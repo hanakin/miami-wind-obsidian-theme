@@ -1,8 +1,11 @@
 # Miami Wind Obsidian Theme
-An Obsidian theme based on Miami Wind color scheme
+An Obsidian theme based on Miami Wind color scheme which is a blend of colors from [Tailwind CSS](https://tailwindcss.com/docs/colors) and Greyscale colors from [Catppuccin Mocha](https://catppuccin.com/) with inspiration from the theme [Miami Nights](https://github.com/monkeytypegame/monkeytype/blob/master/frontend/static/themes/miami_nights.css) for [Monkeytype](https://www.monkeytype.com). Color Swatches built using [Coolors](https://coolors.co/)
 
+## Preview
 
-# Color Palette
+![Preview](./Preview.png)
+
+## Color Palette
 
 ## Base Colors
 [Primary Colors](https://coolors.co/f472b6-22d3ee-fef08a-c084fc-818cf8-34d399-f87171-fdba74)
