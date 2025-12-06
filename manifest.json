@@ -1,8 +1,11 @@
 {
-  "name": "Miami Wind",
-  "version": "1.0.0",
-  "minAppVersion": "0.16.0",
-  "description": "a Color theme based on monkeytype's miami nights theme, catppuccin, and dracula themes using tailwind colors",
-  "author": "hanakin",
-  "authorUrl": "https://github.com/hanakin"
+	"name": "Miami Wind Obsidian Theme",
+	"version": "1.0.0",
+	"minAppVersion": "0.16.0",
+	"description": "a Color theme based on monkeytype's miami nights theme, catppuccin, and dracula themes using tailwind colors",
+	"author": "hanakin",
+	"authorUrl": "https://github.com/hanakin",
+	"repo": "https://github.com/hanakin/miami-wind-obsidian-theme",
+	"modes": ["dark"],
+	"screenshot": "Preview.png"
 }
