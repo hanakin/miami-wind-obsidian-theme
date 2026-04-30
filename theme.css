@@ -165,7 +165,7 @@
 	--checkbox-color-hover: var(--magenta);
 	--checkbox-border-color: var(--cyan);
 	--checkbox-border-color-hover: var(--magenta);
-	--checklist-done-decoration: line-through;
+	--checklist-done-decoration: none;
 	--checklist-done-color: var(--green);
 	--checklist-canceled-color: var(--red);
 
@@ -205,7 +205,7 @@
 	--markup-code: var(--orange);
 
 	/* Additional mappings */
-	
+
 	--scrollbar-bg: var(--grey-11);
 	--scrollbar-thumb-bg: var(--grey-8);
 	--scrollbar-active-thumb-bg: var(--magenta);
@@ -286,7 +286,7 @@ mark {
 /* Links */
 .markdown-rendered a { color: var(--link-unresolved-color); }
 
-.markdown-rendered a:hover { 
+.markdown-rendered a:hover {
 	color: var(--link-color-hover);
 	text-decoration: var(--link-decoration-hover);
 }
@@ -603,49 +603,110 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"] {
 	text-decoration: line-through;
-	color: var(--red);
+	color: var(--red) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"] input {
-	border-color: var(--red);
-	background-color: var(--red);
+	border-color: var(--red) !important;
+	background-color: var(--red) !important;
+	color: var(--black) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"] {
-	text-decoration: underline;
-	color: var(--cyan);
+	text-decoration: underline !important;
+	color: var(--magenta) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"] input {
-	border-color: var(--cyan);
-	background-color: var(--black);
+	border-color: var(--magenta) !important;
+	background-color: var(--black) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"] {
-	text-decoration: none;
-	color: var(--orange);
+	text-decoration: none !important;
+	color: var(--orange) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"] input {
-	border-color: var(--orange);
-	background-color: var(--black);
+	border-color: var(--orange) !important;
+	background-color: var(--black) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"] {
-	text-decoration: none;
-	color: var(--blue);
+	text-decoration: none !important;
+	color: var(--blue) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"] input {
-	border-color: var(--blue);
-	background-color: var(--black);
+	border-color: var(--blue) !important;
+	background-color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"] {
+	text-decoration: none !important;
+	color: var(--green) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"] input {
+	border-color: var(--green) !important;
+	background-color: var(--green) !important;
+	color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=" "],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=" "] {
+	text-decoration: none !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=" "] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=" "] input {
+	border-color: var(--cyan) !important;
+	background-color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"] {
+	text-decoration: none !important;
+	color: var(--yellow) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"] input {
+	border-color: var(--yellow) !important;
+	background-color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"] {
+	text-decoration: none !important;
+	color: var(--grey-3) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"] input {
+	border-color: var(--grey-3) !important;
+	background-color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"] {
+	text-decoration: none !important;
+	color: var(--purple) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"] input {
+	border-color: var(--purple) !important;
+	background-color: var(--black) !important;
 }
 
 
@@ -773,7 +834,7 @@ select,
 select:hover,
 select:focus,
 select:focus-visible,
-select:focus-within,	
+select:focus-within,
 select:active {
 	color: var(--black) !important;
 	background-color: var(--magenta) !important;
@@ -853,7 +914,7 @@ input.prompt-input:focus-visible {
 
 .markdown-reading-view .tag {
 	color: var(--black);
-} 
+}
 
 
 /* Horizontal Rule */
