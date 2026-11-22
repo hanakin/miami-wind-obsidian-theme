@@ -34,3 +34,27 @@ An Obsidian theme based on Miami Wind color scheme which is a blend of colors fr
 [Background Colors](https://coolors.co/1e1e2e-181825-11111b)
 
 ![Background Colors](./imgs/background-colors.png)
+
+## Releasing
+
+1. Set `version` in `manifest.json` to the new version, `X.Y.Z`, without a `v` prefix.
+2. Commit the change on a PR branch:
+   ```sh
+   git add manifest.json
+   git commit -m "Release X.Y.Z"
+   git push -u origin HEAD
+   ```
+3. Open a PR against `main`.
+4. Merge the PR.
+5. Update your local `main`:
+   ```sh
+   git switch main
+   git pull --ff-only origin main
+   ```
+6. Create and push the matching tag:
+   ```sh
+   git tag -a X.Y.Z -m "X.Y.Z"
+   git push origin X.Y.Z
+   ```
+7. Open the **Actions** tab to check the run.
+8. Open **Releases** to check the published release and its `manifest.json` and `theme.css` assets.
