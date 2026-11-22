@@ -1,0 +1,32 @@
+name: Release Obsidian theme
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check release version
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          version="$(jq -er '.version | strings' manifest.json)"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::Tag '$tag' must exactly match manifest.json version '$version' (no v prefix)."
+            exit 1
+          fi
+          echo "Tag '$tag' matches manifest.json version '$version'."
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release create "$tag" --title="$tag" --generate-notes manifest.json theme.css
