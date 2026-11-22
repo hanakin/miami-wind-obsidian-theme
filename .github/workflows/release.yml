@@ -2,11 +2,15 @@ name: Release Obsidian theme
 
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - main
 
 permissions:
   contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -16,19 +20,23 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check release version
-        run: |
-          tag="${GITHUB_REF#refs/tags/}"
-          version="$(jq -er '.version | strings' manifest.json)"
-          if [ "$tag" != "$version" ]; then
-            echo "::error::Tag '$tag' must exactly match manifest.json version '$version' (no v prefix)."
-            exit 1
-          fi
-          echo "Tag '$tag' matches manifest.json version '$version'."
-
       - name: Create release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          tag="${GITHUB_REF#refs/tags/}"
-          gh release create "$tag" --title="$tag" --generate-notes manifest.json theme.css
+          if ! version="$(jq -er '.version | strings' manifest.json)" || [ -z "$version" ]; then
+            echo "::error::manifest.json must contain a non-empty string version."
+            exit 1
+          fi
+          if [[ "$version" == v* ]]; then
+            echo "::error::manifest.json version must not start with v."
+            exit 1
+          fi
+          if output="$(gh release view "$version" 2>&1)"; then
+            echo "Release $version already exists, skipping"
+            exit 0
+          elif [ "$output" != "release not found" ]; then
+            echo "::error::Release lookup failed: $output"
+            exit 1
+          fi
+          gh release create "$version" --target "$GITHUB_SHA" --title "$version" --generate-notes manifest.json theme.css
