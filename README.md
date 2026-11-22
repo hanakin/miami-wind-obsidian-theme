@@ -40,6 +40,7 @@ An Obsidian theme based on Miami Wind color scheme which is a blend of colors fr
 1. Set `version` in `manifest.json` to the new version, `X.Y.Z`, without a `v` prefix.
 2. Commit the change on a PR branch:
    ```sh
+   git switch -c release-X.Y.Z
    git add manifest.json
    git commit -m "Release X.Y.Z"
    git push -u origin HEAD
