@@ -1,6 +1,28 @@
 # Miami Wind Obsidian Theme
 An Obsidian theme based on Miami Wind color scheme which is a blend of colors from [Tailwind CSS](https://tailwindcss.com/docs/colors) and Greyscale colors from [Catppuccin Mocha](https://catppuccin.com/) with inspiration from the theme [Miami Nights](https://github.com/monkeytypegame/monkeytype/blob/master/frontend/static/themes/miami_nights.css) for [Monkeytype](https://www.monkeytype.com). Color Swatches built using [Coolors](https://coolors.co/)
 
+## Installation
+
+### From Obsidian
+
+1. Open **Settings**.
+2. Under **Appearance → Themes**, select **Manage**.
+3. Search for **Miami Wind**.
+4. Select **Miami Wind**.
+5. Select **Install and use**.
+
+### Manual installation
+
+1. Download `manifest.json` and `theme.css` from the [latest release](https://github.com/hanakin/miami-wind-obsidian-theme/releases/latest).
+2. Create the folder `<vault>/.obsidian/themes/Miami Wind/`.
+3. Copy both files into that folder.
+4. Open **Settings → Appearance** in Obsidian.
+5. Select **Miami Wind** under **Themes**.
+
+### Customization
+
+This theme has no Style Settings options. Override colors with a [CSS snippet](https://help.obsidian.md/snippets).
+
 ## Preview
 
 ![Preview](./Preview.png)
