@@ -60,33 +60,6 @@ mark {
 
 @pilot tabs;
 
-.bases-toolbar-item .text-icon-button,
-.bases-toolbar-section-content .text-icon-button {
-	color: var(--cyan);
-	background-color: var(--cyan-transparent);
-	cursor: pointer;
-}
-
-.bases-toolbar-item .text-icon-button:hover,
-.bases-toolbar-section-content .text-icon-button:hover {
-	color: var(--magenta);
-	background-color: var(--magenta-transparent);
-}
-
-.bases-toolbar-section-content .filter-group-actions .text-icon-button,
-.filter-row-actions .clickable-icon {
-	margin-right: 4px;
-}
-
-.filter-row-actions .clickable-icon {
-	background-color: transparent !important;
-}
-
-.filter-row-actions .clickable-icon:hover {
-	color: var(--magenta);
-	background-color: var(--magenta-transparent) !important;
-}
-
 input,
 .combobox-button {
 	background-color: var(--grey-11) !important;
@@ -613,6 +586,8 @@ hr {
 	color: var(--text-disabled);
 	cursor: default;
 }
+
+@pilot bases;
 
 /* Overrides */
 

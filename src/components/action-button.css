@@ -1,0 +1,5 @@
+@define-mixin action-button {
+	color: var(--mw-action-color);
+	background-color: var(--mw-action-background);
+	cursor: pointer;
+}

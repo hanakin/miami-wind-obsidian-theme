@@ -71,5 +71,18 @@
 				}
 			}
 		]
+	},
+	{
+		"component": "action-button",
+		"usages": [
+			{
+				"surface": "bases.css",
+				"selector": ".bases-toolbar-item .text-icon-button,\n.bases-toolbar-section-content .text-icon-button",
+				"properties": {
+					"--mw-action-color": "var(--cyan)",
+					"--mw-action-background": "var(--cyan-transparent)"
+				}
+			}
+		]
 	}
 ]
