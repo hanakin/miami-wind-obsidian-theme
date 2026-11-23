@@ -347,6 +347,8 @@ mark {
 
 /* === legacy.css (continued) === */
 
+/* === links.css === */
+
 /* Links */
 
 .markdown-rendered a {
@@ -371,6 +373,8 @@ mark {
 	color: var(--link-color-hover);
 	text-decoration: var(--link-decoration);
 }
+
+/* === legacy.css (continued) === */
 
 /* Blockquotes */
 

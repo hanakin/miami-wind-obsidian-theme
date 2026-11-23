@@ -14,27 +14,7 @@ mark {
 
 @pilot selection;
 
-/* Links */
-.markdown-rendered a { color: var(--link-unresolved-color); }
-
-.markdown-rendered a:hover {
-	color: var(--link-color-hover);
-	text-decoration: var(--link-decoration-hover);
-}
-
-.markdown-rendered a:visited,
-.markdown-rendered a:active,
-.markdown-rendered a:focus {
-	color: var(--link-color);
-	text-decoration: var(--link-decoration);
-}
-
-.markdown-rendered a:hover:visited,
-.markdown-rendered a:hover:active,
-.markdown-rendered a:hover:focus {
-	color: var(--link-color-hover);
-	text-decoration: var(--link-decoration);
-}
+@pilot links;
 
 /* Blockquotes */
 .markdown-rendered blockquote {
