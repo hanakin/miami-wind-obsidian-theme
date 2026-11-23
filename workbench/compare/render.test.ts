@@ -1,16 +1,13 @@
 import { existsSync } from "node:fs";
 import { type Browser, chromium } from "playwright";
 import { afterAll, beforeAll, expect, test } from "vitest";
+import { BROWSER_OPTIONS } from "./browser";
 import { styleDiff } from "./model";
 import { render } from "./render";
 
 let browser: Browser;
 beforeAll(async () => {
-	browser = await chromium.launch({
-		headless: true,
-		args: ["--disable-gpu", "--num-raster-threads=1"],
-		ignoreDefaultArgs: ["--hide-scrollbars"],
-	});
+	browser = await chromium.launch(BROWSER_OPTIONS);
 });
 afterAll(async () => {
 	await browser.close();
@@ -62,6 +59,10 @@ test
 		"command.app:open-vault",
 		"command.bases:add-view",
 		"settings.webviewer",
+		"extra.textarea.focus",
+		"chrome.window",
+		"chrome.window.macos",
+		"view.empty.action.hover",
 	])(
 	"keeps %s pixels stable across identical replays",
 	async (fixtureId) => {

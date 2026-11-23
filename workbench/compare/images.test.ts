@@ -1,15 +1,12 @@
 import { type Browser, chromium } from "playwright";
 import { afterAll, beforeAll, expect, test } from "vitest";
+import { BROWSER_OPTIONS } from "./browser";
 import { outcome, styleDiff } from "./model";
 import { render } from "./render";
 
 let browser: Browser;
 beforeAll(async () => {
-	browser = await chromium.launch({
-		headless: true,
-		args: ["--disable-gpu", "--num-raster-threads=1"],
-		ignoreDefaultArgs: ["--hide-scrollbars"],
-	});
+	browser = await chromium.launch(BROWSER_OPTIONS);
 });
 afterAll(async () => {
 	await browser.close();

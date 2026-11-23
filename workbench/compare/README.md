@@ -14,7 +14,7 @@ Use `--component exact-name` to filter component tags, including nested tags.
 Use `--surface exact-name` to filter surfaces.
 Combine filters to narrow the selection. An empty selection fails.
 
-The command uses Playwright Chromium with software rendering at 1600 × 1000, scale 1. Scrollbars remain visible. The system color preference is dark. Each fixture retains its theme and platform classes.
+The command uses Playwright Chromium with single-threaded software rasterization at 1600 × 1000, scale 1, in sRGB. It disables partial raster reuse, zero-copy rasterization, and threaded scrolling and animation. It drives pending compositor work and the screenshot frame explicitly through `HeadlessExperimental.beginFrame`. Scrollbars remain visible. The system color preference is dark. Each fixture retains its theme and platform classes.
 
 An isolated Obsidian instance supplies the CodeMirror runtime rules on the first run. The cache is `workbench/out/runtime-cm.css`.
 After an Obsidian update, delete this cache.
@@ -43,7 +43,7 @@ Outputs are local and gitignored. Each run removes old reports and diff images b
 - `workbench/out/diffs/`: before, after, diff, and sanity evidence images. JSON image paths are relative to `workbench/out/`.
 - `workbench/out/component-diffs.json`: `{ [component]: { [surface]: { same, props } } }`.
 
-The JSON keeps `schemaVersion: 1` and the existing fields. Each fixture adds `status`, `notProvenReasons`, and `noise: { styles, pixels }`. A fixture with `not-proven` status has `same: false`.
+The JSON keeps `schemaVersion: 1` and the existing fields. Each fixture adds `status`, `notProvenReasons`, `noise: { styles, pixels }`, and `repeats: { before, after }`. The top-level `rasterization` record names the capture protocol and launch flags. A fixture with `not-proven` status has `same: false`.
 
 The top-level `notProven` list contains `{ id, reasons }` records. The top-level `noise` list contains `{ id, styles, pixels }` records. Summary additions are `notProven`, `notProvenOnly`, and `noise` counts.
 

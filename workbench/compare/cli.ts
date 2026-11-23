@@ -5,6 +5,7 @@ import pixelmatch from "pixelmatch";
 import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import type { FixtureEntry } from "../../capture/scripts/types";
+import { BROWSER_OPTIONS } from "./browser";
 import {
 	componentDiffs,
 	filterFixtures,
@@ -61,11 +62,7 @@ if (appVersion !== registry.obsidianVersion)
 	);
 const app = await Bun.file("capture/.app/app.css").text();
 const cm = await runtimeCss();
-const browser = await chromium.launch({
-	headless: true,
-	args: ["--disable-gpu", "--num-raster-threads=1"],
-	ignoreDefaultArgs: ["--hide-scrollbars"],
-});
+const browser = await chromium.launch(BROWSER_OPTIONS);
 const context = await browser.newContext({
 	viewport: { width: 1600, height: 1000 },
 	deviceScaleFactor: 1,
@@ -94,6 +91,7 @@ type Result = {
 	status: string;
 	notProvenReasons: string[];
 	noise: { styles: number; pixels: number };
+	repeats: { before: number; after: number };
 	pixelDiff: number;
 	differences: ReturnType<typeof styleDiff>;
 	images?: { before: string; after: string; diff: string };
@@ -157,6 +155,7 @@ try {
 					state: f.state,
 					...verdict,
 					noise: { styles: sanityStyles.length, pixels: sanityPixels },
+					repeats: { before: 2, after: 1 },
 					pixelDiff: pixel.count,
 					differences,
 					invisibleTarget: b.invisibleTarget,
@@ -242,6 +241,10 @@ await Bun.write(
 	JSON.stringify(
 		{
 			schemaVersion: 1,
+			rasterization: {
+				flags: BROWSER_OPTIONS.args,
+				capture: "HeadlessExperimental.beginFrame",
+			},
 			status: changed ? "different" : notProven.length ? "not-proven" : "same",
 			notProven,
 			noise,

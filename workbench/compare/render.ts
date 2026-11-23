@@ -1,5 +1,6 @@
 import type { CDPSession, Page } from "playwright";
 import { COMPONENTS } from "../../capture/scripts/engine";
+import { captureFrame, movePointer } from "./browser";
 import type { ElementStyle, Sample } from "./model";
 export interface ImageSize {
 	/** Zero-based document.images index in serialized fixture HTML, including spacer images. */
@@ -112,7 +113,8 @@ export async function render(
 	const replayIssues: string[] = [];
 	await cdp.send("Animation.enable");
 	await cdp.send("Animation.setPlaybackRate", { playbackRate: 0 });
-	await page.mouse.move(-1, -1);
+	await cdp.send("HeadlessExperimental.beginFrame");
+	await movePointer(cdp, -1, -1);
 	await page.evaluate(() => {
 		document
 			.querySelectorAll("[data-compare-force]")
@@ -203,7 +205,7 @@ export async function render(
 			scroller.scrollTop = 0;
 			return { x: r.right - 3, y: r.top + Math.min(10, r.height / 2) };
 		});
-		if (point) await page.mouse.move(point.x, point.y);
+		if (point) await movePointer(cdp, point.x, point.y);
 		else replayIssues.push("scrollbar hover could not be restored");
 	}
 	// A bounded paint interval also works in background worker tabs, whose RAF can be paused.
@@ -392,11 +394,7 @@ export async function render(
 		(el as HTMLStyleElement).disabled = false;
 	});
 	await page.waitForTimeout(120);
-	// CDP avoids Playwright screenshot's extra animation/font waits; the harness has no external resources.
-	const shot = await cdp.send("Page.captureScreenshot", {
-		format: "png",
-		captureBeyondViewport: false,
-	});
+	const png = await captureFrame(cdp);
 	return {
 		styles: data.styles.map(({ element, style }) => ({
 			element,
@@ -409,6 +407,6 @@ export async function render(
 		invisibleTarget: data.invisibleTarget,
 		unsupported: data.unsupported,
 		replayIssues,
-		png: Buffer.from(shot.data, "base64"),
+		png,
 	};
 }
