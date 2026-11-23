@@ -1163,6 +1163,8 @@ hr {
 
 /* === legacy.css (continued) === */
 
+/* === overrides.css === */
+
 /* Overrides */
 
 body:not(.is-phone) .horizontal-tab-nav-item.is-active,
@@ -1173,6 +1175,12 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 	background-color: var(--magenta-transparent);
 	cursor: pointer;
 }
+
+::-webkit-scrollbar-thumb:hover {
+	cursor: pointer;
+}
+
+/* === legacy.css (continued) === */
 
 .code-block-flair,
 .edit-block-button {
@@ -1185,8 +1193,4 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 	background-color: var(--cyan-transparent) !important;
 	color: var(--magenta) !important;
 	cursor: pointer !important;
-}
-
-::-webkit-scrollbar-thumb:hover {
-	cursor: pointer;
 }

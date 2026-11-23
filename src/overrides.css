@@ -1,0 +1,14 @@
+/* Overrides */
+
+body:not(.is-phone) .horizontal-tab-nav-item.is-active,
+body:not(.is-phone) .vertical-tab-nav-item.is-active,
+.modal .vertical-tab-nav-item.is-active,
+.modal .vertical-tab-nav-item.is-active:hover {
+	color: var(--text-normal);
+	background-color: var(--magenta-transparent);
+	cursor: pointer;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	cursor: pointer;
+}
