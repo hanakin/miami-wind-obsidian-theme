@@ -55,6 +55,20 @@
 				"properties": {
 					"--mw-icon-background": "var(--icon-background-hover)"
 				}
+			},
+			{
+				"surface": "tabs.css",
+				"selector": ".workspace-tabs .clickable-icon:hover",
+				"properties": {
+					"--mw-icon-background": "var(--icon-background-hover)"
+				}
+			},
+			{
+				"surface": "tabs.css",
+				"selector": ".workspace-tabs .clickable-icon:active,\n\t.workspace-tabs .clickable-icon.has-active-menu,\n\t.workspace-tabs .clickable-icon.is-active",
+				"properties": {
+					"--mw-icon-background": "var(--icon-background-active)"
+				}
 			}
 		]
 	}

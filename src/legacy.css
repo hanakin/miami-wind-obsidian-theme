@@ -58,17 +58,6 @@ mark {
 
 @pilot sidebars;
 
-	/* Panel Tabs */
-	.workspace-tabs .clickable-icon:hover {
-		background-color: var(--icon-background-hover);
-	}
-
-	.workspace-tabs .clickable-icon:active,
-	.workspace-tabs .clickable-icon.has-active-menu,
-	.workspace-tabs .clickable-icon.is-active {
-		background-color: var(--icon-background-active);
-	}
-
 @pilot tabs;
 
 .bases-toolbar-item .text-icon-button,

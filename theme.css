@@ -425,19 +425,21 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 
 /* === legacy.css (continued) === */
 
+/* === tabs.css === */
+
 /* Panel Tabs */
 
 .workspace-tabs .clickable-icon:hover {
-	background-color: var(--icon-background-hover);
+	--mw-icon-background: var(--icon-background-hover);
+	background-color: var(--mw-icon-background);
 }
 
 .workspace-tabs .clickable-icon:active,
 .workspace-tabs .clickable-icon.has-active-menu,
 .workspace-tabs .clickable-icon.is-active {
-	background-color: var(--icon-background-active);
+	--mw-icon-background: var(--icon-background-active);
+	background-color: var(--mw-icon-background);
 }
-
-/* === tabs.css === */
 
 /* Tabs */
 
