@@ -18,15 +18,32 @@ export const BROWSER_OPTIONS: LaunchOptions = {
 	],
 };
 
+let frameQueue: Promise<unknown> = Promise.resolve();
+export function beginFrame(
+	cdp: CDPSession,
+	params: { screenshot?: { format: "png" } } = {},
+) {
+	// Headless screenshot requests share compositor resources across pages; do not overlap them.
+	const frame = frameQueue.then(() =>
+		cdp.send("HeadlessExperimental.beginFrame", params),
+	);
+	frameQueue = frame.catch(() => undefined);
+	return frame;
+}
+
 export async function captureFrame(cdp: CDPSession): Promise<Buffer> {
 	// Complete pending compositor work, then capture one explicitly driven frame.
-	await cdp.send("HeadlessExperimental.beginFrame");
-	const frame = await cdp.send("HeadlessExperimental.beginFrame", {
-		screenshot: { format: "png" },
-	});
-	if (!frame.screenshotData)
-		throw new Error("Deterministic beginFrame returned no screenshot");
-	return Buffer.from(frame.screenshotData, "base64");
+	await beginFrame(cdp);
+	for (let attempt = 0; attempt < 8; attempt++) {
+		const frame = await beginFrame(cdp, {
+			screenshot: { format: "png" },
+		});
+		if (frame.screenshotData)
+			return Buffer.from(frame.screenshotData, "base64");
+	}
+	throw new Error(
+		"Deterministic beginFrame returned no screenshot after eight frames",
+	);
 }
 
 export async function movePointer(
@@ -47,8 +64,7 @@ export async function movePointer(
 				done = true;
 			},
 		);
-	for (let frame = 0; !done && frame < 8; frame++)
-		await cdp.send("HeadlessExperimental.beginFrame");
+	for (let frame = 0; !done && frame < 8; frame++) await beginFrame(cdp);
 	if (!done)
 		throw new Error(
 			"Pointer did not settle after eight driven compositor frames",

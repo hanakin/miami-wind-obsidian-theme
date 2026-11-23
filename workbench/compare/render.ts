@@ -1,6 +1,6 @@
 import type { CDPSession, Page } from "playwright";
 import { COMPONENTS } from "../../capture/scripts/engine";
-import { captureFrame, movePointer } from "./browser";
+import { beginFrame, captureFrame, movePointer } from "./browser";
 import type { ElementStyle, Sample } from "./model";
 export interface ImageSize {
 	/** Zero-based document.images index in serialized fixture HTML, including spacer images. */
@@ -113,7 +113,7 @@ export async function render(
 	const replayIssues: string[] = [];
 	await cdp.send("Animation.enable");
 	await cdp.send("Animation.setPlaybackRate", { playbackRate: 0 });
-	await cdp.send("HeadlessExperimental.beginFrame");
+	await beginFrame(cdp);
 	await movePointer(cdp, -1, -1);
 	await page.evaluate(() => {
 		document

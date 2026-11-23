@@ -152,3 +152,45 @@ test("hides the focused caret only in screenshots and still compares theme caret
 	expect(a.png.equals(b.png)).toBe(true);
 	await page.close();
 });
+
+test("captures four background worker pages concurrently with complete frame surfaces", async () => {
+	const context = await browser.newContext({
+		viewport: { width: 400, height: 200 },
+	});
+	await context.route("**/*", (r) => r.abort());
+	const pages = await Promise.all(
+		Array.from({ length: 4 }, () => context.newPage()),
+	);
+	await Promise.all(
+		pages.map(async (page) => {
+			const cdp = await context.newCDPSession(page);
+			await cdp.send("DOM.enable");
+			await cdp.send("CSS.enable");
+			const html =
+				'<div data-capture-target style="border:1px solid cyan;border-radius:7px;width:100px;height:50px">Card</div>';
+			const f = { component: "card", surface: "test", state: "default" };
+			const a = await render(
+				page,
+				cdp,
+				html,
+				{ cm: "", app: "", theme: "" },
+				f,
+			);
+			const b = await render(
+				page,
+				cdp,
+				html,
+				{ cm: "", app: "", theme: "/* same */" },
+				f,
+			);
+			const { PNG } = await import("pngjs");
+			const shot = PNG.sync.read(a.png);
+			expect({ width: shot.width, height: shot.height }).toEqual({
+				width: 400,
+				height: 200,
+			});
+			expect(a.png.equals(b.png)).toBe(true);
+		}),
+	);
+	await context.close();
+}, 15000);
