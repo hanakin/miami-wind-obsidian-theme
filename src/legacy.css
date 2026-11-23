@@ -412,11 +412,7 @@ input.prompt-input:focus-visible {
 
 @pilot tag-hover;
 
-/* Horizontal Rule */
-hr {
-	border-color: var(--cyan);
-}
-
+@pilot horizontal-rule;
 
 /* Menus */
 .menu {

@@ -1038,11 +1038,15 @@ input.prompt-input:focus-visible {
 
 /* === legacy.css (continued) === */
 
+/* === horizontal-rule.css === */
+
 /* Horizontal Rule */
 
 hr {
 	border-color: var(--cyan);
 }
+
+/* === legacy.css (continued) === */
 
 /* Menus */
 
