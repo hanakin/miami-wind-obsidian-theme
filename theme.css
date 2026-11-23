@@ -519,6 +519,8 @@ textarea:focus-within,
 	border-color: var(--cyan) !important;
 }
 
+/* === canvas.css === */
+
 /* Canvas */
 
 .canvas-control-group {
@@ -555,6 +557,8 @@ textarea:focus-within,
 .canvas-card-menu .canvas-card-menu-button:hover {
 	color: var(--magenta);
 }
+
+/* === legacy.css (continued) === */
 
 /* Meta */
 
