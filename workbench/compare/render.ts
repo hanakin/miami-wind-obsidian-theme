@@ -42,13 +42,8 @@ export async function render(
 			nodeId: nodeIds[i],
 			forcedPseudoClasses: states[i],
 		});
-	// Wait for font resolution and a complete paint after pseudo-state and transition changes.
-	await page.evaluate(async () => {
-		await document.fonts.ready;
-		await new Promise<void>((resolve) =>
-			requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-		);
-	});
+	// A bounded paint interval also works in background worker tabs, whose RAF can be paused.
+	await page.waitForTimeout(120);
 	const data = await page.evaluate(
 		({ fixture, components }) => {
 			const styles: ElementStyle[] = [],

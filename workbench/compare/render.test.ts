@@ -80,3 +80,20 @@ test
 	},
 	60000,
 );
+
+test("renders a background worker tab without waiting for its paused animation frames", async () => {
+	const context = await browser.newContext();
+	const page = await context.newPage();
+	await context.newPage();
+	const cdp = await context.newCDPSession(page);
+	await cdp.send("DOM.enable");
+	await cdp.send("CSS.enable");
+	await render(
+		page,
+		cdp,
+		"<button>Test</button>",
+		{ cm: "", app: "", theme: "" },
+		{ component: "button", surface: "test", state: "default" },
+	);
+	await context.close();
+}, 3000);
