@@ -173,9 +173,7 @@ input.metadata-property-key-input {
 
 @pilot status-bar;
 
-.nav-file-title.is-active {
-	color: var(--text-normal);
-}
+@pilot navigation;
 
 /* Checkboxes */
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"],

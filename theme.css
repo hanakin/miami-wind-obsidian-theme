@@ -663,9 +663,13 @@ input.metadata-property-key-input {
 
 /* === legacy.css (continued) === */
 
+/* === navigation.css === */
+
 .nav-file-title.is-active {
 	color: var(--text-normal);
 }
+
+/* === legacy.css (continued) === */
 
 /* Checkboxes */
 
