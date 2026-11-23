@@ -1521,6 +1521,8 @@ const gapsQc: Scene = {
 			pseudo: ["hover"],
 			pseudoOn: leaf(".metadata-property[data-property-key='cover'] .metadata-link"),
 			state: "hover",
+			settle: 600,
+			note: "The pencil fades in 0.25s after the link is hovered (app.css transition delay).",
 			minUnobscured: 0.5,
 		},
 		{

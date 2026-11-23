@@ -99,6 +99,22 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 			note: note("The left sidebar as a drawer (vault switcher, tabs, file explorer)."),
 		},
 		{
+			id: id("drawer-tab-list"),
+			component: "workspace-drawer",
+			surface,
+			target: ".workspace-drawer.mod-left .workspace-drawer-tab-options:not(.is-collapsed)",
+			expect: ":has(.workspace-drawer-tab-options-list .workspace-tab-header)",
+			before: async (ctx) => {
+				const at = await ctx.js<[number, number] | null>(
+					"const c = [...document.querySelectorAll('.workspace-drawer.mod-left .workspace-tab-header-inner-chevron')].find((e) => e.getClientRects().length); if (!c) return null; const r = c.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2];",
+				);
+				if (!at) throw new Error("no tab chooser in the drawer");
+				await ctx.page.mouse.click(at[0], at[1]);
+				await ctx.sleep(700);
+			},
+			note: note("The drawer's tab chooser opened (list of sidebar tabs)."),
+		},
+		{
 			id: id("right-drawer"),
 			component: "workspace-drawer",
 			surface,
@@ -120,9 +136,11 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 			full: true,
 			before: async (ctx) => {
 				await closeAll(ctx);
-				await ctx.js("app.mobileTabSwitcher.show(); await sleep(1500);");
+				await ctx.js(
+					"app.workspace.getMostRecentLeaf(app.workspace.rootSplit)?.setPinned(true); await sleep(200); app.mobileTabSwitcher.show(); await sleep(1500);",
+				);
 			},
-			note: note(),
+			note: note("The active tab is pinned first, so its card shows the pin."),
 		},
 		{
 			id: id("menu"),
@@ -132,6 +150,9 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 			expect: size === "phone" ? ".menu.mod-sheet" : ".menu",
 			full: size === "phone",
 			before: async (ctx) => {
+				await ctx.js(
+					"app.mobileTabSwitcher?.hide?.(); app.workspace.getMostRecentLeaf(app.workspace.rootSplit)?.setPinned(false); await sleep(300);",
+				);
 				await openNote("Markdown/Kitchen sink.md", "reading")(ctx);
 				const at = await ctx.js<[number, number] | null>(
 					"const b = [...document.querySelectorAll('.workspace-leaf.mod-active .view-header .view-actions > .view-action')].filter((e) => e.getClientRects().length).at(-1); if (!b) return null; const r = b.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2];",
@@ -252,9 +273,16 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 			expect: ".mod-settings:has(.vertical-tab-content .setting-item)",
 			full: true,
 			before: async (ctx) => {
-				await ctx.js("app.setting.openTabById('editor'); await sleep(1000);");
+				const at = await ctx.js<[number, number] | null>(
+					"const it = [...document.querySelectorAll('.modal.mod-settings .vertical-tab-nav-item')].find((e) => e.getClientRects().length && /^Editor$/.test(e.textContent.trim())); if (!it) return null; it.scrollIntoView({ block: 'center' }); await sleep(200); const r = it.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2];",
+				);
+				if (at) await ctx.page.mouse.click(at[0], at[1]);
+				else await ctx.js("app.setting.openTabById('editor');");
+				await ctx.sleep(1000);
 			},
-			note: note("A Settings page (Editor)."),
+			note: note(
+				"A Settings page (Editor), opened by tapping its entry; on a phone it slides in with a back button.",
+			),
 		},
 		{
 			id: id("bases"),

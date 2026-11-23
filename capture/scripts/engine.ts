@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { CDPSession, Page } from "playwright";
 import { normSelector } from "./css.ts";
 import { INPAGE } from "./inpage.ts";
-import type { Session } from "./obsidian.ts";
+import { type Session, WORK } from "./obsidian.ts";
 import type { Ctx, Evidence, FixtureEntry, ItemDef, Mode, Scene, Target } from "./types.ts";
 
 /** Components worth showing across surfaces. Key = component tag, value = selector. */
@@ -203,17 +203,22 @@ async function emulateMedia(
 	return null;
 }
 
+/** ImageMagick with its temporary files under the work folder (/tmp may be out of quota); throws on failure. */
+function magick(args: string[]): string {
+	const tmp = join(WORK, "tmp");
+	mkdirSync(tmp, { recursive: true });
+	const r = Bun.spawnSync(["magick", ...args], {
+		env: { ...process.env, MAGICK_TEMPORARY_PATH: tmp, TMPDIR: tmp },
+	});
+	if (r.exitCode !== 0)
+		throw new Error(`magick ${args[0]} failed: ${r.stderr.toString().slice(0, 200)}`);
+	return r.stdout.toString();
+}
+
 /** Pixels of the screenshot that have exactly each 0xrrggbb color (ImageMagick histogram). */
 export function pixelCounts(png: string, colors: Record<string, number>): Record<string, number> {
-	const hist = Bun.spawnSync([
-		"magick",
-		png,
-		"-alpha",
-		"off",
-		"-format",
-		"%c",
-		"histogram:info:-",
-	]).stdout.toString();
+	const hist = magick([png, "-alpha", "off", "-format", "%c", "histogram:info:-"]);
+	if (!hist.trim()) throw new Error(`empty ImageMagick histogram for ${png}`);
 	const byHex = new Map<string, number>();
 	for (const m of hist.matchAll(/^\s*(\d+):.*?#([0-9A-Fa-f]{6})/gm))
 		byHex.set((m[2] ?? "").toLowerCase(), Number(m[1]));
@@ -250,8 +255,8 @@ export interface ItemResult {
 
 /** Unique colors and size of a PNG, read with ImageMagick. */
 export function pngStats(path: string): { width: number; height: number; colors: number } {
-	const r = Bun.spawnSync(["magick", "identify", "-format", "%w %h %k", path]);
-	const [w, h, k] = r.stdout.toString().trim().split(" ").map(Number);
+	const out = magick(["identify", "-format", "%w %h %k", path]);
+	const [w, h, k] = out.trim().split(" ").map(Number);
 	return { width: w ?? 0, height: h ?? 0, colors: k ?? 0 };
 }
 
@@ -293,6 +298,10 @@ export async function captureItem(
 	await page.evaluate(
 		"(() => { const s = getSelection(); if (!s || s.isCollapsed || !s.rangeCount) return; const n = s.getRangeAt(0).commonAncestorContainer; const e = n.nodeType === 1 ? n : n.parentElement; if (!e?.closest('[contenteditable=true], input, textarea')) s.removeAllRanges(); })()",
 	);
+	// Park the real pointer on the empty middle of the top edge, so whatever the last item hovered
+	// does not stay hovered; items that click or hover move it from there.
+	const mid = (await page.evaluate("Math.round(innerWidth / 2)")) as number;
+	await page.mouse.move(mid, 1);
 	if (item.before) await item.before(ctx);
 	const target: Target = item.target;
 	const found = (await page.evaluate(
@@ -329,7 +338,7 @@ export async function captureItem(
 					await page.mouse.move(at[0], at[1]);
 				}
 			}
-			await sleep(200);
+			await sleep(200 + (item.settle ?? 0));
 			const d = item.pointer
 				? null
 				: ((await page.evaluate("cap.styleChanges()")) as { n: number; props: string[] } | null);
@@ -425,7 +434,7 @@ export async function captureItem(
 			const end = positions.at(-1) ?? 0;
 			if (end + ch < sh - 2)
 				return { id: item.id, error: `could not scroll to the end (${end}+${ch} of ${sh})` };
-			Bun.spawnSync(["magick", ...parts, "-append", shot]);
+			magick([...parts, "-append", shot]);
 			for (const p of parts) rmSync(p, { force: true });
 			scroll = { positions, scrollHeight: sh, clientHeight: ch };
 		} else {
