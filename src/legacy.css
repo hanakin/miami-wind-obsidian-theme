@@ -148,47 +148,7 @@ textarea:focus-within,
 }
 
 
-/* Meta */
-.metadata-properties-title {
-	color: var(--purple);
-}
-
-.metadata-property[data-property-key="tags"] .multi-select-pill {
-	color: var(--black);
-	background-color: var(--purple);
-	cursor: pointer;
-}
-
-.metadata-property[data-property-key="tags"] .multi-select-pill:hover {
-	background-color: var(--magenta);
-}
-
-.multi-select-pill-remove-button:hover {
-	color: var(--red-bright);
-	cursor: pointer;
-}
-
-.metadata-container .metadata-show-source-button,
-.metadata-container .metadata-add-button {
-	color: var(--black);
-	background-color: var(--cyan);
-	cursor: pointer;
-}
-
-.metadata-container .metadata-show-source-button:hover,
-.metadata-container .metadata-add-button:hover {
-	color: var(--black);
-	background-color: var(--magenta);
-}
-
-.metadata-container .metadata-show-source-button:hover .svg-icon,
-.metadata-container .metadata-add-button:hover .svg-icon{
-	color: var(--black);
-}
-
-input.metadata-property-key-input {
-	color: var(--magenta);
-}
+@pilot properties;
 
 .suggestion-container {
 	border: 1px solid var(--magenta);

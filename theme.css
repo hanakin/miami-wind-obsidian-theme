@@ -582,6 +582,8 @@ textarea:focus-within,
 	color: var(--magenta);
 }
 
+/* === properties.css === */
+
 /* Meta */
 
 .metadata-properties-title {
@@ -621,9 +623,11 @@ textarea:focus-within,
 	color: var(--black);
 }
 
-input.metadata-property-key-input {
-	color: var(--magenta);
+.metadata-property-key-input {
+	--metadata-label-text-color: var(--magenta);
 }
+
+/* === legacy.css (continued) === */
 
 .suggestion-container {
 	border: 1px solid var(--magenta);
