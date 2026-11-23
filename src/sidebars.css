@@ -1,0 +1,12 @@
+/* Drawers */
+.workspace-drawer-vault-actions .clickable-icon:hover {
+	--mw-icon-background: var(--icon-background-hover);
+	@mixin icon-background;
+}
+
+/* Sidebar icon-tab fills lose to Obsidian 1.15.1; omit them for parity. */
+
+body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-profile {
+	border-top-color: var(--cyan);
+}
+

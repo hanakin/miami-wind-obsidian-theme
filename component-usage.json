@@ -48,6 +48,13 @@
 				"properties": {
 					"--mw-icon-background": "var(--icon-background-active)"
 				}
+			},
+			{
+				"surface": "sidebars.css",
+				"selector": ".workspace-drawer-vault-actions .clickable-icon:hover",
+				"properties": {
+					"--mw-icon-background": "var(--icon-background-hover)"
+				}
 			}
 		]
 	}

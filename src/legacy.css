@@ -56,23 +56,7 @@ mark {
 
 @pilot ribbon;
 
-	/* Panel Drawer */
-	.workspace-drawer-vault-actions .clickable-icon:hover {
-		background-color: var(--icon-background-hover);
-	}
-
-	/* Panel Sidebar Tabs */
-	.mod-left-split .workspace-tab-header:hover,
-	.mod-right-split .workspace-tab-header:hover  {
-		background-color: var(--icon-background-hover);
-	}
-
-	.mod-left-split .workspace-tab-header.is-active,
-	.mod-left-split .workspace-tab-header.is-active:hover,
-	.mod-right-split .workspace-tab-header.is-active,
-	.mod-right-split .workspace-tab-header.is-active:hover {
-		background-color: var(--icon-background-active);
-	}
+@pilot sidebars;
 
 	/* Panel Tabs */
 	.workspace-tabs .clickable-icon:hover {
@@ -245,10 +229,6 @@ input.metadata-property-key-input {
 .status-bar-item.mod-clickable:hover {
 	background-color: var(--cyan-transparent);
 	color: var(--magenta);
-}
-
-body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-profile {
-	border-top-color: var(--cyan);
 }
 
 .nav-file-title.is-active {
