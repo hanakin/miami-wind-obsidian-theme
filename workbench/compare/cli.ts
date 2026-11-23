@@ -33,6 +33,7 @@ if (values.help) {
 }
 const started = performance.now();
 const out = "workbench/out";
+rmSync(`${out}/diffs`, { recursive: true, force: true });
 mkdirSync(`${out}/diffs`, { recursive: true });
 const registry = (await Bun.file("capture/fixtures.json").json()) as {
 	obsidianVersion: string;
