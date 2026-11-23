@@ -1006,6 +1006,8 @@ select option:checked {
 
 /* === legacy.css (continued) === */
 
+/* === search.css === */
+
 .search-input-clear-button {
 	color: var(--cyan);
 	cursor: pointer;
@@ -1014,6 +1016,8 @@ select option:checked {
 .search-input-clear-button:hover {
 	color: var(--magenta);
 }
+
+/* === legacy.css (continued) === */
 
 /* Tags */
 
