@@ -9,9 +9,9 @@ The default command builds the after theme first. It compares `b478dc8:theme.css
 
 Use `--id substring`, `--component exact-name`, or `--surface exact-name` to filter fixtures. Combine filters to narrow the selection. Component filtering includes nested component tags from the fixture manifest. An empty selection fails.
 
-The command uses Playwright Chromium at 1600 × 1000, scale 1, dark system preference. The fixture retains its body theme and platform classes. An isolated Obsidian instance supplies its actual CodeMirror runtime rules on the first run. These rules are cached in `workbench/out/runtime-cm.css`. Delete that cache after updating Obsidian. The extracted app CSS version must match the fixture version.
+The command uses Playwright Chromium with software rendering at 1600 × 1000, scale 1, dark system preference. The fixture retains its body theme and platform classes. An isolated Obsidian instance supplies its actual CodeMirror runtime rules on the first run. These rules are cached in `workbench/out/runtime-cm.css`. Delete that cache after updating Obsidian. The extracted app CSS version must match the fixture version.
 
-Each fixture is replayed three times: before, before, after. Every replay loads CodeMirror rules, app CSS, theme CSS, then animation/caret suppression. Recorded pseudo-states are forced through CDP. Before-vs-before must have zero style and pixel changes. A failed sanity check aborts the run and writes an error report.
+Each fixture is replayed three times: before, before, after. Every replay loads CodeMirror rules, app CSS, theme CSS, then animation suppression. Recorded pseudo-states are forced through CDP. Before-vs-before must have zero style and pixel changes. A failed sanity check aborts the run and writes an error report.
 
 Computed standard properties are compared on every element, including ancestors, and on `::before`, `::after`, and `::marker`. Custom property declarations are inputs: their resolved standard property effects are compared instead. Pixel comparison is exact, including antialiasing, over the viewport. Any style or pixel difference returns exit code 1. Setup and sanity failures also return a nonzero code.
 

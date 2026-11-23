@@ -21,7 +21,7 @@ export async function render(
 	}
 	await page.addStyleTag({
 		content:
-			"*,*::before,*::after,*::-webkit-slider-thumb,*::-webkit-slider-runnable-track,*::-webkit-progress-bar,*::-webkit-progress-value,*::-webkit-scrollbar-thumb { animation: none !important; transition: none !important; caret-color: transparent !important; }",
+			"*,*::before,*::after,*::-webkit-slider-thumb,*::-webkit-slider-runnable-track,*::-webkit-progress-bar,*::-webkit-progress-value,*::-webkit-scrollbar-thumb { animation: none !important; transition: none !important; }",
 	});
 	const { root } = await cdp.send("DOM.getDocument", { depth: 0 });
 	const { nodeIds } = await cdp.send("DOM.querySelectorAll", {
