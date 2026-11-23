@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-23T11:55:57.751Z",
+	"generated": "2026-11-23T15:44:09.962Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
 		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/config/obsidian"
@@ -14429,20 +14429,7 @@
 				"sel": ".workspace-leaf-content",
 				"in": "leaf"
 			},
-			"note": "Tags, attachments, orphans, unresolved links and a color group are on; Pixi draws them on a canvas with the colors Obsidian reads from .graph-view.color-* probes."
-		},
-		{
-			"id": "qc.graph.color-probes",
-			"scene": "qc.graph",
-			"surface": "graph",
-			"component": "graph",
-			"state": "default",
-			"source": "catalog:graph-qc",
-			"target": {
-				"sel": ".workspace-leaf-content",
-				"in": "leaf"
-			},
-			"synthetic": "probe elements re-created exactly as GraphRenderer.testCSS() creates them (document.body.createDiv({ cls: 'graph-view ' + name })) and moved into the graph leaf for the snapshot; Obsidian reads their color and detaches them at once"
+			"note": "Tags, attachments, orphans, unresolved links and a color group are on; Pixi draws them on a canvas with the colors Obsidian reads from .graph-view.color-* probes. evidence.record holds the colors the renderer read from each probe class and how many screenshot pixels have exactly that color."
 		},
 		{
 			"id": "qc.media.print",
@@ -14456,15 +14443,6 @@
 		},
 		{
 			"id": "qc.media.forced-colors",
-			"scene": "qc.media",
-			"surface": "workspace",
-			"component": "workspace",
-			"state": "default",
-			"source": "catalog:media-emulation",
-			"target": ".app-container"
-		},
-		{
-			"id": "qc.media.hover-none",
 			"scene": "qc.media",
 			"surface": "workspace",
 			"component": "workspace",
@@ -14716,6 +14694,406 @@
 			"expect": ":has(.changelog-item.mod-success):has(.changelog-item.mod-highlighted)"
 		},
 		{
+			"id": "qc.gap.property-type-warning",
+			"scene": "qc.gaps",
+			"surface": "properties",
+			"component": "property",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".metadata-property[data-property-key='mismatch']",
+				"in": "leaf"
+			},
+			"note": "Gaps.md sets mismatch: 'not a number' while .obsidian/types.json types it as number.",
+			"expect": ":has(.metadata-property-warning-icon)"
+		},
+		{
+			"id": "qc.gap.property-unknown-type",
+			"scene": "qc.gaps",
+			"surface": "properties",
+			"component": "property",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".metadata-property:has(.metadata-property-value-item.mod-unknown)",
+				"in": "leaf"
+			},
+			"note": "An object value (nested:) has no property type.",
+			"expect": ":has(.metadata-property-value-item.mod-unknown)"
+		},
+		{
+			"id": "qc.gap.property-empty-date",
+			"scene": "qc.gaps",
+			"surface": "properties",
+			"component": "property",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".metadata-property:has(input.is-empty)",
+				"in": "leaf"
+			},
+			"expect": ":has(input.is-empty)"
+		},
+		{
+			"id": "qc.gap.property-link-flair",
+			"scene": "qc.gaps",
+			"surface": "properties",
+			"component": "property",
+			"state": "hover",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".metadata-property[data-property-key='cover']",
+				"in": "leaf"
+			},
+			"note": "The pencil fades in 0.25s after the link is hovered (app.css transition delay).",
+			"pseudo": [
+				"hover"
+			],
+			"expect": ":has(.metadata-link .metadata-link-flair)",
+			"minUnobscured": 0.5
+		},
+		{
+			"id": "qc.gap.generic-file-embed",
+			"scene": "qc.gaps",
+			"surface": "editor-live-preview",
+			"component": "embed",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".markdown-source-view .file-embed.mod-generic",
+				"in": "leaf"
+			},
+			"note": "![[archive.zip]]: a file type Obsidian cannot show inline.",
+			"expect": ".file-embed.mod-generic"
+		},
+		{
+			"id": "qc.gap.yaml-error-marker",
+			"scene": "qc.gaps",
+			"surface": "editor-live-preview",
+			"component": "editor-line",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".markdown-source-view .cm-line:has(.error-marker)",
+				"in": "leaf"
+			},
+			"note": "Invalid YAML front matter: Live Preview marks the position of the YAML error.",
+			"expect": ":has(.error-marker)"
+		},
+		{
+			"id": "qc.gap.js-property-access",
+			"scene": "qc.gaps",
+			"surface": "editor-reading-view",
+			"component": "code-block",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".markdown-reading-view pre:has(.token.property-access)",
+				"in": "leaf"
+			},
+			"expect": ":has(.token.property-access)"
+		},
+		{
+			"id": "qc.gap.find-no-match",
+			"scene": "qc.gaps",
+			"surface": "editor-live-preview",
+			"component": "search-input",
+			"state": "no-match",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".document-search-container",
+				"in": "leaf"
+			},
+			"expect": ":has(.mod-no-match)"
+		},
+		{
+			"id": "qc.gap.reading-find-highlight",
+			"scene": "qc.gaps",
+			"surface": "editor-reading-view",
+			"component": "search-highlight",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".markdown-reading-view :has(> .search-highlight)",
+				"in": "leaf"
+			},
+			"note": "Find in Reading view draws .search-highlight boxes over matches.",
+			"expect": ":has(> .search-highlight)"
+		},
+		{
+			"id": "qc.gap.unlinked-mention",
+			"scene": "qc.gaps",
+			"surface": "right-sidebar",
+			"component": "search-result",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": ".workspace-leaf-content[data-type='backlink'] .search-result-file-match:has(.search-result-file-match-replace-button)",
+			"note": "Backlinks > Unlinked mentions: Gaps.md names 'Kitchen sink' without a link, so the match has a Link button.",
+			"expect": ":has(.search-result-file-match-replace-button)"
+		},
+		{
+			"id": "qc.gap.unlinked-mention-button.hover",
+			"scene": "qc.gaps",
+			"surface": "right-sidebar",
+			"component": "button",
+			"state": "hover",
+			"source": "catalog:theme-affected-gaps",
+			"target": ".workspace-leaf-content[data-type='backlink'] .search-result-file-match-replace-button",
+			"note": "The Link button only shows while its match row is hovered; the real pointer hovers the row, then the button.",
+			"pseudo": [
+				"hover"
+			]
+		},
+		{
+			"id": "qc.gap.outgoing-unlinked",
+			"scene": "qc.gaps",
+			"surface": "right-sidebar",
+			"component": "search-result",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": ".workspace-leaf-content[data-type='outgoing-link'] .search-result-file-match:has(.search-result-file-match-destination-file)",
+			"note": "Outgoing links > Unlinked mentions lists the note each plain-text mention could link to.",
+			"expect": ":has(.search-result-file-match-destination-file)"
+		},
+		{
+			"id": "qc.gap.switcher-create",
+			"scene": "qc.gaps",
+			"surface": "suggestion-popup",
+			"component": "suggestion",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": ".prompt .suggestion-item:has(.suggestion-action)",
+			"expect": ":has(.suggestion-action)"
+		},
+		{
+			"id": "qc.gap.graph-controls-closed",
+			"scene": "qc.gaps",
+			"surface": "graph",
+			"component": "graph",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".graph-controls.is-close",
+				"in": "leaf"
+			},
+			"expect": ".is-close"
+		},
+		{
+			"id": "qc.gap.manage-workspaces",
+			"scene": "qc.gaps",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": ".modal:has(.list-container.mod-manage-workspaces)",
+			"expect": ":has(.list-container.mod-manage-workspaces .list-item)"
+		},
+		{
+			"id": "qc.gap.canvas-readonly",
+			"scene": "qc.gaps",
+			"surface": "canvas",
+			"component": "canvas",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".canvas-wrapper.mod-readonly",
+				"in": "leaf"
+			},
+			"note": "Canvas quick settings > Read-only.",
+			"expect": ".mod-readonly"
+		},
+		{
+			"id": "qc.gap.pdf-zoom-min",
+			"scene": "qc.gaps",
+			"surface": "pdf",
+			"component": "pdf",
+			"state": "zoom-out-disabled",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".pdf-toolbar",
+				"in": "leaf"
+			},
+			"note": "Zoomed out to the minimum, the Zoom out button is disabled.",
+			"expect": ":has(.clickable-icon.mod-disabled)"
+		},
+		{
+			"id": "qc.gap.pdf-outline",
+			"scene": "qc.gaps",
+			"surface": "pdf",
+			"component": "pdf",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".pdf-outline-view",
+				"in": "leaf"
+			},
+			"note": "outline.pdf is a hand-written three-page PDF with a document outline, shown in the PDF sidebar's table of contents.",
+			"expect": ".pdf-outline-view:not(.hidden):has(.tree-item)"
+		},
+		{
+			"id": "qc.gap.bases-cards-cover",
+			"scene": "qc.gaps",
+			"surface": "bases",
+			"component": "bases-cards",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".bases-cards-item:has(.bases-cards-cover img), .bases-cards-item:has(.bases-cards-cover[style*='background'])",
+				"in": "leaf"
+			},
+			"note": "The Cards view uses note.cover as its image property; Gaps.md has a cover.",
+			"expect": ":has(.bases-cards-cover)"
+		},
+		{
+			"id": "qc.gap.kanban-card-cover",
+			"scene": "qc.gaps",
+			"surface": "bases",
+			"component": "bases-kanban",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".bases-kanban-card:has(.bases-kanban-card-cover img), .bases-kanban-card:has(.bases-kanban-card-cover[style*='background'])",
+				"in": "leaf"
+			},
+			"expect": ":has(.bases-kanban-card-cover)"
+		},
+		{
+			"id": "qc.gap.kanban-empty",
+			"scene": "qc.gaps",
+			"surface": "bases",
+			"component": "bases-kanban",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".bases-kanban-placeholder",
+				"in": "leaf"
+			},
+			"note": "A kanban view with no group-by property shows its placeholder.",
+			"expect": ":has(.bases-kanban-placeholder-title)"
+		},
+		{
+			"id": "qc.gap.bases-search",
+			"scene": "qc.gaps",
+			"surface": "bases",
+			"component": "search-input",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".bases-search-row",
+				"in": "leaf"
+			}
+		},
+		{
+			"id": "qc.gap.bases-combobox",
+			"scene": "qc.gaps",
+			"surface": "suggestion-popup",
+			"component": "suggestion",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": ".suggestion-container.combobox"
+		},
+		{
+			"id": "qc.gap.formula-status",
+			"scene": "qc.gaps",
+			"surface": "menu",
+			"component": "formula-editor",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".formula-editor-container",
+				"closest": ".menu"
+			},
+			"note": "The formula property's settings show its formula editor with the Valid/Invalid status line.",
+			"expect": ":has(.formula-editor-status)"
+		},
+		{
+			"id": "qc.gap.filter-row-error",
+			"scene": "qc.gaps",
+			"surface": "menu",
+			"component": "filter-row",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".menu .filter-row-error:not([style*='none'])",
+				"closest": ":has(> .filter-row-error)"
+			},
+			"note": "An unparsable advanced filter shows the row's error message.",
+			"expect": ":has(> .filter-row-error:not([style*='none']))"
+		},
+		{
+			"id": "qc.gap.editor-caret",
+			"scene": "qc.gaps",
+			"surface": "editor-live-preview",
+			"component": "editor-line",
+			"state": "caret-visible",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".markdown-source-view .cm-editor > .cm-scroller",
+				"in": "leaf"
+			},
+			"note": "Obsidian draws a CodeMirror caret (.cm-cursor) at the head of a text selection (the empty main cursor uses the native caret); its blink animation is paused in the visible phase for the shot.",
+			"expect": ":has(> .cm-cursorLayer .cm-cursor)"
+		},
+		{
+			"id": "qc.gap.unknown-view-base",
+			"scene": "qc.gaps",
+			"surface": "bases",
+			"component": "bases-view",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".bases-error",
+				"in": "leaf"
+			},
+			"note": "Unknown.base names a view type that does not exist: the base shows its error line.",
+			"expect": ".bases-error"
+		},
+		{
+			"id": "qc.media.hover-none",
+			"scene": "qc.no-pointer",
+			"surface": "workspace",
+			"component": "workspace",
+			"state": "default",
+			"source": "catalog:media-emulation",
+			"target": ".app-container",
+			"note": "Captured by `capture:run --no-pointer`: the app runs headless without the mouse setting, so Blink itself reports (hover: none) and (pointer: none). DevTools media emulation cannot change hover or pointer in this Chromium.",
+			"expect": ".app-container"
+		},
+		{
+			"id": "qc.gap.hotkey-conflict-badge",
+			"scene": "qc.hotkey-conflict",
+			"surface": "settings",
+			"component": "setting-item",
+			"state": "default",
+			"source": "catalog:hotkey-conflict",
+			"target": {
+				"sel": ".setting-group-filter-badge",
+				"closest": ":has(> .setting-group-filter-badge)"
+			},
+			"note": "Italic is given Ctrl/Cmd+B, which Bold already uses; the conflict filter shows a count.",
+			"expect": ":has(> .setting-group-filter-badge)"
+		},
+		{
+			"id": "qc.hotkey-conflict.restore",
+			"scene": "qc.hotkey-conflict",
+			"surface": "settings",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:hotkey-conflict",
+			"target": ".modal.mod-settings"
+		},
+		{
+			"id": "qc.help.options",
+			"scene": "qc.help-window",
+			"surface": "window",
+			"component": "setting-item",
+			"state": "default",
+			"source": "catalog:help-window",
+			"target": ".setting-item:has(.setting-icon)",
+			"note": "Help window: each help link row starts with a .setting-icon.",
+			"expect": ":has(> .setting-icon)"
+		},
+		{
 			"id": "qc.dialog.rename",
 			"scene": "qc.dialogs",
 			"surface": "modal",
@@ -14746,7 +15124,7 @@
 			"source": "catalog:dialogs",
 			"target": ".modal.mod-file-browser",
 			"note": "The same dialog switched to its gallery view.",
-			"expect": ".mod-file-browser:has(.attachments-gallery)"
+			"expect": ".mod-file-browser:has(.attachments-gallery:not([style*='none']))"
 		},
 		{
 			"id": "qc.dialog.export-progress",
@@ -15006,6 +15384,402 @@
 			"state": "default",
 			"source": "catalog:settings-hover-states-in-window",
 			"target": ".app-container"
+		},
+		{
+			"id": "mobile.phone.workspace",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "workspace",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".app-container",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Reading view with the mobile navigation bar.",
+			"expect": ".app-container"
+		},
+		{
+			"id": "mobile.phone.navbar",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "mobile-navbar",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".mobile-navbar",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ":has(.mobile-navbar-actions)"
+		},
+		{
+			"id": "mobile.phone.editor-toolbar",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "mobile-toolbar",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".mobile-toolbar",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Editing shows the mobile editing toolbar.",
+			"expect": ":has(.mobile-toolbar-option)"
+		},
+		{
+			"id": "mobile.phone.left-drawer",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "workspace-drawer",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".workspace-drawer.mod-left",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The left sidebar as a drawer (vault switcher, tabs, file explorer).",
+			"expect": ":has(.workspace-drawer-inner)"
+		},
+		{
+			"id": "mobile.phone.drawer-tab-list",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "workspace-drawer",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".workspace-drawer.mod-left .workspace-drawer-tab-options:not(.is-collapsed)",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The drawer's tab chooser opened (list of sidebar tabs).",
+			"expect": ":has(.workspace-drawer-tab-options-list .workspace-tab-header)"
+		},
+		{
+			"id": "mobile.phone.right-drawer",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "workspace-drawer",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".workspace-drawer.mod-right",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ":has(.workspace-drawer-inner)"
+		},
+		{
+			"id": "mobile.phone.tab-switcher",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "mobile-tab-switcher",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".mobile-tab-switcher",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The active tab is pinned first, so its card shows the pin.",
+			"expect": ":has(.mobile-tab)"
+		},
+		{
+			"id": "mobile.phone.menu",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "menu",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".menu",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. On a phone, menus open as bottom sheets (.menu.mod-sheet).",
+			"expect": ".menu.mod-sheet"
+		},
+		{
+			"id": "mobile.phone.file-menu",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "menu",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".menu",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. A file's context menu from the file explorer drawer, with the destructive Delete item.",
+			"expect": ".menu.mod-sheet:has(.menu-item.is-warning)"
+		},
+		{
+			"id": "mobile.phone.command-palette",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "prompt",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".prompt",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ":has(.suggestion-item)"
+		},
+		{
+			"id": "mobile.phone.quick-switcher",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "prompt",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".prompt",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ":has(.suggestion-item)"
+		},
+		{
+			"id": "mobile.phone.link-suggest",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "suggestion",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".suggestion-container",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Link suggestions while typing [[ in the editor.",
+			"expect": ":has(.suggestion-item)"
+		},
+		{
+			"id": "mobile.phone.confirm-modal",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".modal",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The delete confirmation; it is cancelled, nothing is deleted.",
+			"expect": ":has(.modal-button-container)"
+		},
+		{
+			"id": "mobile.phone.settings",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".modal.mod-settings",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. On a phone, Settings opens as a list of pages.",
+			"expect": ".mod-settings:has(.vertical-tab-nav-item)"
+		},
+		{
+			"id": "mobile.phone.settings-page",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".modal.mod-settings",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. A Settings page (Editor), opened by tapping its entry; on a phone it slides in with a back button.",
+			"expect": ".mod-settings:has(.vertical-tab-content .setting-item)"
+		},
+		{
+			"id": "mobile.phone.bases",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "bases-view",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".app-container",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ".app-container:has(.bases-view)"
+		},
+		{
+			"id": "mobile.phone.bases-settings-menu",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "menu",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".menu",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The Bases view settings menu (on a phone it also holds Filter, Sort, Group and Properties).",
+			"expect": ":has(.bases-toolbar-menu-item)"
+		},
+		{
+			"id": "mobile.phone.bases-filter",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "filter-row",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".menu",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The Bases filter editor as a sheet with its filter rows.",
+			"expect": ".menu.mod-sheet:has(.bases-filter-page .filter-row)"
+		},
+		{
+			"id": "mobile.phone.bases-properties",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "menu",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".menu",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The Bases properties menu (menu item icons).",
+			"expect": ":has(.bases-toolbar-menu-item)"
+		},
+		{
+			"id": "mobile.tablet.workspace",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "workspace",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".app-container",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Reading view with the mobile navigation bar.",
+			"expect": ".app-container"
+		},
+		{
+			"id": "mobile.tablet.editor-toolbar",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "mobile-toolbar",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".mobile-toolbar",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Editing shows the mobile editing toolbar.",
+			"expect": ":has(.mobile-toolbar-option)"
+		},
+		{
+			"id": "mobile.tablet.left-drawer",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "workspace-drawer",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".workspace-drawer.mod-left",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The left sidebar as a drawer (vault switcher, tabs, file explorer).",
+			"expect": ":has(.workspace-drawer-inner)"
+		},
+		{
+			"id": "mobile.tablet.drawer-tab-list",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "workspace-drawer",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".workspace-drawer.mod-left .workspace-drawer-tab-options:not(.is-collapsed)",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The drawer's tab chooser opened (list of sidebar tabs).",
+			"expect": ":has(.workspace-drawer-tab-options-list .workspace-tab-header)"
+		},
+		{
+			"id": "mobile.tablet.right-drawer",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "workspace-drawer",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".workspace-drawer.mod-right",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ":has(.workspace-drawer-inner)"
+		},
+		{
+			"id": "mobile.tablet.tab-switcher",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "mobile-tab-switcher",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".mobile-tab-switcher",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The active tab is pinned first, so its card shows the pin.",
+			"expect": ":has(.mobile-tab)"
+		},
+		{
+			"id": "mobile.tablet.menu",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "menu",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".menu",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ".menu"
+		},
+		{
+			"id": "mobile.tablet.file-menu",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "menu",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".menu",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. A file's context menu from the file explorer drawer, with the destructive Delete item.",
+			"expect": ":has(.menu-item.is-warning)"
+		},
+		{
+			"id": "mobile.tablet.command-palette",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "prompt",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".prompt",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ":has(.suggestion-item)"
+		},
+		{
+			"id": "mobile.tablet.quick-switcher",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "prompt",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".prompt",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ":has(.suggestion-item)"
+		},
+		{
+			"id": "mobile.tablet.link-suggest",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "suggestion",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".suggestion-container",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Link suggestions while typing [[ in the editor.",
+			"expect": ":has(.suggestion-item)"
+		},
+		{
+			"id": "mobile.tablet.confirm-modal",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".modal",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The delete confirmation; it is cancelled, nothing is deleted.",
+			"expect": ":has(.modal-button-container)"
+		},
+		{
+			"id": "mobile.tablet.settings",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".modal.mod-settings",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ".mod-settings:has(.vertical-tab-nav-item)"
+		},
+		{
+			"id": "mobile.tablet.settings-page",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".modal.mod-settings",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. A Settings page (Editor), opened by tapping its entry; on a phone it slides in with a back button.",
+			"expect": ".mod-settings:has(.vertical-tab-content .setting-item)"
+		},
+		{
+			"id": "mobile.tablet.bases",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "bases-view",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".app-container",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ".app-container:has(.bases-view)"
+		},
+		{
+			"id": "mobile.tablet.bases-filter",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "filter-row",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".menu",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"expect": ":has(.filter-row)"
+		},
+		{
+			"id": "mobile.tablet.bases-properties",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "menu",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".menu",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The Bases properties menu (menu item icons).",
+			"expect": ":has(.bases-toolbar-menu-item)"
 		},
 		{
 			"id": "view.type.all-properties",
@@ -19245,7 +20019,7 @@
 		},
 		{
 			"name": "auto-full-screen",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "back-button"
@@ -19289,7 +20063,7 @@
 		},
 		{
 			"name": "bases-display-page",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "bases-embed"
@@ -19431,7 +20205,7 @@
 		},
 		{
 			"name": "bases-properties-page",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "bases-property-visibility-button",
@@ -19526,7 +20300,7 @@
 		},
 		{
 			"name": "bases-toolbar-group-menu",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "bases-toolbar-item"
@@ -19576,7 +20350,7 @@
 		},
 		{
 			"name": "bases-toolbar-menu-item-icon",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "bases-toolbar-menu-item-info"
@@ -19622,7 +20396,7 @@
 		},
 		{
 			"name": "bases-views-page",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "begin"
@@ -20399,7 +21173,7 @@
 		},
 		{
 			"name": "community-modal-controls",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "community-modal-details"
@@ -20438,7 +21212,7 @@
 		},
 		{
 			"name": "community-modal-meta",
-			"excluded": "mobile app only (Atlantis runs desktop Obsidian)"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "community-modal-readme"
@@ -20689,7 +21463,7 @@
 		},
 		{
 			"name": "emulate-mobile",
-			"excluded": "mobile-only state (touch gestures, mobile toolbar or navigation)"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; these touch-gesture and mobile-toolbar states need touch input"
 		},
 		{
 			"name": "end"
@@ -20736,7 +21510,7 @@
 		},
 		{
 			"name": "feedback-banner-content",
-			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone"
+			"excluded": "phone Settings rating banner: built hidden and shown only by a timed in-app rating prompt"
 		},
 		{
 			"name": "feedback-banner-dismiss-button",
@@ -20970,7 +21744,7 @@
 		},
 		{
 			"name": "has-longpress-menu",
-			"excluded": "mobile-only state (touch gestures, mobile toolbar or navigation)"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; these touch-gesture and mobile-toolbar states need touch input"
 		},
 		{
 			"name": "has-row-lines",
@@ -20985,7 +21759,7 @@
 		},
 		{
 			"name": "has-swipe",
-			"excluded": "mobile-only state (touch gestures, mobile toolbar or navigation)"
+			"excluded": "touch gesture state, set only while a touch swipe or pull is in progress; desktop mobile emulation has no touch input"
 		},
 		{
 			"name": "hasBorder"
@@ -21421,7 +22195,7 @@
 		},
 		{
 			"name": "is-hidden-nav",
-			"excluded": "mobile-only state (touch gestures, mobile toolbar or navigation)"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; these touch-gesture and mobile-toolbar states need touch input"
 		},
 		{
 			"name": "is-highlighted"
@@ -21456,11 +22230,11 @@
 		},
 		{
 			"name": "is-mobile",
-			"excluded": "mobile app only (Atlantis runs desktop Obsidian)"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "is-phone",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "is-pinned"
@@ -21515,7 +22289,7 @@
 		},
 		{
 			"name": "is-sliding",
-			"excluded": "mobile-only state (touch gestures, mobile toolbar or navigation)"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; these touch-gesture and mobile-toolbar states need touch input"
 		},
 		{
 			"name": "is-sliding-sidebar",
@@ -21523,11 +22297,11 @@
 		},
 		{
 			"name": "is-swiping",
-			"excluded": "mobile-only state (touch gestures, mobile toolbar or navigation)"
+			"excluded": "touch gesture state, set only while a touch swipe or pull is in progress; desktop mobile emulation has no touch input"
 		},
 		{
 			"name": "is-tablet",
-			"excluded": "tablet layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "is-text-garbled"
@@ -21741,7 +22515,7 @@
 		},
 		{
 			"name": "menu-group",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "menu-item"
@@ -21788,7 +22562,7 @@
 		},
 		{
 			"name": "metadata-content",
-			"excluded": "mobile app only (Atlantis runs desktop Obsidian)"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "metadata-error-container"
@@ -21858,187 +22632,187 @@
 		},
 		{
 			"name": "mobile-navbar",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-navbar-action",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-navbar-action-tabs",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-navbar-actions",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-navbar-tabs-number",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-navbar-text",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-onboarding",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "mobile app onboarding: no code in the desktop build creates it (only app.css styles it), so Obsidian's mobile emulation cannot show it"
 		},
 		{
 			"name": "mobile-onboarding-action",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "mobile app onboarding: no code in the desktop build creates it (only app.css styles it), so Obsidian's mobile emulation cannot show it"
 		},
 		{
 			"name": "mobile-onboarding-actions",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-onboarding-back-button",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "mobile app onboarding: no code in the desktop build creates it (only app.css styles it), so Obsidian's mobile emulation cannot show it"
 		},
 		{
 			"name": "mobile-onboarding-feature-table",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "mobile app onboarding: no code in the desktop build creates it (only app.css styles it), so Obsidian's mobile emulation cannot show it"
 		},
 		{
 			"name": "mobile-onboarding-navbar",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "mobile app onboarding: no code in the desktop build creates it (only app.css styles it), so Obsidian's mobile emulation cannot show it"
 		},
 		{
 			"name": "mobile-onboarding-page",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "mobile app onboarding: no code in the desktop build creates it (only app.css styles it), so Obsidian's mobile emulation cannot show it"
 		},
 		{
 			"name": "mobile-onboarding-radio-button",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-onboarding-radio-group",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-onboarding-radio-option",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-onboarding-radio-option-desc",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-onboarding-radio-option-title",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "mobile app onboarding: no code in the desktop build creates it (only app.css styles it), so Obsidian's mobile emulation cannot show it"
 		},
 		{
 			"name": "mobile-onboarding-screen",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "mobile app onboarding: no code in the desktop build creates it (only app.css styles it), so Obsidian's mobile emulation cannot show it"
 		},
 		{
 			"name": "mobile-onboarding-vault-hint",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-onboarding-vault-list",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-onboarding-vault-path",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-footer",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-group-container",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-pin",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-preview",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-preview-embed",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "tab card preview image: the mobile app renders it from an on-device page screenshot (is-screenshotting runs only in the mobile app)"
 		},
 		{
 			"name": "mobile-tab-preview-empty",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-switcher",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-switcher-inner-scroll",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-switcher-menu-button",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-switcher-menu-button-chevron",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-switcher-menu-spacer",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-switcher-menubar",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-switcher-scroll",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-switcher-search",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tab-title",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-tap",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "set on an element while a touch tap is held; desktop mobile emulation has no touch input"
 		},
 		{
 			"name": "mobile-toolbar",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-toolbar-floating-options",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "opens on a long press of a mobile toolbar button (touch only)"
 		},
 		{
 			"name": "mobile-toolbar-option",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-toolbar-options-container",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-toolbar-options-list",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-toolbar-options-list-container",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-toolbar-spacer",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+			"excluded": "zero-height spacer below the mobile toolbar; it never paints"
 		},
 		{
 			"name": "mod-action"
@@ -22054,14 +22828,14 @@
 		},
 		{
 			"name": "mod-active-col-handle",
-			"excluded": "mobile app only (Atlantis runs desktop Obsidian)"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "mod-active-hotkey-filter"
 		},
 		{
 			"name": "mod-active-row-handle",
-			"excluded": "mobile app only (Atlantis runs desktop Obsidian)"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "mod-add-item",
@@ -22132,7 +22906,7 @@
 		},
 		{
 			"name": "mod-cancel",
-			"excluded": "mobile app only (Atlantis runs desktop Obsidian); phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "mod-canvas-color-1"
@@ -22190,11 +22964,11 @@
 		},
 		{
 			"name": "mod-community-plugin",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "mod-community-theme",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "mod-completed"
@@ -22204,7 +22978,7 @@
 		},
 		{
 			"name": "mod-confirmation",
-			"excluded": "mobile app only (Atlantis runs desktop Obsidian); phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "mod-cta"
@@ -22340,7 +23114,7 @@
 		},
 		{
 			"name": "mod-hotkeys",
-			"excluded": "mobile app only (Atlantis runs desktop Obsidian); phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "mod-hover-label"
@@ -22368,11 +23142,11 @@
 		},
 		{
 			"name": "mod-left-split-toggle",
-			"excluded": "tablet layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "mod-lg",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "mod-linked"
@@ -22594,7 +23368,7 @@
 		},
 		{
 			"name": "mod-toolbar-open",
-			"excluded": "mobile-only state (touch gestures, mobile toolbar or navigation)"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; these touch-gesture and mobile-toolbar states need touch input"
 		},
 		{
 			"name": "mod-top"
@@ -22631,7 +23405,7 @@
 		},
 		{
 			"name": "mod-visible",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "mod-warning"
@@ -22692,7 +23466,7 @@
 		},
 		{
 			"name": "modal-setting-back-button",
-			"excluded": "mobile app only (Atlantis runs desktop Obsidian); phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "modal-setting-title"
@@ -22801,7 +23575,7 @@
 		},
 		{
 			"name": "navbar-action-flair",
-			"excluded": "mobile navigation bar"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile navigation bar: what it cannot reach needs touch input"
 		},
 		{
 			"name": "nested"
@@ -22890,7 +23664,7 @@
 		},
 		{
 			"name": "pdf-annotation-modal",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "pdf-container"
@@ -22909,14 +23683,14 @@
 		},
 		{
 			"name": "pdf-findbar-message",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "pdf-findbar-settings"
 		},
 		{
 			"name": "pdf-findbar-settings-btn",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "pdf-lock-icon"
@@ -22956,7 +23730,7 @@
 		},
 		{
 			"name": "pdf-toolbar-button",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "pdf-toolbar-center",
@@ -23084,7 +23858,7 @@
 		},
 		{
 			"name": "prompt-input-cta",
-			"excluded": "mobile app only (Atlantis runs desktop Obsidian)"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "prompt-instruction"
@@ -23162,15 +23936,15 @@
 		},
 		{
 			"name": "pull-action",
-			"excluded": "mobile pull-down gestures"
+			"excluded": "touch gesture state, set only while a touch swipe or pull is in progress; desktop mobile emulation has no touch input"
 		},
 		{
 			"name": "pull-down-action",
-			"excluded": "mobile pull-down gestures"
+			"excluded": "touch gesture state, set only while a touch swipe or pull is in progress; desktop mobile emulation has no touch input"
 		},
 		{
 			"name": "pull-out-action",
-			"excluded": "mobile pull-down gestures"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; pull-down gestures need touch input"
 		},
 		{
 			"name": "punctuation"
@@ -23475,7 +24249,7 @@
 		},
 		{
 			"name": "setting-search-result-tab",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "setting-search-result-tab-label"
@@ -24131,7 +24905,7 @@
 		},
 		{
 			"name": "vertical-tab-header-title",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope"
 		},
 		{
 			"name": "vertical-tab-nav-item"
@@ -24229,127 +25003,127 @@
 		},
 		{
 			"name": "workspace-drawer",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-action-icon",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-action-item",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-action-short-name",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-actions",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-active-tab-chevron",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-active-tab-container",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-active-tab-content",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-active-tab-icon",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-backdrop",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-header",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-header-icon",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-header-info",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-header-left",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-header-name",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-header-name-action-icon",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-header-name-chevron",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-header-name-text",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-header-switcher",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-inner",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-navbar-backdrop",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-ribbon",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-separator",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-tab-container",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-tab-options",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-tab-options-list",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-tab-select",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-vault-actions",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-vault-name",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-vault-switcher",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drawer-vault-switcher-icon",
-			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input"
 		},
 		{
 			"name": "workspace-drop-overlay"
