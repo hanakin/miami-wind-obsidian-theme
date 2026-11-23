@@ -12,7 +12,7 @@ import { formatConfig } from "./format-config";
 import { formatCss } from "./formatter";
 import legacyChecksum from "./legacy-sha256.json";
 
-export interface ComponentUsage {
+interface ComponentUsage {
 	component: string;
 	usages: {
 		surface: string;

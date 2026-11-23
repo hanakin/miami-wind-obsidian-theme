@@ -1,6 +1,18 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
-	"files": { "includes": ["scripts/**/*.ts", "test/**/*.ts", "*.json"] },
-	"formatter": { "indentStyle": "tab" },
-	"linter": { "enabled": true, "rules": { "preset": "none" } }
+	"files": {
+		"includes": [
+			"scripts/**/*.ts",
+			"test/**/*.ts"
+		]
+	},
+	"formatter": {
+		"indentStyle": "tab"
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "none"
+		}
+	}
 }

@@ -32,7 +32,7 @@ describe("theme rules", () => {
 	});
 });
 
-it("formats with tabs, ordered properties, section banners and stable output", async () => {
+it("formats with tabs, source property order, section banners and stable output", async () => {
 	const input =
 		"/* @section code.css */ .x{color:red;display:block;background:blue} @media (hover: hover){.y{color:green}}";
 	const result = await postcss([formatCss()]).process(input, {
@@ -40,8 +40,8 @@ it("formats with tabs, ordered properties, section banners and stable output", a
 	});
 	expect(result.css).toContain("/* === code.css === */");
 	expect(result.css).toContain("\t display".replace(" ", ""));
-	expect(result.css.indexOf("display:")).toBeLessThan(
-		result.css.indexOf("color:"),
+	expect(result.css.indexOf("color:")).toBeLessThan(
+		result.css.indexOf("display:"),
 	);
 	expect(
 		(await postcss([formatCss()]).process(result.css, { from: undefined })).css,
@@ -84,3 +84,16 @@ it("checks selectors and declarations after nesting and component expansion", as
 		),
 	).rejects.toThrow();
 });
+
+it.each(["line-height: 2; font: 12px serif", "top: 1px; inset: 0"])(
+	"keeps declaration order for %s",
+	async (declarations) => {
+		const result = await postcss([formatCss()]).process(
+			`.x { ${declarations} }`,
+			{ from: undefined },
+		);
+		expect(result.css).toBe(
+			`.x {\n\t${declarations.split("; ").join(";\n\t")};\n}\n`,
+		);
+	},
+);

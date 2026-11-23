@@ -1,52 +1,9 @@
-import type { ChildNode, Container, Plugin } from "postcss";
+import type { Container, Plugin } from "postcss";
 import { formatConfig as config } from "./format-config";
-
-function ordered(nodes: ChildNode[]): ChildNode[] {
-	// Keep shorthand/longhand dependencies and custom-property/comment groups in source order.
-	if (nodes.some((node) => node.type !== "decl" || node.prop.startsWith("--")))
-		return nodes;
-	const properties = nodes.flatMap((node) =>
-		node.type === "decl" ? [node.prop] : [],
-	);
-	if (
-		properties.some((prop) =>
-			properties.some((other) => other.startsWith(`${prop}-`)),
-		)
-	)
-		return nodes;
-	const families = [
-		"border",
-		"background",
-		"font",
-		"margin",
-		"padding",
-		"animation",
-		"transition",
-		"flex",
-		"grid",
-		"outline",
-	];
-	if (
-		families.some(
-			(family) =>
-				properties.filter(
-					(prop) => prop === family || prop.startsWith(`${family}-`),
-				).length > 1,
-		)
-	)
-		return nodes;
-	const rank = (prop: string) => {
-		const index = (config.propertyOrder as readonly string[]).indexOf(prop);
-		return index === -1 ? config.propertyOrder.length : index;
-	};
-	return [...nodes].sort((a, b) =>
-		a.type === "decl" && b.type === "decl" ? rank(a.prop) - rank(b.prop) : 0,
-	);
-}
 
 function render(container: Container, depth = 0): string {
 	const indent = config.indent.repeat(depth);
-	return ordered(container.nodes ?? [])
+	return (container.nodes ?? [])
 		.map((node) => {
 			if (node.type === "comment") {
 				const section = node.text.match(/^@section (.+)$/);

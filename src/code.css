@@ -12,6 +12,11 @@
 	--mw-surface-background: var(--code-background);
 	@mixin surface-background;
 	--code-normal: var(--code-foreground);
+	--link-color: var(--code-foreground);
+	--link-color-hover: var(--code-foreground);
+	--link-external-color: var(--code-foreground);
+	--link-external-color-hover: var(--code-foreground);
+	--link-unresolved-color: var(--code-foreground);
 }
 
 .markdown-rendered pre {

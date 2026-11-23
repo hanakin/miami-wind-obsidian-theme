@@ -256,6 +256,11 @@
 	/* Component: surface-background */
 	background-color: var(--mw-surface-background);
 	--code-normal: var(--code-foreground);
+	--link-color: var(--code-foreground);
+	--link-color-hover: var(--code-foreground);
+	--link-external-color: var(--code-foreground);
+	--link-external-color-hover: var(--code-foreground);
+	--link-unresolved-color: var(--code-foreground);
 }
 
 .markdown-rendered pre {
@@ -267,8 +272,8 @@
 }
 
 .markdown-rendered pre code {
-	color: var(--code-foreground);
 	background-color: transparent;
+	color: var(--code-foreground);
 }
 
 /* Syntax highlighting */
@@ -308,17 +313,17 @@
 .markdown-rendered mark,
 .cm-s-obsidian span.cm-highlight,
 mark {
-	padding: 2px 4px;
-	color: var(--background-primary) !important;
 	background-color: var(--highlight) !important;
+	color: var(--background-primary) !important;
 	border-radius: 3px;
+	padding: 2px 4px;
 }
 
 /* Text selection */
 
 ::selection {
-	color: var(--text-selection-fg);
 	background-color: var(--text-selection);
+	color: var(--text-selection-fg);
 }
 
 /* Links */
@@ -349,8 +354,8 @@ mark {
 /* Blockquotes */
 
 .markdown-rendered blockquote {
-	padding: 8px 16px 16px 16px !important;
 	border-left: 4px solid var(--blockquote);
+	padding: 8px 16px 16px 16px !important;
 }
 
 /* Icon Buttons */
@@ -362,9 +367,9 @@ mark {
 }
 
 .clickable-icon[aria-disabled='true'] {
+	cursor: default;
 	color: var(--text-disabled) !important;
 	background-color: transparent !important;
-	cursor: default;
 }
 
 /* Panel Ribbon */
@@ -483,9 +488,9 @@ mark {
 
 input,
 .combobox-button {
-	color: var(--text-normal);
 	background-color: var(--grey-11) !important;
 	border-color: var(--grey-9) !important;
+	color: var(--text-normal);
 }
 
 input:focus,
@@ -497,8 +502,8 @@ textarea:focus-within,
 .combobox-button:focus,
 .combobox-button:focus-visible,
 .combobox-button:focus-within {
-	border-color: var(--cyan) !important;
 	outline: none !important;
+	border-color: var(--cyan) !important;
 }
 
 /* Canvas */
@@ -582,28 +587,28 @@ input.metadata-property-key-input {
 }
 
 .suggestion-container {
-	margin: 0;
-	padding: 0;
 	border: 1px solid var(--magenta);
 	cursor: pointer;
+	padding: 0;
+	margin: 0;
 }
 
 .suggestion {
-	margin: 0;
 	padding: 0;
 	cursor: pointer;
+	margin: 0;
 }
 
 .suggestion-container.mod-property-value .suggestion-item,
 .suggestion-container.mod-property-key .suggestion-item {
-	margin: 0;
 	padding: 8px 16px;
 	cursor: pointer;
+	margin: 0;
 }
 
 .suggestion-container.mod-property-key .suggestion-item {
-	padding-left: 8px;
 	background-color: var(--black);
+	padding-left: 8px;
 }
 
 .suggestion-item.mod-complex .suggestion-flair {
@@ -621,10 +626,10 @@ input.metadata-property-key-input {
 .suggestion-container.mod-property-value .suggestion-item:hover,
 .suggestion-item.is-selected,
 .suggestion-item.mobile-tap {
-	color: var(--magenta);
 	background-color: var(--magenta-transparent);
-	border-radius: 0;
+	color: var(--magenta);
 	cursor: pointer;
+	border-radius: 0;
 }
 
 /* Status bar */
@@ -640,14 +645,14 @@ input.metadata-property-key-input {
 .status-bar-item,
 .status-bar-item.mod-clickable {
 	padding: 4px 8px;
-	border-radius: 0;
 	cursor: pointer;
+	border-radius: 0;
 }
 
 .status-bar-item:hover,
 .status-bar-item.mod-clickable:hover {
-	color: var(--magenta);
 	background-color: var(--cyan-transparent);
+	color: var(--magenta);
 }
 
 body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-profile {
@@ -662,64 +667,64 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"] {
-	color: var(--red) !important;
 	text-decoration: line-through;
+	color: var(--red) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"] input {
-	color: var(--black) !important;
-	background-color: var(--red) !important;
 	border-color: var(--red) !important;
+	background-color: var(--red) !important;
+	color: var(--black) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"] {
-	color: var(--magenta) !important;
 	text-decoration: underline !important;
+	color: var(--magenta) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"] input {
-	background-color: var(--black) !important;
 	border-color: var(--magenta) !important;
+	background-color: var(--black) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"] {
-	color: var(--orange) !important;
 	text-decoration: none !important;
+	color: var(--orange) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"] input {
-	background-color: var(--black) !important;
 	border-color: var(--orange) !important;
+	background-color: var(--black) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"] {
-	color: var(--blue) !important;
 	text-decoration: none !important;
+	color: var(--blue) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"] input {
-	background-color: var(--black) !important;
 	border-color: var(--blue) !important;
+	background-color: var(--black) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"] {
-	color: var(--green) !important;
 	text-decoration: none !important;
+	color: var(--green) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"] input {
-	color: var(--black) !important;
-	background-color: var(--green) !important;
 	border-color: var(--green) !important;
+	background-color: var(--green) !important;
+	color: var(--black) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=" "],
@@ -729,44 +734,44 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=" "] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=" "] input {
-	background-color: var(--black) !important;
 	border-color: var(--cyan) !important;
+	background-color: var(--black) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"] {
-	color: var(--yellow) !important;
 	text-decoration: none !important;
+	color: var(--yellow) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"] input {
-	background-color: var(--black) !important;
 	border-color: var(--yellow) !important;
+	background-color: var(--black) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"] {
-	color: var(--grey-3) !important;
 	text-decoration: none !important;
+	color: var(--grey-3) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"] input {
-	background-color: var(--black) !important;
 	border-color: var(--grey-3) !important;
+	background-color: var(--black) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"] {
-	color: var(--purple) !important;
 	text-decoration: none !important;
+	color: var(--purple) !important;
 }
 
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"] input,
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"] input {
-	background-color: var(--black) !important;
 	border-color: var(--purple) !important;
+	background-color: var(--black) !important;
 }
 
 /* Tables */
@@ -776,8 +781,8 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 }
 
 .markdown-rendered th {
-	color: var(--text-accent);
 	background-color: var(--code-background);
+	color: var(--text-accent);
 }
 
 .markdown-rendered td {
@@ -857,9 +862,9 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 }
 
 .modal button {
+	cursor: pointer;
 	color: var(--cyan);
 	background-color: var(--cyan-transparent);
-	cursor: pointer;
 }
 
 .modal button:hover,
@@ -869,9 +874,9 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 }
 
 .modal button.mod-cta {
+	cursor: pointer;
 	color: var(--grey-9);
 	background-color: var(--cyan);
-	cursor: pointer;
 }
 
 .modal button.mod-cta:hover {
@@ -883,9 +888,9 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 }
 
 .modal .setting-hotkey {
-	padding: 4px 8px 2px;
 	color: var(--yellow);
 	background-color: var(--yellow-transparent);
+	padding: 4px 8px 2px;
 }
 
 .modal .setting-hotkey:hover {
@@ -942,8 +947,8 @@ select option:checked {
 }
 
 .prompt-instruction-command {
-	padding: 4px 8px;
 	color: var(--code-normal);
+	padding: 4px 8px;
 	background-color: var(--black);
 	border-radius: 4px;
 }
@@ -1050,15 +1055,15 @@ hr {
 .bases-toolbar-menu-item:focus,
 .bases-toolbar-menu-item:active,
 .bases-toolbar-menu-item.selected {
-	color: var(--magenta);
 	background-color: var(--cyan-transparent) !important;
+	color: var(--magenta);
 	cursor: pointer;
 }
 
 .menu-item.is-disabled:hover,
 .bases-toolbar-menu-item.mod-hidden:hover {
-	color: var(--text-disabled);
 	background-color: transparent !important;
+	color: var(--text-disabled);
 	cursor: default;
 }
 
@@ -1081,8 +1086,8 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 
 .code-block-flair:hover,
 .edit-block-button:hover {
-	color: var(--magenta) !important;
 	background-color: var(--cyan-transparent) !important;
+	color: var(--magenta) !important;
 	cursor: pointer !important;
 }
 

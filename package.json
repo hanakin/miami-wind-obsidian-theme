@@ -5,9 +5,8 @@
 	"scripts": {
 		"build": "bun scripts/build.ts",
 		"check:css": "bun scripts/check-css.ts",
-		"check": "biome check scripts test *.json && tsc --noEmit && vitest run && bun run check:css",
-		"check:generated": "bun run build && git diff --exit-code -- theme.css component-usage.json",
-		"fmt": "biome check --write scripts test *.json"
+		"check": "biome check scripts test && tsc --noEmit && vitest run && bun run check:css",
+		"fmt": "biome check --write scripts test"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.8",

@@ -3,8 +3,7 @@ import Specificity from "@bramus/specificity";
 import type { Plugin } from "postcss";
 import selectorParser from "postcss-selector-parser";
 
-export const tagHoverSelector =
-	".cm-hashtag-begin:has(+ .cm-hashtag-end:hover)";
+const tagHoverSelector = ".cm-hashtag-begin:has(+ .cm-hashtag-end:hover)";
 
 function compoundDepth(selector: selectorParser.Selector): number {
 	const direct =
