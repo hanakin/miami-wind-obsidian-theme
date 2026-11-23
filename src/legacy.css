@@ -303,63 +303,7 @@ input.metadata-property-key-input {
 }
 
 
-/* Modal dialogs */
-.modal {
-	background-color: var(--background-primary);
-	border: 2px solid var(--magenta);
-}
-
-.modal-close-button.clickable-icon:hover {
-	color: var(--magenta) !important;
-    background-color: var(--icon-background-hover);
-}
-
-.modal .vertical-tab-header-group-title {
-	color: var(--magenta);
-}
-
-.modal .vertical-tab-nav-item:hover {
-	color: var(--magenta);
-	background-color: var(--magenta-transparent);
-	cursor: pointer;
-}
-
-.modal button {
-	cursor: pointer;
-	color: var(--cyan);
-	background-color: var(--cyan-transparent);
-}
-
-.modal button:hover,
-.modal .clickable-icon:hover {
-	color: var(--magenta);
-	background-color: var(--magenta-transparent);
-}
-
-.modal button.mod-cta {
-	cursor: pointer;
-	color: var(--grey-9);
-	background-color: var(--cyan);
-}
-
-.modal button.mod-cta:hover {
-	background-color: var(--magenta);
-}
-
-.modal .checkbox-container.is-enabled {
-	background-color: var(--magenta);
-}
-
-.modal .setting-hotkey {
-	color: var(--yellow);
-	background-color: var(--yellow-transparent);
-	padding: 4px 8px 2px;
-}
-
-.modal .setting-hotkey:hover {
-	color: var(--purple);
-	background-color: var(--purple-transparent);
-}
+@pilot modals;
 
 .modal .dropdown,
 .dropdown,
@@ -395,14 +339,6 @@ select::-webkit-scrollbar-thumb {
 select option:hover,
 select option:checked {
 	background-color: var(--cyan) !important;
-}
-
-.model .setting-item-description {
-	color: var(--text-disabled);
-}
-
-.modal input:hover {
-	border-color: var(--cyan-transparent);
 }
 
 .prompt {

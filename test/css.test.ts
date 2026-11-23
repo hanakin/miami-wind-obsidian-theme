@@ -129,3 +129,19 @@ it.each(["cm-footref", "cm-hmd-footnote"])(
 		await expect(check(css.replace(state, "cm-link"))).rejects.toThrow();
 	},
 );
+
+it.each([".modal button.mod-cta", ".modal button.mod-cta:hover"])(
+	"allows only the exact modal CTA rival %s",
+	async (selector) => {
+		const css = `${selector} { background-color: var(--cyan) }`;
+		await expect(
+			postcss([checkCss()]).process(css, { from: "src/modals.css" }),
+		).resolves.toBeDefined();
+		await expect(check(css)).rejects.toThrow();
+		await expect(
+			postcss([checkCss()]).process(css.replace("button.", "div."), {
+				from: "src/modals.css",
+			}),
+		).rejects.toThrow();
+	},
+);

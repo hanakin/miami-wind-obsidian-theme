@@ -89,6 +89,30 @@
 		"component": "action-button",
 		"usages": [
 			{
+				"surface": "modals.css",
+				"selector": ".modal .vertical-tab-nav-item:hover",
+				"properties": {
+					"--mw-action-color": "var(--magenta)",
+					"--mw-action-background": "var(--magenta-transparent)"
+				}
+			},
+			{
+				"surface": "modals.css",
+				"selector": ".modal button",
+				"properties": {
+					"--mw-action-color": "var(--cyan)",
+					"--mw-action-background": "var(--cyan-transparent)"
+				}
+			},
+			{
+				"surface": "modals.css",
+				"selector": ".modal button.mod-cta",
+				"properties": {
+					"--mw-action-color": "var(--grey-9)",
+					"--mw-action-background": "var(--cyan)"
+				}
+			},
+			{
 				"surface": "bases.css",
 				"selector": ".bases-toolbar-item .text-icon-button,\n.bases-toolbar-section-content .text-icon-button",
 				"properties": {

@@ -855,15 +855,18 @@ input.metadata-property-key-input {
 	color: var(--purple);
 }
 
+/* === modals.css === */
+
 /* Modal dialogs */
 
 .modal {
 	background-color: var(--background-primary);
-	border: 2px solid var(--magenta);
+	--modal-border-width: 2px;
+	--modal-border-color: var(--magenta);
 }
 
 .modal-close-button.clickable-icon:hover {
-	color: var(--magenta) !important;
+	color: var(--magenta);
 	background-color: var(--icon-background-hover);
 }
 
@@ -872,15 +875,19 @@ input.metadata-property-key-input {
 }
 
 .modal .vertical-tab-nav-item:hover {
-	color: var(--magenta);
-	background-color: var(--magenta-transparent);
+	--mw-action-color: var(--magenta);
+	--mw-action-background: var(--magenta-transparent);
+	color: var(--mw-action-color);
+	background-color: var(--mw-action-background);
 	cursor: pointer;
 }
 
 .modal button {
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--cyan-transparent);
+	color: var(--mw-action-color);
+	background-color: var(--mw-action-background);
 	cursor: pointer;
-	color: var(--cyan);
-	background-color: var(--cyan-transparent);
 }
 
 .modal button:hover,
@@ -890,9 +897,11 @@ input.metadata-property-key-input {
 }
 
 .modal button.mod-cta {
+	--mw-action-color: var(--grey-9);
+	--mw-action-background: var(--cyan);
+	color: var(--mw-action-color);
+	background-color: var(--mw-action-background);
 	cursor: pointer;
-	color: var(--grey-9);
-	background-color: var(--cyan);
 }
 
 .modal button.mod-cta:hover {
@@ -913,6 +922,12 @@ input.metadata-property-key-input {
 	color: var(--purple);
 	background-color: var(--purple-transparent);
 }
+
+.modal input:hover {
+	border-color: var(--cyan-transparent);
+}
+
+/* === legacy.css (continued) === */
 
 .modal .dropdown,
 .dropdown,
@@ -948,14 +963,6 @@ select::-webkit-scrollbar-thumb {
 select option:hover,
 select option:checked {
 	background-color: var(--cyan) !important;
-}
-
-.model .setting-item-description {
-	color: var(--text-disabled);
-}
-
-.modal input:hover {
-	border-color: var(--cyan-transparent);
 }
 
 .prompt {

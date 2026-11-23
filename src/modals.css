@@ -1,0 +1,62 @@
+/* Modal dialogs */
+.modal {
+	background-color: var(--background-primary);
+	--modal-border-width: 2px;
+	--modal-border-color: var(--magenta);
+}
+
+.modal-close-button.clickable-icon:hover {
+	color: var(--magenta);
+	background-color: var(--icon-background-hover);
+}
+
+.modal .vertical-tab-header-group-title {
+	color: var(--magenta);
+}
+
+.modal .vertical-tab-nav-item:hover {
+	--mw-action-color: var(--magenta);
+	--mw-action-background: var(--magenta-transparent);
+	@mixin action-button;
+}
+
+.modal button {
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--cyan-transparent);
+	@mixin action-button;
+}
+
+.modal button:hover,
+.modal .clickable-icon:hover {
+	color: var(--magenta);
+	background-color: var(--magenta-transparent);
+}
+
+.modal button.mod-cta {
+	--mw-action-color: var(--grey-9);
+	--mw-action-background: var(--cyan);
+	@mixin action-button;
+}
+
+.modal button.mod-cta:hover {
+	background-color: var(--magenta);
+}
+
+.modal .checkbox-container.is-enabled {
+	background-color: var(--magenta);
+}
+
+.modal .setting-hotkey {
+	color: var(--yellow);
+	background-color: var(--yellow-transparent);
+	padding: 4px 8px 2px;
+}
+
+.modal .setting-hotkey:hover {
+	color: var(--purple);
+	background-color: var(--purple-transparent);
+}
+
+.modal input:hover {
+	border-color: var(--cyan-transparent);
+}
