@@ -805,6 +805,8 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 	background-color: var(--black) !important;
 }
 
+/* === tables.css === */
+
 /* Tables */
 
 .markdown-rendered table {
@@ -819,6 +821,8 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 .markdown-rendered td {
 	border: 1px solid var(--background-modifier-border);
 }
+
+/* === legacy.css (continued) === */
 
 /* Callouts */
 

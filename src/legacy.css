@@ -275,15 +275,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 	background-color: var(--black) !important;
 }
 
-/* Tables */
-.markdown-rendered table { border: 1px solid var(--background-modifier-border); }
-
-.markdown-rendered th {
-	background-color: var(--code-background);
-	color: var(--text-accent);
-}
-
-.markdown-rendered td { border: 1px solid var(--background-modifier-border); }
+@pilot tables;
 
 /* Callouts */
 .cm-callout .callout[data-callout="note"] {
