@@ -99,7 +99,7 @@ export const INPAGE = String.raw`
 	const overlays = () => document.querySelectorAll(".modal-container, .menu, .suggestion-container, .popover, .prompt").length;
 	/** Per-item capture state, kept in JS so the live page is never marked. */
 	function reset() {
-		window.__cap = { target: null, pseudo: null, forced: [], states: new Map(), seen: new Set() };
+		window.__cap = { target: null, pseudo: null, forced: [], verified: [], states: new Map(), seen: new Set(), flags: {}, cands: [], cdp: null };
 	}
 	reset();
 	/** Clears capture state and tooltips. Escape presses (resetUi) close modals and menus. */
@@ -170,10 +170,10 @@ export const INPAGE = String.raw`
 			let ok = 0, n = 0;
 			const blockers = new Set();
 			for (const fx of [0.25, 0.5, 0.75]) for (const fy of [0.25, 0.5, 0.75]) {
-				const hit = doc.elementFromPoint(v[0] + v[2] * fx, v[1] + v[3] * fy);
+				const x = v[0] + v[2] * fx, y = v[1] + v[3] * fy;
 				n++;
-				if (!hit || related(hit, el)) ok++;
-				else blockers.add(describe(hit));
+				if (topmost(doc, win, x, y, el)) ok++;
+				else { const hit = doc.elementFromPoint(x, y); if (hit) blockers.add(describe(hit)); }
 			}
 			return { visible: true, box: b, inView: v.map((x) => Math.round(x)), unobscured: Math.round((ok / n) * 100) / 100, blockers: [...blockers].slice(0, 3) };
 		});
@@ -207,10 +207,22 @@ export const INPAGE = String.raw`
 	/** True when e (or its subtree) is the topmost painted thing at x,y: layers above it must be clear. */
 	function topmost(doc, win, x, y, e) {
 		for (const h of doc.elementsFromPoint(x, y)) {
-			if (related(h, e)) return true;
+			if (h === e || e.contains(h)) return true;
+			// Anything else above e (an ancestor included: a child with a negative z-index paints
+			// under its parent) hides it unless it paints nothing.
 			if (!clear(win, h)) return false;
 		}
 		return false;
+	}
+	/** Centers of e's own boxes (line fragments for inline elements) inside the rect r. */
+	function samplePoints(e, r) {
+		const pts = [];
+		for (const q of e.getClientRects()) {
+			const v = inter([q.left, q.top, q.width, q.height], r);
+			if (v) pts.push([v[0] + v[2] / 2, v[1] + v[3] / 2]);
+			if (pts.length >= 4) break;
+		}
+		return pts;
 	}
 	function witness(el, clip) {
 		const st = window.__cap;
@@ -232,7 +244,7 @@ export const INPAGE = String.raw`
 				const b = box(e);
 				const v = cs.display === "contents" ? null : inter(b, cl);
 				if (v && cs.visibility === "visible") {
-					if (topmost(doc, win, v[0] + v[2] / 2, v[1] + v[3] / 2, e)) { st.seen.add(e); n++; }
+					if (samplePoints(e, v).some(([x, y]) => topmost(doc, win, x, y, e))) { st.seen.add(e); n++; }
 				}
 				let next = cl;
 				if (cs.overflowX !== "visible" || cs.overflowY !== "visible") next = inter(cl, b);
@@ -242,6 +254,17 @@ export const INPAGE = String.raw`
 			walk(el, start, true);
 		});
 		if (st.seen.has(el)) for (let a = el.parentElement; a; a = a.parentElement) st.seen.add(a);
+		// A wrapper with no area of its own (absolutely placed children, e.g. .search-highlight)
+		// is shown when a painted child of it is.
+		const zero = (e) => { const r = e.getBoundingClientRect(); return r.width < 1 || r.height < 1; };
+		const all = [el, ...el.querySelectorAll("*")];
+		const below = new Set();
+		for (let i = all.length - 1; i >= 0; i--) {
+			const e = all[i];
+			const has = [...e.children].some((c) => st.seen.has(c) || below.has(c));
+			if (has) below.add(e);
+			if (has && !st.seen.has(e) && zero(e) && win.getComputedStyle(e).display !== "none") st.seen.add(e);
+		}
 		return n;
 	}
 	const PSEUDO = ["hover", "active", "focus", "focus-visible", "focus-within"];
@@ -262,7 +285,9 @@ export const INPAGE = String.raw`
 			counts[s] = (counts[s] ?? 0) + 1;
 		};
 		for (const e of scope) for (const p of PSEUDO) { try { if (e.matches(":" + p)) add(e, p); } catch {} }
-		if (st.pseudo) for (const p of st.forced) if (!(st.states.get(st.pseudo) ?? []).includes(p)) add(st.pseudo, p);
+		// Forced states are marked only when verified (matches() in the live page, or DevTools
+		// matched an author rule for that state on the node); see captureItem.
+		if (st.pseudo) for (const p of st.verified ?? []) if (!(st.states.get(st.pseudo) ?? []).includes(p)) add(st.pseudo, p);
 		for (const [mark, on] of Object.entries(extra)) if (on) add(on, mark);
 		return counts;
 	}
@@ -334,24 +359,67 @@ export const INPAGE = String.raw`
 		const p = st.pseudo ? twin.get(st.pseudo) : null;
 		if (p) {
 			p.setAttribute("data-capture-pseudo", "");
-			if (st.forced.includes("visited")) p.setAttribute("data-capture-visited", "");
+			if (st.verified.includes("visited")) p.setAttribute("data-capture-visited", "");
 		}
-		// Live check: the selector must hit a seen element inside the fixture scope.
+		// Live check, independent of the marks above: each theme selector is tested on the LIVE
+		// document with its real pseudo-classes (Element.matches), or credited from DevTools'
+		// matched-rule list for that exact node (forced states in popouts, :visited). It must hit
+		// an element of the fixture scope that the witness recorded as painted.
 		const live = [];
 		const domOnly = [];
-		const inScope = (c) => t.contains(c) || c.contains(t);
+		const inScope = (e) => el.contains(e) || e.contains(el);
+		const cdpSets = new Map();
+		(st.cands ?? []).forEach((c, i) => { const l = st.cdp?.[i]; if (l?.length) cdpSets.set(c, new Set(l)); });
+		const fl = st.flags ?? {};
 		for (const s of opts.sels) {
-			let list;
-			try { list = copy.querySelectorAll(s.sel); } catch { continue; }
-			let hit = false, dom = false;
-			for (const c of list) {
-				if (!inScope(c)) continue;
-				dom = true;
-				if (c.hasAttribute("data-capture-seen")) { hit = true; break; }
+			const hits = new Set();
+			if (s.live) {
+				let list = [];
+				try { list = doc.querySelectorAll(s.live); } catch {}
+				for (const e of list) {
+					if (!inScope(e)) continue;
+					if (s.needs === "selection" && !hasSelection(e)) continue;
+					if (s.needs === "scrollbar-hover" && !(e === el && fl["scrollbar-hover"])) continue;
+					hits.add(e);
+				}
 			}
-			if (hit) live.push(s.id); else if (dom) domOnly.push(s.id);
+			for (const [e, set] of cdpSets) if (set.has(s.norm) && inScope(e)) hits.add(e);
+			if (!hits.size) continue;
+			if ([...hits].some((e) => st.seen.has(e))) live.push(s.id); else domOnly.push(s.id);
 		}
 		const trimmed = applyTrim(t, opts.trim);
+		const back = new Map();
+		for (const [o, c] of twin) back.set(c, o);
+		// Same-origin iframes Obsidian fills by script (no src/srcdoc, e.g. a canvas card being
+		// edited): their live document goes into srcdoc. Stylesheets are not copied (Obsidian's CSS
+		// is proprietary); their origins are listed in data-capture-iframe-styles instead.
+		for (const fc of t.querySelectorAll("iframe")) {
+			const fo = back.get(fc);
+			let idoc = null;
+			try { idoc = fo?.contentDocument; } catch {}
+			if (!idoc?.documentElement || fc.hasAttribute("srcdoc") || (fc.getAttribute("src") && fc.getAttribute("src") !== "about:blank")) continue;
+			const ir = idoc.documentElement.cloneNode(true);
+			const styles = [];
+			for (const st of ir.querySelectorAll("style, link[rel=stylesheet]")) {
+				styles.push(st.localName === "link" ? "link " + st.getAttribute("href") : "style" + (st.id ? "#" + st.id : "") + " (" + st.textContent.length + " chars)");
+				st.remove();
+			}
+			const adopted = idoc.adoptedStyleSheets?.length ?? 0;
+			if (adopted) styles.push("adopted stylesheets: " + adopted);
+			fc.setAttribute("srcdoc", "<!doctype html>" + ir.outerHTML);
+			fc.setAttribute("data-capture-iframe-styles", styles.join("; "));
+		}
+		// Intrinsic sizes of images that will not load offline (app:, https:, file:), by index in
+		// the fixture's document.images order, so a viewer can stand in same-size placeholders.
+		const imageSizes = [];
+		const imgs = el === doc.body || el === doc.documentElement ? [...copy.body.querySelectorAll("img")] : [...(t.localName === "img" ? [t] : []), ...t.querySelectorAll("img")];
+		imgs.forEach((ic, index) => {
+			const io = back.get(ic);
+			const src = ic.getAttribute("src") ?? "";
+			if (!io || !/^(app|https?|file):/i.test(src)) return;
+			const w = io.naturalWidth, h = io.naturalHeight;
+			if (w > 0 && h > 0) imageSizes.push({ index, width: w, height: h });
+		});
 		let html;
 		if (el === doc.body || el === doc.documentElement) html = copy.body.innerHTML;
 		else {
@@ -364,7 +432,7 @@ export const INPAGE = String.raw`
 		}
 		const contains = Object.entries(opts.components).filter(([, sel]) => t.matches?.(sel) || t.querySelector(sel)).map(([k]) => k);
 		const fixture = "<!doctype html>\n<html" + attrs(root) + '>\n<head><meta charset="utf-8"></head>\n<body' + attrs(copy.body) + ">\n" + html + "\n</body>\n</html>\n";
-		return { html: fixture, live, domOnly, trimmed, contains, seen: st.seen.size };
+		return { html: fixture, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes };
 	}
 	/** Painted style of the target and pseudo subtrees (colors, borders, shadows, decorations, ::before/::after), for a before/after state diff. */
 	const PAINT = ["color", "background-color", "background-image", "border-top-color", "border-right-color", "border-bottom-color", "border-left-color", "outline-color", "outline-style", "outline-width", "box-shadow", "text-decoration-line", "text-decoration-color", "opacity", "filter", "transform", "visibility", "fill", "stroke"];
@@ -401,6 +469,16 @@ export const INPAGE = String.raw`
 		}
 		return { n, props: [...props].slice(0, 12) };
 	}
+	/** Nodes whose DevTools matched rules can prove a forced state: the forced node, its ancestors and its painted descendants. */
+	function candidates() {
+		const st = window.__cap;
+		const p = st.pseudo;
+		if (!p) return (st.cands = []);
+		const list = [p];
+		for (let a = p.parentElement; a; a = a.parentElement) list.push(a);
+		for (const d of p.querySelectorAll("*")) { if (list.length >= 250) break; if (st.seen.has(d)) list.push(d); }
+		return (st.cands = list);
+	}
 	/** True when a non-collapsed text selection touches el. */
 	function hasSelection(el) {
 		const sel = el.ownerDocument.getSelection();
@@ -413,6 +491,6 @@ export const INPAGE = String.raw`
 		const r = scroller.getBoundingClientRect();
 		return scroller.scrollHeight > scroller.clientHeight && x > r.left + scroller.clientLeft + scroller.clientWidth && x < r.right && y > r.top && y < r.bottom;
 	}
-	window.cap = { sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges };
+	window.cap = { sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges, candidates };
 })();
 `;

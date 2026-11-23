@@ -145,7 +145,9 @@ function safeFds(pid: number): string[] {
 	return out.stdout.toString().split("\n");
 }
 
-export async function launch(opts: { windowed?: boolean } = {}): Promise<Session> {
+export async function launch(
+	opts: { windowed?: boolean; noPointer?: boolean } = {},
+): Promise<Session> {
 	const windowed = opts.windowed === true;
 	prepareVault();
 	const env: Record<string, string> = {};
@@ -171,7 +173,17 @@ export async function launch(opts: { windowed?: boolean } = {}): Promise<Session
 		"--disable-renderer-backgrounding",
 		...(windowed
 			? ["--ozone-platform=wayland"]
-			: ["--ozone-platform=headless", `--ozone-override-screen-size=${WIDTH},${HEIGHT}`]),
+			: [
+					"--ozone-platform=headless",
+					`--ozone-override-screen-size=${WIDTH},${HEIGHT}`,
+					// Headless has no pointer device, so Blink reports (hover: none) and turns off
+					// Obsidian's @media (hover: hover) rules. Report a mouse, as on Mike's desktop.
+					...(opts.noPointer
+						? []
+						: [
+								"--blink-settings=primaryPointerType=4,availablePointerTypes=4,primaryHoverType=2,availableHoverTypes=2",
+							]),
+				]),
 	];
 	let proc: ChildProcess | undefined;
 	let pid = 0;

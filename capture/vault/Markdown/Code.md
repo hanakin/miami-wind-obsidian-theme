@@ -7,6 +7,7 @@ Inline `const x = 1` code.
 const greet = (name) => `Hello, ${name}!`;
 class Wind extends Breeze { static speed = 42; }
 export default { greet, re: /miami\s+wind/gi, n: null, t: true };
+console.log(greet.name, Wind.speed);
 ```
 
 ```ts

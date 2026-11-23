@@ -1,9 +1,9 @@
 // Step 2: captures every checklist item from the real app into capture/fixtures/.
-// Usage: bun run capture:run [--windowed] [--only <id prefix>]... [--until <scene id>]
+// Usage: bun run capture:run [--windowed | --no-pointer] [--only <id prefix>]... [--until <scene id>]
 // Headless by default; --windowed runs only the scenes that need a real window on the desktop.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { Page } from "playwright";
-import { matchable } from "./css.ts";
+import { liveSelector, normSelector } from "./css.ts";
 import type { AppInventory, CommandResult } from "./discover.ts";
 import { closeExtraPages, pagesOf, restoreLayout, snapshotLayout } from "./discover.ts";
 import { type CaptureOut, ensureDirs, install, makeCtx, runScene } from "./engine.ts";
@@ -28,6 +28,8 @@ const checklist = JSON.parse(readFileSync(`${CAPTURE}checklist.json`, "utf8")) a
 };
 const only = process.argv.flatMap((a, i) => (process.argv[i - 1] === "--only" ? [a] : []));
 const windowed = process.argv.includes("--windowed");
+// --no-pointer: only the scenes that need (hover: none), in a headless app without a mouse.
+const noPointer = process.argv.includes("--no-pointer");
 // --until <scene id>: stop after that scene (to reproduce order-dependent failures quickly).
 const until = process.argv[process.argv.indexOf("--until") + 1];
 const wanted = (id: string) => only.length === 0 || only.some((p) => id.startsWith(p));
@@ -38,7 +40,15 @@ const out: CaptureOut = {
 	screenshotsDir: SCREENSHOTS,
 	version: checklist.obsidianVersion,
 	// Same selector form as the fixtures; evaluated on an off-page copy of the whole live document.
-	live: themeSelectors().map((t) => ({ id: t.id, sel: matchable(t.selector) })),
+	live: themeSelectors().map((t) => {
+		const l = liveSelector(t.selector);
+		return {
+			id: t.id,
+			live: l.sel,
+			...(l.needs ? { needs: l.needs } : {}),
+			norm: normSelector(t.selector),
+		};
+	}),
 };
 ensureDirs(out);
 
@@ -49,7 +59,7 @@ const previous: FixturesFile | undefined = existsSync(fixturesPath)
 	? (JSON.parse(readFileSync(fixturesPath, "utf8")) as FixturesFile)
 	: undefined;
 const censusPath = `${CAPTURE}class-census.json`;
-const fullRun = !only.length && !windowed && !process.argv.includes("--until");
+const fullRun = !only.length && !windowed && !noPointer && !process.argv.includes("--until");
 const census = new Set<string>(
 	!fullRun && existsSync(censusPath)
 		? (JSON.parse(readFileSync(censusPath, "utf8")) as string[])
@@ -57,7 +67,7 @@ const census = new Set<string>(
 );
 
 let scenes: Scene[] = [];
-const session = await launch({ windowed });
+const session = await launch({ windowed, noPointer });
 const entries = new Map<string, FixtureEntry>((previous?.fixtures ?? []).map((f) => [f.id, f]));
 const failed = new Map<string, string>((previous?.failed ?? []).map((f) => [f.id, f.error]));
 try {
@@ -69,7 +79,7 @@ try {
 	scenes = allScenes(checklist.inventory, checklist.commands, () => layout);
 	let done = 0;
 	for (const scene of scenes) {
-		if (Boolean(scene.windowed) !== windowed) continue;
+		if (Boolean(scene.windowed) !== windowed || Boolean(scene.noPointer) !== noPointer) continue;
 		const items = scene.items.filter((i) => wanted(i.id));
 		if (!items.length) continue;
 		await restoreLayout(main, layout).catch(() => undefined);

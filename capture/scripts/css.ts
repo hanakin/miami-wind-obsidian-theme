@@ -181,3 +181,61 @@ if (import.meta.main) {
 	if (keyClassesOf(".a .b.c:hover").join() !== "c,b") throw new Error("keyClassesOf");
 	console.log("css.ts self-check passed");
 }
+
+/** Selector text with whitespace normalized, to compare theme.css text with DevTools' text. */
+export function normSelector(t: string): string {
+	return t
+		.replace(/\s+/g, " ")
+		.replace(/\s*([>+~,])\s*/g, "$1")
+		.replace(/\(\s+/g, "(")
+		.replace(/\s+\)/g, ")")
+		.trim();
+}
+
+/**
+ * App classes the theme can change: theme.css names the class in a selector, or an app.css rule
+ * whose selector names the class reads a custom property that theme.css sets.
+ */
+export function themeAffectedClasses(appCss: string, themeCss: string): Set<string> {
+	const out = new Set<string>();
+	const themeVars = new Set<string>();
+	const theme = postcss.parse(themeCss);
+	theme.walkDecls((d) => {
+		if (d.prop.startsWith("--")) themeVars.add(d.prop);
+	});
+	theme.walkRules((r: Rule) => {
+		for (const s of r.selectors) for (const c of classesOf(s)) out.add(c);
+	});
+	// App custom properties defined from theme-set ones change with the theme too (transitively).
+	const app = postcss.parse(appCss);
+	const defs: [string, string][] = [];
+	app.walkDecls((d) => {
+		if (d.prop.startsWith("--")) defs.push([d.prop, d.value]);
+	});
+	for (let grew = true; grew; ) {
+		grew = false;
+		for (const [prop, value] of defs) {
+			if (themeVars.has(prop)) continue;
+			for (const m of value.matchAll(/var\(\s*(--[\w-]+)/g))
+				if (themeVars.has(m[1] ?? "")) {
+					themeVars.add(prop);
+					grew = true;
+					break;
+				}
+		}
+	}
+	app.walkRules((r: Rule) => {
+		let reads = false;
+		r.walkDecls((d) => {
+			for (const m of d.value.matchAll(/var\(\s*(--[\w-]+)/g))
+				if (themeVars.has(m[1] ?? "")) reads = true;
+		});
+		if (!reads) return;
+		for (const s of r.selectors) {
+			try {
+				for (const c of classesOf(s)) out.add(c);
+			} catch {}
+		}
+	});
+	return out;
+}

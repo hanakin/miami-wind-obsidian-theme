@@ -968,7 +968,9 @@ const graphQc: Scene = {
 			component: "graph",
 			target: leaf(".workspace-leaf-content"),
 			full: true,
-			note: "Tags, attachments, orphans, unresolved links and a color group are on; Pixi draws them on a canvas with the colors Obsidian reads from .graph-view.color-* probes.",
+			note: "Tags, attachments, orphans, unresolved links and a color group are on; Pixi draws them on a canvas with the colors Obsidian reads from .graph-view.color-* probes. evidence.record holds the colors the renderer read from each probe class and how many screenshot pixels have exactly that color.",
+			record:
+				"const v = app.workspace.getLeavesOfType('graph')[0]?.view; const c = v?.renderer?.colors ?? {}; const map = { fill: 'color-fill', fillFocused: 'color-fill-focused', fillTag: 'color-fill-tag', fillUnresolved: 'color-fill-unresolved', fillAttachment: 'color-fill-attachment', arrow: 'color-arrow', circle: 'color-circle', line: 'color-line', text: 'color-text', fillHighlight: 'color-fill-highlight', lineHighlight: 'color-line-highlight' }; const graphColors = {}; const graphAlpha = {}; for (const [k, cls] of Object.entries(map)) if (c[k]) { graphColors[cls] = c[k].rgb; graphAlpha[cls] = c[k].a; } return { graphColors, graphAlpha };",
 		},
 		{
 			id: "qc.graph.color-probes",
@@ -1016,18 +1018,6 @@ const mediaQc: Scene = {
 			target: ".app-container",
 			full: true,
 			media: { features: [{ name: "forced-colors", value: "active" }] },
-		},
-		{
-			id: "qc.media.hover-none",
-			component: "workspace",
-			target: ".app-container",
-			full: true,
-			media: {
-				features: [
-					{ name: "hover", value: "none" },
-					{ name: "pointer", value: "coarse" },
-				],
-			},
 		},
 		{
 			id: "qc.translucent",
@@ -1317,6 +1307,32 @@ const settingsInWindow: Scene = {
 	],
 };
 
+/** A desktop without a mouse: Blink's own (hover: none), from a headless app with no pointer device. */
+const noPointerQc: Scene = {
+	id: "qc.no-pointer",
+	surface: "workspace",
+	source: "catalog:media-emulation",
+	noPointer: true,
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+		await ctx.open("Markdown/Kitchen sink.md", "reading");
+	},
+	items: [
+		{
+			id: "qc.media.hover-none",
+			component: "workspace",
+			target: ".app-container",
+			full: true,
+			expect: ".app-container",
+			before: async (ctx) => {
+				const none = await ctx.js<boolean>("return matchMedia('(hover: none)').matches;");
+				if (!none) throw new Error("this run has a pointer: (hover: none) is false");
+			},
+			note: "Captured by `capture:run --no-pointer`: the app runs headless without the mouse setting, so Blink itself reports (hover: none) and (pointer: none). DevTools media emulation cannot change hover or pointer in this Chromium.",
+		},
+	],
+};
+
 /** Dialogs no command opens directly: rename, unlinked attachments on delete, PDF export progress. */
 const dialogsQc: Scene = {
 	id: "qc.dialogs",
@@ -1360,10 +1376,13 @@ const dialogsQc: Scene = {
 			component: "modal",
 			target: ".modal.mod-file-browser",
 			state: "gallery-view",
-			expect: ".mod-file-browser:has(.attachments-gallery)",
+			expect: ".mod-file-browser:has(.attachments-gallery:not([style*='none']))",
 			before: async (ctx) => {
+				await click(ctx, {
+					sel: ".modal.mod-file-browser .modal-view-option[aria-label='Gallery']",
+				});
 				await ctx.js(
-					"const b = [...document.querySelectorAll('.modal.mod-file-browser .file-browser-views > *')].at(-1); b?.click(); for (let i = 0; i < 20 && !document.querySelector('.attachments-gallery'); i++) await sleep(100); await sleep(400);",
+					"for (let i = 0; i < 20 && !document.querySelector('.attachments-gallery')?.getClientRects().length; i++) await sleep(100); await sleep(400);",
 				);
 			},
 			note: "The same dialog switched to its gallery view.",
@@ -1434,6 +1453,484 @@ const settingsDialogs: Scene = {
 				);
 			},
 			note: "Settings > Keychain shows a warning when the OS keyring is missing (the isolated session has none); its link opens this explanation.",
+		},
+	],
+};
+
+/** Real Escape presses until no menu, modal, popover or suggestion is open. */
+async function closeOverlays(ctx: Ctx): Promise<void> {
+	for (let i = 0; i < 8; i++) {
+		if (!(await ctx.js<number>("return cap.overlays();"))) return;
+		await ctx.page.keyboard.press("Escape");
+		await ctx.sleep(150);
+	}
+}
+const openBase = (view: string) => async (ctx: Ctx) => {
+	await closeOverlays(ctx);
+	await ctx.js(
+		`const ws = app.workspace; const l = ws.getMostRecentLeaf(ws.rootSplit); await l.setViewState({ type: 'bases', state: { file: 'Base.base', viewName: ${JSON.stringify(view)} }, active: true }); ws.setActiveLeaf(l, { focus: true }); await sleep(1500);`,
+	);
+};
+const revealSide = (type: string, file: string) => async (ctx: Ctx) => {
+	await ctx.page.keyboard.press("Escape");
+	await ctx.open(file, "live");
+	await ctx.js(
+		`const l = app.workspace.getLeavesOfType(${JSON.stringify(type)})[0]; await app.workspace.revealLeaf(l); await sleep(400); const p = l.view.backlink ?? l.view.outgoingLink; if (p?.unlinkedCollapsed) p.toggleUnlinkedCollapsed(); await sleep(1500);`,
+	);
+};
+
+/**
+ * Classes the theme can change that no earlier scene showed: property edge cases, unlinked
+ * mentions, find states, Bases covers, errors and menus, read-only canvas, PDF outline and zoom.
+ * Sample content: Markdown/Gaps.md, Base.base (cover image, empty board), Unknown.base, Broken.base,
+ * Attachments/outline.pdf and archive.zip.
+ */
+const gapsQc: Scene = {
+	id: "qc.gaps",
+	surface: "editor-live-preview",
+	source: "catalog:theme-affected-gaps",
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+		await ctx.open("Markdown/Gaps.md", "live");
+	},
+	items: [
+		{
+			id: "qc.gap.property-type-warning",
+			component: "property",
+			surface: "properties",
+			target: leaf(".metadata-property[data-property-key='mismatch']"),
+			expect: ":has(.metadata-property-warning-icon)",
+			note: "Gaps.md sets mismatch: 'not a number' while .obsidian/types.json types it as number.",
+		},
+		{
+			id: "qc.gap.property-unknown-type",
+			component: "property",
+			surface: "properties",
+			target: leaf(".metadata-property:has(.metadata-property-value-item.mod-unknown)"),
+			expect: ":has(.metadata-property-value-item.mod-unknown)",
+			note: "An object value (nested:) has no property type.",
+		},
+		{
+			id: "qc.gap.property-empty-date",
+			component: "property",
+			surface: "properties",
+			target: leaf(".metadata-property:has(input.is-empty)"),
+			expect: ":has(input.is-empty)",
+		},
+		{
+			id: "qc.gap.property-link-flair",
+			component: "property",
+			surface: "properties",
+			target: leaf(".metadata-property[data-property-key='cover']"),
+			expect: ":has(.metadata-link .metadata-link-flair)",
+			pseudo: ["hover"],
+			pseudoOn: leaf(".metadata-property[data-property-key='cover'] .metadata-link"),
+			state: "hover",
+			minUnobscured: 0.5,
+		},
+		{
+			id: "qc.gap.generic-file-embed",
+			component: "embed",
+			target: leaf(".markdown-source-view .file-embed.mod-generic"),
+			expect: ".file-embed.mod-generic",
+			note: "![[archive.zip]]: a file type Obsidian cannot show inline.",
+		},
+		{
+			id: "qc.gap.yaml-error-marker",
+			component: "editor-line",
+			target: leaf(".markdown-source-view .cm-line:has(.error-marker)"),
+			expect: ":has(.error-marker)",
+			before: async (ctx) => {
+				await ctx.open("Markdown/Broken properties.md", "live");
+			},
+			note: "Invalid YAML front matter: Live Preview marks the position of the YAML error.",
+		},
+		{
+			id: "qc.gap.js-property-access",
+			component: "code-block",
+			surface: "editor-reading-view",
+			target: leaf(".markdown-reading-view pre:has(.token.property-access)"),
+			expect: ":has(.token.property-access)",
+			before: async (ctx) => {
+				await ctx.open("Markdown/Code.md", "reading");
+			},
+		},
+		{
+			id: "qc.gap.find-no-match",
+			component: "search-input",
+			target: leaf(".document-search-container"),
+			state: "no-match",
+			expect: ":has(.mod-no-match)",
+			before: async (ctx) => {
+				await ctx.open("Markdown/Kitchen sink.md", "live");
+				await ctx.js("app.workspace.activeEditor.editor.focus(); await sleep(200);");
+				await ctx.command("editor:open-search");
+				await ctx.sleep(300);
+				await ctx.page.keyboard.type("zzqqxxnothing", { delay: 20 });
+				await ctx.sleep(500);
+			},
+		},
+		{
+			id: "qc.gap.reading-find-highlight",
+			component: "search-highlight",
+			surface: "editor-reading-view",
+			target: leaf(".markdown-reading-view :has(> .search-highlight)"),
+			expect: ":has(> .search-highlight)",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.open("Markdown/Kitchen sink.md", "reading");
+				await ctx.command("editor:open-search");
+				await ctx.sleep(300);
+				await ctx.page.keyboard.type("text", { delay: 20 });
+				await ctx.sleep(600);
+			},
+			note: "Find in Reading view draws .search-highlight boxes over matches.",
+		},
+		{
+			id: "qc.gap.unlinked-mention",
+			component: "search-result",
+			surface: "right-sidebar",
+			target:
+				".workspace-leaf-content[data-type='backlink'] .search-result-file-match:has(.search-result-file-match-replace-button)",
+			expect: ":has(.search-result-file-match-replace-button)",
+			before: revealSide("backlink", "Markdown/Kitchen sink.md"),
+			note: "Backlinks > Unlinked mentions: Gaps.md names 'Kitchen sink' without a link, so the match has a Link button.",
+		},
+		{
+			id: "qc.gap.unlinked-mention-button.hover",
+			component: "button",
+			surface: "right-sidebar",
+			target:
+				".workspace-leaf-content[data-type='backlink'] .search-result-file-match-replace-button",
+			pseudo: ["hover"],
+			pointer: true,
+			state: "hover",
+			before: async (ctx) => {
+				const row =
+					".workspace-leaf-content[data-type='backlink'] .search-result-file-match:has(.search-result-file-match-replace-button)";
+				await ctx.page.mouse.move(...(await center(ctx, row)), { steps: 3 });
+				await ctx.sleep(300);
+				const b = await center(
+					ctx,
+					".workspace-leaf-content[data-type='backlink'] .search-result-file-match-replace-button",
+				);
+				await ctx.page.mouse.move(b[0], b[1], { steps: 3 });
+				await ctx.js("window.__capPointer = arg;", b);
+				await ctx.sleep(300);
+			},
+			note: "The Link button only shows while its match row is hovered; the real pointer hovers the row, then the button.",
+		},
+		{
+			id: "qc.gap.outgoing-unlinked",
+			component: "search-result",
+			surface: "right-sidebar",
+			target:
+				".workspace-leaf-content[data-type='outgoing-link'] .search-result-file-match:has(.search-result-file-match-destination-file)",
+			expect: ":has(.search-result-file-match-destination-file)",
+			before: revealSide("outgoing-link", "Markdown/Gaps.md"),
+			note: "Outgoing links > Unlinked mentions lists the note each plain-text mention could link to.",
+		},
+		{
+			id: "qc.gap.switcher-create",
+			component: "suggestion",
+			surface: "suggestion-popup",
+			target: ".prompt .suggestion-item:has(.suggestion-action)",
+			expect: ":has(.suggestion-action)",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.command("switcher:open");
+				await ctx.sleep(400);
+				await ctx.page.keyboard.type("A note that does not exist", { delay: 15 });
+				await ctx.sleep(500);
+			},
+		},
+		{
+			id: "qc.gap.graph-controls-closed",
+			component: "graph",
+			surface: "graph",
+			target: leaf(".graph-controls.is-close"),
+			expect: ".is-close",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.command("graph:open");
+				await ctx.sleep(1500);
+				await click(ctx, leaf(".graph-controls .graph-controls-button.mod-close"));
+				await ctx.sleep(300);
+			},
+		},
+		{
+			id: "qc.gap.manage-workspaces",
+			component: "modal",
+			surface: "modal",
+			target: ".modal:has(.list-container.mod-manage-workspaces)",
+			expect: ":has(.list-container.mod-manage-workspaces .list-item)",
+			before: async (ctx) => {
+				await click(ctx, leaf(".graph-controls .graph-controls-button.mod-open"));
+				await ctx.js(
+					"app.internalPlugins.plugins.workspaces.instance.saveWorkspace('Capture layout'); await sleep(300);",
+				);
+				await ctx.command("workspaces:open-modal");
+				await ctx.sleep(700);
+			},
+		},
+		{
+			id: "qc.gap.canvas-readonly",
+			component: "canvas",
+			surface: "canvas",
+			target: leaf(".canvas-wrapper.mod-readonly"),
+			expect: ".mod-readonly",
+			full: true,
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.open("Canvas.canvas", "live");
+				await ctx.sleep(800);
+				await click(ctx, leaf(".canvas-controls .canvas-control-item"));
+				await ctx.js(
+					"[...document.querySelectorAll('.menu .menu-item')].find((e) => /read-only/i.test(e.textContent))?.click(); await sleep(500);",
+				);
+			},
+			note: "Canvas quick settings > Read-only.",
+		},
+		{
+			id: "qc.gap.pdf-zoom-min",
+			component: "pdf",
+			surface: "pdf",
+			target: leaf(".pdf-toolbar"),
+			state: "zoom-out-disabled",
+			expect: ":has(.clickable-icon.mod-disabled)",
+			before: async (ctx) => {
+				await ctx.js(
+					"app.workspace.activeLeaf.view.canvas?.setReadonly?.(false); await sleep(200);",
+				);
+				await ctx.open("Attachments/sample.pdf", "live");
+				await ctx.sleep(1500);
+				for (let i = 0; i < 30; i++) {
+					const done = await ctx.js<boolean>(
+						"const b = cap.ROOTS.leaf().querySelector('[aria-label=\"Zoom out\"]'); if (!b || b.classList.contains('mod-disabled')) return true; b.click(); await sleep(120); return false;",
+					);
+					if (done) break;
+				}
+				await ctx.sleep(400);
+			},
+			note: "Zoomed out to the minimum, the Zoom out button is disabled.",
+		},
+		{
+			id: "qc.gap.pdf-outline",
+			component: "pdf",
+			surface: "pdf",
+			target: leaf(".pdf-outline-view"),
+			expect: ".pdf-outline-view:not(.hidden):has(.tree-item)",
+			before: async (ctx) => {
+				await ctx.js(
+					"const l = cap.ROOTS.leaf(); for (let i = 0; i < 30; i++) { const b = l.querySelector('[aria-label=\"Zoom in\"]'); if (!b || b.classList.contains('mod-disabled')) break; b.click(); await sleep(60); } l.querySelector('[aria-label=\"Zoom in\"]') && app.workspace.activeLeaf.view.viewer?.child?.pdfViewer?.pdfViewer && (app.workspace.activeLeaf.view.viewer.child.pdfViewer.pdfViewer.currentScaleValue = 'auto'); await sleep(300);",
+				);
+				await ctx.open("Attachments/outline.pdf", "live");
+				await ctx.sleep(1500);
+				await click(ctx, leaf("[aria-label='Toggle sidebar']"));
+				await click(ctx, leaf("[aria-label='Sidebar options']"));
+				await ctx.js(
+					"[...document.querySelectorAll('.menu .menu-item')].find((e) => /table of contents/i.test(e.textContent) && !/reveal/i.test(e.textContent))?.click(); await sleep(800);",
+				);
+			},
+			note: "outline.pdf is a hand-written three-page PDF with a document outline, shown in the PDF sidebar's table of contents.",
+		},
+		{
+			id: "qc.gap.bases-cards-cover",
+			component: "bases-cards",
+			surface: "bases",
+			target: leaf(
+				".bases-cards-item:has(.bases-cards-cover img), .bases-cards-item:has(.bases-cards-cover[style*='background'])",
+			),
+			expect: ":has(.bases-cards-cover)",
+			before: async (ctx) => {
+				await click(ctx, leaf("[aria-label='Toggle sidebar']"));
+				await openBase("Cards view")(ctx);
+			},
+			note: "The Cards view uses note.cover as its image property; Gaps.md has a cover.",
+		},
+		{
+			id: "qc.gap.kanban-card-cover",
+			component: "bases-kanban",
+			surface: "bases",
+			target: leaf(
+				".bases-kanban-card:has(.bases-kanban-card-cover img), .bases-kanban-card:has(.bases-kanban-card-cover[style*='background'])",
+			),
+			expect: ":has(.bases-kanban-card-cover)",
+			before: openBase("Board"),
+		},
+		{
+			id: "qc.gap.kanban-empty",
+			component: "bases-kanban",
+			surface: "bases",
+			target: leaf(".bases-kanban-placeholder"),
+			expect: ":has(.bases-kanban-placeholder-title)",
+			before: openBase("Empty board"),
+			note: "A kanban view with no group-by property shows its placeholder.",
+		},
+		{
+			id: "qc.gap.bases-search",
+			component: "search-input",
+			surface: "bases",
+			target: leaf(".bases-search-row"),
+			before: async (ctx) => {
+				await openBase("Table view")(ctx);
+				await click(ctx, leaf(".bases-toolbar-search"));
+				await ctx.sleep(400);
+			},
+		},
+		{
+			id: "qc.gap.bases-combobox",
+			component: "suggestion",
+			surface: "suggestion-popup",
+			target: ".suggestion-container.combobox",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await click(ctx, leaf(".bases-toolbar-sort-menu"));
+				await click(ctx, { sel: ".menu .combobox-button" });
+				await ctx.sleep(400);
+			},
+		},
+		{
+			id: "qc.gap.formula-status",
+			component: "formula-editor",
+			surface: "menu",
+			target: { sel: ".formula-editor-container", closest: ".menu" },
+			expect: ":has(.formula-editor-status)",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await click(ctx, leaf(".bases-toolbar-properties-menu"));
+				await ctx.js(
+					"const it = [...document.querySelectorAll('.menu .bases-toolbar-menu-item')].find((e) => /name_length/.test(e.textContent)); (it?.querySelector('.clickable-icon:not(.grip-handle)') ?? it)?.click(); await sleep(700);",
+				);
+			},
+			note: "The formula property's settings show its formula editor with the Valid/Invalid status line.",
+		},
+		{
+			id: "qc.gap.filter-row-error",
+			component: "filter-row",
+			surface: "menu",
+			target: {
+				sel: ".menu .filter-row-error:not([style*='none'])",
+				closest: ":has(> .filter-row-error)",
+			},
+			expect: ":has(> .filter-row-error:not([style*='none']))",
+			before: async (ctx) => {
+				await openBase("Table view")(ctx);
+				await click(ctx, leaf(".bases-toolbar-filter-menu"));
+				if (!(await ctx.js<number>("return document.querySelectorAll('.menu').length;")))
+					throw new Error("the filter menu did not open");
+				await ctx.js(
+					"[...document.querySelectorAll('.menu .clickable-icon')].find((b) => b.getAttribute('aria-label') === 'Advanced filter' && b.getBoundingClientRect().width > 0)?.click(); await sleep(600);",
+				);
+				const b = await center(ctx, { sel: ".menu .formula-editor .cm-content" });
+				await ctx.page.mouse.click(b[0], b[1]);
+				await ctx.page.keyboard.press("End");
+				await ctx.page.keyboard.type(" ))(", { delay: 50 });
+				await ctx.sleep(400);
+				await ctx.page.keyboard.press("Tab");
+				const why = await ctx.js<string>(
+					"for (let i = 0; i < 40 && ![...document.querySelectorAll('.menu .filter-row-error')].some((e) => e.getClientRects().length && e.textContent); i++) await sleep(100); if ([...document.querySelectorAll('.menu .filter-row-error')].some((e) => e.getClientRects().length && e.textContent)) return ''; return JSON.stringify({ menus: document.querySelectorAll('.menu').length, errs: [...document.querySelectorAll('.menu .filter-row-error')].map((e) => e.outerHTML.slice(0, 120)), editors: [...document.querySelectorAll('.menu .formula-editor')].map((e) => e.textContent), active: document.activeElement?.className });",
+				);
+				if (why) throw new Error(`no filter error shown: ${why}`);
+			},
+			note: "An unparsable advanced filter shows the row's error message.",
+		},
+		{
+			id: "qc.gap.editor-caret",
+			component: "editor-line",
+			target: leaf(".markdown-source-view .cm-editor > .cm-scroller"),
+			state: "caret-visible",
+			expect: ":has(> .cm-cursorLayer .cm-cursor)",
+			before: async (ctx) => {
+				for (let i = 0; i < 3; i++) await ctx.page.keyboard.press("Escape");
+				await ctx.open("Markdown/Kitchen sink.md", "live");
+				await ctx.js(
+					"const e = app.workspace.activeEditor.editor; e.focus(); const n = e.getValue().split('\\n').findIndex((l) => l.startsWith('Text with')); e.setSelection({ line: n, ch: 0 }, { line: n, ch: 4 }); await sleep(300); const layer = cap.ROOTS.leaf().querySelector('.markdown-source-view .cm-editor > .cm-scroller > .cm-cursorLayer'); for (let i = 0; i < 60 && layer && getComputedStyle(layer).opacity !== '1'; i++) await sleep(25); for (const a of layer?.getAnimations?.() ?? []) a.pause();",
+				);
+			},
+			note: "Obsidian draws a CodeMirror caret (.cm-cursor) at the head of a text selection (the empty main cursor uses the native caret); its blink animation is paused in the visible phase for the shot.",
+		},
+		{
+			id: "qc.gap.unknown-view-base",
+			component: "bases-view",
+			surface: "bases",
+			target: leaf(".bases-error"),
+			expect: ".bases-error",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await ctx.open("Unknown.base", "live");
+				await ctx.sleep(800);
+			},
+			note: "Unknown.base names a view type that does not exist: the base shows its error line.",
+		},
+	],
+};
+
+/** The Help window (help.html), opened by app:open-help in its own window. */
+const helpWindow: Scene = {
+	id: "qc.help-window",
+	surface: "window",
+	source: "catalog:help-window",
+	window: "popout",
+	opener: async (main) => {
+		await main.command("app:open-help");
+	},
+	setup: async (ctx) => {
+		await ctx.sleep(800);
+	},
+	items: [
+		{
+			id: "qc.help.options",
+			component: "setting-item",
+			target: ".setting-item:has(.setting-icon)",
+			expect: ":has(> .setting-icon)",
+			note: "Help window: each help link row starts with a .setting-icon.",
+		},
+	],
+};
+
+/** Hotkeys with a conflict: the 'Show conflicts' filter and its count badge. */
+const hotkeyConflict: Scene = {
+	id: "qc.hotkey-conflict",
+	surface: "settings",
+	source: "catalog:hotkey-conflict",
+	window: "popout",
+	opener: async (main) => {
+		await main.js(
+			"app.hotkeyManager.setHotkeys('editor:toggle-italics', [{ modifiers: ['Mod'], key: 'B' }]); await sleep(200);",
+		);
+		await settingsWindow("hotkeys")(main);
+	},
+	setup: async (ctx) => {
+		await ctx.js(
+			"cap.clearSettingsSearch(); (window.app ?? window.opener.app).setting.openTabById('hotkeys'); await sleep(900);",
+		);
+	},
+	items: [
+		{
+			id: "qc.gap.hotkey-conflict-badge",
+			component: "setting-item",
+			target: {
+				sel: ".setting-group-filter-badge",
+				closest: ":has(> .setting-group-filter-badge)",
+			},
+			expect: ":has(> .setting-group-filter-badge)",
+			note: "Italic is given Ctrl/Cmd+B, which Bold already uses; the conflict filter shows a count.",
+		},
+		{
+			id: "qc.hotkey-conflict.restore",
+			component: "modal",
+			target: ".modal.mod-settings",
+			state: "default",
+			before: async (ctx) => {
+				await ctx.js(
+					"(window.app ?? window.opener.app).hotkeyManager.removeHotkeys('editor:toggle-italics'); await sleep(300);",
+				);
+			},
 		},
 	],
 };
@@ -1567,6 +2064,10 @@ export function qcScenes(): Scene[] {
 		windowQc,
 		settingsPopoutHover,
 		migrationQc,
+		gapsQc,
+		noPointerQc,
+		hotkeyConflict,
+		helpWindow,
 		dialogsQc,
 		settingsDialogs,
 		rtlLanguage,

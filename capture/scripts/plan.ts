@@ -30,6 +30,10 @@ export interface Exclusions {
 	themeSelectors: Record<string, string>;
 	/** Platform-only app.css selectors a class-swapped variant cannot reach, with the reason. */
 	platformSelectors: Record<string, string>;
+	/** Theme-affected app classes this capture cannot show (account, platform, mobile, no producer), with the reason. */
+	appClassesOutOfScope?: Record<string, string>;
+	/** theme.css selectors only met in a labeled scripted fixture, with the label. */
+	themeSelectorsScripted?: Record<string, string>;
 }
 
 /** Every class seen on any element while the capture ran (runtime DOM census, capture.ts). */

@@ -11,7 +11,8 @@
 		"typecheck": "tsc --noEmit",
 		"check": "biome check . && tsc --noEmit",
 		"capture:variants": "bun capture/scripts/variants.ts",
-		"capture:coverage": "bun capture/scripts/coverage.ts"
+		"capture:coverage": "bun capture/scripts/coverage.ts",
+		"capture:selftest": "bun capture/scripts/selftest.ts && bun capture/scripts/css.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.6.8",

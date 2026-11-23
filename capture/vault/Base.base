@@ -24,6 +24,7 @@ views:
       formula.name_length: Average
   - type: cards
     name: Cards view
+    image: note.cover
     order:
       - file.name
       - tags
@@ -35,6 +36,7 @@ views:
       - tags
   - type: kanban
     name: Board
+    image: note.cover
     groupBy:
       property: file.folder
       direction: ASC
@@ -51,3 +53,7 @@ views:
       - formula.name_length
     summaries:
       formula.name_length: Sum
+  - type: kanban
+    name: Empty board
+    order:
+      - file.name

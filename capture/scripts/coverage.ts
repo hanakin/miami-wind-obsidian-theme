@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { chromium } from "playwright";
-import { matchable, selectors } from "./css.ts";
+import { matchable, selectors, themeAffectedClasses } from "./css.ts";
 import { pngStats } from "./engine.ts";
 import { SCREENSHOTS } from "./obsidian.ts";
 import {
@@ -96,7 +96,16 @@ async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promi
 			} catch {
 				expectOk = false;
 			}
+			// Saved hidden: the target or an ancestor carries hidden or an inline display: none.
+			let hiddenBy = "";
+			for (let a = target; a && !hiddenBy; a = a.parentElement)
+				if (a.hasAttribute("hidden") || /display:\s*none/.test(a.getAttribute("style") ?? ""))
+					hiddenBy = `${a.localName}.${[...a.classList].join(".")}`;
+			// imageSizes indexes must point at offline-only images of the saved document.
+			const imgs = [...doc.images].map((i) => i.getAttribute("src") ?? "");
 			return {
+				hiddenBy,
+				imgs,
 				hasTarget: !!target,
 				stateOk: forced.every((p) => marks.includes(p)),
 				expectOk,
@@ -108,6 +117,8 @@ async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promi
 		},
 		[html, rewritten, claim?.expect ?? null, forced] as [string, string[], string | null, string[]],
 	)) as {
+		hiddenBy: string;
+		imgs: string[];
 		hasTarget: boolean;
 		stateOk: boolean;
 		expectOk: boolean;
@@ -117,7 +128,16 @@ async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promi
 		domClasses: string[];
 	};
 	if (!r.hasTarget) why.push("no [data-capture-target] in the fixture");
-	if (!r.stateOk) why.push(`forced state ${forced.join("+")} not marked on the forced element`);
+	if (r.hiddenBy) why.push(`saved hidden: ${r.hiddenBy} has hidden or display: none`);
+	for (const im of f.imageSizes ?? [])
+		if (!/^(app|https?|file):/i.test(r.imgs[im.index] ?? ""))
+			why.push(`imageSizes index ${im.index} is not an offline-only image of the saved fixture`);
+	if (f.evidence?.unverified?.length)
+		why.push(
+			`state unverified: ${f.evidence.unverified.join("+")} (Element.matches() false and no DevTools-matched author rule for it)`,
+		);
+	else if (!r.stateOk)
+		why.push(`forced state ${forced.join("+")} not marked on the forced element`);
 	if (!r.expectOk) why.push(`target does not match ${claim?.expect}`);
 	if (f.variantOf) {
 		// Synthetic platform variant: its base fixture carries the screenshot evidence.
@@ -232,7 +252,14 @@ const themeRows = theme.map((s) => {
 });
 const themeMatched = themeRows.filter((r) => r.fixtures.length > 0);
 const themeExcluded = themeRows.filter((r) => !r.fixtures.length && r.excluded);
-const themeMissing = themeRows.filter((r) => !r.fixtures.length && !r.excluded);
+const scriptedLabel = (r: (typeof themeRows)[number]) =>
+	r.synthetic.length ? ex.themeSelectorsScripted?.[r.selector] : undefined;
+const themeScripted = themeRows.filter(
+	(r) => !r.fixtures.length && !r.excluded && scriptedLabel(r),
+);
+const themeMissing = themeRows.filter(
+	(r) => !r.fixtures.length && !r.excluded && !scriptedLabel(r),
+);
 const themeDomOnly = themeMissing.filter((r) => r.domOnly.length);
 const themeSyntheticOnly = themeMissing.filter((r) => !r.domOnly.length && r.synthetic.length);
 const disagreements = themeRows.filter((r) => r.fixtureOnly.length || r.liveOnly.length);
@@ -259,9 +286,35 @@ const app = appClassStatuses(appSelectors(), ex).map((c) => ({
 	synthetic: classSynthetic.get(c.name),
 	census: seen.has(c.name),
 }));
-const appCovered = app.filter((c) => c.fixture);
-const appExcluded = app.filter((c) => !c.fixture && c.excluded);
-const appMissing = app.filter((c) => !c.fixture && !c.excluded);
+// Graph probe classes (.graph-view.color-*) exist only for an instant; they count as painted when
+// the graph renderer read a color from them and that exact color is in the graph screenshot.
+const graphPainted = new Map<string, string>();
+const graphReadOnly = new Map<string, string>();
+for (const f of fx.fixtures) {
+	const rec = f.evidence?.record;
+	if (!rec?.graphColors) continue;
+	for (const [cls, n] of Object.entries(rec.graphPixels ?? {})) {
+		if (n > 0) {
+			graphPainted.set(cls, f.id);
+			graphPainted.set("graph-view", f.id);
+		} else if (!graphPainted.has(cls)) graphReadOnly.set(cls, f.id);
+	}
+}
+const affected = themeAffectedClasses(
+	readFileSync(`${CAPTURE}.app/app.css`, "utf8"),
+	readFileSync(`${CAPTURE}../theme.css`, "utf8"),
+);
+const appCovered = app.filter((c) => c.fixture || graphPainted.has(c.name));
+const appExcluded = app.filter((c) => !c.fixture && !graphPainted.has(c.name) && c.excluded);
+const appOpen = app.filter((c) => !c.fixture && !graphPainted.has(c.name) && !c.excluded);
+// Classes no theme.css rule or theme-set variable can change are accepted gaps.
+const appNotAffected = appOpen.filter((c) => !affected.has(c.name));
+const appOutOfScope = appOpen.filter(
+	(c) => affected.has(c.name) && ex.appClassesOutOfScope?.[c.name],
+);
+const appMissing = appOpen.filter(
+	(c) => affected.has(c.name) && !ex.appClassesOutOfScope?.[c.name],
+);
 const appCensusOnly = appMissing.filter((c) => c.census && !c.dom && !c.synthetic);
 const appDomOnly = appMissing.filter((c) => c.dom);
 const appSyntheticOnly = appMissing.filter((c) => !c.dom && c.synthetic);
@@ -345,6 +398,8 @@ function baseOf(id: string): string {
 }
 const dupes: string[][] = [];
 const dupeReasons: { ids: string[]; reason: string }[] = [];
+const dupeLimits: { ids: string[]; reason: string }[] = [];
+const stateNotVisible = new Set<string>();
 for (const ids of [...bySha.values()].filter((v) => v.length > 1)) {
 	const facts = await Promise.all(
 		ids.map(async (id) => ({ id, claim: itemById.get(id), ...(await dupeFacts(id)) })),
@@ -411,7 +466,14 @@ for (const ids of [...bySha.values()].filter((v) => v.length > 1)) {
 		}
 	const joined = new Set(facts.map((_, i) => root(i))).size === 1;
 	const reason = joined ? [...why].join("; ") : "";
-	if (reason) dupeReasons.push({ ids, reason });
+	// A state that applies but whose change does not show is a limitation, not visible proof.
+	const hidden = [...why].flatMap(
+		(w) => /^(\S+): the state applies but its changes do not show/.exec(w)?.[1] ?? [],
+	);
+	if (reason && hidden.length) {
+		dupeLimits.push({ ids, reason });
+		for (const h of hidden) stateNotVisible.add(h);
+	} else if (reason) dupeReasons.push({ ids, reason });
 	else dupes.push(ids);
 }
 await browser.close();
@@ -447,14 +509,16 @@ if (existsSync(`${EXPERT}surfaces.md`)) {
 	);
 }
 
+const shown = covered.filter((i) => !stateNotVisible.has(i.id));
+const notVisibleItems = covered.filter((i) => stateNotVisible.has(i.id));
 const pct = (n: number, d: number) => `${d ? ((100 * n) / d).toFixed(1) : "100.0"}%`;
 const n = checklist.items.length;
 const lines = [
 	`Obsidian ${checklist.obsidianVersion} · ${fx.fixtures.length} fixtures, ${valid.size} with valid evidence (${fx.fixtures.filter((f) => f.variantOf).length} synthetic macOS/Windows variants)`,
-	`Checklist items shown in their claimed state: ${covered.length}/${n} (${pct(covered.length, n)}); ${syntheticItems.length} of them scripted or synthetic (labeled); excluded with reason: ${excludedItems.length}; missing: ${missingItems.length}`,
-	`theme.css selectors visibly matched (fixture and live agree, on painted elements): ${themeMatched.length}/${theme.length} (${pct(themeMatched.length, theme.length)}); excluded with reason: ${themeExcluded.length}; missing: ${themeMissing.length} (${themeDomOnly.length} only on hidden/clipped elements, ${themeSyntheticOnly.length} only in scripted fixtures); fixture/live disagreements: ${disagreements.length}`,
-	`App CSS classes visibly captured: ${appCovered.length}, excluded ${appExcluded.length}, missing ${appMissing.length} of ${app.length} (${pct(appCovered.length + appExcluded.length, app.length)} accounted for); of the missing: ${appDomOnly.length} in the DOM but never painted, ${appSyntheticOnly.length} only in scripted fixtures, ${appCensusOnly.length} seen in the runtime census only`,
-	`Screenshots: ${screenshotsHere ? "files re-checked against recorded hashes" : "files not on this machine; recorded evidence used"}; ${dupeReasons.length + dupes.length} groups of identical screenshots (${dupeReasons.length} explained by their fixtures, ${dupes.length} unexplained)`,
+	`Checklist items shown in their claimed state: ${shown.length}/${n} (${pct(shown.length, n)}); ${syntheticItems.length} of them scripted or synthetic (labeled); state applied but its change not visible (limitation, listed): ${notVisibleItems.length}; excluded with reason: ${excludedItems.length}; missing: ${missingItems.length}`,
+	`theme.css selectors visibly matched (fixture and live agree, on painted elements): ${themeMatched.length}/${theme.length} (${pct(themeMatched.length, theme.length)}); excluded with reason: ${themeExcluded.length}; scripted only (labeled): ${themeScripted.length}; missing: ${themeMissing.length} (${themeDomOnly.length} only on hidden/clipped elements, ${themeSyntheticOnly.length} only in scripted fixtures); fixture/live disagreements: ${disagreements.length}`,
+	`App CSS classes visibly captured: ${appCovered.length} (${[...graphPainted.keys()].length} of them graph probes credited by canvas pixels), excluded ${appExcluded.length}, not theme-affected (accepted gaps) ${appNotAffected.length}, theme-affected but out of scope (labeled) ${appOutOfScope.length}, theme-affected missing ${appMissing.length}, of ${app.length}; of the theme-affected missing: ${appDomOnly.length} in the DOM but never painted, ${appSyntheticOnly.length} only in scripted fixtures, ${appCensusOnly.length} seen in the runtime census only`,
+	`Screenshots: ${screenshotsHere ? "files re-checked against recorded hashes" : "files not on this machine; recorded evidence used"}; ${dupeReasons.length + dupeLimits.length + dupes.length} groups of identical screenshots (${dupeReasons.length} explained by their fixtures, ${dupeLimits.length} where a state applies but does not show (limitation), ${dupes.length} unexplained)`,
 	...crossCheck.map((c) => `Expert cross-check, ${c}`),
 ];
 console.log(lines.join("\n"));
@@ -496,7 +560,18 @@ writeFileSync(
 			invalidFixtures: Object.fromEntries(invalid),
 			themeSelectors: themeRows,
 			appClasses: app,
-			identicalScreenshots: { unexplained: dupes, explained: dupeReasons },
+			identicalScreenshots: { unexplained: dupes, explained: dupeReasons, limitation: dupeLimits },
+			stateNotVisible: [...stateNotVisible].sort(),
+			graph: {
+				painted: Object.fromEntries(graphPainted),
+				readOnly: Object.fromEntries(graphReadOnly),
+			},
+			appClassBuckets: {
+				notThemeAffected: appNotAffected.map((c) => c.name),
+				outOfScope: appOutOfScope.map((c) => c.name),
+				missing: appMissing.map((c) => c.name),
+			},
+			themeScripted: themeScripted.map((r) => r.selector),
 		},
 		null,
 		"\t",
@@ -572,9 +647,15 @@ function report(): string {
 	}
 	out.push("", "## App classes not in any valid fixture", "");
 	const reasons = new Map<string, string[]>();
-	for (const c of [...appExcluded, ...appMissing]) {
+	for (const c of [...appExcluded, ...appOutOfScope, ...appNotAffected, ...appMissing]) {
 		const why =
 			c.excluded ??
+			(ex.appClassesOutOfScope?.[c.name] && affected.has(c.name)
+				? `out of scope (theme-affected): ${ex.appClassesOutOfScope[c.name]}`
+				: undefined) ??
+			(!affected.has(c.name)
+				? "not theme-affected (accepted gap): no theme.css selector names it and no app.css rule for it reads a variable theme.css sets"
+				: undefined) ??
 			(c.dom
 				? "**missing** (in a fixture's DOM, but never visibly painted)"
 				: c.synthetic
@@ -587,6 +668,35 @@ function report(): string {
 	for (const [why, names] of [...reasons.entries()].sort(([a], [b]) => a.localeCompare(b))) {
 		out.push(`- ${why} (${names.length}): ${names.map((x) => `\`${x}\``).join(" ")}`);
 	}
+	if (graphPainted.size || graphReadOnly.size)
+		out.push(
+			"",
+			"## Graph colors",
+			"",
+			"Obsidian reads the graph's colors from short-lived `.graph-view.color-*` probe elements and paints them on a canvas. A probe class counts as painted when the renderer read a color from it and that exact color is in the graph screenshot (`evidence.record.graphPixels`).",
+			"",
+			...[...graphPainted.entries()].map(([c, id]) => `- \`${c}\`: painted (\`${id}\`)`),
+			...[...graphReadOnly.entries()].map(
+				([c, id]) =>
+					`- \`${c}\`: read by the renderer, no exact pixel (alpha or antialiasing) (\`${id}\`)`,
+			),
+		);
+	if (themeScripted.length)
+		out.push(
+			"",
+			"## theme.css selectors met only in a labeled scripted fixture",
+			"",
+			...themeScripted.map((r) => `- \`${r.selector}\`: ${scriptedLabel(r)}`),
+		);
+	if (dupeLimits.length)
+		out.push(
+			"",
+			"## Limitation: a state applies but its change does not show",
+			"",
+			"These states are proven applied (DevTools matched their rules and computed styles changed), but the screenshot equals another state's; they are not counted as visibly shown.",
+			"",
+			...dupeLimits.map((d) => `- ${d.ids.map((x) => `\`${x}\``).join(" = ")}: ${d.reason}`),
+		);
 	if (dupes.length || dupeReasons.length)
 		out.push(
 			"",

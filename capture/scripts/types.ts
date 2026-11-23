@@ -51,6 +51,12 @@ export interface ItemDef {
 	minUnobscured?: number;
 	/** Scroll this container top to bottom, screenshot every position and stack the shots. */
 	scroll?: Target;
+	/**
+	 * JS body run in the page after the screenshot; its JSON result is stored as evidence.record.
+	 * A `graphColors` map ({ "color-fill": 0xrrggbb, ... }) also gets exact-pixel counts from the
+	 * screenshot (evidence.record.graphPixels).
+	 */
+	record?: string;
 	/** Huge lists: keep `keep` matches of `sel` plus any matching `keepAlso`, and record the trim. */
 	trim?: { sel: string; keep: number; keepAlso: string };
 	/** CDP media emulation for this item (print, forced-colors, hover: none). */
@@ -70,6 +76,8 @@ export interface Scene {
 	opener?: (main: Ctx) => Promise<void>;
 	/** Needs a real window on the desktop (full screen, maximized); captured by --windowed runs. */
 	windowed?: boolean;
+	/** Needs a desktop without a mouse ((hover: none)); captured by --no-pointer runs. */
+	noPointer?: boolean;
 }
 
 export interface ChecklistItem {
@@ -110,6 +118,11 @@ export interface FixtureEntry {
 	/** Set when repeated children were dropped from the fixture (see ItemDef.trim). */
 	trimmed?: string;
 	evidence?: Evidence;
+	/**
+	 * Intrinsic size (naturalWidth/naturalHeight) of each image whose source does not load offline
+	 * (app:, https:, file:), by zero-based index in the saved fixture's document.images order.
+	 */
+	imageSizes?: { index: number; width: number; height: number }[];
 }
 
 /** What the capture proved about one fixture, checked again by the coverage script. */
@@ -137,6 +150,16 @@ export interface Evidence {
 	clip?: number[];
 	/** Author rules per forced pseudo-class that Chromium matched on the forced element. */
 	painted?: Record<string, number>;
+	/** Result of the item's record script (see ItemDef.record). */
+	record?: {
+		graphColors?: Record<string, number>;
+		graphPixels?: Record<string, number>;
+		[k: string]: unknown;
+	};
+	/** Claimed states proven live (Element.matches) or by a DevTools-matched author rule. */
+	verified?: string[];
+	/** Claimed states nothing proved; they are not marked in the fixture. */
+	unverified?: string[];
 	/** Element boxes (with ::before/::after) whose painted style changed when the state was forced. */
 	styleChanged?: number;
 	/** Which boxes and properties changed (first 12). */
