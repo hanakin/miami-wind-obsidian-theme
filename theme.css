@@ -515,7 +515,7 @@ textarea:focus-within,
 .canvas-control-group {
 	border: none;
 	box-shadow: none;
-	border-radius: 0;
+	--canvas-controls-radius: 0;
 }
 
 .canvas-control-item {
@@ -649,7 +649,7 @@ input.metadata-property-key-input {
 /* Status bar */
 
 .status-bar {
-	background-color: var(--grey-11);
+	--status-bar-background: var(--grey-11);
 	--status-bar-text-color: var(--magenta);
 	border-top: 1px solid var(--cyan);
 	padding: 0;

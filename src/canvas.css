@@ -2,7 +2,7 @@
 .canvas-control-group {
 	border: none;
 	box-shadow: none;
-	border-radius: 0;
+	--canvas-controls-radius: 0;
 }
 
 .canvas-control-item {

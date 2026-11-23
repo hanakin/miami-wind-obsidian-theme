@@ -1,6 +1,6 @@
 /* Status bar */
 .status-bar {
-	background-color: var(--grey-11);
+	--status-bar-background: var(--grey-11);
 	--status-bar-text-color: var(--magenta);
 	border-top: 1px solid var(--cyan);
 	padding: 0;
