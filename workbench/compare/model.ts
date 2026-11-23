@@ -111,7 +111,7 @@ export function outcome(input: {
 	replayIssues: string[];
 }) {
 	const reasons = [...input.replayIssues];
-	if (input.noise) reasons.push("before-vs-before stylesheet-swap noise");
+	if (input.noise) reasons.push("same-CSS repeat noise");
 	if (input.invisible) reasons.push("target has no visible box");
 	for (const kind of new Set(input.unsupported))
 		if (

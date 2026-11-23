@@ -14,21 +14,21 @@ Use `--component exact-name` to filter component tags, including nested tags.
 Use `--surface exact-name` to filter surfaces.
 Combine filters to narrow the selection. An empty selection fails.
 
-The command uses Playwright Chromium with single-threaded software rasterization at 1600 × 1000, scale 1, in sRGB. It disables partial raster reuse, zero-copy rasterization, and threaded scrolling and animation. It drives pending compositor work and the screenshot frame explicitly through `HeadlessExperimental.beginFrame`. Scrollbars remain visible. The system color preference is dark. Each fixture retains its theme and platform classes.
+The command uses Playwright Chromium with single-threaded software rasterization at 1600 × 1000, scale 1, in sRGB. It disables partial raster reuse, zero-copy rasterization, and threaded scrolling and animation. Normal compositor frame scheduling remains active for background pages. Explicit begin-frame control was tested, but it stalled on background fixture pages. Scrollbars remain visible. The system color preference is dark. Each fixture retains its theme and platform classes.
 
 An isolated Obsidian instance supplies the CodeMirror runtime rules on the first run. The cache is `workbench/out/runtime-cm.css`.
 After an Obsidian update, delete this cache.
 The extracted app CSS version must match the fixture version.
 
-Each fixture loads CodeMirror rules and app CSS once. Every capture clears the theme stylesheet, resolves layout, and swaps in the requested CSS. The three captures use the baseline, the baseline with an extra comment, and the after theme. This exercises the same swap path for the sanity check and the actual comparison.
+Each fixture loads CodeMirror rules and app CSS once. Every capture clears the theme stylesheet, resolves layout, and swaps in the requested CSS. Four independent captures use the baseline, the baseline with a comment, the after theme, and the after theme with a comment. This exercises the same swap path for the sanity check and the actual comparison.
 
 The command restores recorded pseudo-states through CDP. Hover and active states propagate to ancestors. Focus-visible also forces focus. Focus propagates focus-within to ancestors. Selection fixtures receive a native selection. Scrollbar-hover fixtures receive a real pointer over the scroll thumb. An unavailable state receives a not-proven reason.
 
 Style reads compare standard computed properties on every element. Applicable pseudo-elements include generated content, markers, selection, placeholders, scrollbars, scrollbar thumbs, tracks, corners, and file-selector buttons. Offscreen probes resolve graph, canvas, and PDF colors that Obsidian reads through JavaScript.
 
-The command disables animation and caret suppression during computed-style reads. It enables suppression for screenshots. Caret-color changes remain visible in computed-style differences. Native media control UI remains hidden because its internal loading state is not serialized. Pixel comparison is exact, including antialiasing. There is no pixel tolerance.
+The command disables animation and caret suppression during computed-style reads. It enables suppression for screenshots. Caret-color changes remain visible in computed-style differences. Native media control UI remains hidden because its internal loading state is not serialized. Pixel comparison checks every RGBA channel exactly, including antialiasing. A changed pixel counts only when both before captures agree and both after captures agree. There is no color tolerance or geometric mask. A same-CSS pixel flip creates a noise record and makes pixel-only conclusions not-proven.
 
-Before-vs-before must have zero style and pixel changes. A noisy fixture receives diagnostic images and a noise record. Computed-style differences retain `different` status despite pixel noise. Noise downgrades pixel-only results to `not-proven`. The command completes the remaining fixtures. It does not classify sanity noise as a theme difference.
+Both same-CSS pairs must have zero style and pixel changes. A noisy fixture receives diagnostic images and a noise record. Computed-style differences retain `different` status despite pixel noise. Noise downgrades pixel-only results to `not-proven`. The command completes the remaining fixtures. It does not classify sanity noise as a theme difference.
 
 Exit codes:
 
@@ -43,9 +43,9 @@ Outputs are local and gitignored. Each run removes old reports and diff images b
 - `workbench/out/diffs/`: before, after, diff, and sanity evidence images. JSON image paths are relative to `workbench/out/`.
 - `workbench/out/component-diffs.json`: `{ [component]: { [surface]: { same, props } } }`.
 
-The JSON keeps `schemaVersion: 1` and the existing fields. Each fixture adds `status`, `notProvenReasons`, `noise: { styles, pixels }`, and `repeats: { before, after }`. The top-level `rasterization` record names the capture protocol and launch flags. A fixture with `not-proven` status has `same: false`.
+The JSON keeps `schemaVersion: 1` and the existing fields. Each fixture adds `status`, `notProvenReasons`, `noise`, and `repeats: { before: 2, after: 2 }`. `noise.beforePixels` and `noise.afterPixels` count same-CSS flips on each side. `noise.pixels` counts their union. `pixelDiff` counts only stable changes. `rawPixelDiff` preserves the first before/after pixel count. The top-level `rasterization` record names the capture protocol and launch flags. A fixture with `not-proven` status has `same: false`.
 
-The top-level `notProven` list contains `{ id, reasons }` records. The top-level `noise` list contains `{ id, styles, pixels }` records. Summary additions are `notProven`, `notProvenOnly`, and `noise` counts.
+The top-level `notProven` list contains `{ id, reasons }` records. The top-level `noise` list contains the fixture ID and its style, union-pixel, before-pixel, and after-pixel noise counts. Summary additions are `notProven`, `notProvenOnly`, and `noise` counts.
 
 `summary.changed` counts proven differences. `summary.unchanged` counts proven same results. `summary.notProvenOnly` counts fixtures with not-proven status. These three counts sum to `summary.checked`. `summary.notProven` includes every fixture with a coverage limit. It can overlap proven differences because a partial replay can still expose a genuine CSS difference.
 
@@ -58,3 +58,5 @@ Fonts are local host fonts. Platform variants do not prove native macOS or Windo
 Fixtures can provide `imageSizes: [{ index, width, height }]`. The index uses zero-based `document.images` order from the serialized fixture HTML, including CodeMirror spacers. Width and height are positive intrinsic `naturalWidth` and `naturalHeight` pixels. Missing images with this metadata receive a plain SVG placeholder at those intrinsic dimensions. The original image classes and CSS sizing remain active. These placeholders prove layout, not image pixels, and do not create a not-proven reason. Loaded images retain their actual pixels.
 
 If `/tmp` is full, set `TMPDIR` to a directory under `~/Work` before running checks or comparisons.
+
+Diff images use red for stable changes and orange for unstable pixels. All unstable pixels remain visible in the evidence. Noisy fixtures also save all four screenshots for inspection.
