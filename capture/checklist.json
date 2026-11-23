@@ -1,9 +1,9 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-23T08:36:36.194Z",
+	"generated": "2026-11-23T11:55:57.751Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
-		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/probe/config/obsidian"
+		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/config/obsidian"
 	],
 	"inventory": {
 		"version": "1.15.1",
@@ -3087,7 +3087,7 @@
 			"component": "clickable-icon",
 			"state": "hover",
 			"source": "catalog:chrome",
-			"target": ".workspace-ribbon .clickable-icon",
+			"target": ".workspace-ribbon .clickable-icon.side-dock-ribbon-action",
 			"pseudo": [
 				"hover"
 			]
@@ -3099,7 +3099,7 @@
 			"component": "clickable-icon",
 			"state": "active",
 			"source": "catalog:chrome",
-			"target": ".workspace-ribbon .clickable-icon",
+			"target": ".workspace-ribbon .clickable-icon.side-dock-ribbon-action",
 			"pseudo": [
 				"active"
 			]
@@ -3147,7 +3147,8 @@
 			"component": "tab-header",
 			"state": "active-tab",
 			"source": "catalog:chrome",
-			"target": ".mod-root .workspace-tab-header.is-active"
+			"target": ".mod-root .workspace-tab-header.is-active",
+			"expect": ".is-active"
 		},
 		{
 			"id": "chrome.tab-header.inactive",
@@ -3284,11 +3285,11 @@
 		{
 			"id": "chrome.workspace-tabs-icon.hover",
 			"scene": "chrome",
-			"surface": "left-sidebar",
+			"surface": "workspace",
 			"component": "clickable-icon",
 			"state": "hover",
 			"source": "catalog:chrome",
-			"target": ".mod-left-split .workspace-tabs .clickable-icon",
+			"target": ".mod-root .workspace-tabs .workspace-tab-header-new-tab .clickable-icon",
 			"pseudo": [
 				"hover"
 			]
@@ -3300,7 +3301,8 @@
 			"component": "clickable-icon",
 			"state": "is-active",
 			"source": "catalog:chrome",
-			"target": ".workspace-tabs .clickable-icon.is-active"
+			"target": ".workspace-tabs .clickable-icon.is-active",
+			"expect": ".is-active"
 		},
 		{
 			"id": "chrome.vault-profile",
@@ -3357,7 +3359,8 @@
 			"target": {
 				"sel": ".view-header-nav-buttons .clickable-icon[aria-disabled='true']",
 				"in": "leaf"
-			}
+			},
+			"expect": "[aria-disabled='true']"
 		},
 		{
 			"id": "chrome.view-action.hover",
@@ -3477,7 +3480,8 @@
 			"component": "tree-item",
 			"state": "collapsed",
 			"source": "catalog:chrome",
-			"target": ".nav-folder.is-collapsed"
+			"target": ".nav-folder.is-collapsed",
+			"expect": ".is-collapsed"
 		},
 		{
 			"id": "chrome.nav-folder.expanded",
@@ -3486,7 +3490,8 @@
 			"component": "tree-item",
 			"state": "expanded",
 			"source": "catalog:chrome",
-			"target": ".nav-folder:not(.is-collapsed):not(.mod-root)"
+			"target": ".nav-folder:not(.is-collapsed):not(.mod-root)",
+			"expect": ":not(.is-collapsed)"
 		},
 		{
 			"id": "chrome.nav-file.active",
@@ -3495,7 +3500,8 @@
 			"component": "nav-file",
 			"state": "is-active",
 			"source": "catalog:chrome",
-			"target": ".nav-file-title.is-active"
+			"target": ".nav-file-title.is-active",
+			"expect": ".is-active"
 		},
 		{
 			"id": "chrome.nav-file.hover",
@@ -10512,7 +10518,8 @@
 			"target": {
 				"sel": ".cm-line.cm-active",
 				"in": "leaf"
-			}
+			},
+			"expect": ".cm-active"
 		},
 		{
 			"id": "editor.reading-selection",
@@ -10672,9 +10679,11 @@
 			"state": "expanded-after-click",
 			"source": "catalog:editor-states",
 			"target": {
-				"sel": ".markdown-reading-view .callout.is-collapsible",
+				"sel": ".markdown-reading-view .callout",
+				"text": "Folded callout",
 				"in": "leaf"
-			}
+			},
+			"expect": ".callout.is-collapsible:not(.is-collapsed):has(> .callout-content)"
 		},
 		{
 			"id": "editor.heading-collapsed",
@@ -10686,7 +10695,9 @@
 			"target": {
 				"sel": ".markdown-reading-view .is-collapsed",
 				"in": "leaf"
-			}
+			},
+			"note": "Full-window shot: the fold arrow sits left of the heading box and the folded content disappears below it.",
+			"expect": ".is-collapsed"
 		},
 		{
 			"id": "editor.list-collapsed",
@@ -10931,7 +10942,8 @@
 			"component": "suggestion",
 			"state": "is-selected",
 			"source": "catalog:properties",
-			"target": ".suggestion-container.mod-property-key .suggestion-item.is-selected"
+			"target": ".suggestion-container.mod-property-key .suggestion-item.is-selected",
+			"expect": ".is-selected"
 		},
 		{
 			"id": "properties.type-menu",
@@ -10964,7 +10976,8 @@
 			"target": {
 				"sel": ".metadata-property[data-property-key=\"done\"] input[type=checkbox]",
 				"in": "leaf"
-			}
+			},
+			"expect": ":checked"
 		},
 		{
 			"id": "properties.reading-view",
@@ -11025,7 +11038,8 @@
 			"component": "menu-item",
 			"state": "is-warning",
 			"source": "catalog:menu:file explorer file",
-			"target": ".menu .menu-item.is-warning"
+			"target": ".menu .menu-item.is-warning",
+			"expect": ".is-warning"
 		},
 		{
 			"id": "menu.file.submenu",
@@ -11254,7 +11268,8 @@
 			"component": "suggestion",
 			"state": "is-selected",
 			"source": "catalog:suggest",
-			"target": ".suggestion-container .suggestion-item.is-selected"
+			"target": ".suggestion-container .suggestion-item.is-selected",
+			"expect": ".is-selected"
 		},
 		{
 			"id": "suggest.link.item.hover",
@@ -11284,7 +11299,8 @@
 			"component": "suggestion",
 			"state": "is-selected",
 			"source": "catalog:suggest",
-			"target": ".suggestion-container .suggestion-item.is-selected"
+			"target": ".suggestion-container .suggestion-item.is-selected",
+			"expect": ".is-selected"
 		},
 		{
 			"id": "suggest.heading.item.hover",
@@ -11314,7 +11330,8 @@
 			"component": "suggestion",
 			"state": "is-selected",
 			"source": "catalog:suggest",
-			"target": ".suggestion-container .suggestion-item.is-selected"
+			"target": ".suggestion-container .suggestion-item.is-selected",
+			"expect": ".is-selected"
 		},
 		{
 			"id": "suggest.block.item.hover",
@@ -11344,7 +11361,8 @@
 			"component": "suggestion",
 			"state": "is-selected",
 			"source": "catalog:suggest",
-			"target": ".suggestion-container .suggestion-item.is-selected"
+			"target": ".suggestion-container .suggestion-item.is-selected",
+			"expect": ".is-selected"
 		},
 		{
 			"id": "suggest.tag.item.hover",
@@ -11374,7 +11392,8 @@
 			"component": "suggestion",
 			"state": "is-selected",
 			"source": "catalog:suggest",
-			"target": ".suggestion-container .suggestion-item.is-selected"
+			"target": ".suggestion-container .suggestion-item.is-selected",
+			"expect": ".is-selected"
 		},
 		{
 			"id": "suggest.slash.item.hover",
@@ -11404,7 +11423,8 @@
 			"component": "suggestion",
 			"state": "is-selected",
 			"source": "catalog:suggest",
-			"target": ".suggestion-container .suggestion-item.is-selected"
+			"target": ".suggestion-container .suggestion-item.is-selected",
+			"expect": ".is-selected"
 		},
 		{
 			"id": "suggest.embed.item.hover",
@@ -11471,7 +11491,8 @@
 			"component": "suggestion",
 			"state": "is-selected",
 			"source": "catalog:prompt",
-			"target": ".prompt .suggestion-item.is-selected"
+			"target": ".prompt .suggestion-item.is-selected",
+			"expect": ".is-selected"
 		},
 		{
 			"id": "prompt.item.hover",
@@ -11592,7 +11613,8 @@
 			"component": "vertical-tab",
 			"state": "is-active",
 			"source": "catalog:modal-controls",
-			"target": ".modal .vertical-tab-nav-item.is-active"
+			"target": ".modal .vertical-tab-nav-item.is-active",
+			"expect": ".is-active"
 		},
 		{
 			"id": "modal.toggle.on",
@@ -11601,7 +11623,8 @@
 			"component": "toggle",
 			"state": "on",
 			"source": "catalog:modal-controls",
-			"target": ".modal .checkbox-container.is-enabled"
+			"target": ".modal .checkbox-container.is-enabled",
+			"expect": ".is-enabled"
 		},
 		{
 			"id": "modal.toggle.off",
@@ -11610,7 +11633,8 @@
 			"component": "toggle",
 			"state": "off",
 			"source": "catalog:modal-controls",
-			"target": ".modal .checkbox-container:not(.is-enabled)"
+			"target": ".modal .checkbox-container:not(.is-enabled)",
+			"expect": ":not(.is-enabled)"
 		},
 		{
 			"id": "modal.toggle.focus-visible",
@@ -11738,15 +11762,6 @@
 			"state": "default",
 			"source": "catalog:modal-controls",
 			"target": ".modal .search-input-container"
-		},
-		{
-			"id": "modal.appearance",
-			"scene": "modal.controls",
-			"surface": "settings",
-			"component": "setting-item",
-			"state": "appearance",
-			"source": "catalog:modal-controls",
-			"target": ".modal.mod-settings"
 		},
 		{
 			"id": "canvas.view",
@@ -11957,7 +11972,8 @@
 			"component": "canvas-node",
 			"state": "selected",
 			"source": "catalog:canvas",
-			"target": ".canvas-node.is-focused"
+			"target": ".canvas-node.is-focused",
+			"expect": ".is-focused"
 		},
 		{
 			"id": "canvas.card-menu",
@@ -12027,7 +12043,8 @@
 			"component": "canvas-node",
 			"state": "editing",
 			"source": "catalog:canvas",
-			"target": ".canvas-node.is-editing"
+			"target": ".canvas-node.is-editing",
+			"expect": ".is-editing"
 		},
 		{
 			"id": "canvas.context-menu",
@@ -12204,7 +12221,8 @@
 			"component": "clickable-icon",
 			"state": "is-selected",
 			"source": "catalog:bases",
-			"target": ".menu .bases-toolbar-menu-item.is-selected .clickable-icon"
+			"target": ".menu .bases-toolbar-menu-item.is-selected .clickable-icon",
+			"expect": ".is-selected .clickable-icon"
 		},
 		{
 			"id": "bases.properties-menu.back-button",
@@ -12614,15 +12632,6 @@
 			"target": ".workspace-leaf-content[data-type=\"footnotes\"]"
 		},
 		{
-			"id": "sidebar.backlinks-unlinked",
-			"scene": "sidebar-views",
-			"surface": "right-sidebar",
-			"component": "backlinks",
-			"state": "unlinked-expanded",
-			"source": "catalog:sidebar-views",
-			"target": ".workspace-leaf-content[data-type=\"backlink\"]"
-		},
-		{
 			"id": "sidebar.tree-item.hover",
 			"scene": "sidebar-views",
 			"surface": "right-sidebar",
@@ -12641,7 +12650,8 @@
 			"component": "tree-item",
 			"state": "is-active",
 			"source": "catalog:sidebar-views",
-			"target": ".workspace-leaf-content[data-type=\"outline\"] .tree-item-self.is-active"
+			"target": ".workspace-leaf-content[data-type=\"outline\"] .tree-item-self.is-active",
+			"expect": ".is-active"
 		},
 		{
 			"id": "sidebar.file-explorer.multi-select",
@@ -12650,7 +12660,8 @@
 			"component": "nav-file",
 			"state": "is-selected",
 			"source": "catalog:sidebar-views",
-			"target": ".nav-file-title.is-selected"
+			"target": ".nav-file-title.is-selected",
+			"expect": ".is-selected"
 		},
 		{
 			"id": "sidebar.file-explorer.rename",
@@ -12732,7 +12743,8 @@
 			"component": "tab-header",
 			"state": "stacked",
 			"source": "catalog:media",
-			"target": ".mod-root .workspace-tabs.mod-stacked"
+			"target": ".mod-root .workspace-tabs.mod-stacked",
+			"expect": ".mod-stacked"
 		},
 		{
 			"id": "view.split",
@@ -12741,7 +12753,8 @@
 			"component": "workspace",
 			"state": "split-vertical",
 			"source": "catalog:media",
-			"target": ".workspace-split.mod-root"
+			"target": ".workspace-split.mod-root",
+			"expect": ":has(> .workspace-tabs ~ .workspace-tabs)"
 		},
 		{
 			"id": "view.window-unfocused",
@@ -12852,7 +12865,8 @@
 			"component": "menu-item",
 			"state": "selected",
 			"source": "catalog:bases-extras",
-			"target": ".menu .bases-toolbar-menu-item.is-selected"
+			"target": ".menu .bases-toolbar-menu-item.is-selected",
+			"expect": ".is-selected"
 		},
 		{
 			"id": "extra.bases.menu-item.focus",
@@ -12909,7 +12923,8 @@
 			"component": "search-input",
 			"state": "search-no-results",
 			"source": "catalog:form-control-states",
-			"target": ".modal.mod-settings"
+			"target": ".modal.mod-settings",
+			"expect": ":has(.setting-search-empty)"
 		},
 		{
 			"id": "extra.settings-search-results",
@@ -12918,7 +12933,8 @@
 			"component": "search-input",
 			"state": "search-results",
 			"source": "catalog:form-control-states",
-			"target": ".modal.mod-settings"
+			"target": ".modal.mod-settings",
+			"expect": ":has(.setting-search-result-item)"
 		},
 		{
 			"id": "extra.link.visited",
@@ -13040,7 +13056,8 @@
 			"component": "clickable-icon",
 			"state": "has-active-menu",
 			"source": "catalog:sidebar-states",
-			"target": ".workspace-tabs .has-active-menu"
+			"target": ".workspace-tabs .has-active-menu",
+			"expect": ".has-active-menu"
 		},
 		{
 			"id": "extra.menu.keyboard-selected",
@@ -13049,7 +13066,8 @@
 			"component": "menu-item",
 			"state": "selected",
 			"source": "catalog:sidebar-states",
-			"target": ".menu .menu-item.selected"
+			"target": ".menu .menu-item.selected",
+			"expect": ".selected"
 		},
 		{
 			"id": "extra.menu-item.focus",
@@ -13361,7 +13379,7 @@
 			"scene": "extra.community",
 			"surface": "modal",
 			"component": "settings-page",
-			"state": "restricted-mode",
+			"state": "default",
 			"source": "catalog:community-browser",
 			"target": ".modal.mod-settings"
 		},
@@ -13370,7 +13388,7 @@
 			"scene": "extra.community",
 			"surface": "modal",
 			"component": "settings-page",
-			"state": "community-plugins-on",
+			"state": "default",
 			"source": "catalog:community-browser",
 			"target": ".modal.mod-settings"
 		},
@@ -13388,7 +13406,7 @@
 			"scene": "extra.more",
 			"surface": "left-sidebar",
 			"component": "search-result",
-			"state": "explain-search",
+			"state": "default",
 			"source": "catalog:more-surfaces",
 			"target": ".workspace-leaf-content[data-type=\"search\"]"
 		},
@@ -13419,7 +13437,8 @@
 			"state": "sub-page",
 			"source": "catalog:settings-subpage",
 			"target": ".modal.mod-settings",
-			"note": "A navigable setting row (chevron) opens a sub-page inside the settings window."
+			"note": "A navigable setting row (chevron) opens a sub-page inside the settings window.",
+			"expect": ":has(.setting-page)"
 		},
 		{
 			"id": "extra.community.plugin-browser",
@@ -13440,6 +13459,18 @@
 			"source": "catalog:community-browser",
 			"target": "body",
 			"expect": ":has(.community-modal-details)"
+		},
+		{
+			"id": "extra.community.item.hover",
+			"scene": "extra.community-plugins-browser",
+			"surface": "community-browser",
+			"component": "community-browser",
+			"state": "hover",
+			"source": "catalog:community-browser",
+			"target": ".community-item",
+			"pseudo": [
+				"hover"
+			]
 		},
 		{
 			"id": "extra.community.theme-browser",
@@ -13724,6 +13755,20 @@
 			"expect": ".cm-editor:has(.cm-selectionLayer)"
 		},
 		{
+			"id": "qc.editor.active-indent",
+			"scene": "qc.editor",
+			"surface": "editor-live-preview",
+			"component": "list",
+			"state": "active-indent",
+			"source": "catalog:editor-qc",
+			"target": {
+				"sel": ".markdown-source-view .cm-line:has(.cm-active-indent)",
+				"in": "leaf"
+			},
+			"note": "With the cursor in a nested list item, the indent guide of its parent level gets .cm-active-indent.",
+			"expect": ":has(.cm-indent.cm-active-indent)"
+		},
+		{
 			"id": "qc.highlight-color-widget",
 			"scene": "qc.editor",
 			"surface": "editor-live-preview",
@@ -13854,6 +13899,31 @@
 			"state": "default",
 			"source": "catalog:drag",
 			"target": ".workspace-drop-overlay",
+			"minUnobscured": 0.3
+		},
+		{
+			"id": "qc.drag.kanban-column",
+			"scene": "qc.drag",
+			"surface": "bases",
+			"component": "bases-kanban",
+			"state": "column-dragged",
+			"source": "catalog:drag",
+			"target": {
+				"sel": ".bases-kanban-container",
+				"in": "leaf"
+			},
+			"note": "A kanban column held mid-drag with the real mouse (pressing on a card starts a column reorder): the column gets .is-being-dragged and a .drag-reorder-ghost copy follows the pointer.",
+			"expect": ":has(> .bases-kanban-column.is-being-dragged)"
+		},
+		{
+			"id": "qc.drag.kanban-ghost",
+			"scene": "qc.drag",
+			"surface": "bases",
+			"component": "drag-ghost",
+			"state": "default",
+			"source": "catalog:drag",
+			"target": ".drag-reorder-ghost",
+			"expect": ":has(> .bases-kanban-column.mod-dragged-item)",
 			"minUnobscured": 0.3
 		},
 		{
@@ -14008,6 +14078,21 @@
 			"state": "default",
 			"source": "catalog:bases-qc",
 			"target": ".cm-tooltip-docstring"
+		},
+		{
+			"id": "qc.bases.matching-bracket",
+			"scene": "qc.bases",
+			"surface": "menu",
+			"component": "formula-editor",
+			"state": "matching-bracket",
+			"source": "catalog:bases-qc",
+			"target": {
+				"sel": ".formula-editor .cm-editor",
+				"closest": ".menu"
+			},
+			"note": "Typing .contains( auto-closes the bracket; with the cursor between them the formula editor marks both with .cm-matchingBracket.",
+			"expect": ":has(.formula-editor .cm-editor.cm-focused .cm-matchingBracket)",
+			"minUnobscured": 0.3
 		},
 		{
 			"id": "qc.bases.list-view",
@@ -14216,6 +14301,49 @@
 			]
 		},
 		{
+			"id": "qc.pdf.annotation-popup",
+			"scene": "qc.pdf",
+			"surface": "pdf",
+			"component": "pdf",
+			"state": "popup-open",
+			"source": "catalog:pdf-qc",
+			"target": {
+				"sel": ".annotationLayer .popupWrapper",
+				"in": "leaf"
+			},
+			"note": "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup.",
+			"expect": ".popupWrapper:not([hidden]):has(.popup:not([hidden]) .popupContent)"
+		},
+		{
+			"id": "qc.pdf.xfa",
+			"scene": "qc.pdf",
+			"surface": "pdf",
+			"component": "pdf",
+			"state": "default",
+			"source": "catalog:pdf-qc",
+			"target": {
+				"sel": ".xfaLayer",
+				"in": "leaf"
+			},
+			"note": "xfa-form.pdf is a hand-written pure XFA form (template packet only); Obsidian's pdf.js has enableXfa on and draws it with its XFA layer.",
+			"expect": ".xfaLayer:has(.xfaPage .xfaTextfield):has(.xfaCheckbox):has(.xfaSelect):has(.xfaButton)"
+		},
+		{
+			"id": "qc.pdf.xfa-text.focus",
+			"scene": "qc.pdf",
+			"surface": "pdf",
+			"component": "text-input",
+			"state": "focus",
+			"source": "catalog:pdf-qc",
+			"target": {
+				"sel": ".xfaLayer .xfaTextfield",
+				"in": "leaf"
+			},
+			"pseudo": [
+				"focus"
+			]
+		},
+		{
 			"id": "qc.file-recovery.diff",
 			"scene": "qc.file-recovery",
 			"surface": "modal",
@@ -14395,78 +14523,78 @@
 		},
 		{
 			"id": "modal.vertical-tab.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "vertical-tab",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal .vertical-tab-nav-item:not(.is-active)",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			]
 		},
 		{
 			"id": "modal.vertical-tab.active.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "vertical-tab",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal .vertical-tab-nav-item.is-active",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			]
 		},
 		{
 			"id": "modal.dropdown.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "dropdown",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal select.dropdown",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			]
 		},
 		{
 			"id": "modal.dropdown.active",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "dropdown",
 			"state": "active",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal select.dropdown",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"active"
 			]
 		},
 		{
 			"id": "modal.slider.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "slider",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal input[type=range]",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			]
 		},
 		{
 			"id": "extra.select-option.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "dropdown",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal select.dropdown option",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			],
@@ -14474,13 +14602,13 @@
 		},
 		{
 			"id": "extra.select-option.checked.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "dropdown",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal select.dropdown option:checked",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			],
@@ -14488,91 +14616,384 @@
 		},
 		{
 			"id": "modal.button.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "button",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal .vertical-tab-content button:not(.mod-cta)",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			]
 		},
 		{
 			"id": "modal.button-cta.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "button-cta",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal button.mod-cta",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			]
 		},
 		{
 			"id": "modal.text-input.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "text-input",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal .vertical-tab-content input[type=text]",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			]
 		},
 		{
 			"id": "modal.clickable-icon.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "clickable-icon",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal .vertical-tab-content .clickable-icon",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			]
 		},
 		{
 			"id": "modal.hotkey.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "hotkey",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal .setting-hotkey",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			]
 		},
 		{
 			"id": "modal.search-clear.hover",
-			"scene": "qc.settings-in-window",
+			"scene": "qc.settings-popout-hover",
 			"surface": "settings",
 			"component": "clickable-icon",
 			"state": "hover",
 			"source": "catalog:settings-hover-states",
 			"target": ".modal .search-input-container.mod-hotkey .search-input-clear-button",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"pseudo": [
 				"hover"
 			]
 		},
 		{
-			"id": "extra.community.item.hover",
+			"id": "qc.migration.modal",
+			"scene": "qc.migration",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:frontmatter-migration",
+			"target": {
+				"sel": ".modal-container",
+				"in": "container"
+			}
+		},
+		{
+			"id": "qc.migration.results",
+			"scene": "qc.migration",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:frontmatter-migration",
+			"target": ".modal:has(.changelog-item)",
+			"note": "Counts of processed, modified and failed notes after Start conversion; the sample notes are disposable copies in the throwaway vault.",
+			"expect": ":has(.changelog-item.mod-success):has(.changelog-item.mod-highlighted)"
+		},
+		{
+			"id": "qc.dialog.rename",
+			"scene": "qc.dialogs",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:dialogs",
+			"target": ".modal.mod-file-rename",
+			"note": "The rename dialog Obsidian shows for files without an inline title (FileManager.promptForFileRename).",
+			"expect": ".mod-file-rename:has(textarea.rename-textarea)"
+		},
+		{
+			"id": "qc.dialog.unlinked-attachments",
+			"scene": "qc.dialogs",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:dialogs",
+			"target": ".modal.mod-file-browser",
+			"note": "Deleting a note whose attachments nothing else links asks which ones to delete too ('Delete unlinked attachments: ask'). The note is a throwaway in Scratch/ and goes to the vault's .trash.",
+			"expect": ".mod-file-browser:has(.file-tree-item-checkbox)"
+		},
+		{
+			"id": "qc.dialog.unlinked-attachments.gallery",
+			"scene": "qc.dialogs",
+			"surface": "modal",
+			"component": "modal",
+			"state": "gallery-view",
+			"source": "catalog:dialogs",
+			"target": ".modal.mod-file-browser",
+			"note": "The same dialog switched to its gallery view.",
+			"expect": ".mod-file-browser:has(.attachments-gallery)"
+		},
+		{
+			"id": "qc.dialog.export-progress",
+			"scene": "qc.dialogs",
+			"surface": "notice",
+			"component": "progress-bar",
+			"state": "default",
+			"source": "catalog:dialogs",
+			"target": ".progress-bar-container",
+			"note": "Export to PDF shows Obsidian's progress bar while it prints. The export is started directly (no save dialog) into the capture work folder with open: false, and its first internal sleep() is held until the shot is taken, so the bar stays up; it is released in qc.dialogs.restore.",
+			"expect": ":has(.progress-bar .progress-bar-message)",
+			"minUnobscured": 0.3
+		},
+		{
+			"id": "qc.dialogs.restore",
+			"scene": "qc.dialogs",
+			"surface": "modal",
+			"component": "workspace",
+			"state": "default",
+			"source": "catalog:dialogs",
+			"target": ".app-container"
+		},
+		{
+			"id": "qc.dialog.startup-time",
+			"scene": "qc.settings-dialogs",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:settings-dialogs",
+			"target": ".modal.mod-plugin-debug",
+			"note": "Settings > About > Check startup time: the startup timing breakdown.",
+			"expect": ".mod-plugin-debug.mod-scrollable-content"
+		},
+		{
+			"id": "qc.dialog.encryption-unavailable",
+			"scene": "qc.settings-dialogs",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:settings-dialogs",
+			"target": ".modal.mod-plugin-debug",
+			"note": "Settings > Keychain shows a warning when the OS keyring is missing (the isolated session has none); its link opens this explanation.",
+			"expect": ".mod-plugin-debug.mod-scrollable-content"
+		},
+		{
+			"id": "qc.rtl-language.window",
+			"scene": "qc.rtl-language",
+			"surface": "workspace",
+			"component": "workspace",
+			"state": "mod-rtl",
+			"source": "catalog:rtl-interface-language",
+			"target": ".app-container",
+			"note": "Interface language set to Hebrew (localStorage.language = he) and the window reloaded.",
+			"expect": "body.mod-rtl .app-container"
+		},
+		{
+			"id": "qc.rtl-language.restore",
+			"scene": "qc.rtl-language",
+			"surface": "workspace",
+			"component": "workspace",
+			"state": "default",
+			"source": "catalog:rtl-interface-language",
+			"target": ".app-container"
+		},
+		{
+			"id": "qc.edit-block-button.hover",
+			"scene": "qc.edit-block-windowed",
+			"surface": "editor-live-preview",
+			"component": "clickable-icon",
+			"state": "hover",
+			"source": "catalog:hover-revealed-buttons",
+			"target": {
+				"sel": ".markdown-source-view .cm-embed-block.cm-callout .edit-block-button",
+				"in": "leaf"
+			},
+			"note": "Real pointer in a real window: over the callout block, then onto its edit button.",
+			"pseudo": [
+				"hover"
+			]
+		},
+		{
+			"id": "inwindow.modal.vertical-tab.hover",
 			"scene": "qc.settings-in-window",
 			"surface": "settings",
-			"component": "community-browser",
+			"component": "vertical-tab",
 			"state": "hover",
-			"source": "catalog:settings-hover-states",
-			"target": ".community-item",
-			"note": "Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal .vertical-tab-nav-item:not(.is-active)",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"hover"
+			]
+		},
+		{
+			"id": "inwindow.modal.vertical-tab.active.hover",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "vertical-tab",
+			"state": "hover",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal .vertical-tab-nav-item.is-active",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"hover"
+			]
+		},
+		{
+			"id": "inwindow.modal.dropdown.hover",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "dropdown",
+			"state": "hover",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal select.dropdown",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"hover"
+			]
+		},
+		{
+			"id": "inwindow.modal.dropdown.active",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "dropdown",
+			"state": "active",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal select.dropdown",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"active"
+			]
+		},
+		{
+			"id": "inwindow.modal.slider.hover",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "slider",
+			"state": "hover",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal input[type=range]",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"hover"
+			]
+		},
+		{
+			"id": "inwindow.extra.select-option.hover",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "dropdown",
+			"state": "hover",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal select.dropdown option",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"hover"
+			],
+			"synthetic": "size=6 set on the <select> so Chromium draws its options in the page (the real dropdown list is a native popup outside the page)"
+		},
+		{
+			"id": "inwindow.extra.select-option.checked.hover",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "dropdown",
+			"state": "hover",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal select.dropdown option:checked",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"hover"
+			],
+			"synthetic": "size=6 set on the <select> so Chromium draws its options in the page"
+		},
+		{
+			"id": "inwindow.modal.button.hover",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "button",
+			"state": "hover",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal .vertical-tab-content button:not(.mod-cta)",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"hover"
+			]
+		},
+		{
+			"id": "inwindow.modal.button-cta.hover",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "button-cta",
+			"state": "hover",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal button.mod-cta",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"hover"
+			]
+		},
+		{
+			"id": "inwindow.modal.text-input.hover",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "text-input",
+			"state": "hover",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal .vertical-tab-content input[type=text]",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"hover"
+			]
+		},
+		{
+			"id": "inwindow.modal.clickable-icon.hover",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "clickable-icon",
+			"state": "hover",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal .vertical-tab-content .clickable-icon",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"hover"
+			]
+		},
+		{
+			"id": "inwindow.modal.hotkey.hover",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "hotkey",
+			"state": "hover",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal .setting-hotkey",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
+			"pseudo": [
+				"hover"
+			]
+		},
+		{
+			"id": "inwindow.modal.search-clear.hover",
+			"scene": "qc.settings-in-window",
+			"surface": "settings",
+			"component": "clickable-icon",
+			"state": "hover",
+			"source": "catalog:settings-hover-states-in-window",
+			"target": ".modal .search-input-container.mod-hotkey .search-input-clear-button",
+			"note": "Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them",
 			"pseudo": [
 				"hover"
 			]
@@ -14583,7 +15004,7 @@
 			"surface": "settings",
 			"component": "workspace",
 			"state": "default",
-			"source": "catalog:settings-hover-states",
+			"source": "catalog:settings-hover-states-in-window",
 			"target": ".app-container"
 		},
 		{
@@ -14801,16 +15222,7 @@
 			"state": "default",
 			"source": "app:setting-tab:about",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"General\""
-		},
-		{
-			"id": "settings.about.end",
-			"scene": "settings.about",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:about",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"General\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.appearance",
@@ -14820,16 +15232,7 @@
 			"state": "default",
 			"source": "app:setting-tab:appearance",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Appearance\""
-		},
-		{
-			"id": "settings.appearance.end",
-			"scene": "settings.appearance",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:appearance",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Appearance\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.interface",
@@ -14839,16 +15242,7 @@
 			"state": "default",
 			"source": "app:setting-tab:interface",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Interface\""
-		},
-		{
-			"id": "settings.interface.end",
-			"scene": "settings.interface",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:interface",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Interface\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.editor",
@@ -14858,16 +15252,7 @@
 			"state": "default",
 			"source": "app:setting-tab:editor",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Editor\""
-		},
-		{
-			"id": "settings.editor.end",
-			"scene": "settings.editor",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:editor",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Editor\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.file",
@@ -14877,16 +15262,7 @@
 			"state": "default",
 			"source": "app:setting-tab:file",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Files and links\""
-		},
-		{
-			"id": "settings.file.end",
-			"scene": "settings.file",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:file",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Files and links\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.hotkeys",
@@ -14896,16 +15272,7 @@
 			"state": "default",
 			"source": "app:setting-tab:hotkeys",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Hotkeys\""
-		},
-		{
-			"id": "settings.hotkeys.end",
-			"scene": "settings.hotkeys",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:hotkeys",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Hotkeys\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.keychain",
@@ -14915,16 +15282,7 @@
 			"state": "default",
 			"source": "app:setting-tab:keychain",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Keychain\""
-		},
-		{
-			"id": "settings.keychain.end",
-			"scene": "settings.keychain",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:keychain",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Keychain\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.plugins",
@@ -14934,16 +15292,7 @@
 			"state": "default",
 			"source": "app:setting-tab:plugins",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Core plugins\""
-		},
-		{
-			"id": "settings.plugins.end",
-			"scene": "settings.plugins",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:plugins",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Core plugins\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.community-plugins",
@@ -14953,16 +15302,7 @@
 			"state": "default",
 			"source": "app:setting-tab:community-plugins",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Community plugins\""
-		},
-		{
-			"id": "settings.community-plugins.end",
-			"scene": "settings.community-plugins",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:community-plugins",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Community plugins\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.switcher",
@@ -14972,16 +15312,7 @@
 			"state": "default",
 			"source": "app:setting-tab:switcher",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Quick switcher\""
-		},
-		{
-			"id": "settings.switcher.end",
-			"scene": "settings.switcher",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:switcher",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Quick switcher\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.sync",
@@ -14991,16 +15322,7 @@
 			"state": "default",
 			"source": "app:setting-tab:sync",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Sync\""
-		},
-		{
-			"id": "settings.sync.end",
-			"scene": "settings.sync",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:sync",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Sync\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.backlink",
@@ -15010,16 +15332,7 @@
 			"state": "default",
 			"source": "app:setting-tab:backlink",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Backlinks\""
-		},
-		{
-			"id": "settings.backlink.end",
-			"scene": "settings.backlink",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:backlink",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Backlinks\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.canvas",
@@ -15029,16 +15342,7 @@
 			"state": "default",
 			"source": "app:setting-tab:canvas",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Canvas\""
-		},
-		{
-			"id": "settings.canvas.end",
-			"scene": "settings.canvas",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:canvas",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Canvas\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.page-preview",
@@ -15048,16 +15352,7 @@
 			"state": "default",
 			"source": "app:setting-tab:page-preview",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Page preview\""
-		},
-		{
-			"id": "settings.page-preview.end",
-			"scene": "settings.page-preview",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:page-preview",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Page preview\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.daily-notes",
@@ -15067,16 +15362,7 @@
 			"state": "default",
 			"source": "app:setting-tab:daily-notes",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Daily notes\""
-		},
-		{
-			"id": "settings.daily-notes.end",
-			"scene": "settings.daily-notes",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:daily-notes",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Daily notes\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.templates",
@@ -15086,16 +15372,7 @@
 			"state": "default",
 			"source": "app:setting-tab:templates",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Templates\""
-		},
-		{
-			"id": "settings.templates.end",
-			"scene": "settings.templates",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:templates",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Templates\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.note-composer",
@@ -15105,16 +15382,7 @@
 			"state": "default",
 			"source": "app:setting-tab:note-composer",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Note composer\""
-		},
-		{
-			"id": "settings.note-composer.end",
-			"scene": "settings.note-composer",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:note-composer",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Note composer\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.command-palette",
@@ -15124,16 +15392,7 @@
 			"state": "default",
 			"source": "app:setting-tab:command-palette",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Command palette\""
-		},
-		{
-			"id": "settings.command-palette.end",
-			"scene": "settings.command-palette",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:command-palette",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Command palette\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.zk-prefixer",
@@ -15143,16 +15402,7 @@
 			"state": "default",
 			"source": "app:setting-tab:zk-prefixer",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Unique note creator\""
-		},
-		{
-			"id": "settings.zk-prefixer.end",
-			"scene": "settings.zk-prefixer",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:zk-prefixer",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Unique note creator\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.file-recovery",
@@ -15162,16 +15412,7 @@
 			"state": "default",
 			"source": "app:setting-tab:file-recovery",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"File recovery\""
-		},
-		{
-			"id": "settings.file-recovery.end",
-			"scene": "settings.file-recovery",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:file-recovery",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"File recovery\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "settings.webviewer",
@@ -15181,16 +15422,7 @@
 			"state": "default",
 			"source": "app:setting-tab:webviewer",
 			"target": ".modal.mod-settings",
-			"note": "Settings tab \"Web viewer\""
-		},
-		{
-			"id": "settings.webviewer.end",
-			"scene": "settings.webviewer",
-			"surface": "settings",
-			"component": "settings-page",
-			"state": "scrolled-to-end",
-			"source": "app:setting-tab:webviewer",
-			"target": ".modal.mod-settings"
+			"note": "Settings tab \"Web viewer\", scrolled top to bottom; the screenshot stacks every position"
 		},
 		{
 			"id": "command.app:migrate-frontmatter",
@@ -15848,7 +16080,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.macos.589",
@@ -15858,7 +16091,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.windows.591",
@@ -15868,7 +16102,8 @@
 			"state": "windows",
 			"source": "app:app.css:1",
 			"target": ".mod-windows",
-			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture"
 		},
 		{
 			"id": "platform.macos.595",
@@ -15878,7 +16113,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos.is-fullscreen",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.windows.596",
@@ -15888,7 +16124,8 @@
 			"state": "windows",
 			"source": "app:app.css:1",
 			"target": ".mod-windows.is-fullscreen",
-			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture"
 		},
 		{
 			"id": "platform.macos.827",
@@ -15898,7 +16135,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos:not(.is-mobile) .mod-settings",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.macos.1132",
@@ -15908,7 +16146,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos .titlebar-button-container",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.macos.1134",
@@ -15918,7 +16157,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos .titlebar-button-container.mod-left",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.macos.1145",
@@ -15928,7 +16168,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos .titlebar-button",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.macos.1147",
@@ -15938,7 +16179,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-macos .titlebar",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.windows.1148",
@@ -15948,7 +16190,8 @@
 			"state": "windows",
 			"source": "app:app.css:1",
 			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-windows .titlebar",
-			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture"
 		},
 		{
 			"id": "platform.windows.1150",
@@ -15959,6 +16202,7 @@
 			"source": "app:app.css:1",
 			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-windows .titlebar-button.mod-back",
 			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture",
 			"excluded": "Windows draws back/forward buttons in its titlebar; the Linux window has no .titlebar-button.mod-back/.mod-forward (see fixture chrome.titlebar), and swapping the body class cannot add them"
 		},
 		{
@@ -15970,6 +16214,7 @@
 			"source": "app:app.css:1",
 			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-windows .titlebar-button.mod-forward",
 			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture",
 			"excluded": "Windows draws back/forward buttons in its titlebar; the Linux window has no .titlebar-button.mod-back/.mod-forward (see fixture chrome.titlebar), and swapping the body class cannot add them"
 		},
 		{
@@ -15980,7 +16225,8 @@
 			"state": "windows",
 			"source": "app:app.css:1",
 			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-windows .titlebar-text",
-			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture"
 		},
 		{
 			"id": "platform.windows.1156",
@@ -15990,7 +16236,8 @@
 			"state": "windows",
 			"source": "app:app.css:1",
 			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-windows .titlebar-button-container",
-			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture"
 		},
 		{
 			"id": "platform.windows.1159",
@@ -16000,7 +16247,8 @@
 			"state": "windows",
 			"source": "app:app.css:1",
 			"target": ".mod-windows .titlebar-button-container",
-			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture"
 		},
 		{
 			"id": "platform.windows.1161",
@@ -16010,7 +16258,8 @@
 			"state": "windows",
 			"source": "app:app.css:1",
 			"target": ".mod-windows .titlebar-button",
-			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture"
 		},
 		{
 			"id": "platform.windows.1163",
@@ -16020,7 +16269,8 @@
 			"state": "windows",
 			"source": "app:app.css:1",
 			"target": ".mod-windows .titlebar-button.mod-logo",
-			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture"
 		},
 		{
 			"id": "platform.windows.1165",
@@ -16030,7 +16280,8 @@
 			"state": "windows",
 			"source": "app:app.css:1",
 			"target": ".mod-windows .titlebar-button.mod-close:hover",
-			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture"
 		},
 		{
 			"id": "platform.windows.1167",
@@ -16041,6 +16292,7 @@
 			"source": "app:app.css:1",
 			"target": ".mod-windows .titlebar-button.mod-close:hover .svg-icon",
 			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-windows on a Linux capture",
 			"excluded": "on Linux the window buttons hold a plain inline <svg> without .svg-icon (see fixture chrome.titlebar-button.hover); Windows builds its own buttons, which swapping the body class cannot reproduce"
 		},
 		{
@@ -16052,6 +16304,7 @@
 			"source": "app:app.css:1",
 			"target": ".mod-macos.is-hidden-frameless:not(.is-popout-window,.is-mobile) .mod-sidedock .sidebar-toggle-button.mod-secondary",
 			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture",
 			"excluded": "on Linux Obsidian puts .sidebar-toggle-button.mod-secondary outside .mod-sidedock; the macOS placement is built by app.js on macOS only, which swapping the body class cannot reproduce"
 		},
 		{
@@ -16062,7 +16315,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos.is-hidden-frameless:not(.is-popout-window,.is-mobile) .sidebar-toggle-button.mod-secondary",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.macos.1418",
@@ -16072,7 +16326,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos.is-hidden-frameless:not(.is-popout-window,.is-mobile).mod-rtl .sidebar-toggle-button.mod-secondary",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.macos.1419",
@@ -16082,7 +16337,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos.is-hidden-frameless:not(.is-popout-window,.is-mobile):not(.mod-rtl) .workspace .workspace-tabs.mod-top-right-space .workspace-tab-header-container",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.macos.1420",
@@ -16092,7 +16348,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos.is-hidden-frameless:not(.is-popout-window,.is-mobile).mod-rtl .workspace .workspace-tabs.mod-top-left-space .workspace-tab-header-container",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		},
 		{
 			"id": "platform.macos.1637",
@@ -16102,7 +16359,8 @@
 			"state": "macos",
 			"source": "app:app.css:1",
 			"target": ".mod-macos .lucide-more-vertical",
-			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture).",
+			"synthetic": "body.mod-linux swapped for mod-macos on a Linux capture"
 		}
 	],
 	"themeSelectors": [
@@ -18080,7 +18338,9 @@
 			"planned": [
 				"modal.vertical-tab.active",
 				"modal.vertical-tab.hover",
-				"modal.vertical-tab.active.hover"
+				"modal.vertical-tab.active.hover",
+				"inwindow.modal.vertical-tab.hover",
+				"inwindow.modal.vertical-tab.active.hover"
 			]
 		},
 		{
@@ -18134,7 +18394,9 @@
 				"modal.button",
 				"modal.button-cta",
 				"modal.button.hover",
-				"modal.button-cta.hover"
+				"modal.button-cta.hover",
+				"inwindow.modal.button.hover",
+				"inwindow.modal.button-cta.hover"
 			]
 		},
 		{
@@ -18144,7 +18406,9 @@
 			"context": "",
 			"planned": [
 				"modal.button.hover",
-				"modal.button-cta.hover"
+				"modal.button-cta.hover",
+				"inwindow.modal.button.hover",
+				"inwindow.modal.button-cta.hover"
 			]
 		},
 		{
@@ -18166,7 +18430,8 @@
 			"planned": [
 				"modal.hotkey",
 				"qc.hotkeys.conflict",
-				"modal.hotkey.hover"
+				"modal.hotkey.hover",
+				"inwindow.modal.hotkey.hover"
 			]
 		},
 		{
@@ -18175,7 +18440,8 @@
 			"selector": ".modal .setting-hotkey:hover",
 			"context": "",
 			"planned": [
-				"modal.hotkey.hover"
+				"modal.hotkey.hover",
+				"inwindow.modal.hotkey.hover"
 			]
 		},
 		{
@@ -18441,7 +18707,8 @@
 			"planned": [
 				"prompt.clear-button.hover",
 				"prompt.clear-button",
-				"modal.search-clear.hover"
+				"modal.search-clear.hover",
+				"inwindow.modal.search-clear.hover"
 			]
 		},
 		{
@@ -18451,7 +18718,8 @@
 			"context": "",
 			"planned": [
 				"prompt.clear-button.hover",
-				"modal.search-clear.hover"
+				"modal.search-clear.hover",
+				"inwindow.modal.search-clear.hover"
 			]
 		},
 		{
@@ -18894,7 +19162,9 @@
 			"line": 1002,
 			"selector": ".edit-block-button",
 			"context": "",
-			"planned": []
+			"planned": [
+				"qc.edit-block-button.hover"
+			]
 		},
 		{
 			"id": "1008:0",
@@ -18910,7 +19180,9 @@
 			"line": 1008,
 			"selector": ".edit-block-button:hover",
 			"context": "",
-			"planned": []
+			"planned": [
+				"qc.edit-block-button.hover"
+			]
 		},
 		{
 			"id": "1015:0",
@@ -19551,8 +19823,7 @@
 			"name": "cdata"
 		},
 		{
-			"name": "changelog-item",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"name": "changelog-item"
 		},
 		{
 			"name": "char"
@@ -19581,14 +19852,14 @@
 		},
 		{
 			"name": "close-button",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "built only in the mobile tab switcher card (.mobile-tab-preview, app.js class for the mobile tab switcher)"
 		},
 		{
 			"name": "close-icon"
 		},
 		{
 			"name": "closeButton",
-			"excluded": "pdf.js viewer dialogs and modes that Obsidian's PDF view never exposes (pdf.js alt-text and AI-model dialogs, message bar, presentation mode, copy-all)"
+			"excluded": "no shipped Obsidian 1.15.1 code (app.js, starter.js, pdf.js viewer, libs) creates this class; only Obsidian's bundled pdf.js viewer CSS styles it"
 		},
 		{
 			"name": "cm-active"
@@ -19930,7 +20201,8 @@
 			"name": "cm-selection"
 		},
 		{
-			"name": "cm-selectionBackground"
+			"name": "cm-selectionBackground",
+			"excluded": "never drawn on desktop: Obsidian's editors keep the browser's own selection (checked a plain selection and a vim visual selection in Kitchen sink.md: .cm-selectionLayer stays empty); the class exists only in CodeMirror's bundled drawSelection code"
 		},
 		{
 			"name": "cm-selectionLayer"
@@ -20238,7 +20510,7 @@
 		},
 		{
 			"name": "connecting-line",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync version history (version-group-container); needs a signed-in Sync vault"
 		},
 		{
 			"name": "constant"
@@ -20257,7 +20529,7 @@
 		},
 		{
 			"name": "copyAll",
-			"excluded": "pdf.js viewer dialogs and modes that Obsidian's PDF view never exposes (pdf.js alt-text and AI-model dialogs, message bar, presentation mode, copy-all)"
+			"excluded": "pdf.js sets it on the viewer only while a select-all copy is in flight and removes it when the copy finishes; no stable frame to capture"
 		},
 		{
 			"name": "debug-textarea"
@@ -20267,11 +20539,11 @@
 		},
 		{
 			"name": "description",
-			"excluded": "pdf.js viewer dialogs and modes that Obsidian's PDF view never exposes (pdf.js alt-text and AI-model dialogs, message bar, presentation mode, copy-all)"
+			"excluded": "no shipped Obsidian 1.15.1 code (app.js, starter.js, pdf.js viewer, libs) creates this class; only Obsidian's bundled pdf.js viewer CSS styles it"
 		},
 		{
 			"name": "dialog",
-			"excluded": "pdf.js viewer dialogs and modes that Obsidian's PDF view never exposes (pdf.js alt-text and AI-model dialogs, message bar, presentation mode, copy-all)"
+			"excluded": "no shipped Obsidian 1.15.1 code (app.js, starter.js, pdf.js viewer, libs) creates this class; only Obsidian's bundled pdf.js viewer CSS styles it"
 		},
 		{
 			"name": "dialogButtonsGroup",
@@ -20365,7 +20637,7 @@
 		},
 		{
 			"name": "dummyPage",
-			"excluded": "pdf.js viewer dialogs and modes that Obsidian's PDF view never exposes (pdf.js alt-text and AI-model dialogs, message bar, presentation mode, copy-all)"
+			"excluded": "pdf.js adds it only in presentation mode (isInPresentationMode); Obsidian's PDF view has no presentation mode command or button"
 		},
 		{
 			"name": "el-blockquote"
@@ -20456,23 +20728,23 @@
 		},
 		{
 			"name": "feedback-banner",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone"
 		},
 		{
 			"name": "feedback-banner-container",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone"
 		},
 		{
 			"name": "feedback-banner-content",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone"
 		},
 		{
 			"name": "feedback-banner-dismiss-button",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone"
 		},
 		{
 			"name": "feedback-banner-title",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone"
 		},
 		{
 			"name": "file-browser-description"
@@ -21075,11 +21347,11 @@
 		},
 		{
 			"name": "is-complete",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "mobile only: set on the mobile left sidebar toggle after layout (u.leftSidebarToggleEl, mobile navbar)"
 		},
 		{
 			"name": "is-connected",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync remote vault list (vault-list-item-title); needs a signed-in Sync account"
 		},
 		{
 			"name": "is-connecting"
@@ -21247,7 +21519,7 @@
 		},
 		{
 			"name": "is-sliding-sidebar",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "mobile only: set on the mobile navbar while a sidebar drawer slides"
 		},
 		{
 			"name": "is-swiping",
@@ -21338,11 +21610,11 @@
 		},
 		{
 			"name": "list-item-actions",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync remote vault list; needs a signed-in Sync account"
 		},
 		{
 			"name": "list-item-desc",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync remote vault list; needs a signed-in Sync account"
 		},
 		{
 			"name": "list-item-part"
@@ -21367,7 +21639,7 @@
 		},
 		{
 			"name": "logo",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "no shipped Obsidian 1.15.1 code (app.js, starter.js, pdf.js viewer, libs) creates this class; only Obsidian's bundled pdf.js viewer CSS styles it"
 		},
 		{
 			"name": "logo-full"
@@ -21410,7 +21682,7 @@
 		},
 		{
 			"name": "mainContainer",
-			"excluded": "pdf.js viewer dialogs and modes that Obsidian's PDF view never exposes (pdf.js alt-text and AI-model dialogs, message bar, presentation mode, copy-all)"
+			"excluded": "no shipped Obsidian 1.15.1 code (app.js, starter.js, pdf.js viewer, libs) creates this class; only Obsidian's bundled pdf.js viewer CSS styles it"
 		},
 		{
 			"name": "markdown-embed"
@@ -21506,7 +21778,7 @@
 		},
 		{
 			"name": "messageBar",
-			"excluded": "pdf.js viewer dialogs and modes that Obsidian's PDF view never exposes (pdf.js alt-text and AI-model dialogs, message bar, presentation mode, copy-all)"
+			"excluded": "no shipped Obsidian 1.15.1 code (app.js, starter.js, pdf.js viewer, libs) creates this class; only Obsidian's bundled pdf.js viewer CSS styles it"
 		},
 		{
 			"name": "metadata-add-button"
@@ -21793,7 +22065,7 @@
 		},
 		{
 			"name": "mod-add-item",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "mobile only: app.js adds it inside if (Platform.isMobile) for list settings"
 		},
 		{
 			"name": "mod-animate"
@@ -22119,7 +22391,7 @@
 		},
 		{
 			"name": "mod-login",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "starter.js sign-in panel of the vault chooser (open a Sync vault); the capture drives the main window only and never opens the vault chooser or account sign-in"
 		},
 		{
 			"name": "mod-logo"
@@ -22255,7 +22527,7 @@
 		},
 		{
 			"name": "mod-selectable",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync deleted-files and file-history list rows (sync-file-tree-container); need a signed-in Sync vault"
 		},
 		{
 			"name": "mod-selection"
@@ -22265,7 +22537,7 @@
 		},
 		{
 			"name": "mod-sheet",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "phone only: set when Platform.isPhone shows menus and suggestions as sheets"
 		},
 		{
 			"name": "mod-sidebar-layout"
@@ -22299,7 +22571,7 @@
 		},
 		{
 			"name": "mod-sync-log",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync log modal; Sync must be set up"
 		},
 		{
 			"name": "mod-system-rtl",
@@ -22375,7 +22647,7 @@
 		},
 		{
 			"name": "mod-working",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync status bar icon; Sync must be set up"
 		},
 		{
 			"name": "mod-zoomed-out"
@@ -22416,7 +22688,7 @@
 		},
 		{
 			"name": "modal-nav-action",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "phone only: built inside Platform.isPhone branches of modals"
 		},
 		{
 			"name": "modal-setting-back-button",
@@ -22593,7 +22865,7 @@
 		},
 		{
 			"name": "outline",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "no shipped Obsidian 1.15.1 code (app.js, starter.js, pdf.js viewer, libs) creates this class; only Obsidian's bundled pdf.js viewer CSS styles it (pdf.js only uses \"outline\" as a sidebar mode name)"
 		},
 		{
 			"name": "page"
@@ -22610,11 +22882,11 @@
 		},
 		{
 			"name": "password-item",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Publish site password list; needs a Publish site"
 		},
 		{
 			"name": "passwords-container",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Publish site password list; needs a Publish site"
 		},
 		{
 			"name": "pdf-annotation-modal",
@@ -22714,7 +22986,7 @@
 		},
 		{
 			"name": "pdfPresentationMode",
-			"excluded": "pdf.js viewer dialogs and modes that Obsidian's PDF view never exposes (pdf.js alt-text and AI-model dialogs, message bar, presentation mode, copy-all)"
+			"excluded": "pdf.js presentation mode; Obsidian's PDF view has no presentation mode command or button"
 		},
 		{
 			"name": "pdfViewer"
@@ -22918,7 +23190,7 @@
 		},
 		{
 			"name": "radio",
-			"excluded": "pdf.js viewer dialogs and modes that Obsidian's PDF view never exposes (pdf.js alt-text and AI-model dialogs, message bar, presentation mode, copy-all)"
+			"excluded": "no shipped Obsidian 1.15.1 code (app.js, starter.js, pdf.js viewer, libs) creates this class; only Obsidian's bundled pdf.js viewer CSS styles it (pdf.js sets type=radio on inputs, never the class)"
 		},
 		{
 			"name": "radioButton"
@@ -23005,7 +23277,7 @@
 		},
 		{
 			"name": "search-input-suggest-button",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "mobile only: built inside if (Platform.isMobile) in search"
 		},
 		{
 			"name": "search-params"
@@ -23441,7 +23713,7 @@
 		},
 		{
 			"name": "suggestion-bg",
-			"excluded": "mobile app only: app.js builds it only when Platform.isMobile / isPhone (mobile feedback banner, phone sheets, mobile navbar, mobile tabs, quick actions, onboarding)"
+			"excluded": "phone sheets only: the backdrop is shown only when a suggestion opens as a sheet (isShownAsSheet = Platform.isPhone)"
 		},
 		{
 			"name": "suggestion-container"
@@ -23754,19 +24026,19 @@
 		},
 		{
 			"name": "tree-list",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Publish navigation editor; needs a Publish site"
 		},
 		{
 			"name": "tree-list-action",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Publish navigation editor; needs a Publish site"
 		},
 		{
 			"name": "tree-list-header",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Publish navigation editor; needs a Publish site"
 		},
 		{
 			"name": "tree-list-title",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Publish navigation editor; needs a Publish site"
 		},
 		{
 			"name": "u-break-word"
@@ -23780,7 +24052,7 @@
 		},
 		{
 			"name": "u-faded-text",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync deleted-files / history modal header; needs a signed-in Sync vault"
 		},
 		{
 			"name": "u-muted"
@@ -23814,23 +24086,23 @@
 		},
 		{
 			"name": "vault-list-item-desc",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync remote vault list; needs a signed-in Sync account"
 		},
 		{
 			"name": "vault-list-item-icon",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync remote vault list; needs a signed-in Sync account"
 		},
 		{
 			"name": "vault-list-item-title",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync remote vault list; needs a signed-in Sync account"
 		},
 		{
 			"name": "version-group-container",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync version history; needs a signed-in Sync vault"
 		},
 		{
 			"name": "version-group-item",
-			"excluded": "Obsidian Sync / Publish / account screens that need a signed-in account with a subscription (the capture runs signed out)"
+			"excluded": "Sync version history; needs a signed-in Sync vault"
 		},
 		{
 			"name": "vertical-tab-content"

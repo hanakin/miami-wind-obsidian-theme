@@ -1,5 +1,5 @@
 // Step 2: captures every checklist item from the real app into capture/fixtures/.
-// Usage: bun run capture:run [--windowed] [--only <id prefix>]...
+// Usage: bun run capture:run [--windowed] [--only <id prefix>]... [--until <scene id>]
 // Headless by default; --windowed runs only the scenes that need a real window on the desktop.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { Page } from "playwright";
@@ -28,6 +28,8 @@ const checklist = JSON.parse(readFileSync(`${CAPTURE}checklist.json`, "utf8")) a
 };
 const only = process.argv.flatMap((a, i) => (process.argv[i - 1] === "--only" ? [a] : []));
 const windowed = process.argv.includes("--windowed");
+// --until <scene id>: stop after that scene (to reproduce order-dependent failures quickly).
+const until = process.argv[process.argv.indexOf("--until") + 1];
 const wanted = (id: string) => only.length === 0 || only.some((p) => id.startsWith(p));
 
 const FIXTURES = `${CAPTURE}fixtures/`;
@@ -47,7 +49,7 @@ const previous: FixturesFile | undefined = existsSync(fixturesPath)
 	? (JSON.parse(readFileSync(fixturesPath, "utf8")) as FixturesFile)
 	: undefined;
 const censusPath = `${CAPTURE}class-census.json`;
-const fullRun = !only.length && !windowed;
+const fullRun = !only.length && !windowed && !process.argv.includes("--until");
 const census = new Set<string>(
 	!fullRun && existsSync(censusPath)
 		? (JSON.parse(readFileSync(censusPath, "utf8")) as string[])
@@ -90,6 +92,7 @@ try {
 		await closeExtraPages(session, main);
 		done += items.length;
 		process.stdout.write(`\r${done} items, ${failed.size} failed   `);
+		if (process.argv.includes("--until") && scene.id === until) break;
 	}
 	process.stdout.write("\n");
 } finally {

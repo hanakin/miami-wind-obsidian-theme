@@ -219,10 +219,19 @@ const editorQc: Scene = {
 			target: leaf(".markdown-reading-view .is-flashing"),
 			expect: ".is-flashing",
 			before: async (ctx) => {
-				await ctx.open("Markdown/Links.md", "reading");
+				// The folded-heading item leaves Headings.md folded (Obsidian saves folds); unfold it.
+				await ctx.open("Markdown/Headings.md", "reading");
 				await ctx.js(
-					"app.workspace.openLinkText('Headings#Heading 3', 'Markdown/Links.md', false); for (let i = 0; i < 40 && !document.querySelector('.is-flashing'); i++) await sleep(50);",
+					"for (const i of cap.ROOTS.leaf().querySelectorAll('.markdown-reading-view .is-collapsed > .heading-collapse-indicator, .markdown-reading-view .heading-collapse-indicator.is-collapsed')) { i.click(); await sleep(200); }",
 				);
+				for (let i = 0; i < 3; i++) {
+					await ctx.open("Markdown/Links.md", "reading", { newLeaf: i > 0 });
+					const r = await ctx.js<string>(
+						"app.workspace.openLinkText('Headings#Heading 3', 'Markdown/Links.md', false); for (let i = 0; i < 40 && !document.querySelector('.is-flashing'); i++) await sleep(50); const l = app.workspace.activeLeaf; return document.querySelector('.is-flashing') ? 'ok' : JSON.stringify({ active: l?.view?.getViewType?.(), file: l?.view?.file?.path, mode: l?.view?.getMode?.() });",
+					);
+					if (r === "ok") break;
+					console.error(`\nqc.flash try ${i}: ${r}`);
+				}
 			},
 			note: "Opening a link to a heading flashes the heading for about a second.",
 		},
@@ -356,7 +365,7 @@ const dragQc: Scene = {
 			before: async (ctx) => {
 				await endDrag(ctx);
 				await ctx.js(
-					"const l = app.workspace.getLeaf(false); await l.setViewState({ type: 'bases', state: { file: 'Base.base', viewName: 'Board' }, active: true }); app.workspace.setActiveLeaf(l, { focus: true }); await sleep(1500);",
+					"const l = app.workspace.getMostRecentLeaf(app.workspace.rootSplit) ?? app.workspace.getLeaf('tab'); await l.setViewState({ type: 'bases', state: { file: 'Base.base', viewName: 'Board' }, active: true }); app.workspace.setActiveLeaf(l, { focus: true }); await sleep(1500);",
 				);
 				const [x, y] = await center(ctx, leaf(".bases-kanban-card"));
 				await ctx.page.mouse.move(x, y);

@@ -83,7 +83,12 @@ export const INPAGE = String.raw`
 		return el;
 	}
 	async function open(file, mode, newLeaf) {
-		const leaf = app.workspace.getLeaf(newLeaf ? "tab" : false);
+		// Always open in the main window's root split: an earlier scene can leave a leaf in a
+		// popout window, which getLeaf(false) would otherwise reuse.
+		const ws = app.workspace;
+		let leaf = ws.getMostRecentLeaf(ws.rootSplit);
+		if (leaf) ws.setActiveLeaf(leaf, { focus: false });
+		if (!leaf || newLeaf || leaf.pinned) leaf = ws.getLeaf("tab");
 		const state = mode === "reading" ? { file, mode: "preview" } : { file, mode: "source", source: mode === "source" };
 		const type = file.endsWith(".md") ? "markdown" : app.viewRegistry.getTypeByExtension(file.split(".").pop());
 		await leaf.setViewState({ type, state, active: true });
@@ -189,6 +194,24 @@ export const INPAGE = String.raw`
 	 * their own ancestor) at the middle of that visible part. Ancestors of the target count when the
 	 * target itself is seen. Calls accumulate (scrolled screenshots).
 	 */
+	/** A layer that paints nothing: no background, border, shadow, outline or own text. */
+	function clear(win, e) {
+		const cs = win.getComputedStyle(e);
+		const none = (c) => c === "transparent" || /rgba\([^)]*,\s*0\)$/.test(c);
+		if (!none(cs.backgroundColor) || cs.backgroundImage !== "none" || cs.boxShadow !== "none") return false;
+		if (["Top", "Right", "Bottom", "Left"].some((k) => parseFloat(cs["border" + k + "Width"]) > 0 && !none(cs["border" + k + "Color"]))) return false;
+		if (cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0) return false;
+		for (const pe of ["::before", "::after"]) { const p = win.getComputedStyle(e, pe); if (p.content !== "none" && p.content !== "normal") return false; }
+		return ![...e.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) && !["img", "svg", "canvas", "video", "iframe", "input", "textarea", "select"].includes(e.localName);
+	}
+	/** True when e (or its subtree) is the topmost painted thing at x,y: layers above it must be clear. */
+	function topmost(doc, win, x, y, e) {
+		for (const h of doc.elementsFromPoint(x, y)) {
+			if (related(h, e)) return true;
+			if (!clear(win, h)) return false;
+		}
+		return false;
+	}
 	function witness(el, clip) {
 		const st = window.__cap;
 		const doc = el.ownerDocument;
@@ -209,8 +232,7 @@ export const INPAGE = String.raw`
 				const b = box(e);
 				const v = cs.display === "contents" ? null : inter(b, cl);
 				if (v && cs.visibility === "visible") {
-					const hit = doc.elementFromPoint(v[0] + v[2] / 2, v[1] + v[3] / 2);
-					if (hit && related(hit, e)) { st.seen.add(e); n++; }
+					if (topmost(doc, win, v[0] + v[2] / 2, v[1] + v[3] / 2, e)) { st.seen.add(e); n++; }
 				}
 				let next = cl;
 				if (cs.overflowX !== "visible" || cs.overflowY !== "visible") next = inter(cl, b);

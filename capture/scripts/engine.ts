@@ -196,6 +196,11 @@ export async function captureItem(
 ): Promise<ItemResult> {
 	const ctx = makeCtx(page);
 	if (item.media) await cdp.send("Emulation.setEmulatedMedia", item.media);
+	// A text selection left by an earlier item would repaint text with ::selection colors; drop it
+	// unless it sits in an editor or field (contexts and items that select text on purpose).
+	await page.evaluate(
+		"(() => { const s = getSelection(); if (!s || s.isCollapsed || !s.rangeCount) return; const n = s.getRangeAt(0).commonAncestorContainer; const e = n.nodeType === 1 ? n : n.parentElement; if (!e?.closest('[contenteditable=true], input, textarea')) s.removeAllRanges(); })()",
+	);
 	if (item.before) await item.before(ctx);
 	const target: Target = item.target;
 	const found = (await page.evaluate(
@@ -209,7 +214,7 @@ export async function captureItem(
 	try {
 		let painted: Record<string, number> = {};
 		let styleChanged: number | null = null;
-		const styleProps: string[] = [];
+		let styleProps: string[] = [];
 		if (pseudo.length) {
 			const on = JSON.stringify(item.pseudoOn ?? target);
 			const ok = (await page.evaluate(
@@ -231,8 +236,13 @@ export async function captureItem(
 				}
 			}
 			await sleep(200);
-			if (!item.pointer)
-				styleChanged = (await page.evaluate("cap.styleChanges()")) as number | null;
+			const d = item.pointer
+				? null
+				: ((await page.evaluate("cap.styleChanges()")) as { n: number; props: string[] } | null);
+			if (d) {
+				styleChanged = d.n;
+				styleProps = d.props;
+			}
 			painted = await stateRules(
 				cdp,
 				node,

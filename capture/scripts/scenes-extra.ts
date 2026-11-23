@@ -306,6 +306,11 @@ const editorExtras: Scene = {
 			full: true,
 			before: async (ctx) => {
 				await ctx.open("Markdown/Embeds.md", "reading");
+				// Reading view only renders sections near the viewport; an earlier scene may have left
+				// this note scrolled past the image.
+				await ctx.js(
+					"const v = app.workspace.activeLeaf.view; const n = v.data.split('\\n').findIndex((l) => l.includes('![[sample-image.png')); v.currentMode.applyScroll(Math.max(0, n - 1)); await sleep(600);",
+				);
 				for (let i = 0; i < 5; i++) {
 					const b = await ctx.js<number[] | null>(
 						"if (document.querySelector('.lightbox')) return null; const e = cap.ROOTS.leaf().querySelector('.markdown-reading-view .image-embed.is-loaded img'); if (!e) { await sleep(400); return [0, 0]; } e.scrollIntoView({ block: 'center' }); await sleep(300); const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2];",
@@ -314,6 +319,10 @@ const editorExtras: Scene = {
 					if (b[0]) await ctx.page.mouse.click(b[0], b[1] ?? 0);
 					await ctx.sleep(700);
 				}
+				const state = await ctx.js<string>(
+					"const w = app.workspace; const l = w.activeLeaf; return JSON.stringify({ lightbox: !!document.querySelector('.lightbox'), active: l?.view?.getViewType?.(), file: l?.view?.file?.path, mode: l?.view?.getMode?.(), imgs: cap.ROOTS.leaf()?.querySelectorAll('.image-embed img').length, embeds: [...(cap.ROOTS.leaf()?.querySelectorAll('.internal-embed') ?? [])].slice(0, 4).map((e) => e.className + ':' + e.getAttribute('src')).join(' | '), png: !!app.vault.getAbstractFileByPath('Attachments/sample-image.png'), headings: !!app.vault.getAbstractFileByPath('Markdown/Headings.md'), files: app.vault.getFiles().length, floating: w.floatingSplit?.children?.length ?? 0, docFocus: document.hasFocus(), activeDocMain: activeDocument === document });",
+				);
+				if (!state.includes('"lightbox":true')) console.error(`\nlightbox not open: ${state}`);
 			},
 		},
 		{

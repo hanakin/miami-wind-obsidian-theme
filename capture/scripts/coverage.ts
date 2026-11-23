@@ -391,15 +391,20 @@ for (const ids of [...bySha.values()].filter((v) => v.length > 1)) {
 					why.add(
 						"the differing states paint nothing new (no rule styles them, or forcing them changed no painted style)",
 					);
-				for (const z of [x, y])
-					if (!sameState && !quiet(z))
-						why.add(
-							`${z.id}: the state applies (${Object.entries(byId.get(z.id)?.evidence?.painted ?? {})
-								.map(([k, n]) => `${n} :${k} rule${n === 1 ? "" : "s"}`)
-								.join(
-									", ",
-								)}) but its changes do not show in this shot (${(byId.get(z.id)?.evidence?.styleProps ?? []).join("; ")})`,
-						);
+				const desc = (z: (typeof facts)[number]) =>
+					`${Object.entries(byId.get(z.id)?.evidence?.painted ?? {})
+						.map(([k, n]) => `${n} :${k} rule${n === 1 ? "" : "s"}`)
+						.join(", ")}; changed: ${(byId.get(z.id)?.evidence?.styleProps ?? []).join("; ")}`;
+				if (!sameState && !quiet(x) && !quiet(y))
+					why.add(
+						`${x.id} and ${y.id} paint the same look (${x.id}: ${desc(x)}) (${y.id}: ${desc(y)})`,
+					);
+				else
+					for (const z of [x, y])
+						if (!sameState && !quiet(z))
+							why.add(
+								`${z.id}: the state applies but its changes do not show at this spot (${desc(z)})`,
+							);
 				why.add(rel);
 				parent[root(j)] = root(i);
 			}

@@ -91,7 +91,7 @@ async function openEditor(
 	then: string,
 ): Promise<void> {
 	for (let i = 0; i < 3; i++) {
-		await ctx.open(file, mode);
+		await ctx.open(file, mode, { newLeaf: i > 0 });
 		const ok = await ctx.js(
 			"for (let i = 0; i < 30 && !app.workspace.activeEditor?.editor; i++) await sleep(100); return !!app.workspace.activeEditor?.editor;",
 		);
@@ -102,7 +102,10 @@ async function openEditor(
 			"app.setting?.close?.(); for (const w of app.workspace.floatingSplit?.children ?? []) w.win?.close(); await sleep(300);",
 		);
 	}
-	throw new Error(`no editor for ${file}`);
+	const why = await ctx.js<string>(
+		"const w = app.workspace; const l = w.activeLeaf; return JSON.stringify({ active: l?.view?.getViewType?.(), file: l?.view?.file?.path, inRoot: l?.getRoot?.() === w.rootSplit, floating: w.floatingSplit?.children?.length ?? 0, docFocus: document.hasFocus(), activeDocMain: activeDocument === document, modals: document.querySelectorAll('.modal-container').length });",
+	);
+	throw new Error(`no editor for ${file}: ${why}`);
 }
 
 /** Contexts tried in order until a command accepts. */
@@ -127,7 +130,13 @@ const CONTEXTS: { id: string; setup: (ctx: Ctx) => Promise<void> }[] = [
 	{
 		id: "heading",
 		setup: async (ctx) => {
-			await openEditor(ctx, "Markdown/Headings.md", "source", "e.setCursor({ line: 4, ch: 4 });");
+			// Kitchen sink in Live Preview: Headings.md can carry a saved fold from the folded-heading item.
+			await openEditor(
+				ctx,
+				"Markdown/Kitchen sink.md",
+				"live",
+				"const n = e.getValue().split('\\n').findIndex((l) => l.startsWith('# ')); e.setCursor({ line: n, ch: 4 });",
+			);
 		},
 	},
 	{
@@ -151,7 +160,7 @@ const CONTEXTS: { id: string; setup: (ctx: Ctx) => Promise<void> }[] = [
 		id: "webviewer",
 		setup: async (ctx) => {
 			await ctx.js(
-				"const l = app.workspace.getLeaf(false); await l.setViewState({ type: 'webviewer', state: { url: 'about:blank' }, active: true }); await sleep(800);",
+				"const l = app.workspace.getMostRecentLeaf(app.workspace.rootSplit) ?? app.workspace.getLeaf('tab'); await l.setViewState({ type: 'webviewer', state: { url: 'about:blank' }, active: true }); await sleep(800);",
 			);
 		},
 	},
