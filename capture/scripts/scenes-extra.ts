@@ -305,6 +305,10 @@ const editorExtras: Scene = {
 			target: ".lightbox",
 			full: true,
 			before: async (ctx) => {
+				// Vim mode is a vault setting: turn it off again after the vim items above.
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await ctx.js("app.vault.setConfig('vimMode', false); await sleep(300);");
 				await ctx.open("Markdown/Embeds.md", "reading");
 				// Reading view only renders sections near the viewport; an earlier scene may have left
 				// this note scrolled past the image.

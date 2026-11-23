@@ -434,6 +434,13 @@ for (const ids of [...bySha.values()].filter((v) => v.length > 1)) {
 			let rel = "";
 			if (x.dom === y.dom) rel = "identical fixture DOM";
 			else if (x.target && x.target === y.target) rel = "the same target element";
+			else if (
+				JSON.stringify(byId.get(x.id)?.evidence?.box) ===
+					JSON.stringify(byId.get(y.id)?.evidence?.box) &&
+				JSON.stringify(byId.get(x.id)?.evidence?.clip) ===
+					JSON.stringify(byId.get(y.id)?.evidence?.clip)
+			)
+				rel = "the same element box and screenshot area";
 			else if (baseOf(x.id) === baseOf(y.id) && x.modeOk && y.modeOk)
 				rel =
 					MODES.test(x.id) || MODES.test(y.id)

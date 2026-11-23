@@ -204,6 +204,13 @@ export const INPAGE = String.raw`
 		for (const pe of ["::before", "::after"]) { const p = win.getComputedStyle(e, pe); if (p.content !== "none" && p.content !== "normal") return false; }
 		return ![...e.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) && !["img", "svg", "canvas", "video", "iframe", "input", "textarea", "select"].includes(e.localName);
 	}
+	/** True when h paints a background (color with alpha, or an image) over its area. */
+	function paintsBackground(win, h) {
+		const cs = win.getComputedStyle(h);
+		const m = /rgba?\(([^)]*)\)/.exec(cs.backgroundColor);
+		const alpha = m ? Number((m[1] ?? "").split(",")[3] ?? 1) : 0;
+		return alpha > 0 || cs.backgroundImage !== "none";
+	}
 	/** True when a positioned ::before/::after of h paints an opaque background over h's content. */
 	function overlayCovers(win, h) {
 		for (const pe of ["::before", "::after"]) {
@@ -229,7 +236,9 @@ export const INPAGE = String.raw`
 					if (cs.position !== "static" && parseInt(cs.zIndex, 10) < 0) under = true;
 				}
 				if (under) {
-					if (!clear(win, h)) return false;
+					// e lies under h's own box: covered only where h paints a background (or an
+					// opaque overlay); borders, text and empty pseudo-elements do not cover it.
+					if (paintsBackground(win, h) || overlayCovers(win, h)) return false;
 					continue;
 				}
 				if (overlayCovers(win, h)) return false;

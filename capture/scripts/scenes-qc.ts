@@ -967,7 +967,9 @@ const graphQc: Scene = {
 			id: "qc.graph.all-node-kinds",
 			component: "graph",
 			before: async (ctx) => {
-				// Let the force layout settle and the renderer draw before the shot.
+				// Pointer off the graph (a hovered node fades the others), then let the force layout
+				// settle and the renderer draw before the shot.
+				await ctx.page.mouse.move(2, 998);
 				await ctx.js(
 					"const v = app.workspace.getLeavesOfType('graph')[0]?.view; for (let i = 0; i < 40 && !(v?.renderer?.nodes?.length); i++) await sleep(100); await sleep(2000);",
 				);
@@ -977,19 +979,6 @@ const graphQc: Scene = {
 			note: "Tags, attachments, orphans, unresolved links and a color group are on; Pixi draws them on a canvas with the colors Obsidian reads from .graph-view.color-* probes. evidence.record holds the colors the renderer read from each probe class and how many screenshot pixels have exactly that color.",
 			record:
 				"const v = app.workspace.getLeavesOfType('graph')[0]?.view; const c = v?.renderer?.colors ?? {}; const map = { fill: 'color-fill', fillFocused: 'color-fill-focused', fillTag: 'color-fill-tag', fillUnresolved: 'color-fill-unresolved', fillAttachment: 'color-fill-attachment', arrow: 'color-arrow', circle: 'color-circle', line: 'color-line', text: 'color-text', fillHighlight: 'color-fill-highlight', lineHighlight: 'color-line-highlight' }; const graphColors = {}; const graphAlpha = {}; for (const [k, cls] of Object.entries(map)) if (c[k]) { graphColors[cls] = c[k].rgb; graphAlpha[cls] = c[k].a; } return { graphColors, graphAlpha };",
-		},
-		{
-			id: "qc.graph.color-probes",
-			component: "graph",
-			target: leaf(".workspace-leaf-content"),
-			full: true,
-			synthetic:
-				"probe elements re-created exactly as GraphRenderer.testCSS() creates them (document.body.createDiv({ cls: 'graph-view ' + name })) and moved into the graph leaf for the snapshot; Obsidian reads their color and detaches them at once",
-			before: async (ctx) => {
-				await ctx.js(
-					"const host = cap.ROOTS.leaf().querySelector('.workspace-leaf-content'); for (const c of ['color-fill', 'color-fill-focused', 'color-fill-tag', 'color-fill-unresolved', 'color-fill-attachment', 'color-arrow', 'color-circle', 'color-line', 'color-text', 'color-fill-highlight', 'color-line-highlight']) { const d = document.body.createDiv({ cls: 'graph-view ' + c }); d.setAttribute('data-capture-probe', ''); d.style.cssText = 'position:absolute;width:0;height:0'; host.appendChild(d); }",
-				);
-			},
 		},
 	],
 };
