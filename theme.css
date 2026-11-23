@@ -371,7 +371,9 @@ mark {
 	padding: 8px 16px 16px 16px !important;
 }
 
-/* Icon Buttons */
+/* === icons.css === */
+
+/* Icon buttons */
 
 .clickable-icon:hover,
 .mod-left-split .workspace-tab-header,
@@ -379,11 +381,14 @@ mark {
 	cursor: var(--icon-cursor);
 }
 
-.clickable-icon[aria-disabled='true'] {
+.clickable-icon[aria-disabled='true'],
+.clickable-icon[aria-disabled='true']:hover {
 	cursor: default;
-	color: var(--text-disabled) !important;
-	background-color: transparent !important;
+	color: var(--text-disabled);
+	background-color: transparent;
 }
+
+/* === legacy.css (continued) === */
 
 /* Panel Ribbon */
 

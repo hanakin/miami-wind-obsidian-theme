@@ -1,0 +1,14 @@
+/* Icon buttons */
+.clickable-icon:hover,
+.mod-left-split .workspace-tab-header,
+.mod-right-split .workspace-tab-header {
+	cursor: var(--icon-cursor);
+}
+
+.clickable-icon[aria-disabled='true'],
+.clickable-icon[aria-disabled='true']:hover {
+	cursor: default;
+	color: var(--text-disabled);
+	background-color: transparent;
+}
+

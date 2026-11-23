@@ -52,17 +52,7 @@ mark {
 	padding: 8px 16px 16px 16px !important;
 }
 
-/* Icon Buttons */
-.clickable-icon:hover,
-.mod-left-split .workspace-tab-header,
-.mod-right-split .workspace-tab-header {
-	cursor: var(--icon-cursor);
-}
-.clickable-icon[aria-disabled='true'] {
-	cursor: default;
-	color: var(--text-disabled) !important;
-	background-color: transparent !important;
-}
+@pilot icons;
 
 	/* Panel Ribbon */
 	.workspace-ribbon .clickable-icon:hover {
