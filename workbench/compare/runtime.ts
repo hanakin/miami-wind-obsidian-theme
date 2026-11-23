@@ -11,9 +11,17 @@ export async function runtimeCss(): Promise<string> {
 	const session = await launch();
 	try {
 		verifyIsolation(session.proc.pid as number);
+		await session.page.evaluate(
+			`app.workspace.openLinkText("Markdown/Code.md", "", false)`,
+		);
+		await session.page.waitForSelector(".cm-editor");
 		const css = await session.page.evaluate(() =>
 			Array.from(document.head.querySelectorAll("style"))
-				.map((s) => s.textContent ?? "")
+				.map((s) =>
+					Array.from(s.sheet?.cssRules ?? [])
+						.map((r) => r.cssText)
+						.join("\n"),
+				)
 				.filter((s) => s.includes(".cm-"))
 				.join("\n"),
 		);

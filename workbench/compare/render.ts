@@ -16,9 +16,9 @@ export async function render(
 	fixture: { component: string; surface: string; state: string },
 ): Promise<Rendered> {
 	await page.setContent(html, { waitUntil: "domcontentloaded" });
-	await page.addStyleTag({ content: css.cm });
-	await page.addStyleTag({ content: css.app });
-	await page.addStyleTag({ content: css.theme });
+	for (const content of [css.cm, css.app, css.theme]) {
+		if (content) await page.addStyleTag({ content });
+	}
 	await page.addStyleTag({
 		content:
 			"*,*::before,*::after { animation: none !important; transition: none !important; caret-color: transparent !important; }",
