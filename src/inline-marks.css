@@ -1,0 +1,14 @@
+/* Highlighted text */
+.markdown-rendered mark,
+.cm-s-obsidian span.cm-highlight,
+mark {
+	background-color: var(--highlight);
+	color: var(--background-primary);
+	border-radius: 3px;
+	padding: 2px 4px;
+}
+
+/* Match the search-highlight background rival (Obsidian 1.15.1, 0,3,1). */
+.cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight {
+	background-color: var(--highlight);
+}

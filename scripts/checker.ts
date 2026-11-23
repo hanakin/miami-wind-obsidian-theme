@@ -21,6 +21,13 @@ paritySpanSelectors.add(
 	".markdown-source-view.mod-cm6 span.cm-inline-code.cm-hmd-footnote",
 );
 
+// Highlights must tie Obsidian 1.15.1's span rivals, including search matches.
+// Direct colors preserve magenta even when colored highlights shadow the variable.
+const highlightSpanSelectors = new Set([
+	".cm-s-obsidian span.cm-highlight",
+	".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
+]);
+
 function compoundDepth(selector: selectorParser.Selector): number {
 	const direct =
 		1 + selector.nodes.filter((node) => node.type === "combinator").length;
@@ -76,6 +83,13 @@ export function checkCss(legacyFile?: string): Plugin {
 						if (
 							rule.source?.input.file === path.resolve("src/code.css") &&
 							paritySpanSelectors.has(selector.toString().trim())
+						)
+							return;
+
+						if (
+							rule.source?.input.file ===
+								path.resolve("src/inline-marks.css") &&
+							highlightSpanSelectors.has(selector.toString().trim())
 						)
 							return;
 

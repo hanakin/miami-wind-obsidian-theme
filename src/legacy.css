@@ -2,15 +2,7 @@
 
 @pilot code;
 
-/* Highlighted text */
-.markdown-rendered mark,
-.cm-s-obsidian span.cm-highlight,
-mark {
-	background-color: var(--highlight) !important;
-	color: var(--background-primary) !important;
-	border-radius: 3px;
-	padding: 2px 4px;
-}
+@pilot inline-marks;
 
 @pilot selection;
 

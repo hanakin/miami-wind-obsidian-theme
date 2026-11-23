@@ -129,3 +129,22 @@ it.each(["cm-footref", "cm-hmd-footnote"])(
 		await expect(check(css.replace(state, "cm-link"))).rejects.toThrow();
 	},
 );
+
+it.each([
+	".cm-s-obsidian span.cm-highlight",
+	".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
+])(
+	"limits the highlight exception to its exact surface: %s",
+	async (selector) => {
+		const css = `${selector} { background-color: var(--highlight) }`;
+		await expect(
+			postcss([checkCss()]).process(css, { from: "src/inline-marks.css" }),
+		).resolves.toBeDefined();
+		await expect(check(css)).rejects.toThrow();
+		await expect(
+			postcss([checkCss()]).process(css.replace("span.", "div."), {
+				from: "src/inline-marks.css",
+			}),
+		).rejects.toThrow();
+	},
+);
