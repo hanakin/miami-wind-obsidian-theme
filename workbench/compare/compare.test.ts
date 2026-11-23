@@ -91,3 +91,22 @@ test("shared look compares matching states and reports all exceptional propertie
 		c: { same: false, props: ["color"] },
 	});
 });
+
+test("style differences remain different despite noisy pixels", async () => {
+	const { outcome } = await import("./model");
+	const common = {
+		noise: true,
+		invisible: false,
+		unsupported: [],
+		replayIssues: [],
+	};
+	const styled = outcome({ ...common, differences: 1, pixels: 50 });
+	expect(styled.status).toBe("different");
+	expect(styled.same).toBe(false);
+	expect(styled.notProvenReasons).toContain(
+		"before-vs-before stylesheet-swap noise",
+	);
+	expect(outcome({ ...common, differences: 0, pixels: 50 }).status).toBe(
+		"not-proven",
+	);
+});

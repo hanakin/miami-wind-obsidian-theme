@@ -28,7 +28,7 @@ Style reads compare standard computed properties on every element. Applicable ps
 
 The command disables animation suppression during computed-style reads. It enables suppression for screenshots. Native media control UI remains hidden because its internal loading state is not serialized. Pixel comparison is exact, including antialiasing. There is no pixel tolerance.
 
-Before-vs-before must have zero style and pixel changes. A noisy fixture receives `not-proven` status, diagnostic images, and a noise record. The command completes the remaining fixtures. It does not classify sanity noise as a theme difference.
+Before-vs-before must have zero style and pixel changes. A noisy fixture receives diagnostic images and a noise record. Computed-style differences retain `different` status despite pixel noise. Noise downgrades pixel-only results to `not-proven`. The command completes the remaining fixtures. It does not classify sanity noise as a theme difference.
 
 Exit codes:
 
