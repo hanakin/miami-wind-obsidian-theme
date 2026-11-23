@@ -1,0 +1,24 @@
+{
+	"nodes": [
+		{"id":"text1","type":"text","text":"# Canvas text card\n\nWith **markdown** and a [[Headings]] link.","x":-400,"y":-200,"width":300,"height":160},
+		{"id":"text2","type":"text","text":"Colored card 1","x":-50,"y":-200,"width":200,"height":80,"color":"1"},
+		{"id":"text3","type":"text","text":"Colored card 2","x":200,"y":-200,"width":200,"height":80,"color":"2"},
+		{"id":"text4","type":"text","text":"Colored card 3","x":-50,"y":-80,"width":200,"height":80,"color":"3"},
+		{"id":"text5","type":"text","text":"Colored card 4","x":200,"y":-80,"width":200,"height":80,"color":"4"},
+		{"id":"text6","type":"text","text":"Colored card 5","x":-50,"y":40,"width":200,"height":80,"color":"5"},
+		{"id":"text7","type":"text","text":"Colored card 6","x":200,"y":40,"width":200,"height":80,"color":"6"},
+		{"id":"text8","type":"text","text":"Custom hex color","x":450,"y":40,"width":200,"height":80,"color":"#ff2e88"},
+		{"id":"file1","type":"file","file":"Markdown/Kitchen sink.md","x":-400,"y":0,"width":300,"height":300},
+		{"id":"file2","type":"file","file":"Attachments/sample-image.png","x":450,"y":-200,"width":240,"height":135},
+		{"id":"file3","type":"file","file":"Markdown/Missing on purpose.md","x":-400,"y":340,"width":300,"height":100},
+		{"id":"link1","type":"link","url":"https://obsidian.md","x":-50,"y":180,"width":400,"height":200},
+		{"id":"group1","type":"group","label":"A group","x":-80,"y":-230,"width":510,"height":380},
+		{"id":"group2","type":"group","label":"Colored group","x":420,"y":-230,"width":300,"height":200,"color":"5"}
+	],
+	"edges": [
+		{"id":"e1","fromNode":"text1","fromSide":"right","toNode":"text2","toSide":"left","label":"edge label"},
+		{"id":"e2","fromNode":"text2","fromSide":"right","toNode":"text3","toSide":"left","color":"1"},
+		{"id":"e3","fromNode":"text4","fromSide":"bottom","toNode":"text6","toSide":"top","toEnd":"none","fromEnd":"arrow","color":"4"},
+		{"id":"e4","fromNode":"file1","fromSide":"right","toNode":"link1","toSide":"left"}
+	]
+}

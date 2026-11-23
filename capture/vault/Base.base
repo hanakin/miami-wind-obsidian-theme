@@ -1,0 +1,38 @@
+filters:
+  and:
+    - file.inFolder("Markdown")
+formulas:
+  name_length: file.name.length
+properties:
+  file.name:
+    displayName: Name
+views:
+  - type: table
+    name: Table view
+    order:
+      - file.name
+      - file.folder
+      - tags
+      - formula.name_length
+      - file.mtime
+    sort:
+      - property: file.name
+        direction: ASC
+    summaries:
+      formula.name_length: Average
+  - type: cards
+    name: Cards view
+    order:
+      - file.name
+      - tags
+  - type: list
+    name: List view
+    order:
+      - file.name
+  - type: table
+    name: Grouped
+    groupBy:
+      property: file.folder
+      direction: ASC
+    order:
+      - file.name

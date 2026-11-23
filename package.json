@@ -1,0 +1,24 @@
+{
+	"name": "miami-wind-obsidian-theme",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"capture:extract-app-css": "bun capture/scripts/extract-app-css.ts",
+		"capture:checklist": "bun capture/scripts/build-checklist.ts",
+		"capture:run": "bun capture/scripts/capture.ts",
+		"capture:coverage": "bun capture/scripts/coverage.ts",
+		"lint": "biome check .",
+		"fmt": "biome check --write .",
+		"typecheck": "tsc --noEmit",
+		"check": "biome check . && tsc --noEmit"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.6.8",
+		"@electron/asar": "^4.3.2",
+		"@types/bun": "^1.4.5",
+		"playwright": "^1.65.1",
+		"postcss": "^8.5.33",
+		"postcss-selector-parser": "^7.2.1",
+		"typescript": "^7.0.2"
+	}
+}

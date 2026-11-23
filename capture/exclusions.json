@@ -1,0 +1,34 @@
+{
+	"appClassGates": {
+		"is-mobile": "mobile app only (Atlantis runs desktop Obsidian)",
+		"is-phone": "phone layout of the mobile app only",
+		"is-tablet": "tablet layout of the mobile app only",
+		"is-ios": "iOS app only",
+		"is-android": "Android app only",
+		"mod-macos": "macOS desktop only (capture runs on Linux)",
+		"mod-windows": "Windows desktop only (capture runs on Linux)",
+		"mod-rtl": "right-to-left interface languages only (vault UI is English)"
+	},
+	"appContexts": {
+		"@media print": "print stylesheet; used by Export to PDF outside the app window",
+		"forced-colors: active": "Windows high-contrast (forced colors) mode only",
+		"(hover: none)": "touch-only devices",
+		"max-width: 300px": "windows narrower than 300px"
+	},
+	"appClasses": {},
+	"themeSelectors": {
+		".model .setting-item-description": "typo in theme.css (.model instead of .modal); matches nothing in Obsidian",
+		".suggestion-item.mobile-tap": "mobile-tap is only set by the mobile app on touch"
+	},
+	"appClassPatterns": {
+		"^mobile-": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it",
+		"^workspace-drawer": "mobile sidebar drawer; desktop uses split sidebars instead",
+		"^pull-": "mobile pull-down gestures",
+		"^navbar-": "mobile navigation bar",
+		"^(has-swipe|is-swiping|is-sliding|has-longpress-menu|emulate-mobile|mod-toolbar-open|is-hidden-nav)$": "mobile-only state (touch gestures, mobile toolbar or navigation)",
+		"^xfa": "pdf.js XFA form layer; only rendered for PDFs that contain XFA forms",
+		"^(buttonWidgetAnnotation|choiceWidgetAnnotation|textWidgetAnnotation|fileAttachmentAnnotation|textAnnotation|freetext|annotationContent|annotationTextContent|popup|popupContent|popupDate|popupMeta|popupTriggerArea|popupWrapper|richText|checkBox|radioButton|pushButton|comb|hasPopup|hasBorder)$": "pdf.js annotation and form-widget layer; only rendered for PDFs with annotations or form fields",
+		"^(sync|publish|site)-": "Obsidian Sync / Publish screens that need a signed-in account with a subscription; the capture runs signed out",
+		"^mod-avatar-": "collaborator avatars in Sync history; needs a signed-in shared vault"
+	}
+}
