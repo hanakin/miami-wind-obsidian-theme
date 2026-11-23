@@ -90,7 +90,7 @@ type Result = {
 	unsupported: string[];
 };
 const results: Result[] = [];
-const samples: Sample[] = [];
+const samples = new Map<string, Sample[]>();
 let next = 0;
 try {
 	await Promise.all(
@@ -147,7 +147,7 @@ try {
 					);
 				}
 				results.push(result);
-				samples.push(...b.samples);
+				samples.set(f.id, b.samples);
 				if (results.length % 50 === 0)
 					console.log(`${results.length}/${fixtures.length} checked`);
 			}
@@ -216,7 +216,11 @@ await Bun.write(
 );
 await Bun.write(
 	`${out}/component-diffs.json`,
-	JSON.stringify(componentDiffs(samples), null, 2),
+	JSON.stringify(
+		componentDiffs(fixtures.flatMap((f) => samples.get(f.id) ?? [])),
+		null,
+		2,
+	),
 );
 const text = `${summary.checked} fixtures checked; ${changed} with differences; ${seconds}s.\nEngine: Playwright Chromium ${browser.version()}. Before-vs-before: passed for every fixture.\nInvisible targets: ${summary.invisibleTargets}.\n\nTop element/property differences:\n${topDifferences.map((d) => `- ${d.count}: ${d.elementProperty}`).join("\n")}\n\nLimits:\n${limitations.map((l) => `- ${l}`).join("\n")}\n`;
 await Bun.write(`${out}/compare.md`, text);
