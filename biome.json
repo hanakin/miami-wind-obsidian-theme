@@ -3,7 +3,9 @@
 	"files": {
 		"includes": [
 			"scripts/**/*.ts",
-			"test/**/*.ts"
+			"test/**/*.ts",
+			"capture/scripts/**/*.ts",
+			"workbench/compare/**/*.ts"
 		]
 	},
 	"formatter": {
@@ -14,5 +16,15 @@
 		"rules": {
 			"preset": "none"
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"capture/scripts/**/*.ts"
+			],
+			"formatter": {
+				"lineWidth": 100
+			}
+		}
+	]
 }
