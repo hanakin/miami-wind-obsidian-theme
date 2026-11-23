@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { type Browser, chromium } from "playwright";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { styleDiff } from "./model";
@@ -46,3 +47,30 @@ test("replays hover, compares pseudo elements and catches changed theme pixels",
 	expect(a.png.equals(b.png)).toBe(false);
 	await page.close();
 });
+
+test.skipIf(!existsSync("capture/.app/app.css"))(
+	"keeps PDF export slider pixels stable across identical replays",
+	async () => {
+		const { readFile } = await import("node:fs/promises");
+		const page = await browser.newPage({
+			viewport: { width: 1600, height: 1000 },
+		});
+		const cdp = await page.context().newCDPSession(page);
+		await cdp.send("DOM.enable");
+		await cdp.send("CSS.enable");
+		const html = await readFile(
+			"capture/fixtures/command.workspace:export-pdf.html",
+			"utf8",
+		);
+		const app = await readFile("capture/.app/app.css", "utf8");
+		const theme = await readFile("theme.css", "utf8");
+		const f = { component: "modal", surface: "test", state: "default" };
+		const first = await render(page, cdp, html, { cm: "", app, theme }, f);
+		for (let i = 0; i < 5; i++) {
+			const repeat = await render(page, cdp, html, { cm: "", app, theme }, f);
+			expect(repeat.png.equals(first.png)).toBe(true);
+		}
+		await page.close();
+	},
+	15000,
+);

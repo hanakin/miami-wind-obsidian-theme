@@ -113,10 +113,17 @@ try {
 				);
 				const sanityStyles = styleDiff(a.styles, sanity.styles);
 				const sanityPixels = pixels(a.png, sanity.png).count;
-				if (sanityStyles.length || sanityPixels)
+				if (sanityStyles.length || sanityPixels) {
+					await Bun.write(`${out}/diffs/${f.id}.sanity-before.png`, a.png);
+					await Bun.write(`${out}/diffs/${f.id}.sanity-repeat.png`, sanity.png);
+					await Bun.write(
+						`${out}/diffs/${f.id}.sanity-styles.json`,
+						JSON.stringify(sanityStyles, null, 2),
+					);
 					throw new Error(
 						`SANITY FAILED ${f.id}: before-vs-before has ${sanityStyles.length} style and ${sanityPixels} pixel differences`,
 					);
+				}
 				const b = await render(page, cdp, html, { cm, app, theme: after }, f);
 				const differences = styleDiff(a.styles, b.styles),
 					pixel = pixels(a.png, b.png);
