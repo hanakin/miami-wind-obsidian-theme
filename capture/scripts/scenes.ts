@@ -922,14 +922,14 @@ const chrome: Scene = {
 		pseudoItem(
 			"chrome.ribbon-icon.hover",
 			"clickable-icon",
-			".workspace-ribbon .clickable-icon",
+			".workspace-ribbon .clickable-icon.side-dock-ribbon-action",
 			["hover"],
 			{ surface: "ribbon" },
 		),
 		pseudoItem(
 			"chrome.ribbon-icon.active",
 			"clickable-icon",
-			".workspace-ribbon .clickable-icon",
+			".workspace-ribbon .clickable-icon.side-dock-ribbon-action",
 			["active"],
 			{ surface: "ribbon" },
 		),
@@ -943,6 +943,7 @@ const chrome: Scene = {
 		},
 		{
 			id: "chrome.tab-header.active",
+			expect: ".is-active",
 			component: "tab-header",
 			target: ".mod-root .workspace-tab-header.is-active",
 			state: "active-tab",
@@ -1023,12 +1024,13 @@ const chrome: Scene = {
 		pseudoItem(
 			"chrome.workspace-tabs-icon.hover",
 			"clickable-icon",
-			".mod-left-split .workspace-tabs .clickable-icon",
+			".mod-root .workspace-tabs .workspace-tab-header-new-tab .clickable-icon",
 			["hover"],
-			{ surface: "left-sidebar" },
+			{ surface: "workspace" },
 		),
 		{
 			id: "chrome.workspace-tabs-icon.is-active",
+			expect: ".is-active",
 			component: "clickable-icon",
 			target: ".workspace-tabs .clickable-icon.is-active",
 			state: "is-active",
@@ -1066,6 +1068,7 @@ const chrome: Scene = {
 		},
 		{
 			id: "chrome.view-header-nav.disabled",
+			expect: "[aria-disabled='true']",
 			component: "clickable-icon",
 			target: { sel: ".view-header-nav-buttons .clickable-icon[aria-disabled='true']", in: "leaf" },
 			state: "disabled",
@@ -1126,6 +1129,7 @@ const chrome: Scene = {
 		),
 		{
 			id: "chrome.nav-folder.collapsed",
+			expect: ".is-collapsed",
 			component: "tree-item",
 			target: ".nav-folder.is-collapsed",
 			state: "collapsed",
@@ -1133,6 +1137,7 @@ const chrome: Scene = {
 		},
 		{
 			id: "chrome.nav-folder.expanded",
+			expect: ":not(.is-collapsed)",
 			component: "tree-item",
 			target: ".nav-folder:not(.is-collapsed):not(.mod-root)",
 			state: "expanded",
@@ -1140,6 +1145,7 @@ const chrome: Scene = {
 		},
 		{
 			id: "chrome.nav-file.active",
+			expect: ".is-active",
 			component: "nav-file",
 			target: ".nav-file-title.is-active",
 			state: "is-active",
@@ -1194,6 +1200,7 @@ const editorStates: Scene = {
 	items: [
 		{
 			id: "editor.active-line",
+			expect: ".cm-active",
 			component: "editor-line",
 			target: { sel: ".cm-line.cm-active", in: "leaf" },
 			state: "active-line",
@@ -1295,22 +1302,26 @@ const editorStates: Scene = {
 		{
 			id: "editor.callout-collapsed-expanded",
 			component: "callout",
-			target: { sel: ".markdown-reading-view .callout.is-collapsible", in: "leaf" },
+			target: { sel: ".markdown-reading-view .callout", text: "Folded callout", in: "leaf" },
 			state: "expanded-after-click",
+			expect: ".callout.is-collapsible:not(.is-collapsed):has(> .callout-content)",
 			surface: "editor-reading-view",
 			before: async (ctx) => {
 				await ctx.open("Markdown/Callouts.md", "reading");
 				await ctx.js(
-					"const c = cap.ROOTS.leaf().querySelector('.markdown-reading-view .callout.is-collapsed .callout-title'); c?.click(); await sleep(300);",
+					"const v = app.workspace.activeLeaf.view; const n = v.data.split('\\n').findIndex((l) => l.includes('Folded callout')); v.currentMode.applyScroll(Math.max(0, n - 2)); let c; for (let i = 0; i < 30 && !c; i++) { await sleep(100); c = [...cap.ROOTS.leaf().querySelectorAll('.markdown-reading-view .callout')].find((e) => e.textContent.includes('Folded callout')); } c.scrollIntoView({ block: 'center' }); await sleep(300); c.querySelector('.callout-title').click(); for (let i = 0; i < 20 && (c.classList.contains('is-collapsed') || getComputedStyle(c.querySelector('.callout-content') ?? c).display === 'none'); i++) await sleep(100);",
 				);
 			},
 		},
 		{
 			id: "editor.heading-collapsed",
+			expect: ".is-collapsed",
 			component: "heading",
 			target: { sel: ".markdown-reading-view .is-collapsed", in: "leaf" },
 			state: "collapsed",
 			surface: "editor-reading-view",
+			full: true,
+			note: "Full-window shot: the fold arrow sits left of the heading box and the folded content disappears below it.",
 			before: async (ctx) => {
 				await ctx.open("Markdown/Headings.md", "reading");
 				await ctx.js(
@@ -1482,6 +1493,7 @@ const propertyStates: Scene = {
 		),
 		{
 			id: "properties.key-suggest-item.selected",
+			expect: ".is-selected",
 			component: "suggestion",
 			target: ".suggestion-container.mod-property-key .suggestion-item.is-selected",
 			state: "is-selected",
@@ -1517,6 +1529,7 @@ const propertyStates: Scene = {
 		},
 		{
 			id: "properties.checkbox-checked",
+			expect: ":checked",
 			component: "checkbox",
 			target: {
 				sel: '.metadata-property[data-property-key="done"] input[type=checkbox]',
@@ -1565,6 +1578,7 @@ const menus: Scene[] = [
 		{ id: "menu.file.item-icon", component: "menu-item", target: ".menu .menu-item-icon" },
 		{
 			id: "menu.file.warning-item",
+			expect: ".is-warning",
 			component: "menu-item",
 			target: ".menu .menu-item.is-warning",
 			state: "is-warning",
@@ -1636,6 +1650,7 @@ const suggestions: Scene[] = [
 			{ id: `suggest.${id}`, component: "suggestion", target: ".suggestion-container" },
 			{
 				id: `suggest.${id}.selected`,
+				expect: ".is-selected",
 				component: "suggestion",
 				target: ".suggestion-container .suggestion-item.is-selected",
 				state: "is-selected",
@@ -1729,6 +1744,7 @@ const prompts: Scene = {
 		{ id: "prompt.command-palette", component: "prompt", target: ".prompt" },
 		{
 			id: "prompt.item.selected",
+			expect: ".is-selected",
 			component: "suggestion",
 			target: ".prompt .suggestion-item.is-selected",
 			state: "is-selected",
@@ -1813,18 +1829,21 @@ const modalControls: Scene = {
 		},
 		{
 			id: "modal.vertical-tab.active",
+			expect: ".is-active",
 			component: "vertical-tab",
 			target: ".modal .vertical-tab-nav-item.is-active",
 			state: "is-active",
 		},
 		{
 			id: "modal.toggle.on",
+			expect: ".is-enabled",
 			component: "toggle",
 			target: ".modal .checkbox-container.is-enabled",
 			state: "on",
 		},
 		{
 			id: "modal.toggle.off",
+			expect: ":not(.is-enabled)",
 			component: "toggle",
 			target: ".modal .checkbox-container:not(.is-enabled)",
 			state: "off",
@@ -1903,17 +1922,6 @@ const modalControls: Scene = {
 				await click(ctx, ".modal .search-input-container input");
 				await ctx.page.keyboard.type("bold", { delay: 20 });
 				await ctx.sleep(300);
-			},
-		},
-		{
-			id: "modal.appearance",
-			component: "setting-item",
-			target: ".modal.mod-settings",
-			state: "appearance",
-			before: async (ctx) => {
-				await ctx.js(
-					"cap.clearSettingsSearch(); app.setting.openTabById('appearance'); await sleep(600);",
-				);
 			},
 		},
 	],
@@ -2026,6 +2034,7 @@ const canvas: Scene = {
 		},
 		{
 			id: "canvas.node-selected",
+			expect: ".is-focused",
 			component: "canvas-node",
 			target: ".canvas-node.is-focused",
 			state: "selected",
@@ -2065,6 +2074,7 @@ const canvas: Scene = {
 		},
 		{
 			id: "canvas.node-editing",
+			expect: ".is-editing",
 			component: "canvas-node",
 			target: ".canvas-node.is-editing",
 			state: "editing",
@@ -2192,6 +2202,7 @@ const bases: Scene = {
 		},
 		{
 			id: "bases.properties-menu.selected-icon",
+			expect: ".is-selected .clickable-icon",
 			component: "clickable-icon",
 			target: ".menu .bases-toolbar-menu-item.is-selected .clickable-icon",
 			state: "is-selected",
@@ -2461,6 +2472,7 @@ const mediaAndOther: Scene = {
 		),
 		{
 			id: "view.stacked-tabs",
+			expect: ".mod-stacked",
 			component: "tab-header",
 			target: ".mod-root .workspace-tabs.mod-stacked",
 			state: "stacked",
@@ -2473,6 +2485,7 @@ const mediaAndOther: Scene = {
 		},
 		{
 			id: "view.split",
+			expect: ":has(> .workspace-tabs ~ .workspace-tabs)",
 			component: "workspace",
 			target: ".workspace-split.mod-root",
 			state: "split-vertical",
@@ -2607,23 +2620,12 @@ const sidebarViews: Scene = {
 				},
 			}),
 		),
-		{
-			id: "sidebar.backlinks-unlinked",
-			component: "backlinks",
-			target: '.workspace-leaf-content[data-type="backlink"]',
-			state: "unlinked-expanded",
-			before: async (ctx) => {
-				await ctx.open("Markdown/Headings.md", "live");
-				await ctx.js(
-					"const l = app.workspace.getLeavesOfType('backlink')[0]; app.workspace.revealLeaf(l); await sleep(500); document.querySelectorAll('.workspace-leaf-content[data-type=\"backlink\"] .tree-item-self.is-clickable, .workspace-leaf-content[data-type=\"backlink\"] .tree-item.is-collapsed > .tree-item-self').forEach((e) => e.click()); await sleep(800);",
-				);
-			},
-		},
 		pseudoItem("sidebar.tree-item.hover", "tree-item", ".mod-right-split .tree-item-self", [
 			"hover",
 		]),
 		{
 			id: "sidebar.outline-active",
+			expect: ".is-active",
 			component: "tree-item",
 			target: '.workspace-leaf-content[data-type="outline"] .tree-item-self.is-active',
 			state: "is-active",
@@ -2636,6 +2638,7 @@ const sidebarViews: Scene = {
 		},
 		{
 			id: "sidebar.file-explorer.multi-select",
+			expect: ".is-selected",
 			component: "nav-file",
 			surface: "left-sidebar",
 			target: ".nav-file-title.is-selected",

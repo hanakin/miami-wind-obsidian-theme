@@ -252,6 +252,7 @@ export function platformChecklistItems(): ChecklistItem[] {
 		source: `app:app.css:${p.line}`,
 		target: p.selector,
 		note: `A fixture with body.mod-${p.platform} must match this app.css selector (synthetic variant of a Linux capture).`,
+		synthetic: `body.mod-linux swapped for mod-${p.platform} on a Linux capture`,
 		...(p.excluded ? { excluded: p.excluded } : {}),
 	}));
 }

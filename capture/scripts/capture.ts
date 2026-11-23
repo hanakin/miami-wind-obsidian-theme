@@ -3,7 +3,7 @@
 // Headless by default; --windowed runs only the scenes that need a real window on the desktop.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { Page } from "playwright";
-import { liveSelector } from "./css.ts";
+import { matchable } from "./css.ts";
 import type { AppInventory, CommandResult } from "./discover.ts";
 import { closeExtraPages, pagesOf, restoreLayout, snapshotLayout } from "./discover.ts";
 import { type CaptureOut, ensureDirs, install, makeCtx, runScene } from "./engine.ts";
@@ -35,10 +35,8 @@ const out: CaptureOut = {
 	fixturesDir: FIXTURES,
 	screenshotsDir: SCREENSHOTS,
 	version: checklist.obsidianVersion,
-	live: themeSelectors().map((t) => {
-		const l = liveSelector(t.selector);
-		return { id: t.id, sel: l.sel, ...(l.needs ? { needs: l.needs } : {}) };
-	}),
+	// Same selector form as the fixtures; evaluated on an off-page copy of the whole live document.
+	live: themeSelectors().map((t) => ({ id: t.id, sel: matchable(t.selector) })),
 };
 ensureDirs(out);
 

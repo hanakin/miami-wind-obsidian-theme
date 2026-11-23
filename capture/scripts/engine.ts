@@ -1,10 +1,10 @@
 // Drives a running Obsidian: reaches each scene, forces states and records DOM + screenshots.
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CDPSession, Page } from "playwright";
 import { INPAGE } from "./inpage.ts";
 import type { Session } from "./obsidian.ts";
-import type { Ctx, FixtureEntry, ItemDef, Mode, Pseudo, Scene, Target } from "./types.ts";
+import type { Ctx, FixtureEntry, ItemDef, Mode, Scene, Target } from "./types.ts";
 
 /** Components worth showing across surfaces. Key = component tag, value = selector. */
 export const COMPONENTS: Record<string, string> = {
@@ -107,21 +107,44 @@ export async function resetUi(page: Page): Promise<void> {
 	await page.evaluate("cap.clean()");
 }
 
-async function forcePseudo(cdp: CDPSession, pseudo: Pseudo[]): Promise<void> {
-	const { root } = await cdp.send("DOM.getDocument", { depth: 0 });
-	const { nodeId } = await cdp.send("DOM.querySelector", {
-		nodeId: root.nodeId,
-		selector: "[data-capture-pseudo]",
-	});
-	if (!nodeId) throw new Error("pseudo target vanished");
-	await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: pseudo });
+/** DevTools node id for a JS expression that evaluates to an element in this page. */
+async function nodeOf(cdp: CDPSession, expression: string): Promise<number> {
+	await cdp.send("DOM.getDocument", { depth: 0 });
+	const { result } = await cdp.send("Runtime.evaluate", { expression });
+	if (!result.objectId) throw new Error(`no element for ${expression}`);
+	const { nodeId } = await cdp.send("DOM.requestNode", { objectId: result.objectId });
+	return nodeId;
 }
 
-/** A theme.css selector in the form Chromium can evaluate live. */
+/**
+ * Author rules whose matching selector uses each pseudo-class, as Chromium matched them for the
+ * node. This is the painted state: inside popout windows Element.matches() misses forced states
+ * that the style engine applies.
+ */
+async function stateRules(
+	cdp: CDPSession,
+	nodeId: number,
+	pseudo: string[],
+): Promise<Record<string, number>> {
+	const r = await cdp.send("CSS.getMatchedStylesForNode", { nodeId });
+	const out: Record<string, number> = {};
+	for (const p of pseudo) {
+		const re = new RegExp(`:${p}(?![\\w-])`);
+		out[p] = 0;
+		for (const m of r.matchedCSSRules ?? []) {
+			if (m.rule.origin !== "regular") continue;
+			for (const i of m.matchingSelectors) {
+				if (re.test(m.rule.selectorList.selectors[i]?.text ?? "")) out[p] = (out[p] ?? 0) + 1;
+			}
+		}
+	}
+	return out;
+}
+
+/** A theme.css selector in fixture form (states as data-capture-state marks). */
 export interface LiveSelector {
 	id: string;
 	sel: string;
-	needs?: string;
 }
 
 export interface CaptureOut {
@@ -144,22 +167,23 @@ export function pngStats(path: string): { width: number; height: number; colors:
 	return { width: w ?? 0, height: h ?? 0, colors: k ?? 0 };
 }
 
-interface Probe {
-	vis: {
-		visible: boolean;
-		reason?: string;
-		box: number[];
-		inView?: number[];
-		unobscured?: number;
-		blockers?: string[];
-	};
-	forcedOk: boolean;
-	expectOk: boolean;
-	marks: Record<string, number>;
-	live: string[];
+interface Vis {
+	visible: boolean;
+	reason?: string;
+	box: number[];
+	inView?: number[];
+	unobscured?: number;
+	blockers?: string[];
+}
+
+interface Snap {
+	lost?: boolean;
 	html: string;
+	live: string[];
+	domOnly: string[];
 	trimmed: { selector: string; kept: number; of: number } | null;
 	contains: string[];
+	seen: number;
 }
 
 /** Captures one item in the current UI state. Fails unless the target is visibly shown in its state. */
@@ -175,124 +199,147 @@ export async function captureItem(
 	if (item.before) await item.before(ctx);
 	const target: Target = item.target;
 	const found = (await page.evaluate(
-		`(async () => { const el = await cap.locate(${JSON.stringify(target)}, ${!!item.pointer}); if (!el) return false; el.setAttribute("data-capture-target", ""); await cap.reveal(el); if (${!item.pointer} && !el.closest(".menu, .popover, .prompt, .suggestion-container")) el.scrollIntoView({ block: "center", inline: "nearest" }); return true; })()`,
+		`(async () => { const el = await cap.locate(${JSON.stringify(target)}, ${!!item.pointer}); if (!el) return false; window.__cap.target = el; await cap.reveal(el); if (${!item.pointer} && !el.closest(".menu, .popover, .prompt, .suggestion-container")) el.scrollIntoView({ block: "center", inline: "nearest" }); return true; })()`,
 	)) as boolean;
 	if (!found) return { id: item.id, error: `target not found: ${JSON.stringify(target)}` };
 	const pseudo = item.pseudo ?? [];
 	const state = item.state ?? (pseudo.length ? pseudo.join("+") : "default");
-	let via: "devtools" | "pointer" = item.pointer ? "pointer" : "devtools";
-	let pressed = false;
-	const forcedHolds = async () =>
-		(await page.evaluate(
-			`(() => { const pel = document.querySelector("[data-capture-pseudo]"); return !!pel && ${JSON.stringify(pseudo)}.every((s) => s === "visited" || pel.matches(":" + s)); })()`,
-		)) as boolean;
-	/** Real pointer over the state element: hover, plus a held button for :active. */
-	const pointAt = async () => {
-		const c = (await page.evaluate(
-			`(() => { const r = document.querySelector("[data-capture-pseudo]").getBoundingClientRect(); return r.width && r.height ? [r.x + r.width / 2, r.y + r.height / 2] : null; })()`,
-		)) as [number, number] | null;
-		if (!c) return;
-		await page.mouse.move(c[0], c[1], { steps: 3 });
-		if (pseudo.includes("active")) {
-			await page.mouse.down();
-			pressed = true;
-		}
-		via = "pointer";
-		await sleep(250);
-	};
+	const via = item.pointer ? "pointer" : "devtools";
+	let forcedNode = 0;
 	try {
+		let painted: Record<string, number> = {};
+		let styleChanged: number | null = null;
+		const styleProps: string[] = [];
 		if (pseudo.length) {
 			const on = JSON.stringify(item.pseudoOn ?? target);
 			const ok = (await page.evaluate(
-				`(() => { const el = cap.find(${on}) ?? document.querySelector("[data-capture-target]"); if (!el) return false; el.setAttribute("data-capture-pseudo", ""); if (${pseudo.includes("visited")}) el.setAttribute("data-capture-visited", ""); return true; })()`,
+				`(() => { const el = cap.find(${on}) ?? window.__cap.target; if (!el) return false; window.__cap.pseudo = el; window.__cap.forced = ${JSON.stringify(pseudo)}; return true; })()`,
 			)) as boolean;
 			if (!ok) return { id: item.id, error: "pseudo target not found" };
+			const node = await nodeOf(cdp, "window.__cap.pseudo");
 			if (!item.pointer) {
-				await forcePseudo(cdp, pseudo);
 				await sleep(150);
-				// DevTools forcing does not reach every window (popouts); fall back to the real pointer.
-				if (!(await forcedHolds()) && pseudo.every((x) => x === "hover" || x === "active")) {
-					await forcePseudo(cdp, []);
-					await pointAt();
+				await page.evaluate("cap.styleBefore()");
+				await cdp.send("CSS.forcePseudoState", { nodeId: node, forcedPseudoClasses: pseudo });
+				forcedNode = node;
+			} else {
+				// The real pointer was placed by before(); nudge it so hover is re-evaluated.
+				const at = (await page.evaluate("window.__capPointer ?? null")) as [number, number] | null;
+				if (at) {
+					await page.mouse.move(at[0] + 1, at[1]);
+					await page.mouse.move(at[0], at[1]);
 				}
 			}
-		}
-		if (item.pointer) {
-			// Marking the target can make CodeMirror redraw it; nudge the pointer so hover is re-evaluated.
-			const at = (await page.evaluate("window.__capPointer ?? null")) as [number, number] | null;
-			if (at) {
-				await page.mouse.move(at[0] + 1, at[1]);
-				await page.mouse.move(at[0], at[1]);
+			await sleep(200);
+			if (!item.pointer)
+				styleChanged = (await page.evaluate("cap.styleChanges()")) as number | null;
+			painted = await stateRules(
+				cdp,
+				node,
+				pseudo.filter((p) => p !== "visited"),
+			);
+			if (item.pointer) {
+				const real = (await page.evaluate(
+					`${JSON.stringify(pseudo)}.every((s) => window.__cap.pseudo.matches(":" + s))`,
+				)) as boolean;
+				if (!real)
+					return { id: item.id, error: `the real pointer did not produce ${pseudo.join("+")}` };
 			}
-		}
-		await sleep(200);
+		} else await sleep(200);
 		const probe = (await page.evaluate(
 			`(() => {
-				// CodeMirror can redraw a line and drop the mark: find the target again.
-				let el = document.querySelector("[data-capture-target]");
-				if (!el) { el = cap.find(${JSON.stringify(target)}); el?.setAttribute("data-capture-target", ""); el?.scrollIntoView({ block: "center" }); }
-				if (!el) return { lost: true };
-				const pel = document.querySelector("[data-capture-pseudo]");
+				let el = window.__cap.target;
+				if (!el.isConnected) { el = cap.find(${JSON.stringify(target)}); if (!el) return { lost: true }; window.__cap.target = el; el.scrollIntoView({ block: "center" }); }
 				const vis = cap.visibility(el);
 				const p = window.__capPointer;
 				const flags = { selection: cap.hasSelection(el), "scrollbar-hover": !!p && cap.overScrollbar(el, p[0], p[1]) };
-				const extra = {};
-				if (flags.selection) extra.selection = el;
-				if (flags["scrollbar-hover"]) extra["scrollbar-hover"] = el;
-				// :visited is hidden from matches(); the forced link carries the mark (see css.ts).
-				if (pel?.hasAttribute("data-capture-visited")) extra.visited = pel;
-				const forcedOk = ${JSON.stringify(pseudo)}.every((s) => s === "visited" || (pel && pel.matches(":" + s)));
 				const expect = ${JSON.stringify(item.expect ?? null)};
-				const expectOk = !expect || el.matches(expect);
-				${item.state && item.state !== "default" ? `el.setAttribute("data-capture-label", ${JSON.stringify(item.state)});` : ""}
-				${item.synthetic ? `el.setAttribute("data-capture-synthetic", ${JSON.stringify(item.synthetic)});` : ""}
-				const marks = cap.markStates(el, extra);
-				const live = cap.liveMatches(el, ${JSON.stringify(out.live)}, { ...flags });
-				const html = cap.serialize(el, ${JSON.stringify(item.trim ?? null)});
-				return { vis, forcedOk, expectOk, marks, live, html, trimmed: window.__capTrimmed, contains: cap.components(el, ${JSON.stringify(COMPONENTS)}) };
+				let expectOk = true;
+				try { expectOk = !expect || el.matches(expect); } catch { expectOk = false; }
+				const marks = cap.markStates(el, { selection: flags.selection ? el : null, "scrollbar-hover": flags["scrollbar-hover"] ? el : null, visited: window.__cap.forced.includes("visited") ? window.__cap.pseudo : null });
+				return { vis, expectOk, marks };
 			})()`,
-		)) as Probe & { lost?: boolean };
+		)) as { lost?: boolean; vis: Vis; expectOk: boolean; marks: Record<string, number> };
 		if (probe.lost) return { id: item.id, error: "target vanished before the snapshot" };
 		const { vis } = probe;
-		if (!vis.visible)
+		if (!vis.visible) {
 			return { id: item.id, error: `target not visible: ${vis.reason} (box ${vis.box.join(",")})` };
-		const minShown = item.minUnobscured ?? 0.6;
-		if ((vis.unobscured ?? 0) < minShown) {
+		}
+		if ((vis.unobscured ?? 0) < (item.minUnobscured ?? 0.6)) {
 			return {
 				id: item.id,
 				error: `target covered (${vis.unobscured} shown) by ${vis.blockers?.join(", ")}`,
 			};
 		}
-		if (!probe.forcedOk)
-			return {
-				id: item.id,
-				error: `Chromium does not report the forced state ${pseudo.join("+")}`,
-			};
 		if (!probe.expectOk)
 			return { id: item.id, error: `state not shown: target does not match ${item.expect}` };
-		const shot = join(out.screenshotsDir, `${item.id}.png`);
-		const [x, y, w, h] = vis.inView ?? [0, 0, 0, 0];
 		const vp = (await page.evaluate("({ width: innerWidth, height: innerHeight })")) as {
 			width: number;
 			height: number;
 		};
+		const [x = 0, y = 0, w = 0, h = 0] = vis.inView ?? [];
 		const pad = 8;
-		const x0 = Math.max(0, (x ?? 0) - pad);
-		const y0 = Math.max(0, (y ?? 0) - pad);
-		const clip = {
-			x: x0,
-			y: y0,
-			width: Math.min(vp.width, (x ?? 0) + (w ?? 0) + pad) - x0,
-			height: Math.min(vp.height, (y ?? 0) + (h ?? 0) + pad) - y0,
-		};
-		await page.screenshot({ path: shot, ...(item.full ? {} : { clip }) });
+		const x0 = Math.max(0, x - pad);
+		const y0 = Math.max(0, y - pad);
+		const clip = item.full
+			? { x: 0, y: 0, width: vp.width, height: vp.height }
+			: {
+					x: x0,
+					y: y0,
+					width: Math.min(vp.width, x + w + pad) - x0,
+					height: Math.min(vp.height, y + h + pad) - y0,
+				};
+		const shot = join(out.screenshotsDir, `${item.id}.png`);
+		const clipArr = JSON.stringify([clip.x, clip.y, clip.width, clip.height]);
+		let scroll: { positions: number[]; scrollHeight: number; clientHeight: number } | undefined;
+		if (item.scroll) {
+			// Long pages: screenshot every scroll position of the container and stack them.
+			const sc = JSON.stringify(item.scroll);
+			const dims = (await page.evaluate(
+				`(() => { const s = cap.find(${sc}); if (!s) return null; s.scrollTop = 0; return [s.scrollHeight, s.clientHeight]; })()`,
+			)) as [number, number] | null;
+			if (!dims) return { id: item.id, error: `scroll container not found: ${item.scroll}` };
+			const [sh, ch] = dims;
+			const positions: number[] = [];
+			const parts: string[] = [];
+			for (let top = 0, i = 0; i < 40; i++) {
+				const at = (await page.evaluate(
+					`(async () => { const s = cap.find(${sc}); s.scrollTop = ${top}; await cap.sleep(250); cap.witness(window.__cap.target, ${clipArr}); return s.scrollTop; })()`,
+				)) as number;
+				positions.push(at);
+				const part = join(out.screenshotsDir, `.${item.id}.${i}.png`);
+				await page.screenshot({ path: part, clip });
+				parts.push(part);
+				if (at + ch >= sh - 2) break;
+				top = at + Math.floor(ch * 0.85);
+			}
+			const end = positions.at(-1) ?? 0;
+			if (end + ch < sh - 2)
+				return { id: item.id, error: `could not scroll to the end (${end}+${ch} of ${sh})` };
+			Bun.spawnSync(["magick", ...parts, "-append", shot]);
+			for (const p of parts) rmSync(p, { force: true });
+			scroll = { positions, scrollHeight: sh, clientHeight: ch };
+		} else {
+			await page.evaluate(`cap.witness(window.__cap.target, ${clipArr})`);
+			await page.screenshot({ path: shot, clip });
+		}
 		const stats = pngStats(shot);
 		if (stats.colors < 2) return { id: item.id, error: "screenshot is blank (one color)" };
 		const sha256 = new Bun.CryptoHasher("sha256")
 			.update(await Bun.file(shot).arrayBuffer())
 			.digest("hex");
+		const snap = (await page.evaluate(
+			`cap.snapshot(${JSON.stringify({
+				sels: out.live,
+				components: COMPONENTS,
+				trim: item.trim ?? null,
+				label: item.state && item.state !== "default" ? item.state : null,
+				synthetic: item.synthetic ?? null,
+			})})`,
+		)) as Snap;
+		if (snap.lost) return { id: item.id, error: "target vanished before the snapshot" };
 		const file = `${item.id}.html`;
-		writeFileSync(join(out.fixturesDir, file), probe.html);
+		writeFileSync(join(out.fixturesDir, file), snap.html);
 		const entry: FixtureEntry = {
 			id: item.id,
 			file,
@@ -302,12 +349,12 @@ export async function captureItem(
 			state,
 			covers: [item.id],
 			obsidianVersion: out.version,
-			contains: probe.contains,
+			contains: snap.contains,
 			...(item.note ? { note: item.note } : {}),
 			...(item.synthetic ? { synthetic: item.synthetic } : {}),
-			...(probe.trimmed
+			...(snap.trimmed
 				? {
-						trimmed: `kept ${probe.trimmed.kept} of ${probe.trimmed.of} ${probe.trimmed.selector} elements (the first ${item.trim?.keep} plus one per distinct state matching ${item.trim?.keepAlso}); the screenshot shows the untrimmed window`,
+						trimmed: `kept ${snap.trimmed.kept} of ${snap.trimmed.of} ${snap.trimmed.selector} elements (the first ${item.trim?.keep} plus one per distinct state matching ${item.trim?.keepAlso}); the screenshot shows the untrimmed window`,
 					}
 				: {}),
 			evidence: {
@@ -316,22 +363,30 @@ export async function captureItem(
 				unobscured: vis.unobscured ?? 0,
 				marks: probe.marks,
 				forced: pseudo,
-				...(pseudo.length ? { via } : {}),
+				...(pseudo.length
+					? { via, painted, ...(styleChanged === null ? {} : { styleChanged, styleProps }) }
+					: {}),
 				...(item.expect ? { expect: item.expect } : {}),
-				live: probe.live,
+				live: snap.live,
+				domOnly: snap.domOnly,
+				seen: snap.seen,
+				clip: [clip.x, clip.y, clip.width, clip.height].map((v) => Math.round(v)),
+				...(scroll ? { scroll } : {}),
 				...(item.media ? { media: JSON.stringify(item.media) } : {}),
 				screenshot: { sha256, ...stats },
 			},
 		};
 		return { id: item.id, entry };
 	} finally {
-		if (pressed) await page.mouse.up().catch(() => undefined);
-		if (pseudo.length) await forcePseudo(cdp, []).catch(() => undefined);
+		if (forcedNode)
+			await cdp
+				.send("CSS.forcePseudoState", { nodeId: forcedNode, forcedPseudoClasses: [] })
+				.catch(() => undefined);
 		if (item.media)
 			await cdp
 				.send("Emulation.setEmulatedMedia", { media: "", features: [] })
 				.catch(() => undefined);
-		await page.evaluate("cap.clean()");
+		await page.evaluate("cap.clean()").catch(() => undefined);
 	}
 }
 

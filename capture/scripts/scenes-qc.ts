@@ -1,5 +1,7 @@
 // Scenes added after QC: states the first capture excluded as "not reached" although the app
 // can show them, plus window states, media emulation and interacting markdown.
+import { INPAGE } from "./inpage.ts";
+import { WORK } from "./obsidian.ts";
 import { baseLayout, click, settingsWindow } from "./scenes.ts";
 import type { Ctx, ItemDef, Pseudo, Scene, Target } from "./types.ts";
 
@@ -184,6 +186,21 @@ const editorQc: Scene = {
 			note: "Target is .cm-editor so the fixture holds .cm-selectionLayer (sibling of .cm-content) as well as the native selection.",
 		},
 		{
+			id: "qc.editor.active-indent",
+			component: "list",
+			target: leaf(".markdown-source-view .cm-line:has(.cm-active-indent)"),
+			state: "active-indent",
+			expect: ":has(.cm-indent.cm-active-indent)",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.open("Markdown/Lists and tasks.md", "live");
+				await ctx.js(
+					"const e = app.workspace.activeEditor.editor; const n = e.getValue().split('\\n').findIndex((l) => l.trim() === '- Nested bullet'); e.focus(); e.setCursor({ line: n, ch: e.getLine(n).length }); await sleep(400);",
+				);
+			},
+			note: "With the cursor in a nested list item, the indent guide of its parent level gets .cm-active-indent.",
+		},
+		{
 			id: "qc.highlight-color-widget",
 			component: "inline-mark",
 			target: leaf(".markdown-source-view .cm-line:has(.cm-highlight-color-widget)"),
@@ -326,6 +343,36 @@ const dragQc: Scene = {
 				await ctx.page.mouse.move(...(await center(ctx, ".mod-root .view-content")), { steps: 8 });
 				await ctx.sleep(500);
 			},
+			minUnobscured: 0.3,
+		},
+		{
+			id: "qc.drag.kanban-column",
+			component: "bases-kanban",
+			surface: "bases",
+			target: leaf(".bases-kanban-container"),
+			state: "column-dragged",
+			expect: ":has(> .bases-kanban-column.is-being-dragged)",
+			full: true,
+			before: async (ctx) => {
+				await endDrag(ctx);
+				await ctx.js(
+					"const l = app.workspace.getLeaf(false); await l.setViewState({ type: 'bases', state: { file: 'Base.base', viewName: 'Board' }, active: true }); app.workspace.setActiveLeaf(l, { focus: true }); await sleep(1500);",
+				);
+				const [x, y] = await center(ctx, leaf(".bases-kanban-card"));
+				await ctx.page.mouse.move(x, y);
+				await ctx.page.mouse.down();
+				await ctx.page.mouse.move(x + 10, y + 10, { steps: 3 });
+				await ctx.page.mouse.move(x + 60, y + 90, { steps: 10 });
+				await ctx.sleep(400);
+			},
+			note: "A kanban column held mid-drag with the real mouse (pressing on a card starts a column reorder): the column gets .is-being-dragged and a .drag-reorder-ghost copy follows the pointer.",
+		},
+		{
+			id: "qc.drag.kanban-ghost",
+			component: "drag-ghost",
+			surface: "bases",
+			target: ".drag-reorder-ghost",
+			expect: ":has(> .bases-kanban-column.mod-dragged-item)",
 			minUnobscured: 0.3,
 		},
 		{
@@ -488,6 +535,23 @@ const basesQc: Scene = {
 				await ctx.page.keyboard.type(".contains(", { delay: 60 });
 				await ctx.sleep(800);
 			},
+		},
+		{
+			id: "qc.bases.matching-bracket",
+			component: "formula-editor",
+			surface: "menu",
+			target: { sel: ".formula-editor .cm-editor", closest: ".menu" },
+			state: "matching-bracket",
+			expect: ":has(.formula-editor .cm-editor.cm-focused .cm-matchingBracket)",
+			minUnobscured: 0.3,
+			before: async (ctx) => {
+				const b = await center(ctx, { sel: ".menu .formula-editor .cm-content" });
+				await ctx.page.mouse.click(b[0], b[1]);
+				await ctx.page.keyboard.press("End");
+				await ctx.page.keyboard.press("ArrowLeft");
+				await ctx.sleep(400);
+			},
+			note: "Typing .contains( auto-closes the bracket; with the cursor between them the formula editor marks both with .cm-matchingBracket.",
 		},
 		{
 			id: "qc.bases.list-view",
@@ -719,6 +783,34 @@ const pdfQc: Scene = {
 			leaf(".annotationLayer .textWidgetAnnotation input"),
 			["focus"],
 		),
+		{
+			id: "qc.pdf.annotation-popup",
+			component: "pdf",
+			target: leaf(".annotationLayer .popupWrapper"),
+			state: "popup-open",
+			expect: ".popupWrapper:not([hidden]):has(.popup:not([hidden]) .popupContent)",
+			before: async (ctx) => {
+				await ctx.open("Attachments/forms.pdf", "live");
+				await ctx.sleep(2000);
+				const b = await center(ctx, leaf(".annotationLayer .textAnnotation"));
+				await ctx.page.mouse.click(b[0], b[1]);
+				await ctx.sleep(600);
+			},
+			note: "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup.",
+		},
+		{
+			id: "qc.pdf.xfa",
+			component: "pdf",
+			target: leaf(".xfaLayer"),
+			expect:
+				".xfaLayer:has(.xfaPage .xfaTextfield):has(.xfaCheckbox):has(.xfaSelect):has(.xfaButton)",
+			before: async (ctx) => {
+				await ctx.open("Attachments/xfa-form.pdf", "live");
+				await ctx.sleep(2500);
+			},
+			note: "xfa-form.pdf is a hand-written pure XFA form (template packet only); Obsidian's pdf.js has enableXfa on and draws it with its XFA layer.",
+		},
+		p("qc.pdf.xfa-text.focus", "text-input", leaf(".xfaLayer .xfaTextfield"), ["focus"]),
 	],
 };
 
@@ -1059,7 +1151,9 @@ const hoverReveal: Scene = {
 };
 
 const IN_WINDOW =
-	"Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same";
+	"Extra coverage: Settings opened inside the main window (settingsPopoutWindow off). Obsidian styles the in-window Settings modal differently (border, rounding, shadow, size limit, header controls), so these complement the popout captures and do not replace them";
+const POPOUT =
+	"In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)";
 
 const tab = (id: string) => async (ctx: Ctx) => {
 	await ctx.js(
@@ -1067,63 +1161,61 @@ const tab = (id: string) => async (ctx: Ctx) => {
 	);
 };
 
-/** Hover and active states of Settings controls, with Settings in the main window. */
-const settingsInWindow: Scene = {
-	id: "qc.settings-in-window",
-	surface: "settings",
-	source: "catalog:settings-hover-states",
-	setup: async (ctx) => {
-		await ctx.js(
-			"app.vault.setConfig('settingsPopoutWindow', false); await sleep(200); app.setting.open(); app.setting.openTabById('editor'); await sleep(700);",
-		);
-	},
-	items: [
+/** Hover and active states of Settings controls; `prefix` keeps the in-window copies apart. */
+function settingsHoverItems(prefix: string, note: string): ItemDef[] {
+	return [
 		p(
-			"modal.vertical-tab.hover",
+			`${prefix}modal.vertical-tab.hover`,
 			"vertical-tab",
 			".modal .vertical-tab-nav-item:not(.is-active)",
 			["hover"],
-			{ note: IN_WINDOW },
+			{ note },
 		),
 		p(
-			"modal.vertical-tab.active.hover",
+			`${prefix}modal.vertical-tab.active.hover`,
 			"vertical-tab",
 			".modal .vertical-tab-nav-item.is-active",
 			["hover"],
-			{ note: IN_WINDOW },
+			{ note },
 		),
-		p("modal.dropdown.hover", "dropdown", ".modal select.dropdown", ["hover"], { note: IN_WINDOW }),
-		p("modal.dropdown.active", "dropdown", ".modal select.dropdown", ["active"], {
-			note: IN_WINDOW,
+		p(`${prefix}modal.dropdown.hover`, "dropdown", ".modal select.dropdown", ["hover"], { note }),
+		p(`${prefix}modal.dropdown.active`, "dropdown", ".modal select.dropdown", ["active"], {
+			note,
 		}),
-		p("modal.slider.hover", "slider", ".modal input[type=range]", ["hover"], { note: IN_WINDOW }),
-		p("extra.select-option.hover", "dropdown", ".modal select.dropdown option", ["hover"], {
-			note: IN_WINDOW,
-			synthetic:
-				"size=6 set on the <select> so Chromium draws its options in the page (the real dropdown list is a native popup outside the page)",
-			before: async (ctx) => {
-				await ctx.js(
-					"document.querySelector('.modal select.dropdown').setAttribute('size', '6'); await sleep(200);",
-				);
-			},
-		}),
+		p(`${prefix}modal.slider.hover`, "slider", ".modal input[type=range]", ["hover"], { note }),
 		p(
-			"extra.select-option.checked.hover",
+			`${prefix}extra.select-option.hover`,
+			"dropdown",
+			".modal select.dropdown option",
+			["hover"],
+			{
+				note,
+				synthetic:
+					"size=6 set on the <select> so Chromium draws its options in the page (the real dropdown list is a native popup outside the page)",
+				before: async (ctx) => {
+					await ctx.js(
+						"document.querySelector('.modal select.dropdown').setAttribute('size', '6'); await sleep(200);",
+					);
+				},
+			},
+		),
+		p(
+			`${prefix}extra.select-option.checked.hover`,
 			"dropdown",
 			".modal select.dropdown option:checked",
 			["hover"],
 			{
-				note: IN_WINDOW,
+				note,
 				synthetic: "size=6 set on the <select> so Chromium draws its options in the page",
 			},
 		),
 		p(
-			"modal.button.hover",
+			`${prefix}modal.button.hover`,
 			"button",
 			".modal .vertical-tab-content button:not(.mod-cta)",
 			["hover"],
 			{
-				note: IN_WINDOW,
+				note,
 				before: async (ctx) => {
 					await ctx.js(
 						"document.querySelector('.modal select.dropdown[size]')?.removeAttribute('size');",
@@ -1132,38 +1224,38 @@ const settingsInWindow: Scene = {
 				},
 			},
 		),
-		p("modal.button-cta.hover", "button-cta", ".modal button.mod-cta", ["hover"], {
-			note: IN_WINDOW,
+		p(`${prefix}modal.button-cta.hover`, "button-cta", ".modal button.mod-cta", ["hover"], {
+			note,
 			before: tab("sync"),
 		}),
 		p(
-			"modal.text-input.hover",
+			`${prefix}modal.text-input.hover`,
 			"text-input",
 			".modal .vertical-tab-content input[type=text]",
 			["hover"],
 			{
-				note: IN_WINDOW,
+				note,
 				before: tab("file"),
 			},
 		),
 		p(
-			"modal.clickable-icon.hover",
+			`${prefix}modal.clickable-icon.hover`,
 			"clickable-icon",
 			".modal .vertical-tab-content .clickable-icon",
 			["hover"],
 			{
-				note: IN_WINDOW,
+				note,
 				before: tab("hotkeys"),
 			},
 		),
-		p("modal.hotkey.hover", "hotkey", ".modal .setting-hotkey", ["hover"], { note: IN_WINDOW }),
+		p(`${prefix}modal.hotkey.hover`, "hotkey", ".modal .setting-hotkey", ["hover"], { note }),
 		p(
-			"modal.search-clear.hover",
+			`${prefix}modal.search-clear.hover`,
 			"clickable-icon",
 			".modal .search-input-container.mod-hotkey .search-input-clear-button",
 			["hover"],
 			{
-				note: IN_WINDOW,
+				note,
 				before: async (ctx) => {
 					await click(ctx, ".modal .search-input-container.mod-hotkey input");
 					await ctx.page.keyboard.type("bold", { delay: 20 });
@@ -1171,15 +1263,34 @@ const settingsInWindow: Scene = {
 				},
 			},
 		),
-		p("extra.community.item.hover", "community-browser", ".community-item", ["hover"], {
-			note: IN_WINDOW,
-			before: async (ctx) => {
-				await tab("community-plugins")(ctx);
-				await ctx.js(
-					"[...document.querySelectorAll('.modal.mod-settings button')].find((e) => /exit restricted/i.test(e.textContent ?? ''))?.click(); await sleep(800); [...document.querySelectorAll('.modal.mod-settings button')].find((e) => /browse/i.test(e.textContent ?? ''))?.click(); await sleep(5000);",
-				);
-			},
-		}),
+	];
+}
+
+/** The real popout Settings window. */
+const settingsPopoutHover: Scene = {
+	id: "qc.settings-popout-hover",
+	surface: "settings",
+	source: "catalog:settings-hover-states",
+	window: "popout",
+	opener: settingsWindow("editor"),
+	setup: async (ctx) => {
+		await ctx.js("cap.clearSettingsSearch(); app.setting.openTabById('editor'); await sleep(700);");
+	},
+	items: settingsHoverItems("", POPOUT),
+};
+
+/** Extra: the same states with Settings inside the main window. */
+const settingsInWindow: Scene = {
+	id: "qc.settings-in-window",
+	surface: "settings",
+	source: "catalog:settings-hover-states-in-window",
+	setup: async (ctx) => {
+		await ctx.js(
+			"app.vault.setConfig('settingsPopoutWindow', false); await sleep(200); app.setting.open(); app.setting.openTabById('editor'); await sleep(700);",
+		);
+	},
+	items: [
+		...settingsHoverItems("inwindow.", IN_WINDOW),
 		{
 			id: "qc.settings-in-window.restore",
 			component: "workspace",
@@ -1193,6 +1304,237 @@ const settingsInWindow: Scene = {
 					"app.setting.close(); app.vault.setConfig('settingsPopoutWindow', true); await sleep(300);",
 				);
 			},
+		},
+	],
+};
+
+/** Dialogs no command opens directly: rename, unlinked attachments on delete, PDF export progress. */
+const dialogsQc: Scene = {
+	id: "qc.dialogs",
+	surface: "modal",
+	source: "catalog:dialogs",
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+		// Deleted notes go to the vault's own .trash folder, never the system trash.
+		await ctx.js(
+			"app.vault.setConfig('trashOption', 'local'); app.vault.setConfig('promptDelete', false); app.vault.setConfig('deleteUnlinkedAttachments', 'ask'); await sleep(200);",
+		);
+	},
+	items: [
+		{
+			id: "qc.dialog.rename",
+			component: "modal",
+			target: ".modal.mod-file-rename",
+			expect: ".mod-file-rename:has(textarea.rename-textarea)",
+			before: async (ctx) => {
+				await ctx.js(
+					"app.fileManager.promptForFileRename(app.vault.getAbstractFileByPath('Attachments/sample-image.png')); await sleep(500);",
+				);
+			},
+			note: "The rename dialog Obsidian shows for files without an inline title (FileManager.promptForFileRename).",
+		},
+		{
+			id: "qc.dialog.unlinked-attachments",
+			component: "modal",
+			target: ".modal.mod-file-browser",
+			expect: ".mod-file-browser:has(.file-tree-item-checkbox)",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.js(
+					"const v = app.vault; if (!v.getAbstractFileByPath('Scratch')) await v.createFolder('Scratch'); for (const n of ['Scratch/unlinked-one.png', 'Scratch/unlinked-two.jpg']) if (!v.getAbstractFileByPath(n)) await v.copy(v.getAbstractFileByPath(n.endsWith('png') ? 'Attachments/sample-image.png' : 'Attachments/small-square.jpg'), n); const note = v.getAbstractFileByPath('Scratch/Note with attachments.md') ?? await v.create('Scratch/Note with attachments.md', 'Only this note links them.\\n\\n![[unlinked-one.png]]\\n![[unlinked-two.jpg]]\\n'); for (let i = 0; i < 40 && !Object.keys(app.metadataCache.resolvedLinks[note.path] ?? {}).length; i++) await sleep(100); app.fileManager.promptForDeletion(note); for (let i = 0; i < 40 && !document.querySelector('.modal.mod-file-browser'); i++) await sleep(100); await sleep(300);",
+				);
+			},
+			note: "Deleting a note whose attachments nothing else links asks which ones to delete too ('Delete unlinked attachments: ask'). The note is a throwaway in Scratch/ and goes to the vault's .trash.",
+		},
+		{
+			id: "qc.dialog.unlinked-attachments.gallery",
+			component: "modal",
+			target: ".modal.mod-file-browser",
+			state: "gallery-view",
+			expect: ".mod-file-browser:has(.attachments-gallery)",
+			before: async (ctx) => {
+				await ctx.js(
+					"const b = [...document.querySelectorAll('.modal.mod-file-browser .file-browser-views > *')].at(-1); b?.click(); for (let i = 0; i < 20 && !document.querySelector('.attachments-gallery'); i++) await sleep(100); await sleep(400);",
+				);
+			},
+			note: "The same dialog switched to its gallery view.",
+		},
+		{
+			id: "qc.dialog.export-progress",
+			component: "progress-bar",
+			surface: "notice",
+			target: ".progress-bar-container",
+			expect: ":has(.progress-bar .progress-bar-message)",
+			minUnobscured: 0.3,
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.open("Markdown/Kitchen sink.md", "reading");
+				await ctx.js(
+					`let p = Object.getPrototypeOf(app.setting); let base = null; while (p && p !== Object.prototype) { if (Object.hasOwn(p, 'open')) base = p; p = Object.getPrototypeOf(p); } const open = base.open; base.open = function () { window.__capModal = this; return open.apply(this, arguments); }; app.commands.executeCommandById('workspace:export-pdf'); await sleep(600); base.open = open; const m = window.__capModal; m.close(); const sl = window.sleep; window.__capHold = new Promise((r) => { window.__capRelease = r; }); window.sleep = async (ms) => { window.sleep = sl; await window.__capHold; return sl(ms); }; window.__capPdf = m.printToPdf({ includeName: true, pageSize: 'Letter', landscape: false, marginsType: 0, scale: 1, open: false, filepath: ${JSON.stringify(`${WORK}/export-test.pdf`)} }); for (let i = 0; i < 40 && !document.querySelector('.progress-bar-container'); i++) await sleep(25); await sleep(300);`,
+				);
+			},
+			note: "Export to PDF shows Obsidian's progress bar while it prints. The export is started directly (no save dialog) into the capture work folder with open: false, and its first internal sleep() is held until the shot is taken, so the bar stays up; it is released in qc.dialogs.restore.",
+		},
+		{
+			id: "qc.dialogs.restore",
+			component: "workspace",
+			target: ".app-container",
+			full: true,
+			state: "default",
+			before: async (ctx) => {
+				await ctx.js(
+					"window.__capRelease?.(); await window.__capPdf?.catch(() => null); app.vault.setConfig('deleteUnlinkedAttachments', 'never'); app.vault.setConfig('promptDelete', true); await sleep(300);",
+				);
+			},
+		},
+	],
+};
+
+/** Debug dialogs reached from the Settings popout: startup time and keychain encryption. */
+const settingsDialogs: Scene = {
+	id: "qc.settings-dialogs",
+	surface: "modal",
+	source: "catalog:settings-dialogs",
+	window: "popout",
+	opener: settingsWindow("about"),
+	setup: async (ctx) => {
+		await ctx.js("cap.clearSettingsSearch(); app.setting.openTabById('about'); await sleep(700);");
+	},
+	items: [
+		{
+			id: "qc.dialog.startup-time",
+			component: "modal",
+			target: ".modal.mod-plugin-debug",
+			expect: ".mod-plugin-debug.mod-scrollable-content",
+			before: async (ctx) => {
+				await ctx.js(
+					"const b = [...document.querySelectorAll('.extra-setting-button')].find((e) => e.querySelector('.lucide-timer')); b.scrollIntoView({ block: 'center' }); b.click(); for (let i = 0; i < 40 && !document.querySelector('.modal.mod-plugin-debug'); i++) await sleep(100); await sleep(400);",
+				);
+			},
+			note: "Settings > About > Check startup time: the startup timing breakdown.",
+		},
+		{
+			id: "qc.dialog.encryption-unavailable",
+			component: "modal",
+			target: ".modal.mod-plugin-debug",
+			expect: ".mod-plugin-debug.mod-scrollable-content",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.js(
+					"app.setting.openTabById('keychain'); await sleep(600); const a = [...document.querySelectorAll('.vertical-tab-content a, .vertical-tab-content .clickable-icon.mod-warning')].find((e) => e.getClientRects().length); a?.click(); for (let i = 0; i < 40 && !document.querySelector('.modal.mod-plugin-debug'); i++) await sleep(100); await sleep(400);",
+				);
+			},
+			note: "Settings > Keychain shows a warning when the OS keyring is missing (the isolated session has none); its link opens this explanation.",
+		},
+	],
+};
+
+/** app:migrate-frontmatter on disposable legacy notes (Migration/): result counters. */
+const migrationQc: Scene = {
+	id: "qc.migration",
+	surface: "modal",
+	source: "catalog:frontmatter-migration",
+	setup: async (ctx) => {
+		await ctx.command("app:migrate-frontmatter");
+		await ctx.sleep(600);
+	},
+	items: [
+		{
+			id: "qc.migration.modal",
+			component: "modal",
+			target: { sel: ".modal-container", in: "container" },
+			full: true,
+		},
+		{
+			id: "qc.migration.results",
+			component: "modal",
+			target: ".modal:has(.changelog-item)",
+			expect: ":has(.changelog-item.mod-success):has(.changelog-item.mod-highlighted)",
+			before: async (ctx) => {
+				await ctx.js(
+					"cap.last('.modal-container .modal button.mod-cta')?.click(); for (let i = 0; i < 50 && !document.querySelector('.changelog-item'); i++) await sleep(100); await sleep(1500);",
+				);
+			},
+			note: "Counts of processed, modified and failed notes after Start conversion; the sample notes are disposable copies in the throwaway vault.",
+		},
+	],
+};
+
+/** The interface in a right-to-left language (Hebrew): body.mod-rtl and mirrored chrome. */
+const rtlLanguage: Scene = {
+	id: "qc.rtl-language",
+	surface: "workspace",
+	source: "catalog:rtl-interface-language",
+	setup: async (ctx) => {
+		await ctx.js("localStorage.setItem('language', 'he');");
+		await ctx.page.reload();
+		await ctx.page.waitForFunction("window.app?.workspace?.layoutReady === true", null, {
+			timeout: 30000,
+		});
+		await ctx.page.evaluate(INPAGE);
+		await baseLayout(ctx);
+		await ctx.sleep(500);
+	},
+	items: [
+		{
+			id: "qc.rtl-language.window",
+			component: "workspace",
+			target: ".app-container",
+			state: "mod-rtl",
+			expect: "body.mod-rtl .app-container",
+			full: true,
+			note: "Interface language set to Hebrew (localStorage.language = he) and the window reloaded.",
+		},
+		{
+			id: "qc.rtl-language.restore",
+			component: "workspace",
+			target: ".app-container",
+			state: "default",
+			full: true,
+			before: async (ctx) => {
+				await ctx.js("localStorage.removeItem('language');");
+				await ctx.page.reload();
+				await ctx.page.waitForFunction("window.app?.workspace?.layoutReady === true", null, {
+					timeout: 30000,
+				});
+				await ctx.page.evaluate(INPAGE);
+				await ctx.sleep(500);
+			},
+		},
+	],
+};
+
+/** The code-block edit button only shows while its block is hovered: real pointer, real window. */
+const editButtonWindowed: Scene = {
+	id: "qc.edit-block-windowed",
+	surface: "editor-live-preview",
+	source: "catalog:hover-revealed-buttons",
+	windowed: true,
+	setup: (ctx) => ctx.open("Markdown/Kitchen sink.md", "live"),
+	items: [
+		{
+			id: "qc.edit-block-button.hover",
+			component: "clickable-icon",
+			target: leaf(".markdown-source-view .cm-embed-block.cm-callout .edit-block-button"),
+			pseudo: ["hover"],
+			pointer: true,
+			state: "hover",
+			before: async (ctx) => {
+				await ctx.js(
+					"cap.ROOTS.leaf().querySelector('.markdown-source-view .cm-embed-block.cm-callout').scrollIntoView({ block: 'center' }); await sleep(300);",
+				);
+				const block = await center(ctx, leaf(".markdown-source-view .cm-embed-block.cm-callout"));
+				await ctx.page.mouse.move(block[0], block[1], { steps: 4 });
+				await ctx.sleep(400);
+				const btn = await center(
+					ctx,
+					leaf(".markdown-source-view .cm-embed-block.cm-callout .edit-block-button"),
+				);
+				await ctx.page.mouse.move(btn[0], btn[1], { steps: 4 });
+				await ctx.js("window.__capPointer = arg;", btn);
+				await ctx.sleep(400);
+			},
+			note: "Real pointer in a real window: over the callout block, then onto its edit button.",
 		},
 	],
 };
@@ -1214,6 +1556,12 @@ export function qcScenes(): Scene[] {
 		graphQc,
 		mediaQc,
 		windowQc,
+		settingsPopoutHover,
+		migrationQc,
+		dialogsQc,
+		settingsDialogs,
+		rtlLanguage,
+		editButtonWindowed,
 		settingsInWindow,
 	];
 }

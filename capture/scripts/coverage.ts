@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { chromium } from "playwright";
-import { matchable } from "./css.ts";
+import { matchable, selectors } from "./css.ts";
 import { pngStats } from "./engine.ts";
 import { SCREENSHOTS } from "./obsidian.ts";
 import {
@@ -18,7 +18,7 @@ import {
 	themeExclusion,
 	themeSelectors,
 } from "./plan.ts";
-import type { ChecklistItem, FixtureEntry, Target } from "./types.ts";
+import type { ChecklistItem, FixtureEntry } from "./types.ts";
 
 if (!existsSync(`${CAPTURE}.app/app.css`)) {
 	throw new Error("Run `bun run capture:extract-app-css` first.");
@@ -46,15 +46,27 @@ await page.route("**", (r) => r.abort());
 interface Check {
 	ok: boolean;
 	why: string[];
+	/** Selector indexes that hit a visibly painted element / only hidden or clipped elements. */
 	hits: number[];
+	domHits: number[];
+	/** Classes on visibly painted elements / only on elements that were not painted. */
 	classes: string[];
+	domClasses: string[];
 }
 
 /** Checks one fixture file in Chromium (DOMParser, no scripts) against its claims. */
 async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promise<Check> {
 	const why: string[] = [];
 	const path = `${CAPTURE}fixtures/${f.file}`;
-	if (!existsSync(path)) return { ok: false, why: ["fixture file missing"], hits: [], classes: [] };
+	if (!existsSync(path))
+		return {
+			ok: false,
+			why: ["fixture file missing"],
+			hits: [],
+			domHits: [],
+			classes: [],
+			domClasses: [],
+		};
 	const html = readFileSync(path, "utf8");
 	const forced = (claim?.pseudo ?? []).filter((p) => p !== "visited");
 	const r = (await page.evaluate(
@@ -63,15 +75,21 @@ async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promi
 			const target = doc.querySelector("[data-capture-target]");
 			const pel = doc.querySelector("[data-capture-pseudo]") ?? target;
 			const marks = (pel?.getAttribute("data-capture-state") ?? "").split(" ");
+			// Visual hits need a visibly painted element (data-capture-seen); DOM hits do not.
 			const hit: number[] = [];
+			const domHit: number[] = [];
 			sels.forEach((s, i) => {
 				try {
-					if (doc.querySelector(s)) hit.push(i);
+					const list = [...doc.querySelectorAll(s)];
+					if (list.some((e) => e.hasAttribute("data-capture-seen"))) hit.push(i);
+					else if (list.length) domHit.push(i);
 				} catch {}
 			});
 			const classes = new Set<string>();
+			const domClasses = new Set<string>();
 			for (const el of doc.querySelectorAll("[class]"))
-				for (const c of el.classList) classes.add(c);
+				for (const c of el.classList)
+					(el.hasAttribute("data-capture-seen") ? classes : domClasses).add(c);
 			let expectOk = true;
 			try {
 				expectOk = !expect || !!target?.matches(expect);
@@ -83,7 +101,9 @@ async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promi
 				stateOk: forced.every((p) => marks.includes(p)),
 				expectOk,
 				hit,
+				domHit,
 				classes: [...classes],
+				domClasses: [...domClasses].filter((c) => !classes.has(c)),
 			};
 		},
 		[html, rewritten, claim?.expect ?? null, forced] as [string, string[], string | null, string[]],
@@ -92,7 +112,9 @@ async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promi
 		stateOk: boolean;
 		expectOk: boolean;
 		hit: number[];
+		domHit: number[];
 		classes: string[];
+		domClasses: string[];
 	};
 	if (!r.hasTarget) why.push("no [data-capture-target] in the fixture");
 	if (!r.stateOk) why.push(`forced state ${forced.join("+")} not marked on the forced element`);
@@ -101,7 +123,14 @@ async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promi
 		// Synthetic platform variant: its base fixture carries the screenshot evidence.
 		const base = byId.get(f.variantOf);
 		if (!base?.evidence) why.push("base fixture has no evidence");
-		return { ok: why.length === 0, why, hits: r.hit, classes: r.classes };
+		return {
+			ok: why.length === 0,
+			why,
+			hits: r.hit,
+			domHits: r.domHit,
+			classes: r.classes,
+			domClasses: r.domClasses,
+		};
 	}
 	const ev = f.evidence;
 	if (!ev) why.push("no capture evidence recorded");
@@ -112,7 +141,8 @@ async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promi
 			why.push(`target only ${ev.unobscured} unobscured`);
 		if (!ev.screenshot || ev.screenshot.colors < 2) why.push("screenshot blank or missing");
 		if (forced.length && !forced.every((p) => (ev.marks[p] ?? 0) > 0))
-			why.push("Chromium did not confirm the forced state");
+			why.push("forced state not recorded");
+		if (!ev.seen) why.push("no element recorded as visibly painted");
 		if (claim?.pseudo?.includes("visited") && !ev.marks.visited) why.push("visited not forced");
 		if (claim?.state === "selection" && !ev.marks.selection)
 			why.push("no text selection on the target");
@@ -130,16 +160,23 @@ async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promi
 			}
 		}
 	}
-	return { ok: why.length === 0, why, hits: r.hit, classes: r.classes };
+	return {
+		ok: why.length === 0,
+		why,
+		hits: r.hit,
+		domHits: r.domHit,
+		classes: r.classes,
+		domClasses: r.domClasses,
+	};
 }
 
-/** A state needs proof unless the target selector itself names it. */
+/**
+ * Every non-default state needs an explicit assertion: forced pseudo-classes, an expect selector
+ * the target matched, a labeled script, or the selection / scrollbar marks checked in inspect().
+ */
 function stateUnproven(i: ChecklistItem): boolean {
 	if (i.state === "default" || i.pseudo?.length || i.expect || i.synthetic) return false;
-	// Proven by marks checked in inspect(): a live text selection or the pointer over a scrollbar.
-	if (i.state === "selection" || i.state === "scrollbar-hover") return false;
-	const sel = typeof i.target === "string" ? i.target : (i.target as Exclude<Target, string>).sel;
-	return !/\.(is|mod|has)-|\[|:checked|:has\(|\.cm-active|\.selected|\.collapsed/.test(sel);
+	return i.state !== "selection" && i.state !== "scrollbar-hover";
 }
 
 const valid = new Map<string, Check>();
@@ -164,12 +201,18 @@ const syntheticItems = covered.filter(
 // 2. theme.css selectors: fixture match AND live match at capture time.
 const fixtureHits = new Map<string, string[]>(theme.map((s) => [s.id, []]));
 const liveHits = new Map<string, string[]>(theme.map((s) => [s.id, []]));
+const domOnlyHits = new Map<string, string[]>(theme.map((s) => [s.id, []]));
+const syntheticHits = new Map<string, string[]>(theme.map((s) => [s.id, []]));
 for (const [id, c] of valid) {
 	const f = byId.get(id) as FixtureEntry;
-	// Synthetic platform variants have no live page; they only cover platform items.
-	if (f.variantOf) continue;
+	// Scripted fixtures and platform variants count separately from visual captures.
+	if (f.variantOf || f.synthetic) {
+		for (const i of c.hits) syntheticHits.get(theme[i]?.id ?? "")?.push(id);
+		continue;
+	}
 	const live = new Set(f.evidence?.live ?? []);
 	for (const i of c.hits) fixtureHits.get(theme[i]?.id ?? "")?.push(id);
+	for (const i of c.domHits) domOnlyHits.get(theme[i]?.id ?? "")?.push(id);
 	for (const l of live) liveHits.get(l)?.push(id);
 }
 const themeRows = theme.map((s) => {
@@ -182,37 +225,191 @@ const themeRows = theme.map((s) => {
 		fixtures: both,
 		fixtureOnly: fix.filter((f) => !live.includes(f)),
 		liveOnly: live.filter((f) => !fix.includes(f)),
+		domOnly: domOnlyHits.get(s.id) ?? [],
+		synthetic: syntheticHits.get(s.id) ?? [],
 		excluded: themeExclusion(s.selector, ex),
 	};
 });
 const themeMatched = themeRows.filter((r) => r.fixtures.length > 0);
 const themeExcluded = themeRows.filter((r) => !r.fixtures.length && r.excluded);
 const themeMissing = themeRows.filter((r) => !r.fixtures.length && !r.excluded);
+const themeDomOnly = themeMissing.filter((r) => r.domOnly.length);
+const themeSyntheticOnly = themeMissing.filter((r) => !r.domOnly.length && r.synthetic.length);
 const disagreements = themeRows.filter((r) => r.fixtureOnly.length || r.liveOnly.length);
 
 // 3. App classes.
 const classIn = new Map<string, string>();
-for (const [id, c] of valid) for (const k of c.classes) if (!classIn.has(k)) classIn.set(k, id);
+const classDom = new Map<string, string>();
+const classSynthetic = new Map<string, string>();
+for (const [id, c] of valid) {
+	const f = byId.get(id) as FixtureEntry;
+	const synthetic = !!(f.variantOf || f.synthetic);
+	for (const k of c.classes) {
+		if (synthetic) {
+			if (!classSynthetic.has(k)) classSynthetic.set(k, id);
+		} else if (!classIn.has(k)) classIn.set(k, id);
+	}
+	for (const k of c.domClasses) if (!classDom.has(k)) classDom.set(k, id);
+}
 const seen = census();
 const app = appClassStatuses(appSelectors(), ex).map((c) => ({
 	...c,
 	fixture: classIn.get(c.name),
+	dom: classDom.get(c.name),
+	synthetic: classSynthetic.get(c.name),
 	census: seen.has(c.name),
 }));
 const appCovered = app.filter((c) => c.fixture);
 const appExcluded = app.filter((c) => !c.fixture && c.excluded);
 const appMissing = app.filter((c) => !c.fixture && !c.excluded);
-const appCensusOnly = appMissing.filter((c) => c.census);
-await browser.close();
+const appCensusOnly = appMissing.filter((c) => c.census && !c.dom && !c.synthetic);
+const appDomOnly = appMissing.filter((c) => c.dom);
+const appSyntheticOnly = appMissing.filter((c) => !c.dom && c.synthetic);
 
-// 4. Identical screenshots of different items (a sign of an overlay covering the window).
+// 4. Identical screenshots of different items. Each group must be explained by its fixtures:
+// a claimed state that no stylesheet styles there, one element in different editor modes, or
+// two items whose fixtures hold the same DOM. Anything else is listed for review.
 const bySha = new Map<string, string[]>();
 for (const f of fx.fixtures) {
 	if (f.variantOf) continue;
 	const sha = f.evidence?.screenshot?.sha256;
 	if (sha) bySha.set(sha, [...(bySha.get(sha) ?? []), f.id]);
 }
-const dupes = [...bySha.values()].filter((v) => v.length > 1);
+const runtimeCss = `${CAPTURE}.app/runtime-styles.css`;
+const stateSelectors = [
+	...theme.map((s) => s.selector),
+	...appSelectors().map((s) => s.selector),
+	...(existsSync(runtimeCss)
+		? selectors(readFileSync(runtimeCss, "utf8")).map((s) => s.selector)
+		: []),
+]
+	.map((s) => matchable(s))
+	.filter((s) => s.includes("data-capture-state~="));
+const MODES = /\.(live|reading|source)$/;
+const MODE_ROOT: Record<string, string> = {
+	live: ".markdown-source-view.is-live-preview",
+	source: ".markdown-source-view:not(.is-live-preview)",
+	reading: ".markdown-reading-view",
+};
+/** What a fixture shows that matters for a dupe: styled states, editor mode, normalized DOM. */
+async function dupeFacts(id: string) {
+	const f = byId.get(id);
+	const html =
+		f && existsSync(`${CAPTURE}fixtures/${f.file}`)
+			? readFileSync(`${CAPTURE}fixtures/${f.file}`, "utf8")
+			: "";
+	const mode = MODES.exec(id)?.[1];
+	return (await page.evaluate(
+		([html, sels, modeSel]) => {
+			const doc = new DOMParser().parseFromString(html, "text/html");
+			const target = doc.querySelector("[data-capture-target]");
+			const styled = sels.filter((s) => {
+				try {
+					return !!doc.querySelector(s);
+				} catch {
+					return false;
+				}
+			});
+			for (const e of doc.querySelectorAll("*"))
+				for (const a of [...e.attributes])
+					if (a.name.startsWith("data-capture") || a.name === "id" || a.name === "style")
+						e.removeAttribute(a.name);
+			return {
+				styled: styled.length,
+				modeOk:
+					!modeSel ||
+					!!target?.closest(modeSel) ||
+					!!target?.querySelector(modeSel) ||
+					!!target?.matches(modeSel),
+				dom: doc.body.innerHTML.replace(/\s+/g, " "),
+				target: (target?.outerHTML ?? "").replace(/\s+/g, " "),
+			};
+		},
+		[html, stateSelectors, mode ? (MODE_ROOT[mode] ?? null) : null] as [
+			string,
+			string[],
+			string | null,
+		],
+	)) as { styled: number; modeOk: boolean; dom: string; target: string };
+}
+const STATE_WORDS =
+	/^(hover|focus|focus-visible|focus-within|active|visited|checked|disabled|selected)(-(hover|focus|focus-visible|focus-within|active|visited|checked|disabled|selected))*$/;
+/** The item an id shows without its state, editor mode or Settings window: chrome.x.hover -> chrome.x. */
+function baseOf(id: string): string {
+	const parts = id
+		.replace(/^inwindow\./, "")
+		.replace(MODES, "")
+		.split(".");
+	while (parts.length > 1 && STATE_WORDS.test(parts.at(-1) ?? "")) parts.pop();
+	return parts.join(".");
+}
+const dupes: string[][] = [];
+const dupeReasons: { ids: string[]; reason: string }[] = [];
+for (const ids of [...bySha.values()].filter((v) => v.length > 1)) {
+	const facts = await Promise.all(
+		ids.map(async (id) => ({ id, claim: itemById.get(id), ...(await dupeFacts(id)) })),
+	);
+	// Members join when they show the same thing (one DOM, one target element, or one base item in
+	// another mode or window). When their claimed states differ, each differing state must paint
+	// nothing new: no rule styles it in the fixture, or forcing it changed no painted style, or it
+	// is a scripted (synthetic) state.
+	const quiet = (x: (typeof facts)[number]) =>
+		!(x.claim?.pseudo ?? []).length ||
+		!!x.claim?.synthetic ||
+		x.styled === 0 ||
+		byId.get(x.id)?.evidence?.styleChanged === 0;
+	const statesOf = (x: (typeof facts)[number]) => [...(x.claim?.pseudo ?? [])].sort().join("+");
+	const parent = facts.map((_, i) => i);
+	const root = (i: number): number => (parent[i] === i ? i : root(parent[i] ?? i));
+	const why = new Set<string>();
+	for (let i = 0; i < facts.length; i++)
+		for (let j = i + 1; j < facts.length; j++) {
+			const x = facts[i];
+			const y = facts[j];
+			if (!x || !y) continue;
+			const sameState = statesOf(x) === statesOf(y);
+			// A state whose rules matched and whose computed changes were recorded, yet whose pixels
+			// match the other shot, is applied but not visible at this spot (listed with the change).
+			const applied = (z: (typeof facts)[number]) => {
+				const ev = byId.get(z.id)?.evidence;
+				return ev?.styleChanged !== undefined && Object.values(ev.painted ?? {}).some((n) => n > 0);
+			};
+			const ok = (z: (typeof facts)[number]) => quiet(z) || applied(z);
+			if (!sameState && !(ok(x) && ok(y))) continue;
+			let rel = "";
+			if (x.dom === y.dom) rel = "identical fixture DOM";
+			else if (x.target && x.target === y.target) rel = "the same target element";
+			else if (baseOf(x.id) === baseOf(y.id) && x.modeOk && y.modeOk)
+				rel =
+					MODES.test(x.id) || MODES.test(y.id)
+						? "the same element in another editor mode"
+						: x.id.startsWith("inwindow.") !== y.id.startsWith("inwindow.")
+							? "the same Settings control in the popout and in the main window"
+							: "the same element in another state";
+			if (rel) {
+				if (!sameState && quiet(x) && quiet(y))
+					why.add(
+						"the differing states paint nothing new (no rule styles them, or forcing them changed no painted style)",
+					);
+				for (const z of [x, y])
+					if (!sameState && !quiet(z))
+						why.add(
+							`${z.id}: the state applies (${Object.entries(byId.get(z.id)?.evidence?.painted ?? {})
+								.map(([k, n]) => `${n} :${k} rule${n === 1 ? "" : "s"}`)
+								.join(
+									", ",
+								)}) but its changes do not show in this shot (${(byId.get(z.id)?.evidence?.styleProps ?? []).join("; ")})`,
+						);
+				why.add(rel);
+				parent[root(j)] = root(i);
+			}
+		}
+	const joined = new Set(facts.map((_, i) => root(i))).size === 1;
+	const reason = joined ? [...why].join("; ") : "";
+	if (reason) dupeReasons.push({ ids, reason });
+	else dupes.push(ids);
+}
+await browser.close();
 
 // 5. Cross-check with the theming expert's vault pages (read only; skipped when absent).
 const EXPERT = `${homedir()}/Holocron/Other/Obsidian/LLM/wiki/concepts/obsidian-theming/`;
@@ -250,9 +447,9 @@ const n = checklist.items.length;
 const lines = [
 	`Obsidian ${checklist.obsidianVersion} · ${fx.fixtures.length} fixtures, ${valid.size} with valid evidence (${fx.fixtures.filter((f) => f.variantOf).length} synthetic macOS/Windows variants)`,
 	`Checklist items shown in their claimed state: ${covered.length}/${n} (${pct(covered.length, n)}); ${syntheticItems.length} of them scripted or synthetic (labeled); excluded with reason: ${excludedItems.length}; missing: ${missingItems.length}`,
-	`theme.css selectors matched by fixture and live Chromium: ${themeMatched.length}/${theme.length} (${pct(themeMatched.length, theme.length)}); excluded with reason: ${themeExcluded.length}; missing: ${themeMissing.length}; fixture/live disagreements: ${disagreements.length}`,
-	`App CSS classes: in a valid fixture ${appCovered.length}, excluded ${appExcluded.length}, missing ${appMissing.length} (${appCensusOnly.length} of them seen in the runtime census only) of ${app.length} (${pct(appCovered.length + appExcluded.length, app.length)} accounted for)`,
-	`Screenshots: ${screenshotsHere ? "files re-checked against recorded hashes" : "files not on this machine; recorded evidence used"}; ${dupes.length} groups of identical screenshots`,
+	`theme.css selectors visibly matched (fixture and live agree, on painted elements): ${themeMatched.length}/${theme.length} (${pct(themeMatched.length, theme.length)}); excluded with reason: ${themeExcluded.length}; missing: ${themeMissing.length} (${themeDomOnly.length} only on hidden/clipped elements, ${themeSyntheticOnly.length} only in scripted fixtures); fixture/live disagreements: ${disagreements.length}`,
+	`App CSS classes visibly captured: ${appCovered.length}, excluded ${appExcluded.length}, missing ${appMissing.length} of ${app.length} (${pct(appCovered.length + appExcluded.length, app.length)} accounted for); of the missing: ${appDomOnly.length} in the DOM but never painted, ${appSyntheticOnly.length} only in scripted fixtures, ${appCensusOnly.length} seen in the runtime census only`,
+	`Screenshots: ${screenshotsHere ? "files re-checked against recorded hashes" : "files not on this machine; recorded evidence used"}; ${dupeReasons.length + dupes.length} groups of identical screenshots (${dupeReasons.length} explained by their fixtures, ${dupes.length} unexplained)`,
 	...crossCheck.map((c) => `Expert cross-check, ${c}`),
 ];
 console.log(lines.join("\n"));
@@ -277,7 +474,7 @@ list("App classes neither captured nor excluded", [
 	appMissing.map((c) => `${c.name}${c.census ? "*" : ""}`).join(" "),
 ]);
 list(
-	"Identical screenshots",
+	"Unexplained identical screenshots",
 	dupes.map((d) => d.join(" = ")),
 );
 
@@ -294,7 +491,7 @@ writeFileSync(
 			invalidFixtures: Object.fromEntries(invalid),
 			themeSelectors: themeRows,
 			appClasses: app,
-			identicalScreenshots: dupes,
+			identicalScreenshots: { unexplained: dupes, explained: dupeReasons },
 		},
 		null,
 		"\t",
@@ -373,20 +570,25 @@ function report(): string {
 	for (const c of [...appExcluded, ...appMissing]) {
 		const why =
 			c.excluded ??
-			(c.census
-				? "**missing** (seen in the runtime census, no fixture)"
-				: "**missing** (never seen in the runtime DOM census)");
+			(c.dom
+				? "**missing** (in a fixture's DOM, but never visibly painted)"
+				: c.synthetic
+					? "**missing** (only in scripted or synthetic fixtures)"
+					: c.census
+						? "**missing** (seen in the runtime census, no fixture)"
+						: "**missing** (never seen in the runtime DOM census)");
 		reasons.set(why, [...(reasons.get(why) ?? []), c.name]);
 	}
 	for (const [why, names] of [...reasons.entries()].sort(([a], [b]) => a.localeCompare(b))) {
 		out.push(`- ${why} (${names.length}): ${names.map((x) => `\`${x}\``).join(" ")}`);
 	}
-	if (dupes.length)
+	if (dupes.length || dupeReasons.length)
 		out.push(
 			"",
 			"## Identical screenshots",
 			"",
-			...dupes.map((d) => `- ${d.map((x) => `\`${x}\``).join(" = ")}`),
+			...dupes.map((d) => `- unexplained: ${d.map((x) => `\`${x}\``).join(" = ")}`),
+			...dupeReasons.map((d) => `- ${d.ids.map((x) => `\`${x}\``).join(" = ")}: ${d.reason}`),
 		);
 	if (fx.failed.length)
 		out.push("", "## Capture failures", "", ...fx.failed.map((f) => `- \`${f.id}\`: ${f.error}`));

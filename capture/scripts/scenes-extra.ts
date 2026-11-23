@@ -70,6 +70,7 @@ const sidebarStates: Scene = {
 		),
 		{
 			id: "extra.tab-list.has-active-menu",
+			expect: ".has-active-menu",
 			component: "clickable-icon",
 			surface: "workspace",
 			target: ".workspace-tabs .has-active-menu",
@@ -78,6 +79,7 @@ const sidebarStates: Scene = {
 		},
 		{
 			id: "extra.menu.keyboard-selected",
+			expect: ".selected",
 			component: "menu-item",
 			surface: "menu",
 			target: ".menu .menu-item.selected",
@@ -122,6 +124,7 @@ const selectStates: Scene = {
 		p("extra.select.focus-within", "dropdown", ".modal select.dropdown", ["focus-within"]),
 		{
 			id: "extra.settings-search-empty",
+			expect: ":has(.setting-search-empty)",
 			component: "search-input",
 			target: ".modal.mod-settings",
 			state: "search-no-results",
@@ -133,6 +136,7 @@ const selectStates: Scene = {
 		},
 		{
 			id: "extra.settings-search-results",
+			expect: ":has(.setting-search-result-item)",
 			component: "search-input",
 			target: ".modal.mod-settings",
 			state: "search-results",
@@ -302,9 +306,14 @@ const editorExtras: Scene = {
 			full: true,
 			before: async (ctx) => {
 				await ctx.open("Markdown/Embeds.md", "reading");
-				await ctx.js(
-					"for (let i = 0; i < 5 && !document.querySelector('.lightbox'); i++) { cap.ROOTS.leaf().querySelector('.markdown-reading-view .image-embed img')?.click(); await sleep(600); }",
-				);
+				for (let i = 0; i < 5; i++) {
+					const b = await ctx.js<number[] | null>(
+						"if (document.querySelector('.lightbox')) return null; const e = cap.ROOTS.leaf().querySelector('.markdown-reading-view .image-embed.is-loaded img'); if (!e) { await sleep(400); return [0, 0]; } e.scrollIntoView({ block: 'center' }); await sleep(300); const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2];",
+					);
+					if (!b) break;
+					if (b[0]) await ctx.page.mouse.click(b[0], b[1] ?? 0);
+					await ctx.sleep(700);
+				}
 			},
 		},
 		{
@@ -361,13 +370,13 @@ const community: Scene = {
 			id: "extra.community.restricted",
 			component: "settings-page",
 			target: ".modal.mod-settings",
-			state: "restricted-mode",
+			state: "default",
 		},
 		{
 			id: "extra.community.enabled",
 			component: "settings-page",
 			target: ".modal.mod-settings",
-			state: "community-plugins-on",
+			state: "default",
 			before: async (ctx) => {
 				await ctx.js(
 					"const b = [...document.querySelectorAll('.modal.mod-settings button')].find((e) => /turn on|restricted/i.test(e.textContent ?? '')); b?.click(); await sleep(1200);",
@@ -436,6 +445,7 @@ const basesExtras: Scene = {
 		}),
 		{
 			id: "extra.bases.menu.keyboard-selected",
+			expect: ".is-selected",
 			component: "menu-item",
 			surface: "menu",
 			target: ".menu .bases-toolbar-menu-item.is-selected",
@@ -505,6 +515,7 @@ const pluginBrowser: Scene = {
 				await ctx.js("document.querySelector('.community-item')?.click(); await sleep(5000);");
 			},
 		},
+		p("extra.community.item.hover", "community-browser", ".community-item", ["hover"]),
 	],
 };
 
@@ -561,7 +572,7 @@ const more: Scene = {
 			component: "search-result",
 			surface: "left-sidebar",
 			target: '.workspace-leaf-content[data-type="search"]',
-			state: "explain-search",
+			state: "default",
 			before: async (ctx) => {
 				await ctx.page.keyboard.press("Escape");
 				await ctx.js(
@@ -613,6 +624,7 @@ const settingsPage: Scene = {
 	items: [
 		{
 			id: "extra.settings-subpage",
+			expect: ":has(.setting-page)",
 			component: "settings-page",
 			target: ".modal.mod-settings",
 			state: "sub-page",

@@ -49,6 +49,8 @@ export interface ItemDef {
 	synthetic?: string;
 	/** Lowest share of sample points where the target must be topmost (default 0.6). */
 	minUnobscured?: number;
+	/** Scroll this container top to bottom, screenshot every position and stack the shots. */
+	scroll?: Target;
 	/** Huge lists: keep `keep` matches of `sel` plus any matching `keepAlso`, and record the trim. */
 	trim?: { sel: string; keep: number; keepAlso: string };
 	/** CDP media emulation for this item (print, forced-colors, hover: none). */
@@ -125,8 +127,21 @@ export interface Evidence {
 	via?: "devtools" | "pointer";
 	/** Selector the target matched to prove the app state, if the item has one. */
 	expect?: string;
-	/** theme.css selector ids Chromium matched in the live page within the fixture's scope. */
+	/** theme.css selector ids that hit a seen element in the off-page copy of the live document. */
 	live: string[];
+	/** Selector ids that only hit elements in the scope that were not visibly painted. */
+	domOnly?: string[];
+	/** Number of elements recorded as visibly painted inside the screenshot clip. */
+	seen?: number;
+	/** Screenshot clip in CSS pixels. */
+	clip?: number[];
+	/** Author rules per forced pseudo-class that Chromium matched on the forced element. */
+	painted?: Record<string, number>;
+	/** Element boxes (with ::before/::after) whose painted style changed when the state was forced. */
+	styleChanged?: number;
+	/** Which boxes and properties changed (first 12). */
+	styleProps?: string[];
+	scroll?: { positions: number[]; scrollHeight: number; clientHeight: number };
 	media?: string;
 	screenshot?: { sha256: string; width: number; height: number; colors: number };
 }

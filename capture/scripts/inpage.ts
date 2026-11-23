@@ -1,5 +1,9 @@
 // Helpers installed into each Obsidian window as `window.cap`. Plain JS on purpose: it runs
 // inside Obsidian through Runtime.evaluate, which Obsidian's CSP does not block.
+//
+// The live page is never marked: CodeMirror redraws lines whose attributes change, which drops
+// held states. Target, states and "seen" witnesses live in JS (window.__cap) and are written onto
+// an off-page copy of the whole document, which also serves the live selector checks.
 export const INPAGE = String.raw`
 (() => {
 	// Popout windows (settings, popout tabs) reach the app through their opener.
@@ -78,71 +82,6 @@ export const INPAGE = String.raw`
 		}
 		return el;
 	}
-	function syncForm(src, dst) {
-		const a = [src, ...src.querySelectorAll("input, textarea, select")];
-		const b = [dst, ...dst.querySelectorAll("input, textarea, select")];
-		a.forEach((s, i) => {
-			const d = b[i];
-			if (!d || !(s instanceof HTMLElement) || s.tagName !== d.tagName) return;
-			if (s instanceof HTMLInputElement) {
-				if (s.type === "checkbox" || s.type === "radio") {
-					if (s.checked) d.setAttribute("checked", ""); else d.removeAttribute("checked");
-					if (s.indeterminate) d.setAttribute("data-capture-indeterminate", "");
-				} else d.setAttribute("value", s.value);
-			} else if (s instanceof HTMLTextAreaElement) d.textContent = s.value;
-			else if (s instanceof HTMLSelectElement) {
-				[...d.options].forEach((o, j) => { if (s.options[j]?.selected) o.setAttribute("selected", ""); else o.removeAttribute("selected"); });
-			}
-		});
-	}
-	const esc = (v) => v.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
-	const attrs = (e) => [...e.attributes].map((a) => " " + a.name + '="' + esc(a.value) + '"').join("");
-	/** Keep the first cards plus one card per special state (classes + badge text); drop the rest. */
-	function applyTrim(clone, trim) {
-		window.__capTrimmed = null;
-		if (!trim) return;
-		const all = [...clone.querySelectorAll(trim.sel)];
-		const keyOf = (c) => {
-			const hit = c.matches(trim.keepAlso) ? c : c.querySelector(trim.keepAlso);
-			return hit ? c.className + "|" + [...c.querySelectorAll(trim.keepAlso)].map((b) => b.className + ":" + b.textContent).join(",") : null;
-		};
-		const seen = new Set();
-		const kept = all.filter((c, i) => {
-			if (i < trim.keep) return true;
-			const k = keyOf(c);
-			if (!k || seen.has(k)) return false;
-			seen.add(k);
-			return true;
-		});
-		for (const c of all) if (!kept.includes(c)) c.remove();
-		window.__capTrimmed = { selector: trim.sel, kept: kept.length, of: all.length };
-	}
-	/** The element's DOM plus its ancestor wrappers (attributes only) and the html/body classes. */
-	function serialize(el, trim) {
-		const doc = el.ownerDocument;
-		let html;
-		if (el === doc.body || el === doc.documentElement) {
-			const clone = doc.body.cloneNode(true);
-			syncForm(doc.body, clone);
-			applyTrim(clone, trim);
-			html = clone.innerHTML;
-		} else {
-			const clone = el.cloneNode(true);
-			syncForm(el, clone);
-			applyTrim(clone, trim);
-			html = clone.outerHTML;
-			for (let a = el.parentElement; a && a !== doc.body && a !== doc.documentElement; a = a.parentElement) {
-				const outer = a.cloneNode(false).outerHTML;
-				const close = "</" + a.localName + ">";
-				html = outer.slice(0, outer.length - close.length) + html + close;
-			}
-		}
-		return "<!doctype html>\n<html" + attrs(doc.documentElement) + '>\n<head><meta charset="utf-8"></head>\n<body' + attrs(doc.body) + ">\n" + html + "\n</body>\n</html>\n";
-	}
-	function components(el, defs) {
-		const scope = el === document.documentElement ? document.body : el;
-		return Object.entries(defs).filter(([, sel]) => scope.matches?.(sel) || scope.querySelector(sel)).map(([k]) => k);
-	}
 	async function open(file, mode, newLeaf) {
 		const leaf = app.workspace.getLeaf(newLeaf ? "tab" : false);
 		const state = mode === "reading" ? { file, mode: "preview" } : { file, mode: "source", source: mode === "source" };
@@ -153,13 +92,16 @@ export const INPAGE = String.raw`
 		return leaf;
 	}
 	const overlays = () => document.querySelectorAll(".modal-container, .menu, .suggestion-container, .popover, .prompt").length;
-	/** Clears capture marks and tooltips. Escape presses (resetUi) close modals and menus. */
+	/** Per-item capture state, kept in JS so the live page is never marked. */
+	function reset() {
+		window.__cap = { target: null, pseudo: null, forced: [], states: new Map(), seen: new Set() };
+	}
+	reset();
+	/** Clears capture state and tooltips. Escape presses (resetUi) close modals and menus. */
 	function clean() {
 		document.querySelectorAll(".tooltip").forEach((e) => e.remove());
 		window.__capPointer = null;
-		for (const a of ["data-capture-state", "data-capture-target", "data-capture-pseudo", "data-capture-visited", "data-capture-label", "data-capture-synthetic"]) {
-			document.querySelectorAll("[" + a + "]").forEach((e) => e.removeAttribute(a));
-		}
+		reset();
 	}
 	/** Settings keep their search text between openings; clear it so the tab content shows. */
 	function clearSettingsSearch() {
@@ -180,65 +122,262 @@ export const INPAGE = String.raw`
 		if (leaf) { await app.workspace.revealLeaf(leaf); await sleep(300); }
 	}
 	const describe = (e) => e.tagName.toLowerCase() + (e.className && typeof e.className === "string" ? "." + e.className.trim().split(/\s+/).slice(0, 3).join(".") : "");
+	const related = (a, b) => a === b || a.contains(b) || b.contains(a);
+	const inter = (a, b) => {
+		const x = Math.max(a[0], b[0]), y = Math.max(a[1], b[1]);
+		const r = Math.min(a[0] + a[2], b[0] + b[2]), btm = Math.min(a[1] + a[3], b[1] + b[3]);
+		return r > x && btm > y ? [x, y, r - x, btm - y] : null;
+	};
+	const box = (e) => { const r = e.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; };
+	/**
+	 * Overlays that skip hit testing (drop overlay, selection box, drag ghost) would read as covered.
+	 * Outside CodeMirror the target subtree is made hit-testable while checking; inside CodeMirror
+	 * we never touch the DOM (CodeMirror would redraw), its text is hit-testable anyway.
+	 */
+	function withHitTesting(el, fn) {
+		const touched = [];
+		if (!el.closest(".cm-content")) {
+			for (const e of [el, ...el.querySelectorAll("*")]) {
+				if (e.ownerDocument.defaultView.getComputedStyle(e).pointerEvents === "none") {
+					touched.push([e, e.style.getPropertyValue("pointer-events"), e.style.getPropertyPriority("pointer-events")]);
+					e.style.setProperty("pointer-events", "auto", "important");
+				}
+			}
+		}
+		try { return fn(); } finally {
+			for (const [e, v, p] of touched) { if (v) e.style.setProperty("pointer-events", v, p); else e.style.removeProperty("pointer-events"); }
+		}
+	}
 	/** Proof that el is drawn: nonzero box inside the window, not hidden, and topmost at most sample points. */
 	function visibility(el) {
 		const doc = el.ownerDocument;
 		const win = doc.defaultView;
-		const r = el.getBoundingClientRect();
-		const box = [r.x, r.y, r.width, r.height].map((v) => Math.round(v));
+		const b = box(el).map((v) => Math.round(v));
 		for (let a = el; a && a.nodeType === 1; a = a.parentElement) {
 			const cs = win.getComputedStyle(a);
-			if (cs.display === "none") return { visible: false, reason: "display: none on " + describe(a), box };
-			if (cs.visibility === "hidden" || cs.visibility === "collapse") return { visible: false, reason: "visibility: hidden on " + describe(a), box };
-			if (parseFloat(cs.opacity) === 0) return { visible: false, reason: "opacity: 0 on " + describe(a), box };
+			if (cs.display === "none") return { visible: false, reason: "display: none on " + describe(a), box: b };
+			if (cs.visibility === "hidden" || cs.visibility === "collapse") return { visible: false, reason: "visibility: hidden on " + describe(a), box: b };
+			if (parseFloat(cs.opacity) === 0) return { visible: false, reason: "opacity: 0 on " + describe(a), box: b };
 		}
-		if (r.width < 1 || r.height < 1) return { visible: false, reason: "zero size", box };
-		const ix = Math.max(0, r.x), iy = Math.max(0, r.y);
-		const iw = Math.min(win.innerWidth, r.right) - ix, ih = Math.min(win.innerHeight, r.bottom) - iy;
-		if (iw < 1 || ih < 1) return { visible: false, reason: "outside the window", box };
-		// Overlays (active cell, selection box, drag ghost) skip hit testing; make the target
-		// hit-testable for the check so paint order alone decides what is on top.
-		const pe = doc.createElement("style");
-		pe.textContent = "[data-capture-target], [data-capture-target] * { pointer-events: auto !important; }";
-		doc.head.appendChild(pe);
-		let ok = 0, n = 0;
-		const blockers = new Set();
-		for (const fx of [0.25, 0.5, 0.75]) for (const fy of [0.25, 0.5, 0.75]) {
-			const hit = doc.elementFromPoint(ix + iw * fx, iy + ih * fy);
-			n++;
-			if (!hit || hit === el || el.contains(hit) || hit.contains(el)) ok++;
-			else blockers.add(describe(hit));
+		const v = visibleRect(el);
+		if (!v) return { visible: false, reason: b[2] < 1 || b[3] < 1 ? "zero size" : "outside the window or clipped", box: b };
+		return withHitTesting(el, () => {
+			let ok = 0, n = 0;
+			const blockers = new Set();
+			for (const fx of [0.25, 0.5, 0.75]) for (const fy of [0.25, 0.5, 0.75]) {
+				const hit = doc.elementFromPoint(v[0] + v[2] * fx, v[1] + v[3] * fy);
+				n++;
+				if (!hit || related(hit, el)) ok++;
+				else blockers.add(describe(hit));
+			}
+			return { visible: true, box: b, inView: v.map((x) => Math.round(x)), unobscured: Math.round((ok / n) * 100) / 100, blockers: [...blockers].slice(0, 3) };
+		});
+	}
+	/** The part of el inside the window and inside every clipping ancestor, or null. */
+	function visibleRect(el) {
+		const win = el.ownerDocument.defaultView;
+		let r = inter(box(el), [0, 0, win.innerWidth, win.innerHeight]);
+		for (let a = el.parentElement; r && a && a !== el.ownerDocument.documentElement; a = a.parentElement) {
+			const cs = win.getComputedStyle(a);
+			if (cs.overflowX !== "visible" || cs.overflowY !== "visible") r = inter(r, box(a));
 		}
-		pe.remove();
-		return { visible: true, box, inView: [ix, iy, iw, ih].map((v) => Math.round(v)), unobscured: Math.round((ok / n) * 100) / 100, blockers: [...blockers].slice(0, 3) };
+		return r;
+	}
+	/**
+	 * Records which elements of the fixture scope are visibly painted inside the screenshot clip:
+	 * rendered, not transparent, inside the clip and every clipping ancestor, and topmost (or under
+	 * their own ancestor) at the middle of that visible part. Ancestors of the target count when the
+	 * target itself is seen. Calls accumulate (scrolled screenshots).
+	 */
+	function witness(el, clip) {
+		const st = window.__cap;
+		const doc = el.ownerDocument;
+		const win = doc.defaultView;
+		let start = inter(clip, [0, 0, win.innerWidth, win.innerHeight]);
+		for (let a = el.parentElement; start && a && a !== doc.documentElement; a = a.parentElement) {
+			const cs = win.getComputedStyle(a);
+			if (cs.overflowX !== "visible" || cs.overflowY !== "visible") start = inter(start, box(a));
+		}
+		if (!start) return 0;
+		let n = 0;
+		withHitTesting(el, () => {
+			const walk = (e, cl, opaque) => {
+				const cs = win.getComputedStyle(e);
+				if (cs.display === "none") return;
+				const op = opaque && parseFloat(cs.opacity) > 0;
+				if (!op) return;
+				const b = box(e);
+				const v = cs.display === "contents" ? null : inter(b, cl);
+				if (v && cs.visibility === "visible") {
+					const hit = doc.elementFromPoint(v[0] + v[2] / 2, v[1] + v[3] / 2);
+					if (hit && related(hit, e)) { st.seen.add(e); n++; }
+				}
+				let next = cl;
+				if (cs.overflowX !== "visible" || cs.overflowY !== "visible") next = inter(cl, b);
+				if (!next) return;
+				for (const c of e.children) walk(c, next, op);
+			};
+			walk(el, start, true);
+		});
+		if (st.seen.has(el)) for (let a = el.parentElement; a; a = a.parentElement) st.seen.add(a);
+		return n;
 	}
 	const PSEUDO = ["hover", "active", "focus", "focus-visible", "focus-within"];
-	/** Marks every element of the fixture scope with the dynamic pseudo-classes Chromium says it matches. */
+	/**
+	 * States of every element in the fixture scope as Chromium's matches() reports them, plus the
+	 * states held on the forced element (confirmed through DevTools by the driver, because
+	 * matches() does not see forced states inside popout windows).
+	 */
 	function markStates(el, extra) {
+		const st = window.__cap;
 		const scope = [el, ...el.querySelectorAll("*")];
 		for (let a = el.parentElement; a; a = a.parentElement) scope.push(a);
 		const counts = {};
-		for (const e of scope) {
-			const st = PSEUDO.filter((p) => { try { return e.matches(":" + p); } catch { return false; } });
-			for (const [mark, on] of Object.entries(extra)) if (on === e) st.push(mark);
-			if (st.length) {
-				e.setAttribute("data-capture-state", st.join(" "));
-				for (const x of st) counts[x] = (counts[x] ?? 0) + 1;
-			}
-		}
+		const add = (e, s) => {
+			const list = st.states.get(e) ?? [];
+			if (!list.includes(s)) list.push(s);
+			st.states.set(e, list);
+			counts[s] = (counts[s] ?? 0) + 1;
+		};
+		for (const e of scope) for (const p of PSEUDO) { try { if (e.matches(":" + p)) add(e, p); } catch {} }
+		if (st.pseudo) for (const p of st.forced) if (!(st.states.get(st.pseudo) ?? []).includes(p)) add(st.pseudo, p);
+		for (const [mark, on] of Object.entries(extra)) if (on) add(on, mark);
 		return counts;
 	}
-	/** Ids of selectors that Chromium matches on el, its subtree or its ancestors in the live page. */
-	function liveMatches(el, sels, flags) {
+	/** Copies live control state (value, checked, selected) onto the clone; no instanceof (popouts). */
+	function syncControl(s, d) {
+		switch (s.localName) {
+			case "input":
+				if (s.type === "checkbox" || s.type === "radio") {
+					if (s.checked) d.setAttribute("checked", ""); else d.removeAttribute("checked");
+					if (s.indeterminate) d.setAttribute("data-capture-indeterminate", "");
+				} else d.setAttribute("value", s.value);
+				break;
+			case "textarea":
+				d.textContent = s.value;
+				break;
+			case "option":
+				if (s.selected) d.setAttribute("selected", ""); else d.removeAttribute("selected");
+				break;
+		}
+	}
+	/** Keeps the first cards plus one card per special state (classes + badge text); drops the rest. */
+	function applyTrim(root, trim) {
+		if (!trim) return null;
+		const all = [...root.querySelectorAll(trim.sel)];
+		const keyOf = (c) => {
+			const hit = c.matches(trim.keepAlso) ? c : c.querySelector(trim.keepAlso);
+			return hit ? c.className + "|" + [...c.querySelectorAll(trim.keepAlso)].map((b) => b.className + ":" + b.textContent).join(",") : null;
+		};
+		const seen = new Set();
+		const kept = all.filter((c, i) => {
+			if (i < trim.keep) return true;
+			const k = keyOf(c);
+			if (!k || seen.has(k)) return false;
+			seen.add(k);
+			return true;
+		});
+		for (const c of all) if (!kept.includes(c)) c.remove();
+		return { selector: trim.sel, kept: kept.length, of: all.length };
+	}
+	const esc = (v) => v.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
+	const attrs = (e) => [...e.attributes].map((a) => " " + a.name + '="' + esc(a.value) + '"').join("");
+	/**
+	 * Copies the whole live document off page, writes the capture marks onto the copy, checks the
+	 * theme selectors there (real siblings and ancestors, marks for states, seen elements only) and
+	 * returns the fixture: the target with its ancestor wrappers and the html/body attributes.
+	 */
+	function snapshot(opts) {
+		const st = window.__cap;
+		const el = st.target;
 		const doc = el.ownerDocument;
-		const out = [];
-		for (const s of sels) {
-			if (s.needs && !flags[s.needs]) continue;
+		const copy = doc.implementation.createHTMLDocument("");
+		const root = copy.importNode(doc.documentElement, true);
+		copy.replaceChild(root, copy.documentElement);
+		const origs = [doc.documentElement, ...doc.documentElement.querySelectorAll("*")];
+		const clones = [root, ...root.querySelectorAll("*")];
+		const twin = new Map();
+		origs.forEach((o, i) => { const c = clones[i]; if (c && c.localName === o.localName) twin.set(o, c); });
+		for (const [o, c] of twin) {
+			syncControl(o, c);
+			const s = st.states.get(o);
+			if (s) c.setAttribute("data-capture-state", s.join(" "));
+			if (st.seen.has(o)) c.setAttribute("data-capture-seen", "");
+		}
+		const t = twin.get(el);
+		if (!t) return { lost: true };
+		t.setAttribute("data-capture-target", "");
+		if (opts.label) t.setAttribute("data-capture-label", opts.label);
+		if (opts.synthetic) t.setAttribute("data-capture-synthetic", opts.synthetic);
+		const p = st.pseudo ? twin.get(st.pseudo) : null;
+		if (p) {
+			p.setAttribute("data-capture-pseudo", "");
+			if (st.forced.includes("visited")) p.setAttribute("data-capture-visited", "");
+		}
+		// Live check: the selector must hit a seen element inside the fixture scope.
+		const live = [];
+		const domOnly = [];
+		const inScope = (c) => t.contains(c) || c.contains(t);
+		for (const s of opts.sels) {
 			let list;
-			try { list = doc.querySelectorAll(s.sel); } catch { continue; }
-			for (const e of list) if (e === el || el.contains(e) || e.contains(el)) { out.push(s.id); break; }
+			try { list = copy.querySelectorAll(s.sel); } catch { continue; }
+			let hit = false, dom = false;
+			for (const c of list) {
+				if (!inScope(c)) continue;
+				dom = true;
+				if (c.hasAttribute("data-capture-seen")) { hit = true; break; }
+			}
+			if (hit) live.push(s.id); else if (dom) domOnly.push(s.id);
+		}
+		const trimmed = applyTrim(t, opts.trim);
+		let html;
+		if (el === doc.body || el === doc.documentElement) html = copy.body.innerHTML;
+		else {
+			html = t.outerHTML;
+			for (let a = t.parentElement; a && a !== copy.body && a !== copy.documentElement; a = a.parentElement) {
+				const outer = a.cloneNode(false).outerHTML;
+				const close = "</" + a.localName + ">";
+				html = outer.slice(0, outer.length - close.length) + html + close;
+			}
+		}
+		const contains = Object.entries(opts.components).filter(([, sel]) => t.matches?.(sel) || t.querySelector(sel)).map(([k]) => k);
+		const fixture = "<!doctype html>\n<html" + attrs(root) + '>\n<head><meta charset="utf-8"></head>\n<body' + attrs(copy.body) + ">\n" + html + "\n</body>\n</html>\n";
+		return { html: fixture, live, domOnly, trimmed, contains, seen: st.seen.size };
+	}
+	/** Painted style of the target and pseudo subtrees (colors, borders, shadows, decorations, ::before/::after), for a before/after state diff. */
+	const PAINT = ["color", "background-color", "background-image", "border-top-color", "border-right-color", "border-bottom-color", "border-left-color", "outline-color", "outline-style", "outline-width", "box-shadow", "text-decoration-line", "text-decoration-color", "opacity", "filter", "transform", "visibility", "fill", "stroke"];
+	function styleSnap() {
+		const out = [];
+		const roots = [window.__cap.target, window.__cap.pseudo].filter(Boolean);
+		for (const r of roots) {
+			const view = r.ownerDocument.defaultView;
+			const all = [r, ...r.querySelectorAll("*")].slice(0, 400);
+			for (const e of all)
+				for (const pe of [null, "::before", "::after"]) {
+					const cs = view.getComputedStyle(e, pe);
+					// Boxes that paint nothing: empty pseudo-elements, undisplayed or hidden elements.
+					const blank = (pe && (cs.content === "none" || cs.content === "normal")) || cs.display === "none" || (!pe && !e.getClientRects().length);
+					out.push({ who: (e.localName + "." + [...e.classList].join(".")).slice(0, 60) + (pe ?? ""), v: blank ? null : PAINT.map((k) => cs.getPropertyValue(k)) });
+				}
 		}
 		return out;
+	}
+	function styleBefore() { window.__cap.styleBefore = styleSnap(); }
+	/** Painted boxes (incl. ::before/::after) whose painted style changed since styleBefore(), with the changed properties. */
+	function styleChanges() {
+		const a = window.__cap.styleBefore;
+		if (!a) return null;
+		const b = styleSnap();
+		const props = new Set();
+		let n = 0;
+		for (let i = 0; i < Math.min(a.length, b.length); i++) {
+			const x = a[i].v, y = b[i].v;
+			if (!x && !y) continue;
+			if (!x || !y) { n++; props.add(b[i].who + " shown/hidden"); continue; }
+			const d = PAINT.filter((_, k) => x[k] !== y[k]);
+			if (d.length) { n++; props.add(b[i].who + " " + d.join(",")); }
+		}
+		return { n, props: [...props].slice(0, 12) };
 	}
 	/** True when a non-collapsed text selection touches el. */
 	function hasSelection(el) {
@@ -252,6 +391,6 @@ export const INPAGE = String.raw`
 		const r = scroller.getBoundingClientRect();
 		return scroller.scrollHeight > scroller.clientHeight && x > r.left + scroller.clientLeft + scroller.clientWidth && x < r.right && y > r.top && y < r.bottom;
 	}
-	window.cap = { sleep, find, locate, serialize, components, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, markStates, liveMatches, hasSelection, overScrollbar };
+	window.cap = { sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges };
 })();
 `;
