@@ -263,6 +263,15 @@
 	--link-unresolved-color: var(--code-foreground);
 }
 
+@media (hover: hover) {
+	/* The link variables preserve code text, while unresolved-link decoration keeps its 1.x color. */
+
+	.cm-s-obsidian .cm-inline-code.is-unresolved:hover {
+		--link-color-hover: var(--magenta);
+		color: var(--code-foreground);
+	}
+}
+
 .markdown-rendered pre {
 	--mw-surface-background: var(--code-background);
 	/* Component: surface-background */
