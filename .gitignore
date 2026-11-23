@@ -1,3 +1,3 @@
 node_modules/
-# Obsidian's proprietary app CSS/JS, extracted locally by `bun run capture:extract-app-css`. Never commit.
 capture/.app/
+workbench/out/

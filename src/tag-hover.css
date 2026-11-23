@@ -1,0 +1,4 @@
+/* Single optional tag-hover :has exception. Remove this file and its pilot slot to retire it. */
+.cm-hashtag-begin:has(+ .cm-hashtag-end:hover) {
+	background-color: var(--magenta);
+}

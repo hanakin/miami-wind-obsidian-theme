@@ -1,50 +1,30 @@
 {
-	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-	"vcs": {
-		"enabled": true,
-		"clientKind": "git",
-		"useIgnoreFile": true
-	},
+	"$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
 	"files": {
-		"ignoreUnknown": true,
 		"includes": [
-			"**",
-			"!**/dist",
-			"!**/node_modules",
-			"!**/imgs",
-			"!**/*.html",
-			"!**/*.md",
-			"!theme.css",
-			"!capture/fixtures",
-			"!capture/vault",
-			"!capture/checklist.json",
-			"!capture/fixtures.json",
-			"!capture/coverage.json"
+			"scripts/**/*.ts",
+			"test/**/*.ts",
+			"capture/scripts/**/*.ts",
+			"workbench/compare/**/*.ts"
 		]
 	},
 	"formatter": {
-		"enabled": true,
-		"indentStyle": "tab",
-		"indentWidth": 2,
-		"lineWidth": 100,
-		"lineEnding": "lf"
+		"indentStyle": "tab"
 	},
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"preset": "recommended"
+			"preset": "none"
 		}
 	},
-	"javascript": {
-		"formatter": {
-			"quoteStyle": "double",
-			"semicolons": "always",
-			"trailingCommas": "all"
+	"overrides": [
+		{
+			"includes": [
+				"capture/scripts/**/*.ts"
+			],
+			"formatter": {
+				"lineWidth": 100
+			}
 		}
-	},
-	"json": {
-		"formatter": {
-			"indentStyle": "tab"
-		}
-	}
+	]
 }
