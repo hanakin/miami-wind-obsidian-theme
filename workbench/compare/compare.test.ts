@@ -51,3 +51,43 @@ test("runtime extraction excludes theme sheets that also contain CodeMirror sele
 		]),
 	).toBe(".ͼ1 .cm-scroller { display:flex }");
 });
+
+test("shared look compares matching states and reports all exceptional properties", () => {
+	const samples = [
+		{
+			component: "button",
+			surface: "a",
+			state: "default",
+			props: { color: "red", width: "20px" },
+		},
+		{
+			component: "button",
+			surface: "b",
+			state: "default",
+			props: { color: "red", width: "20px" },
+		},
+		{
+			component: "button",
+			surface: "c",
+			state: "default",
+			props: { color: "blue", width: "30px" },
+		},
+		{
+			component: "button",
+			surface: "a",
+			state: "hover",
+			props: { color: "pink", width: "20px" },
+		},
+		{
+			component: "button",
+			surface: "b",
+			state: "hover",
+			props: { color: "pink", width: "20px" },
+		},
+	];
+	expect(componentDiffs(samples).button).toEqual({
+		a: { same: true, props: [] },
+		b: { same: true, props: [] },
+		c: { same: false, props: ["color", "width"] },
+	});
+});
