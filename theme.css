@@ -848,9 +848,11 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 
 /* === callouts.css === */
 
+/* Background has no variable; title rules avoid recoloring icons and borders. */
+
 /* Callouts */
 
-:where(.cm-callout) .callout[data-callout="note"] {
+:where(.cm-callout) .callout:where([data-callout="note"]) {
 	--mw-surface-background: var(--blue-bright-transparent);
 	/* Component: surface-background */
 	background-color: var(--mw-surface-background);
@@ -860,7 +862,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 	color: var(--blue-bright);
 }
 
-:where(.cm-callout) .callout[data-callout="info"] {
+:where(.cm-callout) .callout:where([data-callout="info"]) {
 	--mw-surface-background: var(--cyan-transparent);
 	/* Component: surface-background */
 	background-color: var(--mw-surface-background);
@@ -870,7 +872,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 	color: var(--cyan);
 }
 
-:where(.cm-callout) .callout[data-callout="todo"] {
+:where(.cm-callout) .callout:where([data-callout="todo"]) {
 	--mw-surface-background: var(--magenta-transparent);
 	/* Component: surface-background */
 	background-color: var(--mw-surface-background);
@@ -880,7 +882,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 	color: var(--magenta);
 }
 
-:where(.cm-callout) .callout[data-callout="warning"] {
+:where(.cm-callout) .callout:where([data-callout="warning"]) {
 	--mw-surface-background: var(--orange-transparent);
 	/* Component: surface-background */
 	background-color: var(--mw-surface-background);
@@ -890,7 +892,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 	color: var(--orange);
 }
 
-:where(.cm-callout) .callout[data-callout="tip"] {
+:where(.cm-callout) .callout:where([data-callout="tip"]) {
 	--mw-surface-background: var(--green-transparent);
 	/* Component: surface-background */
 	background-color: var(--mw-surface-background);
@@ -900,7 +902,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 	color: var(--green);
 }
 
-:where(.cm-callout) .callout[data-callout="example"] {
+:where(.cm-callout) .callout:where([data-callout="example"]) {
 	--mw-surface-background: var(--purple-transparent);
 	/* Component: surface-background */
 	background-color: var(--mw-surface-background);

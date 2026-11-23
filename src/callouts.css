@@ -1,5 +1,6 @@
+/* Background has no variable; title rules avoid recoloring icons and borders. */
 /* Callouts */
-:where(.cm-callout) .callout[data-callout="note"] {
+:where(.cm-callout) .callout:where([data-callout="note"]) {
 	--mw-surface-background: var(--blue-bright-transparent);
 	@mixin surface-background;
 }
@@ -8,7 +9,7 @@
 	color: var(--blue-bright);
 }
 
-:where(.cm-callout) .callout[data-callout="info"] {
+:where(.cm-callout) .callout:where([data-callout="info"]) {
 	--mw-surface-background: var(--cyan-transparent);
 	@mixin surface-background;
 }
@@ -17,7 +18,7 @@
 	color: var(--cyan);
 }
 
-:where(.cm-callout) .callout[data-callout="todo"] {
+:where(.cm-callout) .callout:where([data-callout="todo"]) {
 	--mw-surface-background: var(--magenta-transparent);
 	@mixin surface-background;
 }
@@ -26,7 +27,7 @@
 	color: var(--magenta);
 }
 
-:where(.cm-callout) .callout[data-callout="warning"] {
+:where(.cm-callout) .callout:where([data-callout="warning"]) {
 	--mw-surface-background: var(--orange-transparent);
 	@mixin surface-background;
 }
@@ -35,7 +36,7 @@
 	color: var(--orange);
 }
 
-:where(.cm-callout) .callout[data-callout="tip"] {
+:where(.cm-callout) .callout:where([data-callout="tip"]) {
 	--mw-surface-background: var(--green-transparent);
 	@mixin surface-background;
 }
@@ -44,7 +45,7 @@
 	color: var(--green);
 }
 
-:where(.cm-callout) .callout[data-callout="example"] {
+:where(.cm-callout) .callout:where([data-callout="example"]) {
 	--mw-surface-background: var(--purple-transparent);
 	@mixin surface-background;
 }
