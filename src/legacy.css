@@ -335,70 +335,7 @@ hr {
 }
 
 
-/* Menus */
-.menu {
-	background-color: var(--black);
-	border: 1px solid var(--cyan);
-	border-radius: 5px;
-}
-
-.menu .clickable-icon {
-	color: var(--cyan);
-	background-color: var(--black);
-	cursor: pointer;
-}
-
-.menu .clickable-icon.bases-toolbar-menu-item-icon {
-	background-color: transparent;
-}
-
-.menu .clickable-icon.bases-toolbar-menu-item-icon:hover {
-	background-color: transparent;
-}
-
-.menu .bases-toolbar-menu-item:hover .clickable-icon,
-.menu .bases-toolbar-menu-item.is-selected .clickable-icon {
-	color: var(--magenta) !important;
-}
-
-.menu .clickable-icon:hover,
-.menu .back-button:hover {
-	color: var(--magenta);
-	background-color: var(--magenta-transparent);
-	cursor: pointer;
-}
-
-.menu .back-button:hover .back-icon {
-	color: var(--magenta);
-}
-
-.menu-separator {
-	border-color: var(--cyan);
-}
-
-.menu-item-icon {
-	color: var(--cyan);
-}
-
-.menu-item:hover,
-.menu-item:focus,
-.menu-item:active,
-.menu-item.selected,
-.bases-toolbar-menu-item:hover,
-.bases-toolbar-menu-item:focus,
-.bases-toolbar-menu-item:active,
-.bases-toolbar-menu-item.selected {
-	background-color: var(--cyan-transparent) !important;
-	color: var(--magenta);
-	cursor: pointer;
-}
-
-.menu-item.is-disabled:hover,
-.bases-toolbar-menu-item.mod-hidden:hover {
-	background-color: transparent !important;
-	color: var(--text-disabled);
-	cursor: default;
-}
+@pilot menus;
 
 @pilot bases;
 

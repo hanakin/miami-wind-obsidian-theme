@@ -1052,17 +1052,22 @@ hr {
 	border-color: var(--cyan);
 }
 
+/* === menus.css === */
+
 /* Menus */
 
 .menu {
-	background-color: var(--black);
-	border: 1px solid var(--cyan);
-	border-radius: 5px;
+	--menu-background: var(--black);
+	--menu-border-color: var(--cyan);
+	--menu-border-width: 1px;
+	--menu-radius: 5px;
 }
 
 .menu .clickable-icon {
-	color: var(--cyan);
-	background-color: var(--black);
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--black);
+	color: var(--mw-action-color);
+	background-color: var(--mw-action-background);
 	cursor: pointer;
 }
 
@@ -1076,13 +1081,15 @@ hr {
 
 .menu .bases-toolbar-menu-item:hover .clickable-icon,
 .menu .bases-toolbar-menu-item.is-selected .clickable-icon {
-	color: var(--magenta) !important;
+	color: var(--magenta);
 }
 
 .menu .clickable-icon:hover,
 .menu .back-button:hover {
-	color: var(--magenta);
-	background-color: var(--magenta-transparent);
+	--mw-action-color: var(--magenta);
+	--mw-action-background: var(--magenta-transparent);
+	color: var(--mw-action-color);
+	background-color: var(--mw-action-background);
 	cursor: pointer;
 }
 
@@ -1102,21 +1109,26 @@ hr {
 .menu-item:focus,
 .menu-item:active,
 .menu-item.selected,
+.menu-item:not(.is-label):not(.is-disabled).selected,
 .bases-toolbar-menu-item:hover,
 .bases-toolbar-menu-item:focus,
 .bases-toolbar-menu-item:active,
 .bases-toolbar-menu-item.selected {
-	background-color: var(--cyan-transparent) !important;
-	color: var(--magenta);
+	--mw-item-background: var(--cyan-transparent);
+	--mw-item-color: var(--magenta);
+	background-color: var(--mw-item-background);
+	color: var(--mw-item-color);
 	cursor: pointer;
 }
 
 .menu-item.is-disabled:hover,
 .bases-toolbar-menu-item.mod-hidden:hover {
-	background-color: transparent !important;
+	background-color: transparent;
 	color: var(--text-disabled);
 	cursor: default;
 }
+
+/* === legacy.css (continued) === */
 
 /* === bases.css === */
 
