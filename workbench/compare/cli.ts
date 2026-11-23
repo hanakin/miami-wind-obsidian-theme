@@ -201,7 +201,7 @@ const summary = {
 	invisibleTargets: results.filter((r) => r.invisibleTarget).length,
 };
 const limitations = [
-	"Serialized DOM only: canvas pixels, media playback, iframe contents and Obsidian runtime behavior are not reconstructed.",
+	"Serialized DOM only: canvas pixels, media playback/native controls, iframe contents and Obsidian runtime behavior are not reconstructed.",
 	"Fonts and external images are unavailable; remote requests are blocked. Platform fixtures use host Linux fonts.",
 	"Computed standard properties on every element and ::before/::after/::marker are compared; custom properties are compared through their resolved effects.",
 	"Invisible targets remain in style comparisons; screenshots show the 1600×1000 viewport and may not paint them.",

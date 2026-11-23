@@ -37,7 +37,7 @@ export async function render(
 		}, css.theme);
 		await page.addStyleTag({
 			content:
-				"*,*::before,*::after,*::-webkit-slider-thumb,*::-webkit-slider-runnable-track,*::-webkit-progress-bar,*::-webkit-progress-value,*::-webkit-scrollbar-thumb { animation: none !important; transition: none !important; }",
+				"*,*::before,*::after,*::-webkit-slider-thumb,*::-webkit-slider-runnable-track,*::-webkit-progress-bar,*::-webkit-progress-value,*::-webkit-scrollbar-thumb { animation: none !important; transition: none !important; } video::-webkit-media-controls,audio::-webkit-media-controls { visibility: hidden !important; }",
 		});
 		documents.set(page, { html, ...css });
 	} else if (previous.theme !== css.theme) {

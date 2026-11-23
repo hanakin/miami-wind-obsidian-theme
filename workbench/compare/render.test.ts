@@ -54,6 +54,7 @@ test
 		"command.workspace:export-pdf",
 		"extra.community.plugin-browser",
 		"extra.canvas.after-select",
+		"md.embed-video.live",
 	])(
 	"keeps %s pixels stable across identical replays",
 	async (fixtureId) => {
