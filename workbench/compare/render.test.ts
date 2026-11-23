@@ -6,7 +6,11 @@ import { render } from "./render";
 
 let browser: Browser;
 beforeAll(async () => {
-	browser = await chromium.launch({ headless: true, args: ["--disable-gpu"] });
+	browser = await chromium.launch({
+		headless: true,
+		args: ["--disable-gpu", "--num-raster-threads=1"],
+		ignoreDefaultArgs: ["--hide-scrollbars"],
+	});
 });
 afterAll(async () => {
 	await browser.close();
@@ -55,6 +59,9 @@ test
 		"extra.community.plugin-browser",
 		"extra.canvas.after-select",
 		"md.embed-video.live",
+		"command.app:open-vault",
+		"command.bases:add-view",
+		"settings.webviewer",
 	])(
 	"keeps %s pixels stable across identical replays",
 	async (fixtureId) => {
@@ -78,7 +85,13 @@ test
 		const f = { component: "modal", surface: "test", state: "default" };
 		const first = await render(page, cdp, html, { cm: "", app, theme }, f);
 		for (let i = 0; i < 5; i++) {
-			const repeat = await render(page, cdp, html, { cm: "", app, theme }, f);
+			const repeat = await render(
+				page,
+				cdp,
+				html,
+				{ cm: "", app, theme: `${theme}\n/* sanity ${i} */` },
+				f,
+			);
 			expect(repeat.png.equals(first.png)).toBe(true);
 		}
 		await page.close();

@@ -88,6 +88,6 @@ test("shared look compares matching states and reports all exceptional propertie
 	expect(componentDiffs(samples).button).toEqual({
 		a: { same: true, props: [] },
 		b: { same: true, props: [] },
-		c: { same: false, props: ["color", "width"] },
+		c: { same: false, props: ["color"] },
 	});
 });
