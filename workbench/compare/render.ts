@@ -42,6 +42,13 @@ export async function render(
 			nodeId: nodeIds[i],
 			forcedPseudoClasses: states[i],
 		});
+	// Wait for font resolution and a complete paint after pseudo-state and transition changes.
+	await page.evaluate(async () => {
+		await document.fonts.ready;
+		await new Promise<void>((resolve) =>
+			requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+		);
+	});
 	const data = await page.evaluate(
 		({ fixture, components }) => {
 			const styles: ElementStyle[] = [],

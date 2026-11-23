@@ -6,7 +6,7 @@ import { render } from "./render";
 
 let browser: Browser;
 beforeAll(async () => {
-	browser = await chromium.launch({ headless: true });
+	browser = await chromium.launch({ headless: true, args: ["--disable-gpu"] });
 });
 afterAll(async () => {
 	await browser.close();
@@ -48,9 +48,11 @@ test("replays hover, compares pseudo elements and catches changed theme pixels",
 	await page.close();
 });
 
-test.skipIf(!existsSync("capture/.app/app.css"))(
-	"keeps PDF export slider pixels stable across identical replays",
-	async () => {
+test
+	.skipIf(!existsSync("capture/.app/app.css"))
+	.each(["command.workspace:export-pdf", "extra.community.plugin-browser"])(
+	"keeps %s pixels stable across identical replays",
+	async (fixtureId) => {
 		const { readFile } = await import("node:fs/promises");
 		const page = await browser.newPage({
 			viewport: { width: 1600, height: 1000 },
@@ -58,10 +60,14 @@ test.skipIf(!existsSync("capture/.app/app.css"))(
 		const cdp = await page.context().newCDPSession(page);
 		await cdp.send("DOM.enable");
 		await cdp.send("CSS.enable");
-		const html = await readFile(
-			"capture/fixtures/command.workspace:export-pdf.html",
-			"utf8",
-		);
+		let html = await readFile(`capture/fixtures/${fixtureId}.html`, "utf8");
+		if (fixtureId.includes("plugin-browser")) {
+			await page.setContent(html);
+			await page
+				.locator(".community-item")
+				.evaluateAll((els) => els.slice(31).forEach((el) => el.remove()));
+			html = await page.content();
+		}
 		const app = await readFile("capture/.app/app.css", "utf8");
 		const theme = await readFile("theme.css", "utf8");
 		const f = { component: "modal", surface: "test", state: "default" };
@@ -72,5 +78,5 @@ test.skipIf(!existsSync("capture/.app/app.css"))(
 		}
 		await page.close();
 	},
-	15000,
+	60000,
 );

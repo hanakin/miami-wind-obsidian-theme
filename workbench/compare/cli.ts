@@ -57,7 +57,10 @@ if (appVersion !== registry.obsidianVersion)
 	);
 const app = await Bun.file("capture/.app/app.css").text();
 const cm = await runtimeCss();
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+	headless: true,
+	args: ["--disable-gpu"],
+});
 const context = await browser.newContext({
 	viewport: { width: 1600, height: 1000 },
 	deviceScaleFactor: 1,
