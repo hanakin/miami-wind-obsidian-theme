@@ -41,6 +41,7 @@ const previous: FixturesFile | undefined =
 		? (JSON.parse(readFileSync(fixturesPath, "utf8")) as FixturesFile)
 		: undefined;
 
+let scenes: Scene[] = [];
 const session = await launch();
 const entries = new Map<string, FixtureEntry>((previous?.fixtures ?? []).map((f) => [f.id, f]));
 const failed = new Map<string, string>((previous?.failed ?? []).map((f) => [f.id, f.error]));
@@ -50,7 +51,7 @@ try {
 	await install(main);
 	await saveRuntimeStyles(main);
 	const layout = await snapshotLayout(main);
-	const scenes = allScenes(checklist.inventory, checklist.commands, () => layout);
+	scenes = allScenes(checklist.inventory, checklist.commands, () => layout);
 	let done = 0;
 	for (const scene of scenes) {
 		const items = scene.items.filter((i) => wanted(i.id));
@@ -80,7 +81,9 @@ try {
 	await close(session);
 }
 
-const linux = [...entries.values()].filter((f) => !f.variantOf);
+// Keep only fixtures for items that still exist (an item can be dropped from the catalog).
+const known = new Set(scenes.flatMap((sc) => sc.items.map((i) => i.id)));
+const linux = [...entries.values()].filter((f) => !f.variantOf && known.has(f.id));
 const fixtures = [...linux, ...(await platformVariants(linux))].sort((a, b) =>
 	a.id.localeCompare(b.id),
 );
@@ -119,6 +122,8 @@ async function pageFor(s: Session, scene: Scene): Promise<Page> {
 	const before = pagesOf(s).length;
 	await install(s.page);
 	await scene.opener(makeCtx(s.page));
+	// An opener can open more than one window (settings, then a browser from it): take the newest.
+	await Bun.sleep(1000);
 	for (let i = 0; i < 40; i++) {
 		const pages = pagesOf(s);
 		if (pages.length > before) {

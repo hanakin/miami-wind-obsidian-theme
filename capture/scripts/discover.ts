@@ -152,7 +152,8 @@ const PROBE = `(() => ({
 	containers: document.querySelectorAll(".modal-container").length,
 	menus: document.querySelectorAll(".menu").length,
 	notices: document.querySelectorAll(".notice").length,
-	suggest: document.querySelectorAll(".suggestion-container").length,
+	// Only popups that are on screen: some suggest containers stay attached but hidden.
+	suggest: [...document.querySelectorAll(".suggestion-container")].filter((e) => e.getClientRects().length > 0).length,
 	leaves: (() => { const out = []; app.workspace.iterateAllLeaves((l) => out.push(l.id + ":" + l.view.getViewType())); return out; })(),
 	body: [...document.body.classList],
 }))()`;
@@ -263,11 +264,12 @@ export async function classifyCommands(
 	session: Session,
 	page: Page,
 	inv: AppInventory,
+	only?: string[],
 ): Promise<CommandResult[]> {
 	await install(page);
 	const layout = await snapshotLayout(page);
 	const out: CommandResult[] = [];
-	for (const c of inv.commands) {
+	for (const c of inv.commands.filter((x) => !only || only.includes(x.id))) {
 		if (SKIP[c.id]) {
 			out.push({ ...c, outcome: { kind: "skipped", reason: SKIP[c.id] ?? "" } });
 			continue;

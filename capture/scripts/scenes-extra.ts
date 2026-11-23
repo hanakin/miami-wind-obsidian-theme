@@ -1,7 +1,7 @@
 // Scenes added after the first coverage run: states theme.css styles that the first catalog did
 // not reach, and app surfaces that only appear after a specific action.
 import { baseLayout, click, rightClick, settingsWindow } from "./scenes.ts";
-import type { ItemDef, Pseudo, Scene, Target } from "./types.ts";
+import type { Ctx, ItemDef, Pseudo, Scene, Target } from "./types.ts";
 
 const p = (
 	id: string,
@@ -124,6 +124,29 @@ const selectStates: Scene = {
 		p("extra.select-option.checked.hover", "dropdown", ".modal select.dropdown option:checked", [
 			"hover",
 		]),
+		{
+			id: "extra.settings-search-empty",
+			component: "search-input",
+			target: ".modal.mod-settings",
+			state: "search-no-results",
+			before: async (ctx) => {
+				await click(ctx, ".modal .setting-search-container input");
+				await ctx.page.keyboard.type("zzqx", { delay: 20 });
+				await ctx.sleep(400);
+			},
+		},
+		{
+			id: "extra.settings-search-results",
+			component: "search-input",
+			target: ".modal.mod-settings",
+			state: "search-results",
+			before: async (ctx) => {
+				await ctx.js("cap.clearSettingsSearch();");
+				await click(ctx, ".modal .setting-search-container input");
+				await ctx.page.keyboard.type("font", { delay: 20 });
+				await ctx.sleep(400);
+			},
+		},
 	],
 };
 
@@ -137,14 +160,6 @@ const formControls: Scene = {
 	},
 	items: [
 		{ id: "extra.modal.shell", component: "modal", target: ".modal-container", full: true },
-		{
-			id: "extra.modal.close-button",
-			component: "clickable-icon",
-			target: ".modal .modal-close-button",
-		},
-		p("extra.modal.close-button.hover", "clickable-icon", ".modal-close-button.clickable-icon", [
-			"hover",
-		]),
 		p("extra.modal.button.hover", "button", ".modal button", ["hover"]),
 		{
 			id: "extra.textarea.focus",
@@ -286,6 +301,35 @@ const editorExtras: Scene = {
 			},
 		},
 		{
+			id: "extra.image-lightbox",
+			component: "lightbox",
+			surface: "modal",
+			target: ".lightbox",
+			full: true,
+			before: async (ctx) => {
+				await ctx.open("Markdown/Embeds.md", "reading");
+				await ctx.js(
+					"cap.ROOTS.leaf().querySelector('.markdown-reading-view .image-embed img')?.click(); await sleep(800);",
+				);
+			},
+		},
+		{
+			id: "extra.modal.close-button",
+			component: "clickable-icon",
+			surface: "modal",
+			target: ".lightbox .modal-close-button",
+			note: "In 1.15.1 only the image lightbox still uses .modal-close-button; other modals use .modal-header-button.",
+		},
+		p(
+			"extra.modal.close-button.hover",
+			"clickable-icon",
+			".lightbox .modal-close-button.clickable-icon",
+			["hover"],
+			{
+				surface: "modal",
+			},
+		),
+		{
 			id: "extra.indentation-guide-active",
 			component: "list",
 			target: leaf(".markdown-source-view .cm-content"),
@@ -357,42 +401,6 @@ const community: Scene = {
 			before: async (ctx) => {
 				await ctx.js(
 					"const b = [...document.querySelectorAll('.modal.mod-settings button')].find((e) => /turn on|restricted/i.test(e.textContent ?? '')); b?.click(); await sleep(1200);",
-				);
-			},
-		},
-		{
-			id: "extra.community.plugin-browser",
-			component: "community-browser",
-			target: ".modal-container:last-child",
-			full: true,
-			before: async (ctx) => {
-				await ctx.js(
-					"const b = [...document.querySelectorAll('.modal.mod-settings button')].find((e) => /browse/i.test(e.textContent ?? '')); b?.click(); await sleep(6000);",
-				);
-			},
-			note: "Loads the community plugin list over the network.",
-		},
-		{
-			id: "extra.community.plugin-details",
-			component: "community-browser",
-			target: ".modal-container:last-child",
-			state: "details",
-			full: true,
-			before: async (ctx) => {
-				await ctx.js(
-					"document.querySelector('.modal-container:last-child .community-item')?.click(); await sleep(5000);",
-				);
-			},
-		},
-		{
-			id: "extra.community.theme-browser",
-			component: "community-browser",
-			target: ".modal-container:last-child",
-			state: "themes",
-			full: true,
-			before: async (ctx) => {
-				await ctx.js(
-					"document.querySelectorAll('.modal-container .modal-close-button').forEach((b) => b.click()); await sleep(300); app.setting.openTabById('appearance'); await sleep(500); const b = [...document.querySelectorAll('.modal.mod-settings button')].find((e) => /manage/i.test(e.textContent ?? '')); b?.click(); await sleep(6000);",
 				);
 			},
 		},
@@ -469,6 +477,18 @@ const basesExtras: Scene = {
 	source: "catalog:bases-extras",
 	setup: (ctx) => ctx.open("Base.base", "live"),
 	items: [
+		{
+			id: "extra.bases.kanban",
+			component: "bases-kanban",
+			target: leaf(".bases-view"),
+			before: async (ctx) => {
+				await ctx.command("bases:change-view");
+				await ctx.sleep(400);
+				await ctx.js(
+					"[...document.querySelectorAll('.suggestion-item')].find((e) => e.textContent.includes('Board'))?.click(); await sleep(1200);",
+				);
+			},
+		},
 		p("extra.bases.toolbar-button.hover", "button", leaf(".bases-toolbar-item .text-icon-button"), [
 			"hover",
 		]),
@@ -509,6 +529,152 @@ const basesExtras: Scene = {
 	],
 };
 
+/** Opens a community browser (its own popout window) from a settings tab's button. */
+function communityOpener(tab: string, button: RegExp): (main: Ctx) => Promise<void> {
+	return async (main) => {
+		await main.js(
+			`app.setting.open(); app.setting.openTabById(${JSON.stringify(tab)}); await sleep(800); const doc = app.setting.modalEl?.ownerDocument ?? document; [...doc.querySelectorAll(".modal.mod-settings button")].find((e) => /exit restricted/i.test(e.textContent ?? ""))?.click(); await sleep(800); const b = [...doc.querySelectorAll('.modal.mod-settings button')].find((e) => ${button}.test(e.textContent ?? '')); b?.click(); await sleep(500);`,
+		);
+	};
+}
+
+const pluginBrowser: Scene = {
+	id: "extra.community-plugins-browser",
+	surface: "community-browser",
+	source: "catalog:community-browser",
+	window: "popout",
+	opener: communityOpener("community-plugins", /browse/i),
+	setup: async (ctx) => {
+		await ctx.sleep(5000);
+	},
+	items: [
+		{
+			id: "extra.community.plugin-browser",
+			component: "community-browser",
+			target: "body",
+			full: true,
+			note: "Loads the community plugin list over the network; opens in its own popout window.",
+		},
+		{
+			id: "extra.community.plugin-details",
+			component: "community-browser",
+			target: "body",
+			state: "details",
+			full: true,
+			before: async (ctx) => {
+				await ctx.js("document.querySelector('.community-item')?.click(); await sleep(5000);");
+			},
+		},
+		p("extra.community.item.hover", "community-browser", ".community-item", ["hover"]),
+	],
+};
+
+const themeBrowser: Scene = {
+	id: "extra.community-themes-browser",
+	surface: "community-browser",
+	source: "catalog:community-browser",
+	window: "popout",
+	opener: communityOpener("appearance", /manage/i),
+	setup: async (ctx) => {
+		await ctx.sleep(5000);
+	},
+	items: [
+		{
+			id: "extra.community.theme-browser",
+			component: "community-browser",
+			target: "body",
+			state: "themes",
+			full: true,
+		},
+	],
+};
+
+const more: Scene = {
+	id: "extra.more",
+	surface: "workspace",
+	source: "catalog:more-surfaces",
+	setup: (ctx) => baseLayout(ctx),
+	items: [
+		{
+			id: "extra.search-suggest",
+			component: "suggestion",
+			surface: "suggestion-popup",
+			target: ".suggestion-container.mod-search-suggestion",
+			before: async (ctx) => {
+				await ctx.js(
+					"const l = app.workspace.getLeavesOfType('search')[0]; app.workspace.revealLeaf(l); l.view.setQuery(''); await sleep(300);",
+				);
+				await click(
+					ctx,
+					'.workspace-leaf-content[data-type="search"] .search-input-container input',
+				);
+				await ctx.sleep(500);
+			},
+		},
+		{
+			id: "extra.search-explain",
+			component: "search-result",
+			surface: "left-sidebar",
+			target: '.workspace-leaf-content[data-type="search"]',
+			state: "explain-search",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.js(
+					"const l = app.workspace.getLeavesOfType('search')[0]; l.view.setExplainSearch?.(true); l.view.setQuery('heading -windsurf'); await sleep(1200);",
+				);
+			},
+		},
+		{
+			id: "extra.graph-color-group",
+			component: "graph-controls",
+			surface: "graph",
+			target: ".graph-controls",
+			state: "color-group",
+			before: async (ctx) => {
+				await ctx.command("graph:open");
+				await ctx.sleep(1500);
+				await ctx.js(
+					"document.querySelectorAll('.graph-controls .tree-item.is-collapsed .tree-item-self').forEach((e) => e.click()); await sleep(300); [...document.querySelectorAll('.graph-controls button')].find((b) => /new group/i.test(b.textContent ?? ''))?.click(); await sleep(600);",
+				);
+			},
+		},
+		{
+			id: "extra.slides",
+			component: "slides",
+			surface: "slides",
+			target: ".slides-container",
+			full: true,
+			before: async (ctx) => {
+				await ctx.open("Markdown/Kitchen sink.md", "live");
+				await ctx.command("slides:start");
+				await ctx.sleep(1500);
+			},
+		},
+	],
+};
+
+const settingsPage: Scene = {
+	id: "extra.settings-page",
+	surface: "settings",
+	source: "catalog:settings-subpage",
+	window: "popout",
+	opener: settingsWindow("interface"),
+	setup: async (ctx) => {
+		await ctx.js(
+			"cap.clearSettingsSearch(); for (const t of app.setting.settingTabs) { app.setting.openTabById(t.id); await sleep(200); const nav = document.querySelector('.modal.mod-settings .setting-item.mod-navigable'); if (nav) { nav.click(); await sleep(600); break; } }",
+		);
+	},
+	items: [
+		{
+			id: "extra.settings-subpage",
+			component: "settings-page",
+			target: ".modal.mod-settings",
+			state: "sub-page",
+			note: "A navigable setting row (chevron) opens a sub-page inside the settings window.",
+		},
+	],
+};
+
 export function extraScenes(): Scene[] {
 	return [
 		basesExtras,
@@ -520,5 +686,9 @@ export function extraScenes(): Scene[] {
 		recovery,
 		canvasExtras,
 		community,
+		more,
+		settingsPage,
+		pluginBrowser,
+		themeBrowser,
 	];
 }

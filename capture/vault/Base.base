@@ -29,6 +29,14 @@ views:
     name: List view
     order:
       - file.name
+  - type: kanban
+    name: Board
+    groupBy:
+      property: file.folder
+      direction: ASC
+    order:
+      - file.name
+      - tags
   - type: table
     name: Grouped
     groupBy:

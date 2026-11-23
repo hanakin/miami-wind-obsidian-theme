@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-23T05:50:24.246Z",
+	"generated": "2026-11-23T06:31:35.442Z",
 	"fixtures": [
 		{
 			"id": "bases.cards",
@@ -1565,6 +1565,27 @@
 			"contains": []
 		},
 		{
+			"id": "chrome.titlebar-button.hover.windows",
+			"file": "chrome.titlebar-button.hover.windows.html",
+			"screenshot": "",
+			"component": "titlebar-button",
+			"surface": "workspace",
+			"state": "hover+windows",
+			"covers": [
+				"platform.windows.591",
+				"platform.windows.1148",
+				"platform.windows.1156",
+				"platform.windows.1159",
+				"platform.windows.1161",
+				"platform.windows.1165"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [],
+			"variantOf": "chrome.titlebar-button.hover",
+			"platform": "windows",
+			"note": "Synthetic: the Linux capture with body class mod-windows instead of mod-linux. Covers the windows rules in app.css; OS-drawn parts (traffic lights, native menus, window frame) are not reproduced. No screenshot."
+		},
+		{
 			"id": "chrome.titlebar.windows",
 			"file": "chrome.titlebar.windows.html",
 			"screenshot": "",
@@ -1572,13 +1593,13 @@
 			"surface": "workspace",
 			"state": "default+windows",
 			"covers": [
-				"platform.windows.1:0",
-				"platform.windows.1:0",
-				"platform.windows.1:4",
-				"platform.windows.1:0",
-				"platform.windows.1:1",
-				"platform.windows.1:1",
-				"platform.windows.1:1"
+				"platform.windows.591",
+				"platform.windows.1148",
+				"platform.windows.1154",
+				"platform.windows.1156",
+				"platform.windows.1159",
+				"platform.windows.1161",
+				"platform.windows.1163"
 			],
 			"obsidianVersion": "1.15.1",
 			"contains": [],
@@ -1729,6 +1750,50 @@
 			]
 		},
 		{
+			"id": "chrome.window.macos",
+			"file": "chrome.window.macos.html",
+			"screenshot": "",
+			"component": "workspace",
+			"surface": "workspace",
+			"state": "default+macos",
+			"covers": [
+				"platform.macos.337",
+				"platform.macos.589",
+				"platform.macos.1417",
+				"platform.macos.1419",
+				"platform.macos.1637"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"button",
+				"checkbox",
+				"text-input",
+				"search-input",
+				"tree-item",
+				"nav-file",
+				"tab-header",
+				"view-header",
+				"status-bar-item",
+				"multi-select-pill",
+				"tag",
+				"internal-link",
+				"callout",
+				"code-block",
+				"inline-code",
+				"table",
+				"heading",
+				"task",
+				"metadata-container",
+				"metadata-property",
+				"search-result",
+				"collapse-icon"
+			],
+			"variantOf": "chrome.window",
+			"platform": "macos",
+			"note": "Synthetic: the Linux capture with body class mod-macos instead of mod-linux. Covers the macos rules in app.css; OS-drawn parts (traffic lights, native menus, window frame) are not reproduced. No screenshot."
+		},
+		{
 			"id": "chrome.workspace-tabs-icon.hover",
 			"file": "chrome.workspace-tabs-icon.hover.html",
 			"screenshot": "screenshots/chrome.workspace-tabs-icon.hover.png",
@@ -1821,6 +1886,40 @@
 				"modal"
 			],
 			"note": "Opened by the command \"Open settings\" (app:open-settings)"
+		},
+		{
+			"id": "command.app:open-settings.macos",
+			"file": "command.app:open-settings.macos.html",
+			"screenshot": "",
+			"component": "window",
+			"surface": "window",
+			"state": "default+macos",
+			"covers": [
+				"platform.macos.337",
+				"platform.macos.589",
+				"platform.macos.827",
+				"platform.macos.1132",
+				"platform.macos.1134",
+				"platform.macos.1145"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"button",
+				"toggle",
+				"checkbox",
+				"dropdown",
+				"slider",
+				"text-input",
+				"textarea",
+				"search-input",
+				"setting-item",
+				"vertical-tab",
+				"modal"
+			],
+			"note": "Synthetic: the Linux capture with body class mod-macos instead of mod-linux. Covers the macos rules in app.css; OS-drawn parts (traffic lights, native menus, window frame) are not reproduced. No screenshot.",
+			"variantOf": "command.app:open-settings",
+			"platform": "macos"
 		},
 		{
 			"id": "command.app:open-vault",
@@ -2296,13 +2395,13 @@
 			"surface": "window",
 			"state": "default+macos",
 			"covers": [
-				"platform.macos.1:0",
-				"platform.macos.1:0",
-				"platform.macos.1:0",
-				"platform.macos.1:0",
-				"platform.macos.1:0",
-				"platform.macos.1:0",
-				"platform.macos.1:1"
+				"platform.macos.337",
+				"platform.macos.589",
+				"platform.macos.1132",
+				"platform.macos.1134",
+				"platform.macos.1145",
+				"platform.macos.1147",
+				"platform.macos.1637"
 			],
 			"obsidianVersion": "1.15.1",
 			"contains": [
@@ -3369,6 +3468,22 @@
 			]
 		},
 		{
+			"id": "extra.bases.kanban",
+			"file": "extra.bases.kanban.html",
+			"screenshot": "screenshots/extra.bases.kanban.png",
+			"component": "bases-kanban",
+			"surface": "bases",
+			"state": "default",
+			"covers": [
+				"extra.bases.kanban"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"tag"
+			]
+		},
+		{
 			"id": "extra.bases.menu-item.active",
 			"file": "extra.bases.menu-item.active.html",
 			"screenshot": "screenshots/extra.bases.menu-item.active.png",
@@ -3565,6 +3680,69 @@
 			]
 		},
 		{
+			"id": "extra.community.item.hover",
+			"file": "extra.community.item.hover.html",
+			"screenshot": "screenshots/extra.community.item.hover.png",
+			"component": "community-browser",
+			"surface": "community-browser",
+			"state": "hover",
+			"covers": [
+				"extra.community.item.hover"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": []
+		},
+		{
+			"id": "extra.community.plugin-browser",
+			"file": "extra.community.plugin-browser.html",
+			"screenshot": "screenshots/extra.community.plugin-browser.png",
+			"component": "community-browser",
+			"surface": "community-browser",
+			"state": "default",
+			"covers": [
+				"extra.community.plugin-browser"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"button",
+				"toggle",
+				"checkbox",
+				"text-input",
+				"search-input",
+				"setting-item",
+				"modal"
+			],
+			"note": "Loads the community plugin list over the network; opens in its own popout window."
+		},
+		{
+			"id": "extra.community.plugin-details",
+			"file": "extra.community.plugin-details.html",
+			"screenshot": "screenshots/extra.community.plugin-details.png",
+			"component": "community-browser",
+			"surface": "community-browser",
+			"state": "details",
+			"covers": [
+				"extra.community.plugin-details"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"button",
+				"button-cta",
+				"toggle",
+				"checkbox",
+				"text-input",
+				"search-input",
+				"setting-item",
+				"modal",
+				"internal-link",
+				"external-link",
+				"inline-code",
+				"heading"
+			]
+		},
+		{
 			"id": "extra.community.restricted",
 			"file": "extra.community.restricted.html",
 			"screenshot": "screenshots/extra.community.restricted.png",
@@ -3585,6 +3763,28 @@
 				"vertical-tab",
 				"modal",
 				"external-link"
+			]
+		},
+		{
+			"id": "extra.community.theme-browser",
+			"file": "extra.community.theme-browser.html",
+			"screenshot": "screenshots/extra.community.theme-browser.png",
+			"component": "community-browser",
+			"surface": "community-browser",
+			"state": "themes",
+			"covers": [
+				"extra.community.theme-browser"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"button",
+				"toggle",
+				"checkbox",
+				"text-input",
+				"search-input",
+				"setting-item",
+				"modal"
 			]
 		},
 		{
@@ -3647,6 +3847,30 @@
 			]
 		},
 		{
+			"id": "extra.graph-color-group",
+			"file": "extra.graph-color-group.html",
+			"screenshot": "screenshots/extra.graph-color-group.png",
+			"component": "graph-controls",
+			"surface": "graph",
+			"state": "color-group",
+			"covers": [
+				"extra.graph-color-group"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"button",
+				"toggle",
+				"checkbox",
+				"slider",
+				"text-input",
+				"search-input",
+				"setting-item",
+				"tree-item",
+				"collapse-icon"
+			]
+		},
+		{
 			"id": "extra.hashtag-begin.hover",
 			"file": "extra.hashtag-begin.hover.html",
 			"screenshot": "screenshots/extra.hashtag-begin.hover.png",
@@ -3674,6 +3898,21 @@
 			"obsidianVersion": "1.15.1",
 			"contains": [
 				"tag"
+			]
+		},
+		{
+			"id": "extra.image-lightbox",
+			"file": "extra.image-lightbox.html",
+			"screenshot": "screenshots/extra.image-lightbox.png",
+			"component": "lightbox",
+			"surface": "modal",
+			"state": "default",
+			"covers": [
+				"extra.image-lightbox"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon"
 			]
 		},
 		{
@@ -3861,6 +4100,37 @@
 			]
 		},
 		{
+			"id": "extra.modal.close-button",
+			"file": "extra.modal.close-button.html",
+			"screenshot": "screenshots/extra.modal.close-button.png",
+			"component": "clickable-icon",
+			"surface": "modal",
+			"state": "default",
+			"covers": [
+				"extra.modal.close-button"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon"
+			],
+			"note": "In 1.15.1 only the image lightbox still uses .modal-close-button; other modals use .modal-header-button."
+		},
+		{
+			"id": "extra.modal.close-button.hover",
+			"file": "extra.modal.close-button.hover.html",
+			"screenshot": "screenshots/extra.modal.close-button.hover.png",
+			"component": "clickable-icon",
+			"surface": "modal",
+			"state": "hover",
+			"covers": [
+				"extra.modal.close-button.hover"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon"
+			]
+		},
+		{
 			"id": "extra.modal.shell",
 			"file": "extra.modal.shell.html",
 			"screenshot": "screenshots/extra.modal.shell.png",
@@ -3981,6 +4251,46 @@
 			]
 		},
 		{
+			"id": "extra.search-explain",
+			"file": "extra.search-explain.html",
+			"screenshot": "screenshots/extra.search-explain.png",
+			"component": "search-result",
+			"surface": "left-sidebar",
+			"state": "explain-search",
+			"covers": [
+				"extra.search-explain"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"toggle",
+				"checkbox",
+				"dropdown",
+				"text-input",
+				"search-input",
+				"setting-item",
+				"tree-item",
+				"search-result",
+				"collapse-icon"
+			]
+		},
+		{
+			"id": "extra.search-suggest",
+			"file": "extra.search-suggest.html",
+			"screenshot": "screenshots/extra.search-suggest.png",
+			"component": "suggestion",
+			"surface": "suggestion-popup",
+			"state": "default",
+			"covers": [
+				"extra.search-suggest"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"suggestion"
+			]
+		},
+		{
 			"id": "extra.select-option.checked.hover",
 			"file": "extra.select-option.checked.hover.html",
 			"screenshot": "screenshots/extra.select-option.checked.hover.png",
@@ -4037,6 +4347,75 @@
 			]
 		},
 		{
+			"id": "extra.settings-search-empty",
+			"file": "extra.settings-search-empty.html",
+			"screenshot": "screenshots/extra.settings-search-empty.png",
+			"component": "search-input",
+			"surface": "settings",
+			"state": "search-no-results",
+			"covers": [
+				"extra.settings-search-empty"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"toggle",
+				"checkbox",
+				"dropdown",
+				"slider",
+				"text-input",
+				"search-input",
+				"setting-item",
+				"vertical-tab",
+				"modal"
+			]
+		},
+		{
+			"id": "extra.settings-search-results",
+			"file": "extra.settings-search-results.html",
+			"screenshot": "screenshots/extra.settings-search-results.png",
+			"component": "search-input",
+			"surface": "settings",
+			"state": "search-results",
+			"covers": [
+				"extra.settings-search-results"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"toggle",
+				"checkbox",
+				"dropdown",
+				"slider",
+				"text-input",
+				"search-input",
+				"setting-item",
+				"vertical-tab",
+				"modal"
+			]
+		},
+		{
+			"id": "extra.settings-subpage",
+			"file": "extra.settings-subpage.html",
+			"screenshot": "screenshots/extra.settings-subpage.png",
+			"component": "settings-page",
+			"surface": "settings",
+			"state": "sub-page",
+			"covers": [
+				"extra.settings-subpage"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"clickable-icon",
+				"text-input",
+				"search-input",
+				"setting-item",
+				"vertical-tab",
+				"modal"
+			],
+			"note": "A navigable setting row (chevron) opens a sub-page inside the settings window."
+		},
+		{
 			"id": "extra.sidebar-icon.active",
 			"file": "extra.sidebar-icon.active.html",
 			"screenshot": "screenshots/extra.sidebar-icon.active.png",
@@ -4049,6 +4428,30 @@
 			"obsidianVersion": "1.15.1",
 			"contains": [
 				"clickable-icon"
+			]
+		},
+		{
+			"id": "extra.slides",
+			"file": "extra.slides.html",
+			"screenshot": "screenshots/extra.slides.png",
+			"component": "slides",
+			"surface": "slides",
+			"state": "default",
+			"covers": [
+				"extra.slides"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"button",
+				"checkbox",
+				"tag",
+				"internal-link",
+				"callout",
+				"code-block",
+				"inline-code",
+				"table",
+				"heading",
+				"task"
 			]
 		},
 		{
@@ -7678,6 +8081,42 @@
 			]
 		},
 		{
+			"id": "md.embed-base-codeblock.live",
+			"file": "md.embed-base-codeblock.live.html",
+			"screenshot": "screenshots/md.embed-base-codeblock.live.png",
+			"component": "embed",
+			"surface": "editor-live-preview",
+			"state": "default",
+			"covers": [
+				"md.embed-base-codeblock.live"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"text-input",
+				"search-input",
+				"internal-link",
+				"bases-toolbar"
+			]
+		},
+		{
+			"id": "md.embed-base-codeblock.reading",
+			"file": "md.embed-base-codeblock.reading.html",
+			"screenshot": "screenshots/md.embed-base-codeblock.reading.png",
+			"component": "embed",
+			"surface": "editor-reading-view",
+			"state": "default",
+			"covers": [
+				"md.embed-base-codeblock.reading"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [
+				"text-input",
+				"search-input",
+				"internal-link",
+				"bases-toolbar"
+			]
+		},
+		{
 			"id": "md.embed-base.live",
 			"file": "md.embed-base.live.html",
 			"screenshot": "screenshots/md.embed-base.live.png",
@@ -10476,6 +10915,32 @@
 			"state": "default",
 			"covers": [
 				"md.mermaid-er.reading"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": []
+		},
+		{
+			"id": "md.mermaid-error.live",
+			"file": "md.mermaid-error.live.html",
+			"screenshot": "screenshots/md.mermaid-error.live.png",
+			"component": "mermaid",
+			"surface": "editor-live-preview",
+			"state": "default",
+			"covers": [
+				"md.mermaid-error.live"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": []
+		},
+		{
+			"id": "md.mermaid-error.reading",
+			"file": "md.mermaid-error.reading.html",
+			"screenshot": "screenshots/md.mermaid-error.reading.png",
+			"component": "mermaid",
+			"surface": "editor-reading-view",
+			"state": "default",
+			"covers": [
+				"md.mermaid-error.reading"
 			],
 			"obsidianVersion": "1.15.1",
 			"contains": []
@@ -13694,6 +14159,33 @@
 			]
 		},
 		{
+			"id": "prompt.instruction-command",
+			"file": "prompt.instruction-command.html",
+			"screenshot": "screenshots/prompt.instruction-command.png",
+			"component": "prompt",
+			"surface": "modal",
+			"state": "default",
+			"covers": [
+				"prompt.instruction-command"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": []
+		},
+		{
+			"id": "prompt.instructions",
+			"file": "prompt.instructions.html",
+			"screenshot": "screenshots/prompt.instructions.png",
+			"component": "prompt",
+			"surface": "modal",
+			"state": "default",
+			"covers": [
+				"prompt.instructions"
+			],
+			"obsidianVersion": "1.15.1",
+			"contains": [],
+			"note": "The command palette shows no instructions in 1.15.1; the move-file prompt does."
+		},
+		{
 			"id": "prompt.item.hover",
 			"file": "prompt.item.hover.html",
 			"screenshot": "screenshots/prompt.item.hover.png",
@@ -16359,60 +16851,7 @@
 			"note": "is-focused removed by script: the headless window never loses OS focus."
 		}
 	],
-	"failed": [
-		{
-			"id": "command.editor:toggle-highlight",
-			"error": "target not found: \".suggestion-container\""
-		},
-		{
-			"id": "command.global-search:open",
-			"error": "target not found: \".suggestion-container\""
-		},
-		{
-			"id": "command.insert-unique-link",
-			"error": "target not found: \".suggestion-container\""
-		},
-		{
-			"id": "extra.community.plugin-browser",
-			"error": "target not found: \".modal-container:last-child\""
-		},
-		{
-			"id": "extra.community.plugin-details",
-			"error": "target not found: \".modal-container:last-child\""
-		},
-		{
-			"id": "extra.community.theme-browser",
-			"error": "target not found: \".modal-container:last-child\""
-		},
-		{
-			"id": "extra.modal.close-button",
-			"error": "target not found: \".modal .modal-close-button\""
-		},
-		{
-			"id": "extra.modal.close-button.hover",
-			"error": "target not found: \".modal-close-button.clickable-icon\""
-		},
-		{
-			"id": "md.mermaid-error.live",
-			"error": "target not found: {\"sel\":\".markdown-source-view .cm-embed-block\",\"text\":\"not valid\",\"in\":\"leaf\"}"
-		},
-		{
-			"id": "md.mermaid-error.reading",
-			"error": "target not found: {\"sel\":\".markdown-reading-view .el-pre\",\"text\":\"not valid\",\"in\":\"leaf\"}"
-		},
-		{
-			"id": "md.mermaid-guard.live",
-			"error": "target not found: {\"sel\":\".markdown-source-view .mermaid-wrapper.is-guarded\",\"in\":\"leaf\"}"
-		},
-		{
-			"id": "prompt.instruction-command",
-			"error": "target not found: \".prompt-instruction-command\""
-		},
-		{
-			"id": "prompt.instructions",
-			"error": "target not found: \".prompt-instructions\""
-		}
-	],
+	"failed": [],
 	"components": {
 		"all-properties": {
 			"surfaces": [
@@ -16465,6 +16904,15 @@
 				"bases.cards"
 			]
 		},
+		"bases-kanban": {
+			"surfaces": [
+				"bases"
+			],
+			"multiSurface": false,
+			"fixtures": [
+				"extra.bases.kanban"
+			]
+		},
 		"bases-list": {
 			"surfaces": [
 				"bases"
@@ -16500,6 +16948,8 @@
 				"bases.toolbar",
 				"bases.view",
 				"command.bases:new-file",
+				"md.embed-base-codeblock.live",
+				"md.embed-base-codeblock.reading",
 				"md.embed-base.live",
 				"md.embed-base.reading",
 				"md.embeds.reading.view",
@@ -16574,6 +17024,7 @@
 			"surfaces": [
 				"bases",
 				"canvas",
+				"community-browser",
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
@@ -16586,6 +17037,7 @@
 				"properties",
 				"right-sidebar",
 				"settings",
+				"slides",
 				"view",
 				"window",
 				"workspace"
@@ -16611,8 +17063,10 @@
 				"chrome.view-header",
 				"chrome.view-header-nav.disabled",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:migrate-frontmatter",
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.app:open-vault",
 				"command.app:show-debug-info",
 				"command.app:toggle-ribbon",
@@ -16648,12 +17102,17 @@
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
 				"extra.community.enabled",
+				"extra.community.plugin-browser",
+				"extra.community.plugin-details",
 				"extra.community.restricted",
+				"extra.community.theme-browser",
 				"extra.file-recovery.diff",
 				"extra.file-recovery.modal",
+				"extra.graph-color-group",
 				"extra.modal.button.hover",
 				"extra.modal.shell",
 				"extra.properties-show-source.hover",
+				"extra.slides",
 				"graph.controls",
 				"graph.local",
 				"graph.view",
@@ -16804,6 +17263,7 @@
 		},
 		"button-cta": {
 			"surfaces": [
+				"community-browser",
 				"modal",
 				"settings",
 				"window"
@@ -16820,6 +17280,7 @@
 				"command.publish:view-changes",
 				"command.sync:setup",
 				"command.workspace:export-pdf",
+				"extra.community.plugin-details",
 				"extra.community.restricted",
 				"modal.appearance",
 				"modal.button-cta",
@@ -16843,6 +17304,7 @@
 				"editor-reading-view",
 				"editor-source-mode",
 				"settings",
+				"slides",
 				"view",
 				"window",
 				"workspace"
@@ -16854,6 +17316,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -16865,6 +17328,7 @@
 				"editor.reading-selection",
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
+				"extra.slides",
 				"light-mode.restore",
 				"light-mode.window",
 				"md.callout-abstract.live",
@@ -17055,6 +17519,7 @@
 		"checkbox": {
 			"surfaces": [
 				"canvas",
+				"community-browser",
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
@@ -17064,6 +17529,7 @@
 				"modal",
 				"properties",
 				"settings",
+				"slides",
 				"view",
 				"window",
 				"workspace"
@@ -17077,7 +17543,9 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.app:toggle-ribbon",
 				"command.canvas:export-as-image",
 				"command.editor:open-link-in-new-window",
@@ -17096,9 +17564,17 @@
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
 				"extra.community.enabled",
+				"extra.community.plugin-browser",
+				"extra.community.plugin-details",
+				"extra.community.theme-browser",
 				"extra.file-recovery.diff",
 				"extra.file-recovery.modal",
+				"extra.graph-color-group",
 				"extra.indentation-guide-active",
+				"extra.search-explain",
+				"extra.settings-search-empty",
+				"extra.settings-search-results",
+				"extra.slides",
 				"graph.controls",
 				"light-mode.restore",
 				"light-mode.window",
@@ -17186,6 +17662,7 @@
 			"surfaces": [
 				"bases",
 				"canvas",
+				"community-browser",
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
@@ -17199,6 +17676,7 @@
 				"ribbon",
 				"right-sidebar",
 				"settings",
+				"suggestion-popup",
 				"view",
 				"window",
 				"workspace"
@@ -17252,10 +17730,12 @@
 				"chrome.view-header",
 				"chrome.view-header-nav.disabled",
 				"chrome.window",
+				"chrome.window.macos",
 				"chrome.workspace-tabs-icon.hover",
 				"chrome.workspace-tabs-icon.is-active",
 				"command.app:migrate-frontmatter",
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.app:show-debug-info",
 				"command.app:toggle-ribbon",
 				"command.bases:add-view",
@@ -17288,6 +17768,7 @@
 				"editor.edit-block-button.hover",
 				"editor.readable-line-length-off",
 				"editor.reading-selection",
+				"extra.bases.kanban",
 				"extra.bases.menu-item.active",
 				"extra.bases.menu-item.focus",
 				"extra.bases.menu.keyboard-selected",
@@ -17295,10 +17776,22 @@
 				"extra.canvas.help",
 				"extra.canvas.selection-box",
 				"extra.community.enabled",
+				"extra.community.plugin-browser",
+				"extra.community.plugin-details",
 				"extra.community.restricted",
+				"extra.community.theme-browser",
 				"extra.file-recovery.diff",
 				"extra.file-recovery.modal",
+				"extra.graph-color-group",
+				"extra.image-lightbox",
+				"extra.modal.close-button",
+				"extra.modal.close-button.hover",
 				"extra.modal.shell",
+				"extra.search-explain",
+				"extra.search-suggest",
+				"extra.settings-search-empty",
+				"extra.settings-search-results",
+				"extra.settings-subpage",
 				"extra.sidebar-icon.active",
 				"extra.tab-list.has-active-menu",
 				"extra.vim-mode",
@@ -17500,6 +17993,7 @@
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
+				"slides",
 				"view",
 				"window",
 				"workspace"
@@ -17511,6 +18005,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -17524,6 +18019,7 @@
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
 				"extra.code-block-flair.hover",
+				"extra.slides",
 				"extra.vim-mode",
 				"light-mode.restore",
 				"light-mode.window",
@@ -17670,6 +18166,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -17687,8 +18184,10 @@
 				"editor.selection",
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
+				"extra.graph-color-group",
 				"extra.indentation-guide-active",
 				"extra.properties-invalid",
+				"extra.search-explain",
 				"extra.vim-mode",
 				"graph.controls",
 				"graph.controls-section.hover",
@@ -17862,6 +18361,18 @@
 				"md.inline-comment.source"
 			]
 		},
+		"community-browser": {
+			"surfaces": [
+				"community-browser"
+			],
+			"multiSurface": false,
+			"fixtures": [
+				"extra.community.item.hover",
+				"extra.community.plugin-browser",
+				"extra.community.plugin-details",
+				"extra.community.theme-browser"
+			]
+		},
 		"diff": {
 			"surfaces": [
 				"modal"
@@ -17894,6 +18405,7 @@
 			"fixtures": [
 				"bases.filter-menu",
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.app:open-vault",
 				"command.bases:add-view",
 				"command.bookmarks:bookmark-all-tabs",
@@ -17902,10 +18414,13 @@
 				"command.bookmarks:bookmark-current-view",
 				"command.canvas:export-as-image",
 				"command.workspace:export-pdf",
+				"extra.search-explain",
 				"extra.select-option.checked.hover",
 				"extra.select-option.hover",
 				"extra.select.focus-visible",
 				"extra.select.focus-within",
+				"extra.settings-search-empty",
+				"extra.settings-search-results",
 				"modal.appearance",
 				"modal.dropdown",
 				"modal.dropdown-option.checked",
@@ -17983,6 +18498,8 @@
 				"extra.canvas.selection-box",
 				"md.embed-audio.live",
 				"md.embed-audio.reading",
+				"md.embed-base-codeblock.live",
+				"md.embed-base-codeblock.reading",
 				"md.embed-base.live",
 				"md.embed-base.reading",
 				"md.embed-block.live",
@@ -18034,6 +18551,7 @@
 		},
 		"external-link": {
 			"surfaces": [
+				"community-browser",
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
@@ -18044,6 +18562,7 @@
 			"multiSurface": true,
 			"fixtures": [
 				"editor.external-link.hover",
+				"extra.community.plugin-details",
 				"extra.community.restricted",
 				"extra.external-link.visited",
 				"md.bare-url.live",
@@ -18144,6 +18663,7 @@
 			],
 			"multiSurface": false,
 			"fixtures": [
+				"extra.graph-color-group",
 				"graph.controls"
 			]
 		},
@@ -18159,11 +18679,13 @@
 		"heading": {
 			"surfaces": [
 				"canvas",
+				"community-browser",
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
 				"file-view",
 				"popover",
+				"slides",
 				"view",
 				"window",
 				"workspace"
@@ -18177,6 +18699,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -18191,7 +18714,9 @@
 				"editor.selection",
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
+				"extra.community.plugin-details",
 				"extra.indentation-guide-active",
+				"extra.slides",
 				"extra.vim-mode",
 				"light-mode.restore",
 				"light-mode.window",
@@ -18332,9 +18857,11 @@
 		"inline-code": {
 			"surfaces": [
 				"canvas",
+				"community-browser",
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
+				"slides",
 				"view",
 				"window",
 				"workspace"
@@ -18346,6 +18873,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -18358,6 +18886,8 @@
 				"editor.selection",
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
+				"extra.community.plugin-details",
+				"extra.slides",
 				"extra.vim-mode",
 				"light-mode.restore",
 				"light-mode.window",
@@ -18551,10 +19081,12 @@
 			"surfaces": [
 				"bases",
 				"canvas",
+				"community-browser",
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
 				"properties",
+				"slides",
 				"view",
 				"window",
 				"workspace"
@@ -18572,6 +19104,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.bases:new-file",
 				"command.editor:open-link-in-new-window",
@@ -18587,10 +19120,12 @@
 				"editor.selection",
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
+				"extra.community.plugin-details",
 				"extra.link.active",
 				"extra.link.hover-active",
 				"extra.link.hover-visited",
 				"extra.link.visited",
+				"extra.slides",
 				"extra.vim-mode",
 				"light-mode.restore",
 				"light-mode.window",
@@ -18653,6 +19188,8 @@
 				"md.callouts.live.view",
 				"md.callouts.reading.view",
 				"md.callouts.source.view",
+				"md.embed-base-codeblock.live",
+				"md.embed-base-codeblock.reading",
 				"md.embed-base.live",
 				"md.embed-base.reading",
 				"md.embed-image.source",
@@ -18706,6 +19243,15 @@
 			"fixtures": [
 				"md.kbd.reading",
 				"prompt.hotkey"
+			]
+		},
+		"lightbox": {
+			"surfaces": [
+				"modal"
+			],
+			"multiSurface": false,
+			"fixtures": [
+				"extra.image-lightbox"
 			]
 		},
 		"list": {
@@ -18891,6 +19437,8 @@
 				"md.mermaid-class.reading",
 				"md.mermaid-er.live",
 				"md.mermaid-er.reading",
+				"md.mermaid-error.live",
+				"md.mermaid-error.reading",
 				"md.mermaid-error.source",
 				"md.mermaid-flowchart.live",
 				"md.mermaid-flowchart.reading",
@@ -18925,6 +19473,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -19035,6 +19584,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -19120,6 +19670,7 @@
 		},
 		"modal": {
 			"surfaces": [
+				"community-browser",
 				"modal",
 				"settings",
 				"window"
@@ -19129,6 +19680,7 @@
 				"command.app:migrate-frontmatter",
 				"command.app:open-another-vault",
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.app:show-debug-info",
 				"command.app:switch-vault",
 				"command.bases:change-view",
@@ -19156,10 +19708,16 @@
 				"command.workspaces:save-and-load",
 				"extra.canvas.help",
 				"extra.community.enabled",
+				"extra.community.plugin-browser",
+				"extra.community.plugin-details",
 				"extra.community.restricted",
+				"extra.community.theme-browser",
 				"extra.file-recovery.diff",
 				"extra.file-recovery.modal",
 				"extra.modal.shell",
+				"extra.settings-search-empty",
+				"extra.settings-search-results",
+				"extra.settings-subpage",
 				"modal.appearance",
 				"modal.shell",
 				"settings.about",
@@ -19228,6 +19786,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -19296,6 +19855,7 @@
 				"chrome.nav-file.hover",
 				"chrome.nav-folder.expanded",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.theme:toggle-light-dark",
 				"light-mode.restore",
@@ -19421,6 +19981,8 @@
 				"command.workspaces:load",
 				"command.workspaces:save-and-load",
 				"prompt.command-palette",
+				"prompt.instruction-command",
+				"prompt.instructions",
 				"prompt.quick-switcher"
 			]
 		},
@@ -19455,6 +20017,7 @@
 		"search-input": {
 			"surfaces": [
 				"bases",
+				"community-browser",
 				"editor-live-preview",
 				"editor-reading-view",
 				"file-view",
@@ -19479,7 +20042,9 @@
 				"chrome.left-split",
 				"chrome.right-split",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.app:toggle-ribbon",
 				"command.bases:new-file",
 				"command.file-recovery:open",
@@ -19490,12 +20055,22 @@
 				"editor.document-replace",
 				"editor.document-search",
 				"extra.community.enabled",
+				"extra.community.plugin-browser",
+				"extra.community.plugin-details",
 				"extra.community.restricted",
+				"extra.community.theme-browser",
 				"extra.file-recovery.diff",
 				"extra.file-recovery.modal",
+				"extra.graph-color-group",
+				"extra.search-explain",
+				"extra.settings-search-empty",
+				"extra.settings-search-results",
+				"extra.settings-subpage",
 				"graph.controls",
 				"light-mode.restore",
 				"light-mode.window",
+				"md.embed-base-codeblock.live",
+				"md.embed-base-codeblock.reading",
 				"md.embed-base.live",
 				"md.embed-base.reading",
 				"md.embed-pdf.live",
@@ -19590,6 +20165,8 @@
 				"chrome.backlinks-pane",
 				"chrome.right-split",
 				"chrome.window",
+				"chrome.window.macos",
+				"extra.search-explain",
 				"light-mode.restore",
 				"light-mode.window",
 				"md.embed-query.live",
@@ -19607,6 +20184,7 @@
 		},
 		"setting-item": {
 			"surfaces": [
+				"community-browser",
 				"graph",
 				"left-sidebar",
 				"modal",
@@ -19617,6 +20195,7 @@
 			"multiSurface": true,
 			"fixtures": [
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.app:open-vault",
 				"command.bookmarks:bookmark-all-tabs",
 				"command.bookmarks:bookmark-current-heading",
@@ -19627,7 +20206,15 @@
 				"command.publish:view-changes",
 				"command.workspace:export-pdf",
 				"extra.community.enabled",
+				"extra.community.plugin-browser",
+				"extra.community.plugin-details",
 				"extra.community.restricted",
+				"extra.community.theme-browser",
+				"extra.graph-color-group",
+				"extra.search-explain",
+				"extra.settings-search-empty",
+				"extra.settings-search-results",
+				"extra.settings-subpage",
 				"graph.controls",
 				"modal.appearance",
 				"modal.hotkey.recording",
@@ -19688,6 +20275,7 @@
 			"fixtures": [
 				"extra.community.enabled",
 				"extra.community.restricted",
+				"extra.settings-subpage",
 				"settings.about",
 				"settings.about.end",
 				"settings.appearance",
@@ -19753,9 +20341,13 @@
 			"multiSurface": true,
 			"fixtures": [
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.canvas:export-as-image",
 				"command.graph:open",
 				"command.workspace:export-pdf",
+				"extra.graph-color-group",
+				"extra.settings-search-empty",
+				"extra.settings-search-results",
 				"graph.controls",
 				"modal.appearance",
 				"modal.shell",
@@ -19772,6 +20364,15 @@
 				"settings.webviewer",
 				"settings.webviewer.end",
 				"view.type.graph"
+			]
+		},
+		"slides": {
+			"surfaces": [
+				"slides"
+			],
+			"multiSurface": false,
+			"fixtures": [
+				"extra.slides"
 			]
 		},
 		"state": {
@@ -19804,6 +20405,7 @@
 				"chrome.status-bar-item.clickable",
 				"chrome.status-bar-item.hover",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.theme:toggle-light-dark",
 				"light-mode.restore",
@@ -19862,6 +20464,7 @@
 				"extra.property-value-suggest",
 				"extra.property-value-suggest-item",
 				"extra.property-value-suggest-item.hover",
+				"extra.search-suggest",
 				"prompt.command-palette",
 				"prompt.item.hover",
 				"prompt.item.selected",
@@ -19915,6 +20518,7 @@
 				"chrome.tab-header.inactive",
 				"chrome.tab-header.inactive.hover",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -19942,6 +20546,7 @@
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
+				"slides",
 				"view",
 				"window",
 				"workspace"
@@ -19953,6 +20558,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -19963,6 +20569,7 @@
 				"editor.selection",
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
+				"extra.slides",
 				"light-mode.restore",
 				"light-mode.window",
 				"md.kitchen-sink.live.view",
@@ -19989,6 +20596,7 @@
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
+				"slides",
 				"view",
 				"window",
 				"workspace"
@@ -20001,6 +20609,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -20012,10 +20621,12 @@
 				"editor.reading-selection",
 				"editor.selection",
 				"editor.tag.hover",
+				"extra.bases.kanban",
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
 				"extra.hashtag-begin.hover",
 				"extra.hashtag-begin.hover-line",
+				"extra.slides",
 				"extra.vim-mode",
 				"light-mode.restore",
 				"light-mode.window",
@@ -20050,6 +20661,7 @@
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
+				"slides",
 				"view",
 				"window",
 				"workspace"
@@ -20061,6 +20673,7 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -20074,6 +20687,7 @@
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
 				"extra.indentation-guide-active",
+				"extra.slides",
 				"extra.vim-mode",
 				"light-mode.restore",
 				"light-mode.window",
@@ -20128,6 +20742,7 @@
 			"surfaces": [
 				"bases",
 				"canvas",
+				"community-browser",
 				"editor-live-preview",
 				"editor-reading-view",
 				"editor-source-mode",
@@ -20160,8 +20775,10 @@
 				"chrome.root-split",
 				"chrome.scrollbar",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:open-another-vault",
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.app:switch-vault",
 				"command.app:toggle-ribbon",
 				"command.bases:add-view",
@@ -20200,15 +20817,25 @@
 				"extra.canvas.after-select",
 				"extra.canvas.selection-box",
 				"extra.community.enabled",
+				"extra.community.plugin-browser",
+				"extra.community.plugin-details",
 				"extra.community.restricted",
+				"extra.community.theme-browser",
 				"extra.file-recovery.diff",
 				"extra.file-recovery.modal",
+				"extra.graph-color-group",
 				"extra.prompt-input.hover",
+				"extra.search-explain",
+				"extra.settings-search-empty",
+				"extra.settings-search-results",
+				"extra.settings-subpage",
 				"extra.vim-command-panel",
 				"extra.vim-mode",
 				"graph.controls",
 				"light-mode.restore",
 				"light-mode.window",
+				"md.embed-base-codeblock.live",
+				"md.embed-base-codeblock.reading",
 				"md.embed-base.live",
 				"md.embed-base.reading",
 				"md.embed-pdf.live",
@@ -20361,6 +20988,7 @@
 			"multiSurface": true,
 			"fixtures": [
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.app:show-debug-info",
 				"command.file-recovery:open",
 				"extra.file-recovery.diff",
@@ -20389,11 +21017,13 @@
 			],
 			"multiSurface": false,
 			"fixtures": [
-				"chrome.titlebar-button.hover"
+				"chrome.titlebar-button.hover",
+				"chrome.titlebar-button.hover.windows"
 			]
 		},
 		"toggle": {
 			"surfaces": [
+				"community-browser",
 				"graph",
 				"left-sidebar",
 				"modal",
@@ -20404,13 +21034,21 @@
 			"multiSurface": true,
 			"fixtures": [
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.canvas:export-as-image",
 				"command.file-recovery:open",
 				"command.graph:open",
 				"command.workspace:export-pdf",
 				"extra.community.enabled",
+				"extra.community.plugin-browser",
+				"extra.community.plugin-details",
+				"extra.community.theme-browser",
 				"extra.file-recovery.diff",
 				"extra.file-recovery.modal",
+				"extra.graph-color-group",
+				"extra.search-explain",
+				"extra.settings-search-empty",
+				"extra.settings-search-results",
 				"graph.controls",
 				"modal.appearance",
 				"modal.shell",
@@ -20478,9 +21116,12 @@
 				"chrome.nav-folder.expanded",
 				"chrome.right-split",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.graph:open",
 				"command.theme:toggle-light-dark",
+				"extra.graph-color-group",
+				"extra.search-explain",
 				"graph.controls",
 				"graph.controls-section.hover",
 				"graph.local",
@@ -20536,9 +21177,13 @@
 			"multiSurface": true,
 			"fixtures": [
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.sync:setup",
 				"extra.community.enabled",
 				"extra.community.restricted",
+				"extra.settings-search-empty",
+				"extra.settings-search-results",
+				"extra.settings-subpage",
 				"modal.appearance",
 				"modal.shell",
 				"modal.vertical-tab-group-title",
@@ -20727,6 +21372,7 @@
 				"chrome.view-header",
 				"chrome.view-header-title.hover",
 				"chrome.window",
+				"chrome.window.macos",
 				"command.app:toggle-ribbon",
 				"command.bases:new-file",
 				"command.canvas:new-file",
@@ -20956,6 +21602,7 @@
 			"multiSurface": false,
 			"fixtures": [
 				"command.app:open-settings",
+				"command.app:open-settings.macos",
 				"command.app:open-vault",
 				"command.editor:open-link-in-new-window",
 				"command.editor:open-link-in-new-window.macos",
@@ -20974,6 +21621,7 @@
 			"fixtures": [
 				"chrome.root-split",
 				"chrome.window",
+				"chrome.window.macos",
 				"light-mode.restore",
 				"light-mode.window",
 				"view.drag-end",

@@ -538,6 +538,13 @@ const FEATURES: Feature[] = [
 		live: ".bases-embed",
 	},
 	{
+		id: "embed-base-codeblock",
+		component: "embed",
+		note: "Markdown/Embeds.md",
+		reading: ".block-language-base",
+		live: ".block-language-base",
+	},
+	{
 		id: "embed-missing",
 		component: "embed",
 		note: "Markdown/Embeds.md",
@@ -640,8 +647,8 @@ const FEATURES: Feature[] = [
 		id: "mermaid-error",
 		component: "mermaid",
 		note: "Markdown/Mermaid.md",
-		reading: { sel: ".el-pre", text: "not valid" },
-		live: { sel: ".cm-embed-block", text: "not valid" },
+		reading: { sel: ".mermaid", text: "No diagram type" },
+		live: { sel: ".mermaid", text: "No diagram type" },
 		source: line("this is not valid mermaid"),
 	},
 	{
@@ -739,14 +746,6 @@ function markdownScenes(): Scene[] {
 					full: true,
 				},
 			];
-			if (note === "Markdown/Mermaid.md" && mode === "live") {
-				// Obsidian asks once per vault before rendering Mermaid; record the prompt first.
-				items.push({
-					id: "md.mermaid-guard.live",
-					component: "mermaid",
-					target: { sel: ".markdown-source-view .mermaid-wrapper.is-guarded", in: "leaf" },
-				});
-			}
 			for (const f of FEATURES.filter((x) => x.note === note)) {
 				const t = mode === "reading" ? f.reading : (f[mode] ?? f.editor);
 				if (!t) continue;
@@ -1693,12 +1692,6 @@ const prompts: Scene = {
 	},
 	items: [
 		{ id: "prompt.command-palette", component: "prompt", target: ".prompt" },
-		{ id: "prompt.instructions", component: "prompt", target: ".prompt-instructions" },
-		{
-			id: "prompt.instruction-command",
-			component: "prompt",
-			target: ".prompt-instruction-command",
-		},
 		{
 			id: "prompt.item.selected",
 			component: "suggestion",
@@ -1738,6 +1731,22 @@ const prompts: Scene = {
 			id: "prompt.quick-switcher-highlight",
 			component: "suggestion",
 			target: ".prompt .suggestion-highlight",
+		},
+		{
+			id: "prompt.instructions",
+			component: "prompt",
+			target: ".prompt-instructions",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.command("file-explorer:move-file");
+				await ctx.sleep(400);
+			},
+			note: "The command palette shows no instructions in 1.15.1; the move-file prompt does.",
+		},
+		{
+			id: "prompt.instruction-command",
+			component: "prompt",
+			target: ".prompt-instruction-command",
 		},
 	],
 };

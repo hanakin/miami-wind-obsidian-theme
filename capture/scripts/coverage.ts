@@ -31,7 +31,8 @@ const fixtures = fx.fixtures.filter((f) => existsSync(`${CAPTURE}fixtures/${f.fi
 
 // 1. Checklist items.
 const coveredItems = new Set(fixtures.flatMap((f) => f.covers));
-const missingItems = checklist.items.filter((i) => !coveredItems.has(i.id));
+const excludedItems = checklist.items.filter((i) => !coveredItems.has(i.id) && i.excluded);
+const missingItems = checklist.items.filter((i) => !coveredItems.has(i.id) && !i.excluded);
 
 // 2. theme.css selectors, matched in Chromium's own selector engine via DOMParser (no scripts run).
 const theme = themeSelectors();
@@ -98,12 +99,14 @@ const EXPERT = `${homedir()}/Holocron/Other/Obsidian/LLM/wiki/concepts/obsidian-
 const crossCheck: string[] = [];
 const appStatus = new Map(app.map((c) => [c.name, c]));
 if (existsSync(`${EXPERT}rule-map.md`)) {
-	const known = new Set(theme.map((s) => `${s.line}|${s.selector.replace(/\s+/g, " ")}`));
+	const norm = (x: string) => x.replaceAll("\\|", "|").replace(/\s+/g, " ");
 	const rows = [
 		...readFileSync(`${EXPERT}rule-map.md`, "utf8").matchAll(/^\| (\d+) \| `(.+?)` \|/gm),
 	];
+	// The expert's table cuts long selectors; a row matches a tracked selector it starts.
 	const unknown = rows.filter(
-		(r) => !known.has(`${r[1]}|${(r[2] ?? "").replaceAll("\\|", "|").replace(/\s+/g, " ")}`),
+		(r) =>
+			!theme.some((s) => String(s.line) === r[1] && norm(s.selector).startsWith(norm(r[2] ?? ""))),
 	);
 	crossCheck.push(
 		`rule-map.md: ${rows.length} rows; ${rows.length - unknown.length} name a theme.css selector this checklist tracks${unknown.length ? `; not found: ${unknown.map((r) => `${r[1]} ${r[2]}`).join(", ")}` : ""}`,
@@ -125,7 +128,7 @@ if (existsSync(`${EXPERT}surfaces.md`)) {
 const pct = (n: number, d: number) => `${d ? ((100 * n) / d).toFixed(1) : "100.0"}%`;
 const lines = [
 	`Obsidian ${checklist.obsidianVersion} · ${fixtures.length} fixtures (${fixtures.filter((f) => f.variantOf).length} synthetic macOS/Windows variants)`,
-	`Checklist items covered: ${checklist.items.length - missingItems.length}/${checklist.items.length} (${pct(checklist.items.length - missingItems.length, checklist.items.length)})`,
+	`Checklist items covered: ${checklist.items.length - missingItems.length - excludedItems.length}/${checklist.items.length} (${pct(checklist.items.length - missingItems.length - excludedItems.length, checklist.items.length)}); excluded with reason: ${excludedItems.length}; missing: ${missingItems.length}`,
 	`theme.css selectors matched: ${themeMatched.length}/${theme.length} (${pct(themeMatched.length, theme.length)}); excluded with reason: ${themeExcluded.length}; missing: ${themeMissing.length}`,
 	`App CSS classes: covered ${appCovered.length}, excluded ${appExcluded.length}, missing ${appMissing.length} of ${app.length} (${pct(appCovered.length + appExcluded.length, app.length)} accounted for)`,
 	...crossCheck.map((c) => `Expert cross-check, ${c}`),
@@ -195,6 +198,17 @@ function report(): string {
 	}
 	for (const [why, names] of [...reasons.entries()].sort(([a], [b]) => a.localeCompare(b))) {
 		out.push(`- ${why} (${names.length}): ${names.map((n) => `\`${n}\``).join(" ")}`);
+	}
+	if (excludedItems.length) {
+		out.push(
+			"",
+			"## Checklist items excluded",
+			"",
+			...excludedItems.map(
+				(i) =>
+					`- \`${i.id}\` (\`${typeof i.target === "string" ? i.target : i.target.sel}\`): ${i.excluded}`,
+			),
+		);
 	}
 	if (fx.failed.length) {
 		out.push("", "## Capture failures", "", ...fx.failed.map((f) => `- \`${f.id}\`: ${f.error}`));

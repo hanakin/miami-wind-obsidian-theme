@@ -27,23 +27,25 @@ export interface Exclusions {
 	appClassPatterns: Record<string, string>;
 	/** theme.css selectors that can never match, with the reason. */
 	themeSelectors: Record<string, string>;
+	/** Platform-only app.css selectors a class-swapped variant cannot reach, with the reason. */
+	platformSelectors: Record<string, string>;
 }
 
 export const DEAD =
 	"name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version";
 
-let shipped: string | undefined;
-/** True when the class name occurs anywhere in Obsidian's shipped JS/HTML. */
+let shipped: Set<string> | undefined;
+/** True when the class name occurs as a whole token in Obsidian's shipped JS/HTML. */
 export function referenced(name: string): boolean {
 	if (shipped === undefined) {
 		const dir = `${CAPTURE}.app/js/`;
-		shipped = readdirSync(dir, { recursive: true })
-			.map(String)
-			.filter((f) => /\.(m?js|html)$/.test(f))
-			.map((f) => readFileSync(`${dir}${f}`, "utf8"))
-			.join("\n");
+		shipped = new Set<string>();
+		for (const f of readdirSync(dir, { recursive: true }).map(String)) {
+			if (!/\.(m?js|html)$/.test(f)) continue;
+			for (const m of readFileSync(`${dir}${f}`, "utf8").matchAll(/[\w-]+/g)) shipped.add(m[0]);
+		}
 	}
-	return shipped.includes(name);
+	return shipped.has(name);
 }
 
 export function loadExclusions(): Exclusions {
@@ -189,23 +191,26 @@ export interface PlatformItem {
 	platform: "macos" | "windows";
 	selector: string;
 	line: number;
+	excluded?: string;
 }
 
 /** app.css selectors that only apply with mod-macos / mod-windows on <body>, one item each. */
 export function platformItems(): PlatformItem[] {
 	const ex = loadExclusions();
 	const out: PlatformItem[] = [];
-	for (const s of appSelectors()) {
+	for (const [n, s] of appSelectors().entries()) {
 		if (Object.keys(ex.appContexts).some((c) => s.context.includes(c))) continue;
 		const pos = positiveClassesOf(s.selector);
 		if (pos.some((c) => ex.appClassGates[c])) continue;
 		for (const platform of ["macos", "windows"] as const) {
 			if (pos.includes(`mod-${platform}`)) {
 				out.push({
-					id: `platform.${platform}.${s.id}`,
+					// app.css is minified onto one line, so number by position in the file.
+					id: `platform.${platform}.${n}`,
 					platform,
 					selector: s.selector,
 					line: s.line,
+					excluded: platformExclusion(s.selector, ex),
 				});
 			}
 		}
@@ -223,5 +228,13 @@ export function platformChecklistItems(): ChecklistItem[] {
 		source: `app:app.css:${p.line}`,
 		target: p.selector,
 		note: `A fixture with body.mod-${p.platform} must match this app.css selector (synthetic variant of a Linux capture).`,
+		...(p.excluded ? { excluded: p.excluded } : {}),
 	}));
+}
+
+function platformExclusion(selector: string, ex: Exclusions): string | undefined {
+	if (ex.platformSelectors[selector]) return ex.platformSelectors[selector];
+	const dead = positiveClassesOf(selector).filter((c) => !referenced(c));
+	if (dead.length) return `uses ${dead.map((c) => `.${c}`).join(", ")}, whose ${DEAD}`;
+	return undefined;
 }

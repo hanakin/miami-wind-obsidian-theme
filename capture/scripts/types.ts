@@ -65,6 +65,8 @@ export interface ChecklistItem {
 	source: string;
 	target: Target;
 	note?: string;
+	/** Set when the item can never be captured, with the reason. */
+	excluded?: string;
 }
 
 export interface FixtureEntry {

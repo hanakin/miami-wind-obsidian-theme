@@ -24,7 +24,7 @@ export async function platformVariants(fixtures: FixtureEntry[]): Promise<Fixtur
 	await page.route("**", (r) => r.abort());
 	const out: FixtureEntry[] = [];
 	for (const os of PLATFORMS) {
-		const wanted = items.filter((i) => i.platform === os);
+		const wanted = items.filter((i) => i.platform === os && !i.excluded);
 		const rewritten = wanted.map((i) => matchable(i.selector));
 		const hitsByFixture = new Map<string, PlatformItem[]>();
 		for (const f of base) {

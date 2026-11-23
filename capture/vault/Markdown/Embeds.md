@@ -40,3 +40,15 @@ Search query embed:
 ```query
 tag:#theme
 ```
+
+Base code block:
+```base
+filters:
+  and:
+    - file.inFolder("Graph")
+views:
+  - type: table
+    name: Graph notes
+    order:
+      - file.name
+```

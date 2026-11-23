@@ -1,5 +1,5 @@
 // Step 1: builds capture/checklist.json and capture/CHECKLIST.md from the running app.
-// Usage: bun run capture:checklist [--refresh]
+// Usage: bun run capture:checklist [--refresh | --recheck <command id>...]
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { type AppInventory, type CommandResult, classifyCommands, inventory } from "./discover.ts";
 import { install } from "./engine.ts";
@@ -23,8 +23,25 @@ if (!existsSync(`${CAPTURE}.app/app.css`)) {
 }
 
 // --refresh rebuilds from the inventory and command probe already in checklist.json.
+// --recheck <command id> (repeatable) probes those commands again and keeps the rest.
 const refresh = process.argv.includes("--refresh");
-if (refresh) {
+const recheck = process.argv.flatMap((a, i) => (process.argv[i - 1] === "--recheck" ? [a] : []));
+if (recheck.length) {
+	const prev = JSON.parse(readFileSync(`${CAPTURE}checklist.json`, "utf8")) as {
+		isolation: string[];
+		inventory: AppInventory;
+		commands: CommandResult[];
+	};
+	const session = await launch();
+	try {
+		await install(session.page);
+		const fresh = await classifyCommands(session, session.page, prev.inventory, recheck);
+		const commands = prev.commands.map((c) => fresh.find((f) => f.id === c.id) ?? c);
+		write(prev.isolation, prev.inventory, commands, prev.inventory.version);
+	} finally {
+		await close(session);
+	}
+} else if (refresh) {
 	const prev = JSON.parse(readFileSync(`${CAPTURE}checklist.json`, "utf8")) as {
 		isolation: string[];
 		inventory: AppInventory;
