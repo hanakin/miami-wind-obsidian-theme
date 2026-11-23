@@ -1,5 +1,5 @@
 // Step 2: captures every checklist item from the real app into capture/fixtures/.
-// Usage: bun run capture:run [--windowed | --no-pointer] [--only <id prefix>]... [--until <scene id>]
+// Usage: bun run capture:run [--windowed | --no-pointer | --mobile phone|tablet] [--only <id prefix>]... [--until <scene id>]
 // Headless by default; --windowed runs only the scenes that need a real window on the desktop.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { Page } from "playwright";
@@ -7,7 +7,14 @@ import { liveSelector, normSelector } from "./css.ts";
 import type { AppInventory, CommandResult } from "./discover.ts";
 import { closeExtraPages, pagesOf, restoreLayout, snapshotLayout } from "./discover.ts";
 import { type CaptureOut, ensureDirs, install, makeCtx, runScene } from "./engine.ts";
-import { close, launch, SCREENSHOTS, type Session, verifyIsolation } from "./obsidian.ts";
+import {
+	close,
+	launch,
+	leaveMobile,
+	SCREENSHOTS,
+	type Session,
+	verifyIsolation,
+} from "./obsidian.ts";
 import { allScenes, CAPTURE, themeSelectors } from "./plan.ts";
 import type { FixtureEntry, Scene } from "./types.ts";
 import { platformVariants } from "./variants.ts";
@@ -30,6 +37,13 @@ const only = process.argv.flatMap((a, i) => (process.argv[i - 1] === "--only" ? 
 const windowed = process.argv.includes("--windowed");
 // --no-pointer: only the scenes that need (hover: none), in a headless app without a mouse.
 const noPointer = process.argv.includes("--no-pointer");
+// --mobile phone|tablet: only the emulated-mobile scenes of that size.
+const mobileArg = process.argv[process.argv.indexOf("--mobile") + 1];
+const mobile = process.argv.includes("--mobile")
+	? mobileArg === "tablet"
+		? "tablet"
+		: "phone"
+	: undefined;
 // --until <scene id>: stop after that scene (to reproduce order-dependent failures quickly).
 const until = process.argv[process.argv.indexOf("--until") + 1];
 const wanted = (id: string) => only.length === 0 || only.some((p) => id.startsWith(p));
@@ -59,7 +73,8 @@ const previous: FixturesFile | undefined = existsSync(fixturesPath)
 	? (JSON.parse(readFileSync(fixturesPath, "utf8")) as FixturesFile)
 	: undefined;
 const censusPath = `${CAPTURE}class-census.json`;
-const fullRun = !only.length && !windowed && !noPointer && !process.argv.includes("--until");
+const fullRun =
+	!only.length && !windowed && !noPointer && !mobile && !process.argv.includes("--until");
 const census = new Set<string>(
 	!fullRun && existsSync(censusPath)
 		? (JSON.parse(readFileSync(censusPath, "utf8")) as string[])
@@ -67,7 +82,11 @@ const census = new Set<string>(
 );
 
 let scenes: Scene[] = [];
-const session = await launch({ windowed, noPointer });
+const session = await launch({
+	windowed,
+	noPointer: noPointer || !!mobile,
+	...(mobile ? { mobile } : {}),
+});
 const entries = new Map<string, FixtureEntry>((previous?.fixtures ?? []).map((f) => [f.id, f]));
 const failed = new Map<string, string>((previous?.failed ?? []).map((f) => [f.id, f.error]));
 try {
@@ -79,7 +98,12 @@ try {
 	scenes = allScenes(checklist.inventory, checklist.commands, () => layout);
 	let done = 0;
 	for (const scene of scenes) {
-		if (Boolean(scene.windowed) !== windowed || Boolean(scene.noPointer) !== noPointer) continue;
+		if (
+			Boolean(scene.windowed) !== windowed ||
+			Boolean(scene.noPointer) !== noPointer ||
+			scene.mobile !== mobile
+		)
+			continue;
 		const items = scene.items.filter((i) => wanted(i.id));
 		if (!items.length) continue;
 		await restoreLayout(main, layout).catch(() => undefined);
@@ -106,6 +130,7 @@ try {
 	}
 	process.stdout.write("\n");
 } finally {
+	if (mobile) await leaveMobile(session);
 	await close(session);
 }
 

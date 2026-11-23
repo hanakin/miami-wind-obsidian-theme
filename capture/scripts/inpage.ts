@@ -204,10 +204,38 @@ export const INPAGE = String.raw`
 		for (const pe of ["::before", "::after"]) { const p = win.getComputedStyle(e, pe); if (p.content !== "none" && p.content !== "normal") return false; }
 		return ![...e.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) && !["img", "svg", "canvas", "video", "iframe", "input", "textarea", "select"].includes(e.localName);
 	}
+	/** True when a positioned ::before/::after of h paints an opaque background over h's content. */
+	function overlayCovers(win, h) {
+		for (const pe of ["::before", "::after"]) {
+			const cs = win.getComputedStyle(h, pe);
+			if (cs.content === "none" || cs.content === "normal" || cs.position === "static") continue;
+			const m = /rgba?\(([^)]*)\)/.exec(cs.backgroundColor);
+			const alpha = m ? Number((m[1] ?? "").split(",")[3] ?? 1) : 0;
+			if (alpha >= 1 || cs.backgroundImage !== "none") return true;
+		}
+		return false;
+	}
 	/** True when e (or its subtree) is the topmost painted thing at x,y: layers above it must be clear. */
 	function topmost(doc, win, x, y, e) {
 		for (const h of doc.elementsFromPoint(x, y)) {
 			if (h === e || e.contains(h)) return true;
+			if (h.contains(e)) {
+				// The first hit is e's own ancestor h. With a negative z-index between them, e is
+				// painted under h's own box. Otherwise e paints above h's box and the hit came through
+				// h's ::before/::after overlay (or e ignores hits): covered only by an opaque overlay.
+				let under = false;
+				for (let a = e; a && a !== h; a = a.parentElement) {
+					const cs = win.getComputedStyle(a);
+					if (cs.position !== "static" && parseInt(cs.zIndex, 10) < 0) under = true;
+				}
+				if (under) {
+					if (!clear(win, h)) return false;
+					continue;
+				}
+				if (overlayCovers(win, h)) return false;
+				if (win.getComputedStyle(e).pointerEvents === "none") return true;
+				continue;
+			}
 			// Anything else above e (an ancestor included: a child with a negative z-index paints
 			// under its parent) hides it unless it paints nothing.
 			if (!clear(win, h)) return false;

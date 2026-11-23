@@ -147,7 +147,8 @@ async function stateRules(
  * them, normalized, in window.__cap.cdp for the live check in cap.snapshot().
  */
 async function matchedOnCandidates(page: Page, cdp: CDPSession): Promise<void> {
-	await cdp.send("DOM.getDocument", { depth: 0 });
+	// No DOM.getDocument here: it resets DevTools' node bindings, which drops the forced state.
+	// captureItem already requested the document when it forced the state.
 	const { result } = await cdp.send("Runtime.evaluate", { expression: "cap.candidates()" });
 	if (!result.objectId) return;
 	const { result: props } = await cdp.send("Runtime.getProperties", {
@@ -164,7 +165,11 @@ async function matchedOnCandidates(page: Page, cdp: CDPSession): Promise<void> {
 			const texts = new Set<string>();
 			const rules = [
 				...(r.matchedCSSRules ?? []),
-				...(r.pseudoElements ?? []).flatMap((pe) => pe.matches),
+				// Scrollbar pseudo-elements are reported for any element; they are proven by the
+				// scrollbar-hover mark instead.
+				...(r.pseudoElements ?? [])
+					.filter((pe) => !pe.pseudoType.startsWith("scrollbar"))
+					.flatMap((pe) => pe.matches),
 			];
 			for (const m of rules) {
 				if (m.rule.origin !== "regular") continue;

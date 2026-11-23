@@ -27,6 +27,23 @@ const CASES: { name: string; html: string; seen: boolean }[] = [
 		seen: false,
 	},
 	{
+		// A child that ignores hits (pointer-events: none) still paints above its parent.
+		name: "pointer-events: none child over its parent",
+		html: `<div style="width:200px;height:100px;background:red"><div id="t" style="pointer-events:none;width:100px;height:50px;background:blue"></div></div>`,
+		seen: true,
+	},
+	{
+		// The parent's positioned ::before overlay paints nothing (like .metadata-properties-heading).
+		name: "child under its parent's transparent ::before overlay",
+		html: `<style>#p{position:relative;width:200px;height:60px}#p::before{content:"";position:absolute;inset:0}</style><div id="p"><span id="t" style="color:blue">Properties</span></div>`,
+		seen: true,
+	},
+	{
+		name: "child under its parent's opaque ::before overlay",
+		html: `<style>#p{position:relative;width:200px;height:60px}#p::before{content:"";position:absolute;inset:0;background:red}</style><div id="p"><span id="t" style="color:blue">Properties</span></div>`,
+		seen: false,
+	},
+	{
 		// A zero-size wrapper of absolutely placed boxes (like .search-highlight) shows through them.
 		name: "zero-size wrapper of painted children",
 		html: `<div style="position:relative;width:300px;height:200px"><div id="t"><div style="position:absolute;left:10px;top:10px;width:80px;height:20px;background:yellow"></div></div></div>`,

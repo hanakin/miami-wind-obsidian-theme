@@ -11,6 +11,7 @@ import {
 } from "./discover.ts";
 import { catalogScenes } from "./scenes.ts";
 import { extraScenes } from "./scenes-extra.ts";
+import { mobileScenes } from "./scenes-mobile.ts";
 import { qcScenes } from "./scenes-qc.ts";
 import type { ChecklistItem, Scene, Target } from "./types.ts";
 
@@ -88,6 +89,7 @@ export function allScenes(
 		...catalogScenes(),
 		...extraScenes(),
 		...qcScenes(),
+		...mobileScenes(),
 		...viewScenes(inv),
 		...settingsScenes(inv),
 		...commandScenes(cmds, layout),

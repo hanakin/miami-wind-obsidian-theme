@@ -146,7 +146,7 @@ function safeFds(pid: number): string[] {
 }
 
 export async function launch(
-	opts: { windowed?: boolean; noPointer?: boolean } = {},
+	opts: { windowed?: boolean; noPointer?: boolean; mobile?: "phone" | "tablet" } = {},
 ): Promise<Session> {
 	const windowed = opts.windowed === true;
 	prepareVault();
@@ -232,7 +232,39 @@ export async function launch(
 		null,
 		{ timeout: 30000 },
 	);
+	// Obsidian's own mobile emulation (app.emulateMobile) lives in localStorage of this profile:
+	// set it for --mobile runs, and make sure no other run ever starts emulated.
+	const size = opts.mobile === "phone" ? [390, 844] : opts.mobile === "tablet" ? [1024, 768] : null;
+	const emulated = (await page.evaluate("!!localStorage.getItem('EmulateMobile')")) as boolean;
+	if (size || emulated) {
+		await page.evaluate(
+			`(() => { ${size ? "localStorage.setItem('EmulateMobile', '1')" : "localStorage.removeItem('EmulateMobile')"}; require("electron").remote.getCurrentWindow().setContentSize(${size?.[0] ?? WIDTH}, ${size?.[1] ?? HEIGHT}); })()`,
+		);
+		await Bun.sleep(400);
+		await page.evaluate("location.reload()").catch(() => undefined);
+		await Bun.sleep(1500);
+		await page.waitForFunction(
+			() =>
+				"app" in window &&
+				(window as { app?: { workspace?: { layoutReady?: boolean } } }).app?.workspace
+					?.layoutReady === true,
+			null,
+			{ timeout: 30000 },
+		);
+		const mobileNow = (await page.evaluate(
+			"document.body.classList.contains('is-mobile')",
+		)) as boolean;
+		if (mobileNow !== !!size)
+			throw new Error(
+				`mobile emulation is ${mobileNow ? "on" : "off"}, wanted ${size ? "on" : "off"}`,
+			);
+	}
 	return { browser, page, pid, windowed, ...(proc ? { proc } : {}) };
+}
+
+/** Turns Obsidian's mobile emulation off again in this profile (end of a --mobile run). */
+export async function leaveMobile(s: Session): Promise<void> {
+	await s.page.evaluate("localStorage.removeItem('EmulateMobile')").catch(() => undefined);
 }
 
 function shellQuote(v: string): string {

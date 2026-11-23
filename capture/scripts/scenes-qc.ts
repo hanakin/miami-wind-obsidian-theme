@@ -222,7 +222,7 @@ const editorQc: Scene = {
 				// The folded-heading item leaves Headings.md folded (Obsidian saves folds); unfold it.
 				await ctx.open("Markdown/Headings.md", "reading");
 				await ctx.js(
-					"for (const i of cap.ROOTS.leaf().querySelectorAll('.markdown-reading-view .is-collapsed > .heading-collapse-indicator, .markdown-reading-view .heading-collapse-indicator.is-collapsed')) { i.click(); await sleep(200); }",
+					"for (let k = 0; k < 8; k++) { const i = cap.ROOTS.leaf().querySelector('.markdown-reading-view .is-collapsed > .heading-collapse-indicator, .markdown-reading-view .heading-collapse-indicator.is-collapsed'); if (!i) break; i.click(); await sleep(250); }",
 				);
 				for (let i = 0; i < 3; i++) {
 					await ctx.open("Markdown/Links.md", "reading", { newLeaf: i > 0 });
@@ -966,6 +966,12 @@ const graphQc: Scene = {
 		{
 			id: "qc.graph.all-node-kinds",
 			component: "graph",
+			before: async (ctx) => {
+				// Let the force layout settle and the renderer draw before the shot.
+				await ctx.js(
+					"const v = app.workspace.getLeavesOfType('graph')[0]?.view; for (let i = 0; i < 40 && !(v?.renderer?.nodes?.length); i++) await sleep(100); await sleep(2000);",
+				);
+			},
 			target: leaf(".workspace-leaf-content"),
 			full: true,
 			note: "Tags, attachments, orphans, unresolved links and a color group are on; Pixi draws them on a canvas with the colors Obsidian reads from .graph-view.color-* probes. evidence.record holds the colors the renderer read from each probe class and how many screenshot pixels have exactly that color.",

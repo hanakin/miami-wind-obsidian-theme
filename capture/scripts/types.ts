@@ -78,6 +78,8 @@ export interface Scene {
 	windowed?: boolean;
 	/** Needs a desktop without a mouse ((hover: none)); captured by --no-pointer runs. */
 	noPointer?: boolean;
+	/** Emulated mobile app (Obsidian's app.emulateMobile) at phone or tablet size; captured by --mobile runs. */
+	mobile?: "phone" | "tablet";
 }
 
 export interface ChecklistItem {
