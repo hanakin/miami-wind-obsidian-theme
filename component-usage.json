@@ -36,6 +36,48 @@
 				"properties": {
 					"--mw-surface-background": "var(--code-background)"
 				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout[data-callout=\"note\"]",
+				"properties": {
+					"--mw-surface-background": "var(--blue-bright-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout[data-callout=\"info\"]",
+				"properties": {
+					"--mw-surface-background": "var(--cyan-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout[data-callout=\"todo\"]",
+				"properties": {
+					"--mw-surface-background": "var(--magenta-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout[data-callout=\"warning\"]",
+				"properties": {
+					"--mw-surface-background": "var(--orange-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout[data-callout=\"tip\"]",
+				"properties": {
+					"--mw-surface-background": "var(--green-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout[data-callout=\"example\"]",
+				"properties": {
+					"--mw-surface-background": "var(--purple-transparent)"
+				}
 			}
 		]
 	}
