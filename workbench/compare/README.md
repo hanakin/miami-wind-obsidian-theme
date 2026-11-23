@@ -51,6 +51,10 @@ The top-level `notProven` list contains `{ id, reasons }` records. The top-level
 
 The shared component look uses each property's most common after-theme value within the same interaction state. Ties select the first use in fixture ID order. The comparison excludes container dimensions: width, height, inline-size, block-size, transform-origin, and perspective-origin. Filtered runs describe only the selected uses. This output measures surface consistency independently of before/after parity.
 
-DOM replay cannot reconstruct canvas content, media playback, native media controls, iframe contents, external images, or Obsidian runtime behavior. Fixtures with those elements receive not-proven reasons. Hidden or offscreen targets also receive not-proven reasons. Their computed styles remain compared.
+DOM replay cannot reconstruct canvas content, media playback, native media controls, populated iframe contents, missing external images, or Obsidian runtime behavior. Fixtures with those elements receive not-proven reasons. CodeMirror spacer images and images without a source do not represent missing assets. Loaded images are rebuilt. Source-less empty iframes are empty, including graph resize sensors. The controlled Canvas editor iframe remains not-proven because Obsidian injects its editor document through JavaScript. Hidden or offscreen targets also receive not-proven reasons. Their computed styles remain compared.
 
 Fonts are local host fonts. Platform variants do not prove native macOS or Windows appearance. A zero-difference result does not prove live-app parity when the report lists not-proven fixtures.
+
+Fixtures can provide `imageSizes: [{ index, width, height }]`. The index uses zero-based `document.images` order from the serialized fixture HTML, including CodeMirror spacers. Width and height are positive intrinsic `naturalWidth` and `naturalHeight` pixels. Missing images with this metadata receive a plain SVG placeholder at those intrinsic dimensions. The original image classes and CSS sizing remain active. These placeholders prove layout, not image pixels, and do not create a not-proven reason. Loaded images retain their actual pixels.
+
+If `/tmp` is full, set `TMPDIR` to a directory under `~/Work` before running checks or comparisons.

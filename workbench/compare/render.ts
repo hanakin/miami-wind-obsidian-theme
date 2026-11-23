@@ -1,6 +1,18 @@
 import type { CDPSession, Page } from "playwright";
 import { COMPONENTS } from "../../capture/scripts/engine";
 import type { ElementStyle, Sample } from "./model";
+export interface ImageSize {
+	/** Zero-based document.images index in serialized fixture HTML, including spacer images. */
+	index: number;
+	width: number;
+	height: number;
+}
+export interface RenderFixture {
+	component: string;
+	surface: string;
+	state: string;
+	imageSizes?: ImageSize[];
+}
 export interface Rendered {
 	styles: ElementStyle[];
 	samples: Sample[];
@@ -11,23 +23,62 @@ export interface Rendered {
 }
 const documents = new WeakMap<
 	Page,
-	{ html: string; cm: string; app: string; theme: string }
+	{ html: string; cm: string; app: string; theme: string; images: string }
 >();
 export async function render(
 	page: Page,
 	cdp: CDPSession,
 	html: string,
 	css: { cm: string; app: string; theme: string },
-	fixture: { component: string; surface: string; state: string },
+	fixture: RenderFixture,
 ): Promise<Rendered> {
+	const images = JSON.stringify(fixture.imageSizes ?? []);
+	for (const size of fixture.imageSizes ?? []) {
+		if (
+			!Number.isSafeInteger(size.index) ||
+			size.index < 0 ||
+			!Number.isSafeInteger(size.width) ||
+			size.width <= 0 ||
+			!Number.isSafeInteger(size.height) ||
+			size.height <= 0
+		)
+			throw new Error(
+				"Invalid imageSizes: expected a nonnegative integer index and positive intrinsic pixel dimensions",
+			);
+	}
 	const previous = documents.get(page);
 	if (
 		!previous ||
 		previous.html !== html ||
 		previous.cm !== css.cm ||
-		previous.app !== css.app
+		previous.app !== css.app ||
+		previous.images !== images
 	) {
 		await page.setContent(html, { waitUntil: "domcontentloaded" });
+		await page.evaluate(async (sizes) => {
+			const images = Array.from(document.images);
+			for (const { index, width, height } of sizes) {
+				const image = images[index];
+				if (!image)
+					throw new Error(
+						`imageSizes index ${index} does not identify an image`,
+					);
+				if (
+					image.matches(".cm-widgetBuffer") ||
+					!image.getAttribute("src")?.trim() ||
+					(image.complete && image.naturalWidth > 0)
+				)
+					continue;
+				// An intrinsic-size SVG preserves CSS sizing without fixing the rendered width or height.
+				image.removeAttribute("srcset");
+				image.src = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="gray"/></svg>`)}`;
+			}
+			await Promise.all(
+				images
+					.filter((image) => image.src.startsWith("data:"))
+					.map((image) => image.decode().catch(() => undefined)),
+			);
+		}, fixture.imageSizes ?? []);
 		for (const content of [css.cm, css.app])
 			if (content) await page.addStyleTag({ content });
 		await page.evaluate(() => {
@@ -49,7 +100,7 @@ export async function render(
 				"video::-webkit-media-controls,audio::-webkit-media-controls { visibility:hidden !important }";
 			document.head.append(media);
 		});
-		documents.set(page, { html, ...css });
+		documents.set(page, { html, ...css, images });
 	}
 	// Every capture exercises an actual stylesheet swap through the same empty-theme state.
 	await page.locator("style[data-compare-theme]").evaluate((style, theme) => {
@@ -315,7 +366,24 @@ export async function render(
 					document.querySelectorAll(
 						"canvas,video,audio,iframe,img,embed,object",
 					),
-				).map((e) => e.localName),
+				)
+					.filter((e) => {
+						if (e instanceof HTMLImageElement)
+							return (
+								!e.matches(".cm-widgetBuffer") &&
+								!!e.getAttribute("src")?.trim() &&
+								!(e.complete && e.naturalWidth > 0)
+							);
+						// The controlled Canvas editor injects a nonempty about:blank document lost by serialization.
+						if (e instanceof HTMLIFrameElement)
+							return (
+								!!e.getAttribute("src")?.trim() ||
+								e.hasAttribute("srcdoc") ||
+								e.matches(".embed-iframe.is-controlled")
+							);
+						return true;
+					})
+					.map((e) => e.localName),
 			};
 		},
 		{ fixture, components: COMPONENTS },
