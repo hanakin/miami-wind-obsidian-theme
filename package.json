@@ -9,13 +9,13 @@
 		"lint": "biome check .",
 		"fmt": "biome check --write scripts test",
 		"typecheck": "tsc --noEmit",
-		"check": "biome check capture/scripts scripts test workbench/compare && tsc --noEmit && vitest run && bun run check:css",
+		"check": "biome check capture/scripts scripts test workbench/compare && tsc --noEmit && bun run test && bun run check:css",
 		"capture:variants": "bun capture/scripts/variants.ts",
 		"capture:coverage": "bun capture/scripts/coverage.ts",
 		"build": "bun scripts/build.ts",
 		"check:css": "bun scripts/check-css.ts",
 		"compare": "bun workbench/compare/cli.ts",
-		"test": "vitest run"
+		"test": "playwright install chromium && vitest run"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.8",
