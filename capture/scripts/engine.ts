@@ -463,6 +463,9 @@ export async function captureItem(
 			})})`,
 		)) as Snap;
 		if (snap.lost) return { id: item.id, error: "target vanished before the snapshot" };
+		const unseen = snap.seen
+			? null
+			: ((await page.evaluate("cap.stackAt(window.__cap.target)")) as string[]);
 		const file = `${item.id}.html`;
 		writeFileSync(join(out.fixturesDir, file), snap.html);
 		const entry: FixtureEntry = {
@@ -502,6 +505,7 @@ export async function captureItem(
 				live: snap.live,
 				domOnly: snap.domOnly,
 				seen: snap.seen,
+				...(unseen ? { stackAtCenter: unseen } : {}),
 				clip: [clip.x, clip.y, clip.width, clip.height].map((v) => Math.round(v)),
 				...(scroll ? { scroll } : {}),
 				...(item.media ? { media: JSON.stringify(item.media) } : {}),

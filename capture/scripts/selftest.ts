@@ -44,6 +44,23 @@ const CASES: { name: string; html: string; seen: boolean }[] = [
 		seen: false,
 	},
 	{
+		// A translucent fill above (like a canvas group) only tints the element below.
+		name: "element under a 10% tint",
+		html: `<div id="t" style="width:200px;height:100px;background:blue"></div><div style="position:absolute;left:0;top:0;width:300px;height:300px;background:rgba(255,0,0,0.1)"></div>`,
+		seen: true,
+	},
+	{
+		name: "element under a 90% fill",
+		html: `<div id="t" style="width:200px;height:100px;background:blue"></div><div style="position:absolute;left:0;top:0;width:300px;height:300px;background:rgba(255,0,0,0.9)"></div>`,
+		seen: false,
+	},
+	{
+		// Half covered by an opaque sibling at its center: the uncovered half still shows.
+		name: "element half covered by an opaque sibling",
+		html: `<div id="t" style="width:200px;height:100px;background:blue"></div><div style="position:absolute;left:60px;top:0;width:300px;height:300px;background:green"></div>`,
+		seen: true,
+	},
+	{
 		// A zero-size wrapper of absolutely placed boxes (like .search-highlight) shows through them.
 		name: "zero-size wrapper of painted children",
 		html: `<div style="position:relative;width:300px;height:200px"><div id="t"><div style="position:absolute;left:10px;top:10px;width:80px;height:20px;background:yellow"></div></div></div>`,

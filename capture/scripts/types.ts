@@ -166,6 +166,8 @@ export interface Evidence {
 	unverified?: string[];
 	/** Element boxes (with ::before/::after) whose painted style changed when the state was forced. */
 	styleChanged?: number;
+	/** When nothing of the target was recorded as painted: the hit stack at its center (top first). */
+	stackAtCenter?: string[];
 	/** Which boxes and properties changed (first 12). */
 	styleProps?: string[];
 	scroll?: { positions: number[]; scrollHeight: number; clientHeight: number };

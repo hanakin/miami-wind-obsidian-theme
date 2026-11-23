@@ -198,7 +198,9 @@ export const INPAGE = String.raw`
 	function clear(win, e) {
 		const cs = win.getComputedStyle(e);
 		const none = (c) => c === "transparent" || /rgba\([^)]*,\s*0\)$/.test(c);
-		if (!none(cs.backgroundColor) || cs.backgroundImage !== "none" || cs.boxShadow !== "none") return false;
+		// A background under 50% alpha only tints what lies below (e.g. a canvas group's fill).
+		const tint = (c) => { const m = /rgba\(([^)]*)\)/.exec(c); return !!m && Number((m[1] ?? "").split(",")[3]) < 0.5; };
+		if ((!none(cs.backgroundColor) && !tint(cs.backgroundColor)) || cs.backgroundImage !== "none" || cs.boxShadow !== "none") return false;
 		if (["Top", "Right", "Bottom", "Left"].some((k) => parseFloat(cs["border" + k + "Width"]) > 0 && !none(cs["border" + k + "Color"]))) return false;
 		if (cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0) return false;
 		for (const pe of ["::before", "::after"]) { const p = win.getComputedStyle(e, pe); if (p.content !== "none" && p.content !== "normal") return false; }
@@ -251,13 +253,15 @@ export const INPAGE = String.raw`
 		}
 		return false;
 	}
-	/** Centers of e's own boxes (line fragments for inline elements) inside the rect r. */
+	/** Center and quadrant centers of e's own boxes (line fragments for inline elements) inside r: a partly covered element still shows where any of them is on top. */
 	function samplePoints(e, r) {
 		const pts = [];
+		let n = 0;
 		for (const q of e.getClientRects()) {
 			const v = inter([q.left, q.top, q.width, q.height], r);
-			if (v) pts.push([v[0] + v[2] / 2, v[1] + v[3] / 2]);
-			if (pts.length >= 4) break;
+			if (!v) continue;
+			for (const [fx, fy] of [[0.5, 0.5], [0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]]) pts.push([v[0] + v[2] * fx, v[1] + v[3] * fy]);
+			if (++n >= 4) break;
 		}
 		return pts;
 	}
@@ -516,6 +520,16 @@ export const INPAGE = String.raw`
 		for (const d of p.querySelectorAll("*")) { if (list.length >= 250) break; if (st.seen.has(d)) list.push(d); }
 		return (st.cands = list);
 	}
+	/** What lies at the center of el, top first (diagnostics when nothing of el is recorded as painted). */
+	function stackAt(el) {
+		const v = visibleRect(el);
+		if (!v) return [];
+		const win = el.ownerDocument.defaultView;
+		return withHitTesting(el, () => el.ownerDocument.elementsFromPoint(v[0] + v[2] / 2, v[1] + v[3] / 2).slice(0, 6).map((h) => {
+			const cs = win.getComputedStyle(h);
+			return (h === el ? "TARGET " : el.contains(h) ? "child " : h.contains(el) ? "ancestor " : "") + h.localName + "." + String(h.className?.baseVal ?? h.className).split(" ").slice(0, 3).join(".") + " bg=" + cs.backgroundColor + " pe=" + cs.pointerEvents + " z=" + cs.zIndex + " clear=" + clear(win, h);
+		}));
+	}
 	/** True when a non-collapsed text selection touches el. */
 	function hasSelection(el) {
 		const sel = el.ownerDocument.getSelection();
@@ -528,6 +542,6 @@ export const INPAGE = String.raw`
 		const r = scroller.getBoundingClientRect();
 		return scroller.scrollHeight > scroller.clientHeight && x > r.left + scroller.clientLeft + scroller.clientWidth && x < r.right && y > r.top && y < r.bottom;
 	}
-	window.cap = { sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges, candidates };
+	window.cap = { sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges, candidates, stackAt };
 })();
 `;
