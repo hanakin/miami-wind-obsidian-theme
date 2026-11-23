@@ -1007,6 +1007,8 @@ input.prompt-input:focus-visible {
 	background-color: var(--grey-11);
 }
 
+/* === tags.css === */
+
 /* Tags */
 
 .cm-hashtag {
@@ -1023,6 +1025,8 @@ input.prompt-input:focus-visible {
 .markdown-reading-view .tag {
 	color: var(--black);
 }
+
+/* === legacy.css (continued) === */
 
 /* === tag-hover.css === */
 

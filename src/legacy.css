@@ -408,22 +408,7 @@ input.prompt-input:focus-visible {
 }
 
 
-/* Tags */
-.cm-hashtag {
-	display: inline-block;
-	margin: 2px 0;
-}
-
-.cm-hashtag-begin:hover,
-.cm-hashtag-begin:hover + .cm-hashtag-end,
-.cm-hashtag-end:hover {
-	background-color: var(--magenta);
-}
-
-.markdown-reading-view .tag {
-	color: var(--black);
-}
-
+@pilot tags;
 
 @pilot tag-hover;
 
