@@ -5,6 +5,7 @@
 
 .metadata-property[data-property-key="tags"] .multi-select-pill {
 	--pill-color: var(--black);
+	--pill-color-hover: var(--black);
 	--pill-background: var(--purple);
 	cursor: pointer;
 }
