@@ -12,11 +12,7 @@ mark {
 	padding: 2px 4px;
 }
 
-/* Text selection */
-::selection {
-	background-color: var(--text-selection);
-	color: var(--text-selection-fg);
-}
+@pilot selection;
 
 /* Links */
 .markdown-rendered a { color: var(--link-unresolved-color); }

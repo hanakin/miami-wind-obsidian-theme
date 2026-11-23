@@ -336,12 +336,16 @@ mark {
 	padding: 2px 4px;
 }
 
+/* === selection.css === */
+
 /* Text selection */
 
 ::selection {
 	background-color: var(--text-selection);
 	color: var(--text-selection-fg);
 }
+
+/* === legacy.css (continued) === */
 
 /* Links */
 
