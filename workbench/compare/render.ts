@@ -82,9 +82,28 @@ export async function render(
 			}
 			const target = document.querySelector("[data-capture-target]");
 			const r = target?.getBoundingClientRect();
+			const table: Record<string, string>[] = [];
+			const ids = new Map<string, number>();
+			const intern = (props: Record<string, string>) => {
+				const key = JSON.stringify(props);
+				const known = ids.get(key);
+				if (known !== undefined) return known;
+				const id = table.length;
+				table.push(props);
+				ids.set(key, id);
+				return id;
+			};
+			// Repeated computed styles cross the browser protocol once, with no property filtering.
 			return {
-				styles,
-				samples,
+				table,
+				styles: styles.map(({ element, props }) => ({
+					element,
+					style: intern(props),
+				})),
+				samples: samples.map(({ props, ...sample }) => ({
+					...sample,
+					style: intern(props),
+				})),
 				invisibleTarget: !r || r.width === 0 || r.height === 0,
 				unsupported: Array.from(
 					document.querySelectorAll("canvas,video,audio,iframe,img"),
@@ -98,5 +117,17 @@ export async function render(
 		format: "png",
 		captureBeyondViewport: false,
 	});
-	return { ...data, png: Buffer.from(shot.data, "base64") };
+	return {
+		styles: data.styles.map(({ element, style }) => ({
+			element,
+			props: data.table[style] as Record<string, string>,
+		})),
+		samples: data.samples.map(({ style, ...sample }) => ({
+			...sample,
+			props: data.table[style] as Record<string, string>,
+		})),
+		invisibleTarget: data.invisibleTarget,
+		unsupported: data.unsupported,
+		png: Buffer.from(shot.data, "base64"),
+	};
 }
