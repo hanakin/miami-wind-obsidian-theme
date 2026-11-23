@@ -48,14 +48,22 @@ export async function render(
 		({ fixture, components }) => {
 			const styles: ElementStyle[] = [],
 				samples: Sample[] = [];
+			// Standard property names are engine-wide; avoid enumerating thousands of inherited custom names per node.
+			const names = Array.from(
+				getComputedStyle(document.documentElement),
+			).filter((p) => !p.startsWith("--"));
+			const pool = new Map<string, Record<string, string>>();
 			const read = (el: Element, pseudo?: string) => {
-				const s = getComputedStyle(el, pseudo);
-				// Custom properties are implementation inputs; compare their resolved standard properties instead.
-				return Object.fromEntries(
-					Array.from(s)
-						.filter((p) => !p.startsWith("--"))
-						.map((p) => [p, s.getPropertyValue(p)]),
+				const computed = getComputedStyle(el, pseudo);
+				const values = names.map((p) => computed.getPropertyValue(p));
+				const key = JSON.stringify(values);
+				const known = pool.get(key);
+				if (known) return known;
+				const props = Object.fromEntries(
+					names.map((p, i) => [p, values[i] as string]),
 				);
+				pool.set(key, props);
+				return props;
 			};
 			const elements = Array.from(
 				document.querySelectorAll("html, body, body *"),
@@ -85,14 +93,13 @@ export async function render(
 			const target = document.querySelector("[data-capture-target]");
 			const r = target?.getBoundingClientRect();
 			const table: Record<string, string>[] = [];
-			const ids = new Map<string, number>();
+			const ids = new Map<Record<string, string>, number>();
 			const intern = (props: Record<string, string>) => {
-				const key = JSON.stringify(props);
-				const known = ids.get(key);
+				const known = ids.get(props);
 				if (known !== undefined) return known;
 				const id = table.length;
 				table.push(props);
-				ids.set(key, id);
+				ids.set(props, id);
 				return id;
 			};
 			// Repeated computed styles cross the browser protocol once, with no property filtering.
