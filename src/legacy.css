@@ -16,11 +16,7 @@ mark {
 
 @pilot links;
 
-/* Blockquotes */
-.markdown-rendered blockquote {
-	border-left: 4px solid var(--blockquote);
-	padding: 8px 16px 16px 16px !important;
-}
+@pilot blockquotes;
 
 /* Icon Buttons */
 .clickable-icon:hover,
