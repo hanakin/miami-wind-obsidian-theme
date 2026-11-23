@@ -824,6 +824,8 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 
 /* === legacy.css (continued) === */
 
+/* === callouts.css === */
+
 /* Callouts */
 
 .cm-callout .callout[data-callout="note"] {
@@ -873,6 +875,8 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 .cm-callout .callout[data-callout="example"] .callout-title {
 	color: var(--purple);
 }
+
+/* === legacy.css (continued) === */
 
 /* Modal dialogs */
 
