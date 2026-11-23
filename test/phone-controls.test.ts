@@ -1,0 +1,107 @@
+import { readFile } from "node:fs/promises";
+import { type Browser, chromium } from "playwright";
+import { afterAll, beforeAll, expect, it } from "vitest";
+import { compile } from "../scripts/pipeline";
+
+let browser: Browser;
+let theme: string;
+let rivals: string;
+beforeAll(async () => {
+	browser = await chromium.launch({ headless: true });
+	theme = (await compile()).css;
+	rivals = await readFile(
+		new URL("fixtures/phone-controls-rivals.css", import.meta.url),
+		"utf8",
+	);
+});
+afterAll(async () => {
+	await browser.close();
+});
+
+async function compareStates(html: string, legacy: string) {
+	const page = await browser.newPage();
+	try {
+		const results = [];
+		for (const css of [theme + legacy, theme]) {
+			await page.setContent(`<body class="theme-dark is-phone">${html}</body>`);
+			await page.addStyleTag({
+				content: `${rivals}\n${css}\n* { transition: none !important; }`,
+			});
+			const cdp = await page.context().newCDPSession(page);
+			await cdp.send("DOM.enable");
+			await cdp.send("CSS.enable");
+			const { root } = await cdp.send("DOM.getDocument");
+			const { nodeIds } = await cdp.send("DOM.querySelectorAll", {
+				nodeId: root.nodeId,
+				selector: "[data-target]",
+			});
+			const states = [];
+			for (const forcedPseudoClasses of [
+				[],
+				["hover"],
+				["focus"],
+				["active"],
+				["focus", "hover"],
+				["focus-visible", "focus"],
+			]) {
+				for (const nodeId of nodeIds)
+					await cdp.send("CSS.forcePseudoState", {
+						nodeId,
+						forcedPseudoClasses,
+					});
+				states.push(
+					await page
+						.locator("[data-target], [data-target] svg")
+						.evaluateAll((nodes) =>
+							nodes.map((node) => {
+								const s = getComputedStyle(node);
+								return {
+									color: s.color,
+									background: s.backgroundColor,
+									stroke: s.stroke,
+									cursor: s.cursor,
+								};
+							}),
+						),
+				);
+			}
+			await cdp.detach();
+			results.push(states);
+		}
+		expect(results[1]).toEqual(results[0]);
+	} finally {
+		await page.close();
+	}
+}
+
+// The reference restores the inherited faint value to detect variable fan-out into SVG paint.
+it("preserves phone Bases filter fills without changing icon paint", async () => {
+	for (const container of ["menu mod-sheet", "drag-reorder-ghost mod-sheet"]) {
+		await compareStates(
+			`<div class="${container}"><div class="bases-filter-page"><div class="filter-row"><div class="filter-row-actions"><button class="clickable-icon" data-target><svg class="svg-icon" fill="none" stroke="currentColor" width="24" height="24"><path d="M0 0h8" /></svg></button></div></div></div></div>`,
+			`
+			.filter-row-actions .clickable-icon { --text-faint: #888 !important; background-color: transparent !important; }
+			.filter-row-actions .clickable-icon:hover { color: var(--magenta); background-color: var(--magenta-transparent) !important; }
+		`,
+		);
+	}
+});
+
+it("preserves phone menu states including disabled focus and active", async () => {
+	await compareStates(
+		`<div class="menu"><div class="menu-item" data-target>Normal</div><div class="menu-item mobile-tap" data-target>Tap</div><div class="menu-item is-disabled" data-target>Disabled</div><div class="menu-item is-disabled mobile-tap" data-target>Disabled tap</div></div>`,
+		`
+		.menu-item:hover, .menu-item:focus, .menu-item:active, .menu-item.selected { background-color: var(--cyan-transparent) !important; color: var(--magenta); cursor: pointer; }
+		.menu-item.is-disabled:hover { background-color: transparent !important; color: var(--text-disabled); cursor: default; }
+	`,
+	);
+});
+
+it("preserves PDF form and mobile onboarding select fills", async () => {
+	await compareStates(
+		`<div class="annotationLayer"><div class="choiceWidgetAnnotation"><select data-target><option>PDF</option></select><select disabled data-target><option>Disabled PDF</option></select></div></div><div class="mobile-onboarding"><div class="language-dropdown"><select data-target><option>Language</option></select></div></div>`,
+		`
+		select, select:hover, select:focus, select:focus-visible, select:focus-within, select:active { background-color: var(--magenta) !important; }
+	`,
+	);
+});

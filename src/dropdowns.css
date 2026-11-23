@@ -47,3 +47,14 @@ select option:checked {
 	background-color: var(--magenta);
 	color: var(--black);
 }
+
+/* Obsidian 1.15.1 PDF forms use background:none at 0,3,1; tie only its color. */
+.annotationLayer .choiceWidgetAnnotation select:focus,
+.annotationLayer .choiceWidgetAnnotation select[disabled] {
+	background-color: var(--magenta);
+}
+
+/* Onboarding uses a literal transparent fill at 0,2,1. */
+.mobile-onboarding .language-dropdown select {
+	background-color: var(--magenta);
+}

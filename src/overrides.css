@@ -23,14 +23,6 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 }
 
 .clickable-icon[aria-disabled='true'],
-.clickable-icon[aria-disabled='true']:hover:where(:not(.modal-close-button)),
-.clickable-icon[aria-disabled='true']:active,
-.clickable-icon[aria-disabled='true'].is-active,
-.clickable-icon[aria-disabled='true'].has-active-menu {
+.clickable-icon[aria-disabled='true']:is(:hover, :active, .is-active, .has-active-menu):where(:not(.modal-close-button:hover)) {
 	color: var(--text-disabled);
-}
-
-/* Preserve the original close-button hover's stronger text override. */
-.modal-close-button.clickable-icon:where([aria-disabled='true']):hover {
-	color: var(--magenta);
 }

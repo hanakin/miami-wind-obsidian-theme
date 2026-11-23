@@ -80,7 +80,7 @@ export function checkCss(legacyFile?: string): Plugin {
 							return;
 
 						// Obsidian 1.15.1 button.mod-destructive.mod-cta(:hover) uses
-						// 0,2,1 / 0,3,1 with literal error colors; ties preserve modal CTA fills.
+						// 0,2,1 / 0,3,1 reading --background-modifier-error/-hover; ties preserve CTA fills.
 						if (
 							rule.source?.input.file === path.resolve("src/modals.css") &&
 							[".modal button.mod-cta", ".modal button.mod-cta:hover"].includes(

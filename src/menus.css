@@ -57,8 +57,17 @@
 	@mixin menu-item-state;
 }
 
-/* Tie the selected fill without raising text specificity over warning items. */
-.menu-item:not(.is-label):not(.is-disabled).selected {
+/* Tie phone fills without raising text specificity over warning items. */
+.menu-item:not(.is-label):not(.is-disabled).selected,
+.menu-item:not(.is-label):not(.is-disabled):hover,
+.menu-item:not(.is-label):not(.is-disabled):focus,
+.menu-item:not(.is-label):not(.is-disabled):active {
+	background-color: var(--cyan-transparent);
+}
+
+/* Disabled focus/active used the normal fill; hover still wins below. */
+.menu-item.is-disabled:focus,
+.menu-item.is-disabled:active {
 	background-color: var(--cyan-transparent);
 }
 

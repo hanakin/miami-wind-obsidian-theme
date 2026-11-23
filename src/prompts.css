@@ -8,11 +8,3 @@
 	background-color: var(--black);
 	border-radius: 4px;
 }
-
-.prompt-input:hover,
-.prompt-input:focus,
-.prompt-input:focus-visible {
-	background-color: var(--grey-11);
-}
-
-

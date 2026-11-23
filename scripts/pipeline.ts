@@ -61,7 +61,6 @@ export async function compile() {
 						"icons",
 						"ribbon",
 						"sidebars",
-						"tab-icons",
 						"bases",
 						"suggestions",
 						"status-bar",

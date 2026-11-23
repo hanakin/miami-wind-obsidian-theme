@@ -17,10 +17,12 @@
 }
 
 .filter-row-actions .clickable-icon {
+	--text-faint: transparent;
 	background-color: transparent;
 }
 
 .filter-row-actions .clickable-icon:hover {
+	--text-faint: var(--magenta-transparent);
 	color: var(--magenta);
 	background-color: var(--magenta-transparent);
 }
