@@ -609,18 +609,13 @@ textarea:focus-within,
 }
 
 .metadata-property[data-property-key="tags"] .multi-select-pill {
-	color: var(--black);
-	background-color: var(--purple);
+	--pill-color: var(--black);
+	--pill-background: var(--purple);
 	cursor: pointer;
 }
 
 .metadata-property[data-property-key="tags"] .multi-select-pill:hover {
-	background-color: var(--magenta);
-}
-
-.multi-select-pill-remove-button:hover {
-	color: var(--red-bright);
-	cursor: pointer;
+	--pill-background-hover: var(--magenta);
 }
 
 .metadata-container .metadata-show-source-button,
@@ -646,6 +641,13 @@ textarea:focus-within,
 }
 
 /* === legacy.css (continued) === */
+
+/* Shared multi-select control. */
+
+.multi-select-pill-remove-button:hover {
+	color: var(--red-bright);
+	cursor: pointer;
+}
 
 .suggestion-container {
 	border: 1px solid var(--magenta);

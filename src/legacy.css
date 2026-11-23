@@ -150,6 +150,12 @@ textarea:focus-within,
 
 @pilot properties;
 
+/* Shared multi-select control. */
+.multi-select-pill-remove-button:hover {
+	color: var(--red-bright);
+	cursor: pointer;
+}
+
 .suggestion-container {
 	border: 1px solid var(--magenta);
 	cursor: pointer;
