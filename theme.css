@@ -832,8 +832,10 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 }
 
 .markdown-rendered th {
-	background-color: var(--code-background);
-	color: var(--text-accent);
+	--mw-surface-background: var(--code-background);
+	/* Component: surface-background */
+	background-color: var(--mw-surface-background);
+	--table-header-color: var(--text-accent);
 }
 
 .markdown-rendered td {

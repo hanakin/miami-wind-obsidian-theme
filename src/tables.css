@@ -2,8 +2,9 @@
 .markdown-rendered table { border: 1px solid var(--background-modifier-border); }
 
 .markdown-rendered th {
-	background-color: var(--code-background);
-	color: var(--text-accent);
+	--mw-surface-background: var(--code-background);
+	@mixin surface-background;
+	--table-header-color: var(--text-accent);
 }
 
 .markdown-rendered td { border: 1px solid var(--background-modifier-border); }

@@ -29,6 +29,13 @@
 				"properties": {
 					"--mw-surface-background": "var(--grey-10)"
 				}
+			},
+			{
+				"surface": "tables.css",
+				"selector": ".markdown-rendered th",
+				"properties": {
+					"--mw-surface-background": "var(--code-background)"
+				}
 			}
 		]
 	}
