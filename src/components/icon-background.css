@@ -1,0 +1,3 @@
+@define-mixin icon-background {
+	background-color: var(--mw-icon-background);
+}

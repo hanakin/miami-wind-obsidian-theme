@@ -54,14 +54,7 @@ mark {
 
 @pilot icons;
 
-	/* Panel Ribbon */
-	.workspace-ribbon .clickable-icon:hover {
-		background-color: var(--icon-background-hover);
-	}
-
-	.workspace-ribbon .clickable-icon:active {
-		background-color: var(--icon-background-active);
-	}
+@pilot ribbon;
 
 	/* Panel Drawer */
 	.workspace-drawer-vault-actions .clickable-icon:hover {

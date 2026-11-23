@@ -31,5 +31,24 @@
 				}
 			}
 		]
+	},
+	{
+		"component": "icon-background",
+		"usages": [
+			{
+				"surface": "ribbon.css",
+				"selector": ".workspace-ribbon .clickable-icon:hover",
+				"properties": {
+					"--mw-icon-background": "var(--icon-background-hover)"
+				}
+			},
+			{
+				"surface": "ribbon.css",
+				"selector": ".workspace-ribbon .clickable-icon:active",
+				"properties": {
+					"--mw-icon-background": "var(--icon-background-active)"
+				}
+			}
+		]
 	}
 ]
