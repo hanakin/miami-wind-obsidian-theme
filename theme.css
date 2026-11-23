@@ -985,8 +985,10 @@ select option:checked {
 
 /* === legacy.css (continued) === */
 
+/* === prompts.css === */
+
 .prompt {
-	border-color: var(--magenta);
+	--prompt-border-color: var(--magenta);
 }
 
 .prompt-instruction-command {
@@ -996,6 +998,14 @@ select option:checked {
 	border-radius: 4px;
 }
 
+.prompt-input:hover,
+.prompt-input:focus,
+.prompt-input:focus-visible {
+	background-color: var(--grey-11);
+}
+
+/* === legacy.css (continued) === */
+
 .search-input-clear-button {
 	color: var(--cyan);
 	cursor: pointer;
@@ -1003,12 +1013,6 @@ select option:checked {
 
 .search-input-clear-button:hover {
 	color: var(--magenta);
-}
-
-input.prompt-input:hover,
-input.prompt-input:focus,
-input.prompt-input:focus-visible {
-	background-color: var(--grey-11);
 }
 
 /* Tags */

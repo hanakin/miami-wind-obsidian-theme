@@ -307,17 +307,7 @@ input.metadata-property-key-input {
 
 @pilot dropdowns;
 
-.prompt {
-	border-color: var(--magenta);
-}
-
-.prompt-instruction-command {
-	color: var(--code-normal);
-	padding: 4px 8px;
-	background-color: var(--black);
-	border-radius: 4px;
-}
-
+@pilot prompts;
 .search-input-clear-button {
 	color: var(--cyan);
 	cursor: pointer;
@@ -327,11 +317,6 @@ input.metadata-property-key-input {
 	color: var(--magenta);
 }
 
-input.prompt-input:hover,
-input.prompt-input:focus,
-input.prompt-input:focus-visible {
-	background-color: var(--grey-11);
-}
 
 
 /* Tags */
