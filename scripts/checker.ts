@@ -7,10 +7,18 @@ const tagHoverSelector = ".cm-hashtag-begin:has(+ .cm-hashtag-end:hover)";
 
 // Parity-only exceptions: these exact 1.x selectors need 0,2,1 to tie Obsidian's
 // span.cm-url, span.cm-formatting-link-string and span.cm-formatting-math rivals.
-const syntaxSpanSelectors = new Set(
+const paritySpanSelectors = new Set(
 	["keyword", "string", "number", "comment", "operator", "variable", "def"].map(
 		(token) => `.cm-s-obsidian span.cm-${token}`,
 	),
+);
+// Footnote refs: .cm-s-obsidian span.cm-footref.cm-hmd-barelink.cm-formatting (0,4,1).
+// Footnote labels: .cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote (0,4,1).
+paritySpanSelectors.add(
+	".markdown-source-view.mod-cm6 span.cm-inline-code.cm-footref",
+);
+paritySpanSelectors.add(
+	".markdown-source-view.mod-cm6 span.cm-inline-code.cm-hmd-footnote",
 );
 
 function compoundDepth(selector: selectorParser.Selector): number {
@@ -67,7 +75,7 @@ export function checkCss(legacyFile?: string): Plugin {
 					selector.walkTags((tag) => {
 						if (
 							rule.source?.input.file === path.resolve("src/code.css") &&
-							syntaxSpanSelectors.has(selector.toString())
+							paritySpanSelectors.has(selector.toString().trim())
 						)
 							return;
 

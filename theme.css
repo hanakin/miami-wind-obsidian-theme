@@ -263,6 +263,13 @@
 	color: var(--code-foreground);
 }
 
+/* Match Obsidian's 0,4,1 footnote rivals without changing inherited colors. */
+
+.markdown-source-view.mod-cm6 span.cm-inline-code.cm-footref,
+.markdown-source-view.mod-cm6 span.cm-inline-code.cm-hmd-footnote {
+	color: var(--code-foreground);
+}
+
 @media (hover: hover) {
 	.markdown-source-view.mod-cm6 .cm-inline-code:hover {
 		color: var(--code-foreground);

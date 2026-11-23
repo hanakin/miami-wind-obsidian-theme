@@ -117,3 +117,15 @@ it.each([
 		await expect(check(css.replace("span.", "div."))).rejects.toThrow();
 	},
 );
+
+it.each(["cm-footref", "cm-hmd-footnote"])(
+	"allows the exact inline-code %s rival only in code.css",
+	async (state) => {
+		const css = `.markdown-source-view.mod-cm6 span.cm-inline-code.${state} { color: var(--code-foreground) }`;
+		await expect(check(css)).resolves.toBeDefined();
+		await expect(
+			postcss([checkCss()]).process(css, { from: "src/tabs.css" }),
+		).rejects.toThrow();
+		await expect(check(css.replace(state, "cm-link"))).rejects.toThrow();
+	},
+);
