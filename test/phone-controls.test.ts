@@ -23,7 +23,9 @@ async function compareStates(html: string, legacy: string) {
 	try {
 		const results = [];
 		for (const css of [theme + legacy, theme]) {
-			await page.setContent(`<body class="theme-dark is-phone">${html}</body>`);
+			await page.setContent(
+				`<body class="theme-dark is-mobile is-phone">${html}</body>`,
+			);
 			await page.addStyleTag({
 				content: `${rivals}\n${css}\n* { transition: none !important; }`,
 			});
@@ -51,7 +53,7 @@ async function compareStates(html: string, legacy: string) {
 					});
 				states.push(
 					await page
-						.locator("[data-target], [data-target] svg")
+						.locator("[data-target], [data-target] *")
 						.evaluateAll((nodes) =>
 							nodes.map((node) => {
 								const s = getComputedStyle(node);
@@ -89,7 +91,7 @@ it("preserves phone Bases filter fills without changing icon paint", async () =>
 
 it("preserves phone menu states including disabled focus and active", async () => {
 	await compareStates(
-		`<div class="menu"><div class="menu-item" data-target>Normal</div><div class="menu-item mobile-tap" data-target>Tap</div><div class="menu-item is-disabled" data-target>Disabled</div><div class="menu-item is-disabled mobile-tap" data-target>Disabled tap</div></div>`,
+		`<div class="menu"><div class="menu-item" data-target>Normal</div><div class="menu-item mobile-tap" data-target>Tap</div><div class="menu-item is-disabled" data-target>Disabled</div><div class="menu-item is-disabled mobile-tap" data-target>Disabled tap</div><div class="menu-item is-disabled selected" data-target>Disabled selected</div></div>`,
 		`
 		.menu-item:hover, .menu-item:focus, .menu-item:active, .menu-item.selected { background-color: var(--cyan-transparent) !important; color: var(--magenta); cursor: pointer; }
 		.menu-item.is-disabled:hover { background-color: transparent !important; color: var(--text-disabled); cursor: default; }
@@ -104,4 +106,35 @@ it("preserves PDF form and mobile onboarding select fills", async () => {
 		select, select:hover, select:focus, select:focus-visible, select:focus-within, select:active { background-color: var(--magenta) !important; }
 	`,
 	);
+});
+
+it("preserves both phone Bases menu row shapes without changing descendant paint", async () => {
+	for (const shape of [
+		"bases-toolbar-menu-action tappable",
+		"suggestion-item",
+	]) {
+		const rows = [
+			"",
+			"selected",
+			"is-selected",
+			"mobile-tap",
+			"is-disabled",
+			"mod-hidden",
+			"mod-hidden selected",
+			"mod-hidden mobile-tap",
+		]
+			.map(
+				(state) =>
+					`<div class="bases-toolbar-menu-item ${shape} ${state}" tabindex="0" data-target><span class="bases-toolbar-menu-item-info"><span class="bases-toolbar-menu-item-name">Name</span></span><span class="clickable-icon bases-toolbar-menu-item-icon"><svg class="svg-icon" fill="none" stroke="currentColor" width="24" height="24"><path d="M0 0h8" /></svg></span></div>`,
+			)
+			.join("");
+		await compareStates(
+			`<div class="menu mod-sheet">${shape === "suggestion-item" ? `<div class="suggestion-group">${rows}</div>` : rows}</div>`,
+			`
+			.bases-toolbar-menu-item { --interactive-normal: #444 !important; --interactive-hover: #555 !important; }
+			.bases-toolbar-menu-item:hover, .bases-toolbar-menu-item:focus, .bases-toolbar-menu-item:active, .bases-toolbar-menu-item.selected { background-color: var(--cyan-transparent) !important; color: var(--magenta); cursor: pointer; }
+			.bases-toolbar-menu-item.mod-hidden:hover { background-color: transparent !important; color: var(--text-disabled); cursor: default; }
+		`,
+		);
+	}
 });
