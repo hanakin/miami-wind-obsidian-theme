@@ -24,16 +24,25 @@ export interface Usage {
 /** workbench/out/component-diffs.json, written by the compare tool. */
 export type Diffs = Record<string, Record<string, { same: boolean; props: string[] }>>;
 
+/** The compare tool's verdict on one fixture, current theme against new build. */
+export type CompareState =
+	| { kind: "same" | "changed" | "hidden" }
+	| { kind: "unsupported"; what: string[] };
+
 export interface ViewerData {
 	/** False until `bun run capture:extract-app-css` has run. */
 	appCss: boolean;
+	/** False until the compare tool has extracted Obsidian's CodeMirror runtime rules. */
+	cmCss: boolean;
 	fixtures: Fixture[];
 	components: Record<string, ComponentEntry>;
 	usage: Usage[];
 	/** Null until the compare tool has written its file. */
 	diffs: Diffs | null;
-	/** Ids of fixtures the compare tool found changed (from compare.json); null until it has run. */
-	changed: string[] | null;
+	/** Per-fixture verdicts by id; null until the compare tool has run. */
+	compare: Record<string, CompareState> | null;
+	/** Why compare.json could not be used, when it exists but is not a schemaVersion 1 report. */
+	compareError?: string;
 }
 
 export type Theme = "current" | "new";

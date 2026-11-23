@@ -2,6 +2,7 @@ import type { Fixture, Theme, ViewerData } from "./types.ts";
 
 type Mode = Theme | "both";
 type Child = Node | string | false | null | undefined;
+type Rect = [number, number, number, number];
 
 const MODES: [Mode, string][] = [
 	["current", "Current theme"],
@@ -12,6 +13,9 @@ const MODES: [Mode, string][] = [
 const FRAME_W = 1600;
 const FRAME_H = 1000;
 const PAD = 8;
+const GAP = 8;
+// How many captures to try when looking for one that really shows a component.
+const MAX_TRIES = 6;
 
 function h(tag: string, attrs: Record<string, string> = {}, ...children: Child[]): HTMLElement {
 	const el = document.createElement(tag);
@@ -30,7 +34,6 @@ const nav = must("nav");
 const main = must("main");
 const data = (await (await fetch("/api/data")).json()) as ViewerData;
 const fixtures = new Map(data.fixtures.map((f) => [f.id, f]));
-const changed = data.changed && new Set(data.changed);
 const usage = new Map(data.usage.map((u) => [u.component, u]));
 const names = Object.keys(data.components).sort();
 const shared = names.filter((n) => data.components[n]?.multiSurface);
@@ -75,15 +78,41 @@ function renderNav(): void {
 		const surface = c.surfaces[0] ?? "other";
 		bySurface.set(surface, [...(bySurface.get(surface) ?? []), n]);
 	}
+	const filter = h("input", {
+		type: "search",
+		placeholder: "Filter components",
+		"aria-label": "Filter components",
+		spellcheck: "false",
+	}) as HTMLInputElement;
+	filter.addEventListener("input", () => {
+		const q = filter.value.trim().toLowerCase();
+		// Groups left with no visible link hide themselves (style.css).
+		for (const a of nav.querySelectorAll("a")) a.hidden = !a.dataset.name?.includes(q);
+	});
 	nav.replaceChildren(
-		h("div", { class: "brand" }, "Miami Wind", h("span", {}, "Obsidian components")),
-		h("h2", {}, "Components", h("span", {}, String(shared.length + buildOnly.length))),
-		...shared.map((n) => navLink(n, data.components[n]?.surfaces.length)),
-		...buildOnly.map((n) => navLink(n)),
-		h("h2", {}, "Surface-only", h("span", {}, String(names.length - shared.length))),
-		...[...bySurface.keys()]
-			.sort()
-			.flatMap((s) => [h("h3", {}, s), ...(bySurface.get(s) ?? []).map((n) => navLink(n))]),
+		h("div", { class: "nav-top" }, h("div", { class: "brand" }, "Miami Wind components"), filter),
+		h(
+			"div",
+			{ class: "group" },
+			h("h2", {}, "Components", h("span", {}, String(shared.length + buildOnly.length))),
+			...shared.map((n) => navLink(n, data.components[n]?.surfaces.length)),
+			...buildOnly.map((n) => navLink(n)),
+		),
+		h(
+			"div",
+			{ class: "group" },
+			h("h2", {}, "Surface-only", h("span", {}, String(names.length - shared.length))),
+			...[...bySurface.keys()]
+				.sort()
+				.map((s) =>
+					h(
+						"div",
+						{ class: "group" },
+						h("h3", {}, s),
+						...(bySurface.get(s) ?? []).map((n) => navLink(n)),
+					),
+				),
+		),
 	);
 }
 
@@ -101,11 +130,13 @@ const lazy = new IntersectionObserver(
 	{ rootMargin: "600px" },
 );
 
-/** One fixture under one theme, cropped to the captured element once the frame reports it. */
+/** One fixture under one theme, cropped to the shown element once the frame reports it. */
 function shot(f: Fixture, theme: Theme, label: boolean, focus?: string): HTMLElement {
 	const frame = h("iframe", {
 		"data-src": `/frame/${theme}/${encodeURIComponent(f.id)}${focus ? `?focus=${encodeURIComponent(focus)}` : ""}`,
 		title: `${f.id} (${theme})`,
+		// Captured markup is untrusted: no same-origin access, only the viewer's own measuring script.
+		sandbox: "allow-scripts",
 		width: String(FRAME_W),
 		height: String(FRAME_H),
 		tabindex: "-1",
@@ -120,79 +151,169 @@ function shot(f: Fixture, theme: Theme, label: boolean, focus?: string): HTMLEle
 	);
 }
 
-addEventListener("message", (e: MessageEvent<{ mwRect?: [number, number, number, number] }>) => {
-	const rect = e.data?.mwRect;
-	if (!rect) return;
+/** Per crop: the box the frame reported. Per figure: what to do when its component is not found. */
+const rects = new WeakMap<Element, Rect>();
+const onMissing = new WeakMap<Element, () => void>();
+
+/** Sizes a figure's crops. Side by side, captures wider than half the row stack at full size. */
+function layout(figure: Element): void {
+	const room = figure.closest(".captures")?.clientWidth ?? FRAME_W;
+	const boxes = [...figure.querySelectorAll(".crop")].flatMap((crop) => {
+		const r = rects.get(crop);
+		if (!r) return [];
+		const left = Math.max(0, r[0] - PAD);
+		const top = Math.max(0, r[1] - PAD);
+		const width = Math.min(FRAME_W, r[0] + r[2] + PAD) - left;
+		const height = Math.min(FRAME_H, r[1] + r[3] + PAD) - top;
+		return [{ crop: crop as HTMLElement, left, top, width, height }];
+	});
+	const half = (room - GAP) / 2 - 2;
+	const stacked = mode === "both" && boxes.some((b) => b.width > half);
+	figure.querySelector(".shots")?.classList.toggle("stacked", stacked);
+	for (const b of boxes) {
+		const scale = Math.min(1, (mode === "both" && !stacked ? half : room - 2) / b.width);
+		b.crop.style.width = `${b.width * scale}px`;
+		b.crop.style.height = `${b.height * scale}px`;
+		const frame = b.crop.querySelector("iframe");
+		if (frame) frame.style.transform = `scale(${scale}) translate(${-b.left}px, ${-b.top}px)`;
+		b.crop.classList.add("ready");
+	}
+}
+
+/** A row whose captures all turned out hidden has shown nothing, so it cannot claim "Same". */
+function settle(row: Element | null): void {
+	if (!row) return;
+	const crops = [...row.querySelectorAll(".crop")];
+	if (crops.some((c) => !c.classList.contains("hidden"))) return;
+	const badge = row.querySelector(".badge.same");
+	if (badge) badge.replaceWith(h("span", { class: "badge" }, "Nothing visible"));
+}
+
+addEventListener("message", (e: MessageEvent<{ mwRect?: unknown }>) => {
+	if (typeof e.data !== "object" || e.data === null || !("mwRect" in e.data)) return;
 	const frame = [...document.querySelectorAll("iframe")].find((f) => f.contentWindow === e.source);
 	const crop = frame?.parentElement;
-	if (!frame || !crop) return;
-	const [x, y, w, h_] = rect;
-	if (w === 0 || h_ === 0) {
-		// The theme (or Obsidian itself) hides the captured element in this fixture.
-		crop.replaceChildren("Hidden in this capture");
-		crop.classList.add("hidden");
+	const figure = crop?.closest("figure");
+	if (!crop || !figure) return;
+	const row = figure.closest(".surface");
+	const r = e.data.mwRect;
+	if (Array.isArray(r) && r.length === 4 && r.every((n) => Number.isFinite(n) && n >= 0)) {
+		rects.set(crop, r as Rect);
+		layout(figure);
 		return;
 	}
-	const left = Math.max(0, x - PAD);
-	const top = Math.max(0, y - PAD);
-	const width = Math.min(FRAME_W, x + w + PAD) - left;
-	const height = Math.min(FRAME_H, y + h_ + PAD) - top;
-	const room = crop.closest(".captures")?.clientWidth ?? width;
-	const scale = Math.min(1, (mode === "both" ? room / 2 - 24 : room - 26) / width);
-	crop.style.width = `${width * scale}px`;
-	crop.style.height = `${height * scale}px`;
-	frame.style.transform = `scale(${scale}) translate(${-left}px, ${-top}px)`;
-	crop.classList.add("ready");
+	// Not found or not visible. The first theme decides whether to try another capture.
+	const retry = onMissing.get(figure);
+	if (retry && crop === figure.querySelector(".crop")) return retry();
+	crop.replaceChildren("Hidden in this capture");
+	crop.classList.add("hidden");
+	settle(row);
 });
 
-/** `inside` names the component to crop to when the fixture captured something larger around it. */
-function capture(f: Fixture, inside?: string): HTMLElement {
+/** `focus` names the component to crop to when the fixture captured something larger around it. */
+function capture(f: Fixture, focus?: string): HTMLElement {
 	const themes: Theme[] = mode === "both" ? ["current", "new"] : [mode];
+	const verdict = mode === "current" ? undefined : data.compare?.[f.id];
 	return h(
 		"figure",
 		{ class: "capture" },
-		h("div", { class: "shots" }, ...themes.map((t) => shot(f, t, mode === "both", inside))),
+		h("div", { class: "shots" }, ...themes.map((t) => shot(f, t, mode === "both", focus))),
 		h(
 			"figcaption",
 			f.note ? { title: f.note } : {},
 			h("span", { class: f.state === "default" ? "state" : "state forced" }, f.state),
 			h("code", {}, f.id),
-			inside && h("span", { class: "inside" }, `in ${f.component}`),
-			mode !== "current" && changed?.has(f.id) && h("span", { class: "changed" }, "Changed"),
+			focus && f.component !== focus && h("span", { class: "aside" }, `in ${f.component}`),
+			verdict?.kind === "changed" && h("span", { class: "changed" }, "Changed"),
+			verdict?.kind === "hidden" && h("span", { class: "aside" }, "Hidden when compared"),
+			verdict?.kind === "unsupported" &&
+				h("span", { class: "aside" }, `Not comparable (${verdict.what.join(", ")})`),
 		),
 	);
 }
 
+/**
+ * The first of `candidates` in which the component is really found and visible, tried one at a
+ * time as the frames report back. When none qualifies, `none()` takes its place.
+ */
+function firstShowing(candidates: Fixture[], focus: string, none: () => Node): Node {
+	const [f, ...rest] = candidates;
+	if (!f) return none();
+	const figure = capture(f, focus);
+	onMissing.set(figure, () => {
+		const row = figure.closest(".surface");
+		const section = figure.closest("section");
+		figure.replaceWith(firstShowing(rest, focus, none));
+		settle(row);
+		// A "Shared look" left with nothing to show goes away.
+		if (section?.classList.contains("shared") && !section.querySelector("figure")) section.remove();
+	});
+	return figure;
+}
+
 // --- Component page -----------------------------------------------------------------------
 
-function badge(component: string, surface: string): HTMLElement {
+const bySize = (a: Fixture, b: Fixture) => a.size - b.size;
+
+function badge(component: string, surface: string, shown: Fixture[]): HTMLElement {
 	const d = data.diffs?.[component]?.[surface];
 	if (!d) return h("span", { class: "badge" }, "Not compared yet");
-	return d.same
-		? h("span", { class: "badge same" }, "Same")
-		: h("span", { class: "badge differs" }, "Differs");
+	if (!d.same) return h("span", { class: "badge differs" }, "Differs");
+	// Captures the compare tool found hidden are no evidence that the surface looks the same.
+	const hidden = shown.length > 0 && shown.every((f) => data.compare?.[f.id]?.kind === "hidden");
+	return hidden
+		? h("span", { class: "badge" }, "Nothing visible")
+		: h("span", { class: "badge same" }, "Same");
 }
 
 function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLElement {
 	const here = all.filter((f) => f.surface === surface);
 	const own = here.filter((f) => f.component === component);
-	// No capture of the component itself on this surface: show it inside what was captured there.
-	const shown = own.length ? own : here.toSorted((a, b) => a.size - b.size).slice(0, 3);
 	const props = data.diffs?.[component]?.[surface]?.props ?? [];
-	return h(
+	const none = () =>
+		h("p", { class: "none" }, "No capture of this component on this surface.") as Node;
+	const row = h(
 		"section",
 		{ class: "surface" },
 		h(
 			"header",
 			{},
 			h("h3", {}, surface),
-			badge(component, surface),
+			badge(component, surface, own),
 			props.length > 0 && h("ul", { class: "props" }, ...props.map((p) => h("li", {}, p))),
 		),
 		h(
 			"div",
 			{ class: "captures" },
-			...shown.map((f) => capture(f, own.length ? undefined : component)),
+			// Captures of the component itself; failing that, one larger capture that visibly has it.
+			...(own.length
+				? own.map((f) => capture(f))
+				: [firstShowing(here.toSorted(bySize).slice(0, MAX_TRIES), component, none)]),
+		),
+	);
+	settle(row);
+	return row;
+}
+
+/** One capture per state: the smallest capture of the component itself, default first. */
+function sharedLook(component: string, own: Fixture[]): HTMLElement | false {
+	const states = Map.groupBy(own.toSorted(bySize), (f) => f.state);
+	if (states.size === 0) return false;
+	const order = [...states.keys()].sort(
+		(a, b) => Number(b === "default") - Number(a === "default"),
+	);
+	return h(
+		"section",
+		{ class: "shared" },
+		h("h2", {}, "Shared look"),
+		h(
+			"div",
+			{ class: "captures" },
+			...order.map((s) =>
+				firstShowing((states.get(s) ?? []).slice(0, MAX_TRIES), component, () =>
+					document.createComment(`no clean capture of ${s}`),
+				),
+			),
 		),
 	);
 }
@@ -255,6 +376,8 @@ function modeSwitch(): HTMLElement {
 	);
 }
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 function renderPage(): void {
 	const name = decodeURIComponent(location.hash.slice(1)) || shared[0] || names[0] || "";
 	for (const a of nav.querySelectorAll("a")) {
@@ -264,14 +387,23 @@ function renderPage(): void {
 	const entry = data.components[name];
 	const all = (entry?.fixtures ?? []).flatMap((id) => fixtures.get(id) ?? []);
 	const own = all.filter((f) => f.component === name);
-	// One capture per state, default first.
-	const states = [...new Map(own.map((f) => [f.state, f])).values()].sort(
-		(a, b) => Number(b.state === "default") - Number(a.state === "default"),
+	const diffs = data.diffs?.[name];
+	const differs = (s: string) => diffs?.[s]?.same === false;
+	// Differing surfaces first; the sort is stable, so each group stays alphabetical.
+	const surfaces = (entry?.surfaces ?? []).toSorted(
+		(a, b) => Number(differs(b)) - Number(differs(a)),
 	);
-	const surfaces = entry?.surfaces ?? [];
 	const meta = entry
-		? `${surfaces.length} ${surfaces.length === 1 ? "surface" : "surfaces"} · ${all.length} ${all.length === 1 ? "capture" : "captures"}`
+		? [
+				plural(surfaces.length, "surface"),
+				plural(all.length, "capture"),
+				diffs &&
+					`${surfaces.filter(differs).length} of ${surfaces.filter((x) => diffs[x]).length} differ`,
+			]
+				.filter(Boolean)
+				.join(" · ")
 		: "Build component with no captures";
+	const ready = data.appCss && data.cmCss;
 
 	const parts: Child[] = [
 		h("header", { class: "top" }, h("div", {}, h("h1", {}, name), h("p", {}, meta)), modeSwitch()),
@@ -284,15 +416,18 @@ function renderPage(): void {
 				" and this page reloads.",
 			),
 		data.appCss &&
-			entry?.multiSurface &&
-			states.length > 0 &&
+			!data.cmCss &&
 			h(
-				"section",
-				{},
-				h("h2", {}, "Shared look"),
-				h("div", { class: "captures" }, ...states.map((f) => capture(f))),
+				"p",
+				{ class: "message" },
+				"Obsidian's editor rules are not extracted yet, so captures cannot render. Run ",
+				h("code", {}, "bun run compare"),
+				" and this page reloads.",
 			),
-		data.appCss &&
+		data.compareError &&
+			h("p", { class: "message" }, `Per-capture results are off. ${data.compareError}`),
+		ready && entry?.multiSurface && sharedLook(name, own),
+		ready &&
 			surfaces.length > 0 &&
 			h(
 				"section",
@@ -310,5 +445,3 @@ renderNav();
 renderPage();
 nav.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "center" });
 addEventListener("hashchange", renderPage);
-// The server says when the built theme, app CSS or compare result changed.
-new EventSource("/events").addEventListener("message", () => location.reload());

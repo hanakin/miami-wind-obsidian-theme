@@ -1,0 +1,175 @@
+// The viewer's local asset handling, as a Vite plugin: the data for the page, the fixtures wrapped
+// with Obsidian's CSS plus one theme, and a reload when the built theme or the compare result changes.
+import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import { existsSync, readFileSync, statSync, watchFile } from "node:fs";
+import type { ServerResponse } from "node:http";
+import Specificity from "@bramus/specificity";
+import { extractFile } from "@electron/asar";
+import type { Plugin } from "vite";
+import { COMPONENTS } from "../../capture/scripts/engine.ts";
+import { appAsar } from "../../capture/scripts/obsidian.ts";
+import { runtimeCss } from "../compare/runtime.ts";
+import { compareStates } from "./compare-states.ts";
+import { forceStates } from "./force-states.ts";
+import { frameCsp, frameDocument } from "./frame.ts";
+import type { ViewerData } from "./types.ts";
+
+const ROOT = new URL("../../", import.meta.url).pathname;
+const CURRENT_REF = "b478dc8";
+
+const paths = {
+	app: `${ROOT}capture/.app/app.css`,
+	// Obsidian's real CodeMirror runtime rules, extracted and cached by the compare tool.
+	cm: `${ROOT}workbench/out/runtime-cm.css`,
+	new: `${ROOT}theme.css`,
+	diffs: `${ROOT}workbench/out/component-diffs.json`,
+	compare: `${ROOT}workbench/out/compare.json`,
+	fixtures: `${ROOT}capture/fixtures.json`,
+	usage: `${ROOT}component-usage.json`,
+};
+
+// The highest specificity in a component's selector list.
+const top = (selector: string) =>
+	Specificity.calculate(selector).reduce((max, s) => (Specificity.compare(s, max) > 0 ? s : max));
+
+/**
+ * Selectors of more specific components. An element matching one of these belongs to that
+ * component (a `button.clickable-icon` is a clickable icon), so it does not stand in for this one.
+ */
+function moreSpecific(component: string): string[] {
+	const own = COMPONENTS[component];
+	if (!own) return [];
+	return Object.entries(COMPONENTS)
+		.filter(([name, sel]) => name !== component && Specificity.compare(top(sel), top(own)) > 0)
+		.map(([, sel]) => sel);
+}
+
+const json = (path: string): unknown =>
+	existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
+
+type FixtureIndex = Pick<ViewerData, "fixtures" | "components">;
+
+function data(index: FixtureIndex): ViewerData {
+	const report = json(paths.compare);
+	const compare = report === null ? null : compareStates(report);
+	return {
+		appCss: existsSync(paths.app),
+		cmCss: existsSync(paths.cm),
+		fixtures: index.fixtures.map(({ id, component, surface, state, note }) => ({
+			id,
+			component,
+			surface,
+			state,
+			note,
+			size: statSync(`${ROOT}capture/fixtures/${id}.html`).size,
+		})),
+		components: index.components,
+		usage: (json(paths.usage) as ViewerData["usage"] | null) ?? [],
+		diffs: json(paths.diffs) as ViewerData["diffs"],
+		compare: typeof compare === "string" ? null : compare,
+		compareError: typeof compare === "string" ? compare : undefined,
+	};
+}
+
+// Stylesheets with forced states, kept until the file changes.
+const cssCache = new Map<string, { mtime: number; css: string }>();
+function css(name: "app" | "cm" | "new"): string | null {
+	const path = paths[name];
+	if (!existsSync(path)) return null;
+	const mtime = statSync(path).mtimeMs;
+	const hit = cssCache.get(name);
+	if (hit?.mtime === mtime) return hit.css;
+	const out = forceStates(readFileSync(path, "utf8"));
+	cssCache.set(name, { mtime, css: out });
+	return out;
+}
+
+function send(res: ServerResponse, status: number, type: string, body: string | Uint8Array): void {
+	res.statusCode = status;
+	res.setHeader("Content-Type", type);
+	res.setHeader("X-Content-Type-Options", "nosniff");
+	res.end(body);
+}
+
+export function viewer(): Plugin {
+	return {
+		name: "miami-wind-viewer",
+		async configureServer(server) {
+			const index = json(paths.fixtures) as FixtureIndex;
+			const fixtureIds = new Set(index.fixtures.map((f) => f.id));
+			const currentCss = forceStates(
+				execFileSync("git", ["show", `${CURRENT_REF}:theme.css`], { cwd: ROOT, encoding: "utf8" }),
+			);
+			if (existsSync(paths.app) && !existsSync(paths.cm)) {
+				// The compare tool's extractor: reads the rules from an isolated Obsidian, once.
+				process.chdir(ROOT);
+				await runtimeCss().catch((e) => console.warn(`CodeMirror rules not extracted: ${e}`));
+			}
+
+			// Bumped on every change so frames fetch fresh CSS while unchanged CSS stays cached.
+			let version = Date.now();
+			for (const path of [paths.new, paths.diffs, paths.compare, paths.app, paths.cm]) {
+				watchFile(path, { interval: 300 }, () => {
+					version = Date.now();
+					server.ws.send({ type: "full-reload" });
+				});
+			}
+
+			server.middlewares.use((req, res, next) => {
+				const url = new URL(req.url ?? "/", "http://viewer");
+				const [, area, a, b] = url.pathname.split("/").map(decodeURIComponent);
+				// Frames have no origin of their own (sandbox), so every URL they load is spelled out.
+				const origin = `http://${req.headers.host}`;
+
+				if (url.pathname === "/api/data") {
+					return send(res, 200, "application/json", JSON.stringify(data(index)));
+				}
+				if (area === "frame" && (a === "current" || a === "new") && b && fixtureIds.has(b)) {
+					const nonce = randomUUID();
+					const component = url.searchParams.get("focus") ?? "";
+					const selector = COMPONENTS[component];
+					const focus = selector ? { is: selector, not: moreSpecific(component) } : null;
+					const styles = ["cm", "app", a].map((n) => `${origin}/css/${n}.css?v=${version}`);
+					const html = readFileSync(`${ROOT}capture/fixtures/${b}.html`, "utf8");
+					res.setHeader("Content-Security-Policy", frameCsp(origin, nonce));
+					res.setHeader("Cache-Control", "no-store");
+					return send(
+						res,
+						200,
+						"text/html; charset=utf-8",
+						frameDocument(html, styles, focus, nonce),
+					);
+				}
+				if (area === "css" && a === "public" && b && /^[\w.-]+$/.test(b)) {
+					// Fonts and images app.css points at, read straight from the local Obsidian install.
+					try {
+						const asar = appAsar() ?? "/usr/lib/obsidian/obsidian.asar";
+						const file = extractFile(asar, `public/${b}`);
+						// Frames are sandboxed (origin "null"), and fonts are fetched with CORS.
+						res.setHeader("Access-Control-Allow-Origin", "null");
+						res.setHeader("Cache-Control", "max-age=31536000, immutable");
+						const type = b.endsWith(".svg") ? "image/svg+xml" : "application/octet-stream";
+						return send(res, 200, type, file);
+					} catch {
+						return send(res, 404, "text/plain", "Not found");
+					}
+				}
+				if (area === "css" && a && !b) {
+					const name = a.replace(/\.css$/, "");
+					const body =
+						name === "current"
+							? currentCss
+							: name === "app" || name === "cm" || name === "new"
+								? css(name)
+								: null;
+					if (body === null) return send(res, 404, "text/plain", "Not found");
+					res.setHeader("Cache-Control", "max-age=31536000, immutable");
+					return send(res, 200, "text/css; charset=utf-8", body);
+				}
+				if (area === "frame" || area === "css") return send(res, 404, "text/plain", "Not found");
+				next();
+			});
+		},
+	};
+}

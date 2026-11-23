@@ -3,26 +3,31 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "bun scripts/build.ts",
-		"viewer": "bun workbench/viewer/server.ts",
-		"check:css": "bun scripts/check-css.ts",
 		"capture:extract-app-css": "bun capture/scripts/extract-app-css.ts",
 		"capture:checklist": "bun capture/scripts/build-checklist.ts",
 		"capture:run": "bun capture/scripts/capture.ts",
+		"lint": "biome check .",
+		"fmt": "biome check --write scripts test",
+		"typecheck": "tsc --noEmit",
+		"check": "biome check capture/scripts scripts test workbench/compare workbench/viewer && tsc --noEmit && bun run test && bun run check:css",
 		"capture:variants": "bun capture/scripts/variants.ts",
 		"capture:coverage": "bun capture/scripts/coverage.ts",
-		"lint": "biome check .",
-		"fmt": "biome check --write .",
-		"typecheck": "tsc --noEmit",
-		"check": "biome check . && tsc --noEmit && vitest run && bun run check:css"
+		"build": "bun scripts/build.ts",
+		"viewer": "bun --bun vite --config workbench/viewer/vite.config.ts",
+		"check:css": "bun scripts/check-css.ts",
+		"compare": "bun workbench/compare/cli.ts",
+		"test": "playwright install chromium && vitest run"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.8",
 		"@bramus/specificity": "^2.4.3",
 		"@electron/asar": "^4.3.2",
 		"@types/bun": "^1.4.5",
+		"@types/pngjs": "^6.0.5",
 		"@types/postcss-import": "^14.0.3",
+		"pixelmatch": "^8.0.0",
 		"playwright": "^1.65.1",
+		"pngjs": "^7.0.0",
 		"postcss": "^8.5.33",
 		"postcss-import": "^17.0.1",
 		"postcss-mixins": "^12.1.2",
@@ -31,6 +36,7 @@
 		"stylelint": "17.16.0",
 		"stylelint-config-obsidianmd": "0.1.0",
 		"typescript": "^7.0.2",
+		"vite": "^8.3.8",
 		"vitest": "^5.1.1"
 	}
 }

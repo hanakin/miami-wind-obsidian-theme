@@ -51,23 +51,60 @@ nav {
 	scrollbar-color: var(--interactive) transparent;
 }
 
+.nav-top {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	margin: 0 -8px;
+	padding: 18px 8px 10px;
+	background: var(--mantle);
+}
+
 .brand {
-	padding: 20px 12px 4px;
+	padding: 0 12px 12px;
 	font-weight: 650;
 	font-size: 15px;
 }
 
-.brand span {
-	display: block;
-	color: var(--grey-400);
-	font-weight: 400;
-	font-size: 12px;
+nav input {
+	width: 100%;
+	padding: 7px 12px;
+	background: var(--grey-900);
+	border: 1px solid transparent;
+	border-radius: var(--radius);
+	color: var(--text);
+	font: inherit;
+	font-size: 13px;
+}
+
+nav input::placeholder {
+	color: var(--grey-500);
+}
+
+nav input:hover {
+	background: var(--interactive);
+}
+
+/* Focus shows as a surface and border shift, never a ring. */
+nav input:focus {
+	background: var(--interactive);
+	border-color: var(--grey-500);
+}
+
+nav input::-webkit-search-cancel-button {
+	cursor: pointer;
+}
+
+/* A filtered-out link, and any group the filter leaves empty. */
+nav a[hidden],
+.group:not(:has(a:not([hidden]))) {
+	display: none;
 }
 
 nav h2 {
 	display: flex;
 	justify-content: space-between;
-	margin: 24px 12px 8px;
+	margin: 16px 12px 8px;
 	color: var(--subtext);
 	font-weight: 600;
 	font-size: 11px;
@@ -291,6 +328,17 @@ main h2 {
 	align-items: flex-start;
 }
 
+.shots.stacked {
+	flex-direction: column;
+	gap: 12px;
+}
+
+.none {
+	margin: 0;
+	color: var(--grey-400);
+	font-size: 13px;
+}
+
 .shot-label {
 	display: block;
 	margin-bottom: 4px;
@@ -354,7 +402,7 @@ figcaption[title] {
 	color: var(--cyan);
 }
 
-.inside {
+.aside {
 	color: var(--grey-500);
 }
 
@@ -391,4 +439,9 @@ td {
 
 .decl {
 	display: block;
+}
+
+/* The summary row stays short: a tall capture (a stacked tab strip) is cut off, not shrunk. */
+.shared .crop {
+	max-height: 320px;
 }
