@@ -85,7 +85,7 @@
 			},
 			{
 				"surface": "menus.css",
-				"selector": ".menu-item:hover,\n.menu-item:focus,\n.menu-item:active,\n.menu-item.selected,\n.menu-item:not(.is-label):not(.is-disabled).selected,\n.bases-toolbar-menu-item:hover,\n.bases-toolbar-menu-item:focus,\n.bases-toolbar-menu-item:active,\n.bases-toolbar-menu-item.selected",
+				"selector": ".menu-item:hover,\n.menu-item:focus,\n.menu-item:active,\n.menu-item.selected,\n.bases-toolbar-menu-item:hover,\n.bases-toolbar-menu-item:focus,\n.bases-toolbar-menu-item:active,\n.bases-toolbar-menu-item.selected",
 				"properties": {
 					"--mw-item-background": "var(--cyan-transparent)",
 					"--mw-item-color": "var(--magenta)"

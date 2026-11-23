@@ -387,11 +387,8 @@ mark {
 	cursor: var(--icon-cursor);
 }
 
-.clickable-icon[aria-disabled='true'],
-.clickable-icon[aria-disabled='true']:hover {
+.clickable-icon[aria-disabled='true'] {
 	cursor: default;
-	color: var(--text-disabled);
-	background-color: transparent;
 }
 
 /* === legacy.css (continued) === */
@@ -1109,7 +1106,6 @@ hr {
 .menu-item:focus,
 .menu-item:active,
 .menu-item.selected,
-.menu-item:not(.is-label):not(.is-disabled).selected,
 .bases-toolbar-menu-item:hover,
 .bases-toolbar-menu-item:focus,
 .bases-toolbar-menu-item:active,
@@ -1119,6 +1115,12 @@ hr {
 	background-color: var(--mw-item-background);
 	color: var(--mw-item-color);
 	cursor: pointer;
+}
+
+/* Tie the selected fill without raising text specificity over warning items. */
+
+.menu-item:not(.is-label):not(.is-disabled).selected {
+	background-color: var(--cyan-transparent);
 }
 
 .menu-item.is-disabled:hover,
@@ -1178,6 +1180,30 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 
 ::-webkit-scrollbar-thumb:hover {
 	cursor: pointer;
+}
+
+/* Disabled paint must follow surface states; cursor keeps its original cascade position. */
+
+.clickable-icon[aria-disabled='true'],
+.clickable-icon[aria-disabled='true']:hover,
+.clickable-icon[aria-disabled='true']:active,
+.clickable-icon[aria-disabled='true'].is-active,
+.clickable-icon[aria-disabled='true'].has-active-menu {
+	background-color: transparent;
+}
+
+.clickable-icon[aria-disabled='true'],
+.clickable-icon[aria-disabled='true']:hover:where(:not(.modal-close-button)),
+.clickable-icon[aria-disabled='true']:active,
+.clickable-icon[aria-disabled='true'].is-active,
+.clickable-icon[aria-disabled='true'].has-active-menu {
+	color: var(--text-disabled);
+}
+
+/* Preserve the original close-button hover's stronger text override. */
+
+.modal-close-button.clickable-icon:where([aria-disabled='true']):hover {
+	color: var(--magenta);
 }
 
 /* === legacy.css (continued) === */

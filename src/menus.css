@@ -48,7 +48,6 @@
 .menu-item:focus,
 .menu-item:active,
 .menu-item.selected,
-.menu-item:not(.is-label):not(.is-disabled).selected,
 .bases-toolbar-menu-item:hover,
 .bases-toolbar-menu-item:focus,
 .bases-toolbar-menu-item:active,
@@ -56,6 +55,11 @@
 	--mw-item-background: var(--cyan-transparent);
 	--mw-item-color: var(--magenta);
 	@mixin menu-item-state;
+}
+
+/* Tie the selected fill without raising text specificity over warning items. */
+.menu-item:not(.is-label):not(.is-disabled).selected {
+	background-color: var(--cyan-transparent);
 }
 
 .menu-item.is-disabled:hover,
