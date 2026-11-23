@@ -50,7 +50,11 @@ test("replays hover, compares pseudo elements and catches changed theme pixels",
 
 test
 	.skipIf(!existsSync("capture/.app/app.css"))
-	.each(["command.workspace:export-pdf", "extra.community.plugin-browser"])(
+	.each([
+		"command.workspace:export-pdf",
+		"extra.community.plugin-browser",
+		"extra.canvas.after-select",
+	])(
 	"keeps %s pixels stable across identical replays",
 	async (fixtureId) => {
 		const { readFile } = await import("node:fs/promises");

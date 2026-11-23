@@ -8,6 +8,10 @@ export interface Rendered {
 	invisibleTarget: boolean;
 	unsupported: string[];
 }
+const documents = new WeakMap<
+	Page,
+	{ html: string; cm: string; app: string; theme: string }
+>();
 export async function render(
 	page: Page,
 	cdp: CDPSession,
@@ -15,14 +19,34 @@ export async function render(
 	css: { cm: string; app: string; theme: string },
 	fixture: { component: string; surface: string; state: string },
 ): Promise<Rendered> {
-	await page.setContent(html, { waitUntil: "domcontentloaded" });
-	for (const content of [css.cm, css.app, css.theme]) {
-		if (content) await page.addStyleTag({ content });
+	const previous = documents.get(page);
+	if (
+		!previous ||
+		previous.html !== html ||
+		previous.cm !== css.cm ||
+		previous.app !== css.app
+	) {
+		await page.setContent(html, { waitUntil: "domcontentloaded" });
+		for (const content of [css.cm, css.app])
+			if (content) await page.addStyleTag({ content });
+		await page.evaluate((theme) => {
+			const style = document.createElement("style");
+			style.dataset.compareTheme = "";
+			style.textContent = theme;
+			document.head.append(style);
+		}, css.theme);
+		await page.addStyleTag({
+			content:
+				"*,*::before,*::after,*::-webkit-slider-thumb,*::-webkit-slider-runnable-track,*::-webkit-progress-bar,*::-webkit-progress-value,*::-webkit-scrollbar-thumb { animation: none !important; transition: none !important; }",
+		});
+		documents.set(page, { html, ...css });
+	} else if (previous.theme !== css.theme) {
+		// Swap only theme CSS: document recreation introduces unrelated raster rounding differences.
+		await page.locator("style[data-compare-theme]").evaluate((style, theme) => {
+			style.textContent = theme;
+		}, css.theme);
+		previous.theme = css.theme;
 	}
-	await page.addStyleTag({
-		content:
-			"*,*::before,*::after,*::-webkit-slider-thumb,*::-webkit-slider-runnable-track,*::-webkit-progress-bar,*::-webkit-progress-value,*::-webkit-scrollbar-thumb { animation: none !important; transition: none !important; }",
-	});
 	const { root } = await cdp.send("DOM.getDocument", { depth: 0 });
 	const { nodeIds } = await cdp.send("DOM.querySelectorAll", {
 		nodeId: root.nodeId,
