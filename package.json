@@ -4,6 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"build": "bun scripts/build.ts",
+		"viewer": "bun workbench/viewer/server.ts",
 		"check:css": "bun scripts/check-css.ts",
 		"capture:extract-app-css": "bun capture/scripts/extract-app-css.ts",
 		"capture:checklist": "bun capture/scripts/build-checklist.ts",

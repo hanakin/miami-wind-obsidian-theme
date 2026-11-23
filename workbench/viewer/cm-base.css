@@ -1,0 +1,96 @@
+/* CodeMirror injects its layout rules from JavaScript, so they are in neither app.css nor the
+   fixtures. Without them editor captures collapse to one letter per line. This is the layout
+   part of @codemirror/view's base theme, scoped like the real one (one class + the element).
+   shortcut: hand-copied layout subset only, re-copy if editor captures look wrong after an Obsidian update. */
+.cm-editor {
+	position: relative !important;
+	display: flex !important;
+	flex-direction: column;
+	box-sizing: border-box;
+}
+
+.cm-editor .cm-scroller {
+	position: relative;
+	z-index: 0;
+	display: flex !important;
+	align-items: flex-start !important;
+	height: 100%;
+	overflow-x: auto;
+	overflow-anchor: none;
+	line-height: 1.4;
+}
+
+.cm-editor .cm-content {
+	display: block;
+	flex-grow: 2;
+	flex-shrink: 0;
+	box-sizing: border-box;
+	min-height: 100%;
+	margin: 0;
+	padding: 4px 0;
+	outline: none;
+	white-space: pre;
+	word-wrap: normal;
+}
+
+.cm-editor .cm-lineWrapping {
+	flex-shrink: 1;
+	white-space: break-spaces;
+	word-break: break-word;
+	overflow-wrap: anywhere;
+}
+
+.cm-editor .cm-line {
+	display: block;
+	padding: 0 2px 0 6px;
+}
+
+.cm-editor .cm-layer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	contain: size style;
+}
+
+.cm-editor .cm-layer > * {
+	position: absolute;
+}
+
+.cm-editor .cm-cursor {
+	display: none;
+	margin-left: -0.6px;
+	border-left: 1.2px solid;
+	pointer-events: none;
+}
+
+.cm-editor.cm-focused > .cm-scroller > .cm-cursorLayer .cm-cursor {
+	display: block;
+}
+
+.cm-editor .cm-gutters {
+	z-index: 200;
+	display: flex;
+	flex-shrink: 0;
+	box-sizing: border-box;
+	height: 100%;
+}
+
+.cm-editor .cm-gutter {
+	display: flex !important;
+	flex-direction: column;
+	flex-shrink: 0;
+	box-sizing: border-box;
+	min-height: 100%;
+	overflow: hidden;
+}
+
+.cm-editor .cm-gutterElement {
+	box-sizing: border-box;
+}
+
+.cm-editor .cm-widgetBuffer {
+	display: inline;
+	width: 0;
+	height: 1em;
+	vertical-align: text-top;
+}
