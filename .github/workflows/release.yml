@@ -28,13 +28,16 @@ jobs:
             echo "::error::manifest.json must contain a non-empty string version."
             exit 1
           fi
-          if [[ "$version" == v* ]]; then
-            echo "::error::manifest.json version must not start with v."
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::manifest.json version must be X.Y.Z (got '$version')."
             exit 1
           fi
-          if output="$(gh release view "$version" 2>&1)"; then
-            echo "Release $version already exists, skipping"
-            exit 0
+          if output="$(gh release view "$version" --json isDraft -q .isDraft 2>&1)"; then
+            case "$output" in
+              false) echo "Release $version already exists, skipping"; exit 0 ;;
+              true) echo "::error::Release $version exists as a draft; publish or delete it."; exit 1 ;;
+              *) echo "::error::Unexpected release lookup result: $output"; exit 1 ;;
+            esac
           elif [ "$output" != "release not found" ]; then
             echo "::error::Release lookup failed: $output"
             exit 1
