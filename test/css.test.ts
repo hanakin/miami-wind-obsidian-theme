@@ -97,3 +97,23 @@ it.each(["line-height: 2; font: 12px serif", "top: 1px; inset: 0"])(
 		);
 	},
 );
+
+it.each([
+	"keyword",
+	"string",
+	"number",
+	"comment",
+	"operator",
+	"variable",
+	"def",
+])(
+	"allows the exact legacy span.cm-%s syntax selector only in code.css",
+	async (token) => {
+		const css = `.cm-s-obsidian span.cm-${token} { color: var(--${token}) }`;
+		await expect(check(css)).resolves.toBeDefined();
+		await expect(
+			postcss([checkCss()]).process(css, { from: "src/tabs.css" }),
+		).rejects.toThrow();
+		await expect(check(css.replace("span.", "div."))).rejects.toThrow();
+	},
+);

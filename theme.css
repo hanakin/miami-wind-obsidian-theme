@@ -284,31 +284,31 @@
 
 /* Syntax highlighting */
 
-.cm-s-obsidian .cm-keyword {
+.cm-s-obsidian span.cm-keyword {
 	color: var(--keyword);
 }
 
-.cm-s-obsidian .cm-string {
+.cm-s-obsidian span.cm-string {
 	color: var(--string);
 }
 
-.cm-s-obsidian .cm-number {
+.cm-s-obsidian span.cm-number {
 	color: var(--value);
 }
 
-.cm-s-obsidian .cm-comment {
+.cm-s-obsidian span.cm-comment {
 	color: var(--comment);
 }
 
-.cm-s-obsidian .cm-operator {
+.cm-s-obsidian span.cm-operator {
 	color: var(--operator);
 }
 
-.cm-s-obsidian .cm-variable {
+.cm-s-obsidian span.cm-variable {
 	color: var(--variable);
 }
 
-.cm-s-obsidian .cm-def {
+.cm-s-obsidian span.cm-def {
 	color: var(--function);
 }
 

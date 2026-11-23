@@ -5,6 +5,14 @@ import selectorParser from "postcss-selector-parser";
 
 const tagHoverSelector = ".cm-hashtag-begin:has(+ .cm-hashtag-end:hover)";
 
+// Parity-only exceptions: these exact 1.x selectors need 0,2,1 to tie Obsidian's
+// span.cm-url, span.cm-formatting-link-string and span.cm-formatting-math rivals.
+const syntaxSpanSelectors = new Set(
+	["keyword", "string", "number", "comment", "operator", "variable", "def"].map(
+		(token) => `.cm-s-obsidian span.cm-${token}`,
+	),
+);
+
 function compoundDepth(selector: selectorParser.Selector): number {
 	const direct =
 		1 + selector.nodes.filter((node) => node.type === "combinator").length;
@@ -57,6 +65,12 @@ export function checkCss(legacyFile?: string): Plugin {
 					});
 					// Inspect every compound, including selector lists inside functional pseudos.
 					selector.walkTags((tag) => {
+						if (
+							rule.source?.input.file === path.resolve("src/code.css") &&
+							syntaxSpanSelectors.has(selector.toString())
+						)
+							return;
+
 						const siblings = tag.parent?.nodes ?? [];
 						const index = siblings.indexOf(tag);
 						const before = siblings
