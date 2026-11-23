@@ -1,0 +1,27 @@
+{
+	"name": "miami-wind-obsidian-theme",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "bun scripts/build.ts",
+		"check:css": "bun scripts/check-css.ts",
+		"check": "biome check scripts test *.json && tsc --noEmit && vitest run && bun run check:css",
+		"check:generated": "bun run build && git diff --exit-code -- theme.css component-usage.json",
+		"fmt": "biome check --write scripts test *.json"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.6.8",
+		"@bramus/specificity": "^2.4.3",
+		"@types/bun": "^1.4.5",
+		"@types/postcss-import": "^14.0.3",
+		"postcss": "^8.5.33",
+		"postcss-import": "^17.0.1",
+		"postcss-mixins": "^12.1.2",
+		"postcss-nested": "^9.0.1",
+		"postcss-selector-parser": "^7.2.1",
+		"stylelint": "17.16.0",
+		"stylelint-config-obsidianmd": "0.1.0",
+		"typescript": "^7.0.2",
+		"vitest": "^5.1.1"
+	}
+}
