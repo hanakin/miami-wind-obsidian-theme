@@ -1,0 +1,5 @@
+@define-mixin menu-item-state {
+	background-color: var(--mw-item-background);
+	color: var(--mw-item-color);
+	cursor: pointer;
+}

@@ -73,6 +73,19 @@
 		]
 	},
 	{
+		"component": "menu-item-state",
+		"usages": [
+			{
+				"surface": "suggestions.css",
+				"selector": ".suggestion-container.mod-property-value .suggestion-item:hover,\n.suggestion-item.is-selected, .suggestion-item.mobile-tap",
+				"properties": {
+					"--mw-item-background": "var(--magenta-transparent)",
+					"--mw-item-color": "var(--magenta)"
+				}
+			}
+		]
+	},
+	{
 		"component": "action-button",
 		"usages": [
 			{

@@ -126,50 +126,7 @@ input.metadata-property-key-input {
 	color: var(--magenta);
 }
 
-.suggestion-container {
-	border: 1px solid var(--magenta);
-	cursor: pointer;
-	padding: 0;
-	margin: 0;
-}
-
-.suggestion {
-	padding: 0;
-	cursor: pointer;
-	margin: 0;
-}
-
-.suggestion-container.mod-property-value .suggestion-item,
-.suggestion-container.mod-property-key .suggestion-item {
-	padding: 8px 16px;
-	cursor: pointer;
-	margin: 0;
-}
-
-.suggestion-container.mod-property-key .suggestion-item {
-	background-color: var(--black);
-	padding-left: 8px;
-}
-
-.suggestion-item.mod-complex .suggestion-flair {
-	color: var(--cyan);
-}
-
-.suggestion-container.mod-property-key .suggestion-item:hover {
-	background-color: var(--magenta-transparent);
-}
-
-.suggestion-container.mod-property-key .suggestion-item.mod-complex:hover .suggestion-flair {
-	color: var(--magenta);
-}
-
-.suggestion-container.mod-property-value .suggestion-item:hover,
-.suggestion-item.is-selected, .suggestion-item.mobile-tap {
-	background-color: var(--magenta-transparent);
-	color: var(--magenta);
-	cursor: pointer;
-	border-radius: 0;
-}
+@pilot suggestions;
 
 @pilot status-bar;
 
