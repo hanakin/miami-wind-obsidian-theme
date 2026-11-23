@@ -1,4 +1,9 @@
 import { existsSync } from "node:fs";
+export function selectRuntimeCss(sheets: string[]): string {
+	return sheets
+		.filter((s) => s.includes(".ͼ1") && s.includes(".cm-scroller"))
+		.join("\n");
+}
 export async function runtimeCss(): Promise<string> {
 	const path = "workbench/out/runtime-cm.css";
 	if (existsSync(path)) return Bun.file(path).text();
@@ -15,16 +20,14 @@ export async function runtimeCss(): Promise<string> {
 			`app.workspace.openLinkText("Markdown/Code.md", "", false)`,
 		);
 		await session.page.waitForSelector(".cm-editor");
-		const css = await session.page.evaluate(() =>
-			Array.from(document.head.querySelectorAll("style"))
-				.map((s) =>
-					Array.from(s.sheet?.cssRules ?? [])
-						.map((r) => r.cssText)
-						.join("\n"),
-				)
-				.filter((s) => s.includes(".cm-"))
-				.join("\n"),
+		const sheets = await session.page.evaluate(() =>
+			Array.from(document.head.querySelectorAll("style")).map((s) =>
+				Array.from(s.sheet?.cssRules ?? [])
+					.map((r) => r.cssText)
+					.join("\n"),
+			),
 		);
+		const css = selectRuntimeCss(sheets);
 		if (!css.includes("cm-scroller"))
 			throw new Error("No CodeMirror base rules found in isolated Obsidian");
 		await Bun.write(path, css);
