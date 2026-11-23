@@ -1,15 +1,16 @@
 {
 	"compilerOptions": {
 		"target": "ESNext",
-		"module": "ESNext",
+		"module": "Preserve",
 		"moduleResolution": "bundler",
 		"strict": true,
 		"noEmit": true,
+		"esModuleInterop": true,
 		"allowImportingTsExtensions": true,
 		"verbatimModuleSyntax": true,
 		"skipLibCheck": true,
 		"types": ["bun"],
 		"lib": ["ESNext", "DOM", "DOM.Iterable"]
 	},
-	"include": ["capture/**/*.ts"]
+	"include": ["capture/**/*.ts", "scripts/**/*.ts", "test/**/*.ts", "workbench/**/*.ts"]
 }

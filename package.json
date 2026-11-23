@@ -3,23 +3,33 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
+		"build": "bun scripts/build.ts",
+		"check:css": "bun scripts/check-css.ts",
 		"capture:extract-app-css": "bun capture/scripts/extract-app-css.ts",
 		"capture:checklist": "bun capture/scripts/build-checklist.ts",
 		"capture:run": "bun capture/scripts/capture.ts",
+		"capture:variants": "bun capture/scripts/variants.ts",
+		"capture:coverage": "bun capture/scripts/coverage.ts",
 		"lint": "biome check .",
 		"fmt": "biome check --write .",
 		"typecheck": "tsc --noEmit",
-		"check": "biome check . && tsc --noEmit",
-		"capture:variants": "bun capture/scripts/variants.ts",
-		"capture:coverage": "bun capture/scripts/coverage.ts"
+		"check": "biome check . && tsc --noEmit && vitest run && bun run check:css"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.6.8",
+		"@biomejs/biome": "2.6.8",
+		"@bramus/specificity": "^2.4.3",
 		"@electron/asar": "^4.3.2",
 		"@types/bun": "^1.4.5",
+		"@types/postcss-import": "^14.0.3",
 		"playwright": "^1.65.1",
 		"postcss": "^8.5.33",
+		"postcss-import": "^17.0.1",
+		"postcss-mixins": "^12.1.2",
+		"postcss-nested": "^9.0.1",
 		"postcss-selector-parser": "^7.2.1",
-		"typescript": "^7.0.2"
+		"stylelint": "17.16.0",
+		"stylelint-config-obsidianmd": "0.1.0",
+		"typescript": "^7.0.2",
+		"vitest": "^5.1.1"
 	}
 }

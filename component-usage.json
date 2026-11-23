@@ -1,0 +1,35 @@
+[
+	{
+		"component": "surface-background",
+		"usages": [
+			{
+				"surface": "code.css",
+				"selector": ".markdown-rendered code",
+				"properties": {
+					"--mw-surface-background": "var(--code-background)"
+				}
+			},
+			{
+				"surface": "code.css",
+				"selector": ".cm-inline-code",
+				"properties": {
+					"--mw-surface-background": "var(--code-background)"
+				}
+			},
+			{
+				"surface": "code.css",
+				"selector": ".markdown-rendered pre",
+				"properties": {
+					"--mw-surface-background": "var(--code-background)"
+				}
+			},
+			{
+				"surface": "tabs.css",
+				"selector": ".workspace .mod-root .workspace-tab-header",
+				"properties": {
+					"--mw-surface-background": "var(--grey-10)"
+				}
+			}
+		]
+	}
+]

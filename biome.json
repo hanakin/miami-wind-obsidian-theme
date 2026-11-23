@@ -14,7 +14,9 @@
 			"!**/imgs",
 			"!**/*.html",
 			"!**/*.md",
-			"!theme.css",
+			"!**/*.css",
+			"!component-usage.json",
+			"!workbench/out",
 			"!capture/fixtures",
 			"!capture/vault",
 			"!capture/checklist.json",
@@ -46,5 +48,12 @@
 		"formatter": {
 			"indentStyle": "tab"
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["scripts/**", "test/**"],
+			"formatter": { "lineWidth": 80 },
+			"linter": { "rules": { "preset": "none" } }
+		}
+	]
 }
