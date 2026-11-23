@@ -6,11 +6,12 @@
 		"capture:extract-app-css": "bun capture/scripts/extract-app-css.ts",
 		"capture:checklist": "bun capture/scripts/build-checklist.ts",
 		"capture:run": "bun capture/scripts/capture.ts",
-		"capture:coverage": "bun capture/scripts/coverage.ts",
 		"lint": "biome check .",
 		"fmt": "biome check --write .",
 		"typecheck": "tsc --noEmit",
-		"check": "biome check . && tsc --noEmit"
+		"check": "biome check . && tsc --noEmit",
+		"capture:variants": "bun capture/scripts/variants.ts",
+		"capture:coverage": "bun capture/scripts/coverage.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.6.8",

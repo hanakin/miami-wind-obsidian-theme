@@ -1,1 +1,4 @@
-{"cssTheme":"Miami Wind","theme":"obsidian","baseFontSize":16}
+{
+  "cssTheme": "Miami Wind",
+  "showRibbon": true
+}

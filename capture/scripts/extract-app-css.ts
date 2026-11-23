@@ -4,8 +4,10 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { extractFile, listPackage } from "@electron/asar";
+import { appAsar } from "./obsidian.ts";
 
-const asar = process.env.OBSIDIAN_ASAR ?? "/usr/lib/obsidian/obsidian.asar";
+// The same asar the capture runs: the newest obsidian-*.asar in the work dir, else the package's.
+const asar = appAsar() ?? "/usr/lib/obsidian/obsidian.asar";
 const outDir = new URL("../.app/", import.meta.url).pathname;
 
 mkdirSync(outDir, { recursive: true });

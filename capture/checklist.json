@@ -1,12 +1,12 @@
 {
-	"obsidianVersion": "1.14.4",
-	"generated": "2026-11-23T04:59:46.268Z",
+	"obsidianVersion": "1.15.1",
+	"generated": "2026-11-23T05:35:56.922Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
 		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/probe/config/obsidian"
 	],
 	"inventory": {
-		"version": "1.14.4",
+		"version": "1.15.1",
 		"commands": [
 			{
 				"id": "app:decrease-font-size",
@@ -14123,6 +14123,266 @@
 				"in": "container"
 			},
 			"note": "Opened by the command \"Workspaces: Save and load another layout\" (workspaces:save-and-load)"
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos.mod-system-rtl",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".mod-windows",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".mod-windows.mod-system-rtl",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos.is-fullscreen",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:1",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".mod-windows.is-fullscreen",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos:not(.is-mobile) .mod-settings",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos .titlebar-button-container",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos .titlebar-button-container.mod-left",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos .titlebar-button",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-macos .titlebar",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-windows .titlebar",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-windows .titlebar-button.mod-back",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:2",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-windows .titlebar-button.mod-forward",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:4",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-windows .titlebar-text",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".is-hidden-frameless:not(.starter,.is-popout-modal).mod-windows .titlebar-button-container",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:1",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".mod-windows .titlebar-button-container",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:1",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".mod-windows .titlebar-button",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:1",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".mod-windows .titlebar-button.mod-logo",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:1",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".mod-windows .titlebar-button.mod-close:hover",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.windows.1:1",
+			"scene": "platform-variants",
+			"surface": "platform-windows",
+			"component": "platform-variant",
+			"state": "windows",
+			"source": "app:app.css:1",
+			"target": ".mod-windows .titlebar-button.mod-close:hover .svg-icon",
+			"note": "A fixture with body.mod-windows must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos.is-hidden-frameless:not(.is-popout-window,.is-mobile) .mod-sidedock .sidebar-toggle-button.mod-secondary",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos.is-hidden-frameless:not(.is-popout-window,.is-mobile) .sidebar-toggle-button.mod-secondary",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:0",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos.is-hidden-frameless:not(.is-popout-window,.is-mobile):not(.mod-rtl) .workspace .workspace-tabs.mod-top-right-space .workspace-tab-header-container",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
+		},
+		{
+			"id": "platform.macos.1:1",
+			"scene": "platform-variants",
+			"surface": "platform-macos",
+			"component": "platform-variant",
+			"state": "macos",
+			"source": "app:app.css:1",
+			"target": ".mod-macos .lucide-more-vertical",
+			"note": "A fixture with body.mod-macos must match this app.css selector (synthetic variant of a Linux capture)."
 		}
 	],
 	"themeSelectors": [
@@ -14754,7 +15014,8 @@
 			"selector": ".workspace-tab-header-container",
 			"context": "",
 			"planned": [
-				"chrome.tab-header-container"
+				"chrome.tab-header-container",
+				"platform.macos.1:0"
 			]
 		},
 		{
@@ -17064,6 +17325,9 @@
 			"name": "bases-error"
 		},
 		{
+			"name": "bases-filter-page"
+		},
+		{
 			"name": "bases-filter-query-message"
 		},
 		{
@@ -17282,7 +17546,14 @@
 			"name": "bases-toolbar"
 		},
 		{
+			"name": "bases-toolbar-display-menu"
+		},
+		{
 			"name": "bases-toolbar-filter-menu"
+		},
+		{
+			"name": "bases-toolbar-group-menu",
+			"excluded": "phone layout of the mobile app only"
 		},
 		{
 			"name": "bases-toolbar-item"
@@ -17313,24 +17584,19 @@
 			"name": "bases-toolbar-menu-form"
 		},
 		{
-			"name": "bases-toolbar-menu-header",
-			"excluded": "phone layout of the mobile app only"
+			"name": "bases-toolbar-menu-header"
 		},
 		{
-			"name": "bases-toolbar-menu-header-actions",
-			"excluded": "phone layout of the mobile app only"
+			"name": "bases-toolbar-menu-header-actions"
 		},
 		{
-			"name": "bases-toolbar-menu-header-back",
-			"excluded": "phone layout of the mobile app only"
+			"name": "bases-toolbar-menu-header-back"
 		},
 		{
-			"name": "bases-toolbar-menu-header-end",
-			"excluded": "phone layout of the mobile app only"
+			"name": "bases-toolbar-menu-header-end"
 		},
 		{
-			"name": "bases-toolbar-menu-header-title",
-			"excluded": "phone layout of the mobile app only"
+			"name": "bases-toolbar-menu-header-title"
 		},
 		{
 			"name": "bases-toolbar-menu-item"
@@ -17357,7 +17623,7 @@
 		},
 		{
 			"name": "bases-toolbar-properties-menu",
-			"excluded": "print stylesheet; used by Export to PDF outside the app window"
+			"excluded": "print stylesheet; used by Export to PDF outside the app window; phone layout of the mobile app only"
 		},
 		{
 			"name": "bases-toolbar-result-count"
@@ -17373,15 +17639,7 @@
 		},
 		{
 			"name": "bases-toolbar-sort-menu",
-			"excluded": "print stylesheet; used by Export to PDF outside the app window"
-		},
-		{
-			"name": "bases-toolbar-view-result-count",
-			"excluded": "phone layout of the mobile app only"
-		},
-		{
-			"name": "bases-toolbar-view-text",
-			"excluded": "phone layout of the mobile app only"
+			"excluded": "print stylesheet; used by Export to PDF outside the app window; phone layout of the mobile app only"
 		},
 		{
 			"name": "bases-toolbar-views-menu"
@@ -18362,6 +18620,9 @@
 			"name": "conjunction"
 		},
 		{
+			"name": "conjunction-chevron"
+		},
+		{
 			"name": "connecting-line"
 		},
 		{
@@ -18573,10 +18834,12 @@
 			"name": "extra-setting-button"
 		},
 		{
-			"name": "feature-cell"
+			"name": "feature-cell",
+			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
 		{
-			"name": "feature-row"
+			"name": "feature-row",
+			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
 		{
 			"name": "feedback-banner"
@@ -18615,7 +18878,8 @@
 			"name": "file-embed-icon"
 		},
 		{
-			"name": "file-embed-link"
+			"name": "file-embed-link",
+			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
 		{
 			"name": "file-embed-title"
@@ -18650,6 +18914,9 @@
 		},
 		{
 			"name": "filter-expression"
+		},
+		{
+			"name": "filter-formula-label"
 		},
 		{
 			"name": "filter-group"
@@ -18698,8 +18965,7 @@
 			"name": "flair"
 		},
 		{
-			"name": "focused",
-			"excluded": "Windows high-contrast (forced colors) mode only"
+			"name": "focused"
 		},
 		{
 			"name": "fold-gutter",
@@ -18821,7 +19087,8 @@
 			"excluded": "mobile-only state (touch gestures, mobile toolbar or navigation)"
 		},
 		{
-			"name": "has-row-lines"
+			"name": "has-row-lines",
+			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
 		{
 			"name": "has-selection"
@@ -18877,8 +19144,7 @@
 			"name": "highlight-swatch"
 		},
 		{
-			"name": "highlightArea",
-			"excluded": "Windows high-contrast (forced colors) mode only"
+			"name": "highlightArea"
 		},
 		{
 			"name": "highlighting"
@@ -19267,7 +19533,7 @@
 			"name": "is-grouped"
 		},
 		{
-			"name": "is-guarded"
+			"name": "is-held"
 		},
 		{
 			"name": "is-hidden"
@@ -19366,11 +19632,17 @@
 			"name": "is-selecting"
 		},
 		{
+			"name": "is-settling"
+		},
+		{
 			"name": "is-sidedock-collapsed"
 		},
 		{
 			"name": "is-sliding",
 			"excluded": "mobile-only state (touch gestures, mobile toolbar or navigation)"
+		},
+		{
+			"name": "is-sliding-sidebar"
 		},
 		{
 			"name": "is-swiping",
@@ -19419,10 +19691,12 @@
 			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
 		{
-			"name": "language-dropdown"
+			"name": "language-dropdown",
+			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
 		{
-			"name": "language-dropdown-icon"
+			"name": "language-dropdown-icon",
+			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
 		{
 			"name": "lightbox"
@@ -19455,7 +19729,8 @@
 			"name": "list-container"
 		},
 		{
-			"name": "list-heading"
+			"name": "list-heading",
+			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
 		{
 			"name": "list-item"
@@ -19470,7 +19745,8 @@
 			"name": "list-item-part"
 		},
 		{
-			"name": "list-item-separator"
+			"name": "list-item-separator",
+			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
 		{
 			"name": "list-number"
@@ -19524,8 +19800,7 @@
 			"name": "lucide-help-circle"
 		},
 		{
-			"name": "lucide-more-vertical",
-			"excluded": "iOS app only; macOS desktop only (capture runs on Linux)"
+			"name": "lucide-more-vertical"
 		},
 		{
 			"name": "lucide-square-function",
@@ -19627,27 +19902,6 @@
 		},
 		{
 			"name": "mermaid"
-		},
-		{
-			"name": "mermaid-guard-actions"
-		},
-		{
-			"name": "mermaid-guard-description"
-		},
-		{
-			"name": "mermaid-guard-header"
-		},
-		{
-			"name": "mermaid-guard-source"
-		},
-		{
-			"name": "mermaid-guard-text"
-		},
-		{
-			"name": "mermaid-guard-title"
-		},
-		{
-			"name": "mermaid-wrapper"
 		},
 		{
 			"name": "message"
@@ -19765,11 +20019,27 @@
 			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
 		},
 		{
+			"name": "mobile-onboarding-action",
+			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+		},
+		{
+			"name": "mobile-onboarding-actions",
+			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+		},
+		{
+			"name": "mobile-onboarding-back-button",
+			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+		},
+		{
 			"name": "mobile-onboarding-feature-table",
 			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
 		},
 		{
 			"name": "mobile-onboarding-navbar",
+			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+		},
+		{
+			"name": "mobile-onboarding-page",
 			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
 		},
 		{
@@ -19794,6 +20064,18 @@
 		},
 		{
 			"name": "mobile-onboarding-screen",
+			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+		},
+		{
+			"name": "mobile-onboarding-vault-hint",
+			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+		},
+		{
+			"name": "mobile-onboarding-vault-list",
+			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
+		},
+		{
+			"name": "mobile-onboarding-vault-path",
 			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
 		},
 		{
@@ -19890,90 +20172,6 @@
 		},
 		{
 			"name": "mobile-toolbar-spacer",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-action",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-action-description",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-action-icon",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-action-name",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-actions",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-button-container",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-callout-title",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-content",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-empty-state",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-field-input",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-field-name",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-header",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-header-icon",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-load-button",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-load-callout",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-load-text",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-logo-container",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-screen",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-chooser-version",
-			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
-		},
-		{
-			"name": "mobile-vault-logo-text",
 			"excluded": "mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding); desktop never builds it"
 		},
 		{
@@ -20251,6 +20449,9 @@
 			"name": "mod-form"
 		},
 		{
+			"name": "mod-formula"
+		},
+		{
 			"name": "mod-forward",
 			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
@@ -20345,8 +20546,7 @@
 			"name": "mod-logo"
 		},
 		{
-			"name": "mod-macos",
-			"excluded": "macOS desktop only (capture runs on Linux)"
+			"name": "mod-macos"
 		},
 		{
 			"name": "mod-manage-workspaces"
@@ -20494,6 +20694,9 @@
 			"name": "mod-settings"
 		},
 		{
+			"name": "mod-sheet"
+		},
+		{
 			"name": "mod-sidebar-layout"
 		},
 		{
@@ -20510,6 +20713,9 @@
 		},
 		{
 			"name": "mod-start"
+		},
+		{
+			"name": "mod-starting"
 		},
 		{
 			"name": "mod-submenu"
@@ -20571,10 +20777,12 @@
 			"name": "mod-update"
 		},
 		{
-			"name": "mod-value"
+			"name": "mod-value",
+			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
 		{
-			"name": "mod-version"
+			"name": "mod-version",
+			"excluded": "name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version"
 		},
 		{
 			"name": "mod-vertical"
@@ -20593,8 +20801,7 @@
 			"name": "mod-wide"
 		},
 		{
-			"name": "mod-windows",
-			"excluded": "Windows desktop only (capture runs on Linux)"
+			"name": "mod-windows"
 		},
 		{
 			"name": "mod-working"
@@ -20939,6 +21146,12 @@
 			"name": "pdfViewer"
 		},
 		{
+			"name": "pele"
+		},
+		{
+			"name": "pele-math"
+		},
+		{
 			"name": "placeholder"
 		},
 		{
@@ -20963,8 +21176,7 @@
 			"excluded": "pdf.js annotation and form-widget layer; only rendered for PDFs with annotations or form fields"
 		},
 		{
-			"name": "popupAnnotation",
-			"excluded": "Windows high-contrast (forced colors) mode only"
+			"name": "popupAnnotation"
 		},
 		{
 			"name": "popupContent",
@@ -20992,7 +21204,7 @@
 		},
 		{
 			"name": "print",
-			"excluded": "print stylesheet; used by Export to PDF outside the app window"
+			"excluded": "mobile app only (Atlantis runs desktop Obsidian); print stylesheet; used by Export to PDF outside the app window"
 		},
 		{
 			"name": "progress-bar"
@@ -22260,6 +22472,10 @@
 		},
 		{
 			"name": "workspace-drawer-inner",
+			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
+		},
+		{
+			"name": "workspace-drawer-navbar-backdrop",
 			"excluded": "mobile sidebar drawer; desktop uses split sidebars instead"
 		},
 		{

@@ -1930,9 +1930,7 @@ const lightMode: Scene = {
 			state: "theme-dark",
 			full: true,
 			before: async (ctx) => {
-				await ctx.js(
-					"app.changeTheme?.('obsidian') ?? app.setTheme?.('obsidian'); await sleep(600);",
-				);
+				await ctx.js("app.changeTheme?.('system') ?? app.setTheme?.('system'); await sleep(600);");
 			},
 		},
 	],

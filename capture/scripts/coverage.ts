@@ -2,6 +2,7 @@
 // fixtures in a real Chromium, and Obsidian's app classes found in the fixtures.
 // Usage: bun run capture:coverage    (exit code 1 while any gap is neither covered nor excluded)
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { chromium } from "playwright";
 import { matchable } from "./css.ts";
 import {
@@ -92,12 +93,42 @@ const appCovered = app.filter((c) => c.fixture);
 const appExcluded = app.filter((c) => !c.fixture && c.excluded);
 const appMissing = app.filter((c) => !c.fixture && !c.excluded);
 
+// 4. Cross-check with the theming expert's vault pages (read only; skipped when absent).
+const EXPERT = `${homedir()}/Holocron/Other/Obsidian/LLM/wiki/concepts/obsidian-theming/`;
+const crossCheck: string[] = [];
+const appStatus = new Map(app.map((c) => [c.name, c]));
+if (existsSync(`${EXPERT}rule-map.md`)) {
+	const known = new Set(theme.map((s) => `${s.line}|${s.selector.replace(/\s+/g, " ")}`));
+	const rows = [
+		...readFileSync(`${EXPERT}rule-map.md`, "utf8").matchAll(/^\| (\d+) \| `(.+?)` \|/gm),
+	];
+	const unknown = rows.filter(
+		(r) => !known.has(`${r[1]}|${(r[2] ?? "").replaceAll("\\|", "|").replace(/\s+/g, " ")}`),
+	);
+	crossCheck.push(
+		`rule-map.md: ${rows.length} rows; ${rows.length - unknown.length} name a theme.css selector this checklist tracks${unknown.length ? `; not found: ${unknown.map((r) => `${r[1]} ${r[2]}`).join(", ")}` : ""}`,
+	);
+}
+if (existsSync(`${EXPERT}surfaces.md`)) {
+	const named = new Set(
+		[...readFileSync(`${EXPERT}surfaces.md`, "utf8").matchAll(/`([^`]+)`/g)].flatMap((m) =>
+			[...(m[1] ?? "").matchAll(/\.?(-?[a-zA-Z][\w-]*)/g)].map((x) => x[1] ?? ""),
+		),
+	);
+	const inApp = [...named].filter((n) => appStatus.has(n));
+	const open = inApp.filter((n) => !appStatus.get(n)?.fixture && !appStatus.get(n)?.excluded);
+	crossCheck.push(
+		`surfaces.md: ${inApp.length} Obsidian classes named; ${inApp.length - open.length} covered or excluded${open.length ? `; open: ${open.join(" ")}` : ""}`,
+	);
+}
+
 const pct = (n: number, d: number) => `${d ? ((100 * n) / d).toFixed(1) : "100.0"}%`;
 const lines = [
-	`Obsidian ${checklist.obsidianVersion} · ${fixtures.length} fixtures`,
+	`Obsidian ${checklist.obsidianVersion} · ${fixtures.length} fixtures (${fixtures.filter((f) => f.variantOf).length} synthetic macOS/Windows variants)`,
 	`Checklist items covered: ${checklist.items.length - missingItems.length}/${checklist.items.length} (${pct(checklist.items.length - missingItems.length, checklist.items.length)})`,
 	`theme.css selectors matched: ${themeMatched.length}/${theme.length} (${pct(themeMatched.length, theme.length)}); excluded with reason: ${themeExcluded.length}; missing: ${themeMissing.length}`,
 	`App CSS classes: covered ${appCovered.length}, excluded ${appExcluded.length}, missing ${appMissing.length} of ${app.length} (${pct(appCovered.length + appExcluded.length, app.length)} accounted for)`,
+	...crossCheck.map((c) => `Expert cross-check, ${c}`),
 ];
 console.log(lines.join("\n"));
 if (missingItems.length)

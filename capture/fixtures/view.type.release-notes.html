@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" style="font-size: calc(16px * var(--preferred-text-scale, 1));" dir="ltr">
+<head><meta charset="utf-8"></head>
+<body class="mod-linux is-frameless is-hidden-frameless obsidian-app styled-scrollbars show-inline-title is-floating-nav auto-full-screen show-view-header is-focused show-ribbon theme-dark" style="--zoom-factor: 1; --font-text-size: 16px; --indent-size: 4;">
+<div class="app-container"><div class="horizontal-main-container"><div class="workspace is-primary-sidedock-open is-left-sidedock-open"><div class="workspace-split mod-vertical mod-root"><div class="workspace-tabs mod-active mod-top mod-top-right-space"><div class="workspace-tab-container"><div class="workspace-leaf mod-active"><div class="workspace-leaf-content" data-type="release-notes" data-capture-target=""><div class="view-header"><div class="view-header-left"><div class="view-header-nav-buttons"><button class="clickable-icon" aria-disabled="true" aria-label="Navigate back"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-arrow-left"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button><button class="clickable-icon" aria-disabled="true" aria-label="Navigate forward"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-arrow-right"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button></div></div><div class="view-header-title-container mod-at-start mod-fade mod-at-end"><div class="view-header-title-parent"></div><div class="view-header-title">Release Notes </div></div><div class="view-actions mod-raised"><button class="clickable-icon view-action mod-bookmark" aria-label="Bookmark"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-bookmark"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"></path></svg></button><button class="clickable-icon view-action" aria-label="More options"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-more-vertical"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></button></div></div><div class="view-content release-notes-view"><div class="cm-scroller is-readable-line-width"><div class="markdown-preview-view markdown-rendered"><div class="callout is-collapsed is-collapsible" data-callout="attention"><div class="callout-title"><div class="callout-title-inner">What's new in 1.15.1</div><div class="callout-fold is-collapsed"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-chevron-down"><path d="m6 9 6 6 6-6"></path></svg></div></div><div class="callout-content" style="display: none;"></div></div><hr><h1>What's new in 1.15</h1><div><p class="u-small">Released on November 2, 2026</p><p>This update brings faster Mermaid diagrams that match your theme, reorderable filters in Bases, and new URI and CLI commands for adding content under a heading.</p>
+<h2 data-heading="Diagrams and charts">Diagrams and charts</h2>
+<p>Mermaid diagrams and charts are now rendered using our new library <a href="https://pele.run/" class="external-link" rel="noopener nofollow" aria-label="https://pele.run/" data-tooltip-position="top" target="_blank">Pele</a>, compatible with the latest Mermaid 12.1.0 syntax.</p>
+<ul>
+<li>Diagrams now appear faster and use the colors and fonts of your theme.</li>
+<li>Diagrams are now responsive to the width of a note, and can be zoomed and panned when they are scaled down.</li>
+<li>Diagrams are now shown without asking first, since Pele can't run code. The <strong>Show Mermaid diagrams in notes</strong> setting has been removed.</li>
+</ul>
+<h2 data-heading="Improvements">Improvements</h2>
+<ul>
+<li>URI/CLI: Added commands to append or prepend to a heading, and control for line breaks around appended/prepended content.</li>
+<li>Suggestions now ignore diacritics (accent marks) so <code>cafe</code> matches <code>café</code> in link suggestions, <strong>Quick switcher</strong>, <strong>Command palette</strong>, and <strong>Bases</strong> search.</li>
+<li>Tooltips no longer repeat text that's already fully visible. They only appear when text is cut off.</li>
+<li>Dragging items to reorder them now animates the item smoothly into its new position when you drop it.</li>
+<li>Vim: Updated Vim mode with new commands and fixes, including <code>g?</code>, <code>:put</code>, search patterns in <code>:</code> ranges (e.g. <code>:/foo/,/bar/d</code>), Vim-style regexes with <code>:set nopcre</code>, <code>&lt;A-…&gt;</code> mappings on macOS, and fixes for <code>gj</code>, <code>:sort</code>, and <code>;</code>, <code>,</code>, <code>&gt;</code>, and <code>&lt;</code> in visual mode.</li>
+</ul>
+<h3 data-heading="Performance">Performance</h3>
+<ul>
+<li>Community plugins now load faster when Obsidian starts.</li>
+</ul>
+<h3 data-heading="Bases">Bases</h3>
+<ul>
+<li>Added dragging to reorder filters, and a menu on each filter row to add filters or move them between <strong>All views</strong> and <strong>This view</strong>.</li>
+<li>Search now says when a result limit hides matches, e.g. "Showing 10 of 40".</li>
+<li>Formula fields can now be resized up to the width of the window.</li>
+</ul>
+<h3 data-heading="Editor">Editor</h3>
+<ul>
+<li>Moving the caret up or down in Live Preview preserves its position relative to list text, accounting for bullets, numbers, and checkboxes.</li>
+<li>With <strong>Smart lists</strong> turned on, indenting, unindenting, or moving a list item up or down now also moves the items nested under it. Pressing <code>Enter</code> at the end of an item with nested items now adds a new first nested item, or a new item below it if the item is folded.</li>
+</ul>
+<h2 data-heading="No longer broken">No longer broken</h2>
+<ul>
+<li>Fixed renaming a file opened from outside the vault closing its tab.</li>
+<li>Fixed <strong>Quick switcher</strong> failing to create a note while a file from outside the vault is open.</li>
+<li>Fixed Obsidian reopening in a loop, even after quitting, when it's the default app for a file type it can't open (e.g. a <code>.canvas</code> file with <strong>Canvas</strong> turned off).</li>
+<li>macOS: Fixed Quick Look previews blocking keyboard navigation for some users (requires latest installer).</li>
+<li>Properties: Fixed <strong>Show source</strong> on an embedded note with invalid properties opening the note in place of the current one. It now edits the embed in place when possible, or opens the note in a new tab.</li>
+<li>Fixed page previews and canvas cards of a heading (e.g. <code>[[Note#Heading]]</code>) hiding text, or showing it as properties, when the section under the heading starts with a <code>---</code> divider.</li>
+<li>Fixed the hints below property value suggestions (e.g. "Type <code>[[</code> to link note") not showing.</li>
+<li>Fixed "Reveal file in navigation" in the <strong>Bookmarks</strong> right-click menu doing nothing when the <strong>Files</strong> core plugin is turned off.</li>
+<li>Fixed "No backlinks found." blinking in the <strong>Backlinks</strong> pane while Obsidian starts.</li>
+</ul>
+<h3 data-heading="Bases">Bases</h3>
+<ul>
+<li>Fixed a filter value with a double quote or a backslash saving as a broken filter.</li>
+<li>Fixed toolbar menus staying in place when the window is resized.</li>
+</ul>
+<h3 data-heading="Editor">Editor</h3>
+<ul>
+<li>Live Preview: Fixed selecting bold, italic, or highlighted text sometimes including only one of its hidden <code>**</code>, <code>*</code>, or <code>==</code> marks.</li>
+</ul>
+<h2 data-heading="Developers">Developers</h2>
+<ul>
+<li><code>prepareFuzzySearch</code> and <code>prepareSimpleSearch</code> now ignore accents on Latin and Greek letters (e.g. <code>cafe</code> matches <code>café</code>).</li>
+<li>Closing formatting tokens now include a <code>formatting-*-end</code> segment in their syntax-tree node names, not just a <code>cm-formatting-*-end</code> class. For example, the closing inline-code backtick is now <code>formatting_formatting-code_formatting-code-end_inline-code</code>. Plugins that match full node names like <code>formatting-code_inline-code</code> will miss closing tokens; match <code>formatting-code</code> instead.</li>
+<li>Mermaid diagrams are now drawn using <a href="https://pele.run" class="external-link" rel="noopener nofollow" aria-label="https://pele.run" data-tooltip-position="top" target="_blank">Pele</a>. Added <code>--mermaid-*</code> CSS variables for colors, corner radius, and font weights. Elements inside a diagram have <a href="https://pele.run/theming" class="external-link" rel="noopener nofollow" aria-label="https://pele.run/theming" data-tooltip-position="top" target="_blank">Pele's</a> <code>.pele-*</code> classes. Obsidian no longer includes Mermaid: <code>loadMermaid()</code> and <code>window.mermaid</code> now draw with Pele and support <code>initialize()</code>, <code>render()</code>, <code>parse()</code> and <code>mermaidAPI.getConfig()</code>, <code>setConfig()</code> and <code>render()</code>. Their SVG has Pele's classes, not Mermaid's. New code can use <code>window.pele</code> once <code>loadMermaid()</code> resolves.</li>
+<li>The <code>PIXI</code> global is now loaded the first time a graph opens, instead of at start-up. Use <code>loadPixi()</code> to load it before then.</li>
+</ul></div><section class="footnotes"><hr><p class="footnote">A complete list of previous changes can be found on <a class="external-link" href="https://obsidian.md/changelog">our changelog</a>.</p></section></div></div></div></div></div></div></div></div></div></div></div>
+</body>
+</html>

@@ -183,3 +183,45 @@ export function themeExclusion(selector: string, ex: Exclusions): string | undef
 	}
 	return undefined;
 }
+
+export interface PlatformItem {
+	id: string;
+	platform: "macos" | "windows";
+	selector: string;
+	line: number;
+}
+
+/** app.css selectors that only apply with mod-macos / mod-windows on <body>, one item each. */
+export function platformItems(): PlatformItem[] {
+	const ex = loadExclusions();
+	const out: PlatformItem[] = [];
+	for (const s of appSelectors()) {
+		if (Object.keys(ex.appContexts).some((c) => s.context.includes(c))) continue;
+		const pos = positiveClassesOf(s.selector);
+		if (pos.some((c) => ex.appClassGates[c])) continue;
+		for (const platform of ["macos", "windows"] as const) {
+			if (pos.includes(`mod-${platform}`)) {
+				out.push({
+					id: `platform.${platform}.${s.id}`,
+					platform,
+					selector: s.selector,
+					line: s.line,
+				});
+			}
+		}
+	}
+	return out;
+}
+
+export function platformChecklistItems(): ChecklistItem[] {
+	return platformItems().map((p) => ({
+		id: p.id,
+		scene: "platform-variants",
+		surface: `platform-${p.platform}`,
+		component: "platform-variant",
+		state: p.platform,
+		source: `app:app.css:${p.line}`,
+		target: p.selector,
+		note: `A fixture with body.mod-${p.platform} must match this app.css selector (synthetic variant of a Linux capture).`,
+	}));
+}

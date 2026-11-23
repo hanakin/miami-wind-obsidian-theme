@@ -2,9 +2,17 @@
 // Isolation: own XDG_CONFIG_HOME + --user-data-dir under the work dir, a throwaway vault,
 // no display variables, and Chromium's headless Ozone platform (no window on any screen).
 import { type ChildProcess, spawn } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	cpSync,
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { type Browser, chromium, type Page } from "playwright";
 
 export const WORK = process.env.CAPTURE_WORK ?? join(homedir(), "Work/miami-wind-obsidian-capture");
@@ -26,7 +34,19 @@ const SESSION_VARS = [
 ];
 const REPO = new URL("../../", import.meta.url).pathname;
 const ELECTRON = "/usr/lib/electron43/electron";
+// The Arch package's loader. It runs the newest obsidian-<version>.asar found in the user-data
+// dir, so dropping a copy of Mike's self-updated 1.15.1 asar there runs 1.15.1.
 const APP = "/usr/lib/obsidian/app.asar";
+/** Newest obsidian-*.asar copied into the work dir (read-only copy of ~/.config/obsidian's). */
+export function appAsar(): string | undefined {
+	if (process.env.OBSIDIAN_ASAR) return process.env.OBSIDIAN_ASAR;
+	if (!existsSync(WORK)) return undefined;
+	const found = readdirSync(WORK)
+		.filter((f) => /^obsidian-[\d.]+\.asar$/.test(f))
+		.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+	const newest = found.at(-1);
+	return newest ? join(WORK, newest) : undefined;
+}
 const PORT = Number(process.env.CAPTURE_PORT ?? 9339);
 const VAULT_ID = "c4c7a9e0aa11b0b5";
 export const WIDTH = 1600;
@@ -51,6 +71,8 @@ function prepareVault(): void {
 	cpSync(join(REPO, "manifest.json"), join(theme, "manifest.json"));
 	mkdirSync(USER_DATA, { recursive: true });
 	mkdirSync(SCREENSHOTS, { recursive: true });
+	const asar = appAsar();
+	if (asar) cpSync(asar, join(USER_DATA, basename(asar)));
 	writeFileSync(
 		join(USER_DATA, "obsidian.json"),
 		JSON.stringify({
@@ -129,6 +151,8 @@ export async function launch(): Promise<Session> {
 			`--remote-debugging-port=${PORT}`,
 			"--remote-debugging-address=127.0.0.1",
 			"--disable-gpu",
+			// Mike's vault uses the "system" base theme; his desktop is dark, a headless window is not.
+			"--force-dark-mode",
 			"--force-device-scale-factor=1",
 		],
 		{ env, stdio: ["ignore", "pipe", "pipe"], detached: false },

@@ -8,6 +8,7 @@ import { type CaptureOut, ensureDirs, install, makeCtx, runScene } from "./engin
 import { close, launch, SCREENSHOTS, type Session, verifyIsolation } from "./obsidian.ts";
 import { allScenes, CAPTURE } from "./plan.ts";
 import type { FixtureEntry, Scene } from "./types.ts";
+import { platformVariants } from "./variants.ts";
 
 interface FixturesFile {
 	obsidianVersion: string;
@@ -79,7 +80,10 @@ try {
 	await close(session);
 }
 
-const fixtures = [...entries.values()].sort((a, b) => a.id.localeCompare(b.id));
+const linux = [...entries.values()].filter((f) => !f.variantOf);
+const fixtures = [...linux, ...(await platformVariants(linux))].sort((a, b) =>
+	a.id.localeCompare(b.id),
+);
 const components: FixturesFile["components"] = {};
 for (const f of fixtures) {
 	for (const c of new Set([f.component, ...f.contains])) {

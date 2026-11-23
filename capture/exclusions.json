@@ -5,8 +5,6 @@
 		"is-tablet": "tablet layout of the mobile app only",
 		"is-ios": "iOS app only",
 		"is-android": "Android app only",
-		"mod-macos": "macOS desktop only (capture runs on Linux)",
-		"mod-windows": "Windows desktop only (capture runs on Linux)",
 		"mod-rtl": "right-to-left interface languages only (vault UI is English)"
 	},
 	"appContexts": {

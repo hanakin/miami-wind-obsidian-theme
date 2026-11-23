@@ -70,6 +70,7 @@ export interface ChecklistItem {
 export interface FixtureEntry {
 	id: string;
 	file: string;
+	/** Relative to ~/Work/miami-wind-obsidian-capture; empty for synthetic variants. */
 	screenshot: string;
 	component: string;
 	surface: string;
@@ -78,5 +79,8 @@ export interface FixtureEntry {
 	obsidianVersion: string;
 	/** Components found inside the fixture (for showing one component across surfaces). */
 	contains: string[];
+	/** Set on synthetic platform variants: the Linux fixture they were made from. */
+	variantOf?: string;
+	platform?: "macos" | "windows";
 	note?: string;
 }
