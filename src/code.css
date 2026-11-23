@@ -11,18 +11,15 @@
 .cm-inline-code {
 	--mw-surface-background: var(--code-background);
 	@mixin surface-background;
-	--code-normal: var(--code-foreground);
-	--link-color: var(--code-foreground);
-	--link-color-hover: var(--code-foreground);
-	--link-external-color: var(--code-foreground);
-	--link-external-color-hover: var(--code-foreground);
-	--link-unresolved-color: var(--code-foreground);
+}
+
+/* Match the link rivals on the code span without recoloring nested link text. */
+.markdown-source-view.mod-cm6 .cm-inline-code {
+	color: var(--code-foreground);
 }
 
 @media (hover: hover) {
-	/* The link variables preserve code text, while unresolved-link decoration keeps its 1.x color. */
-	.cm-s-obsidian .cm-inline-code.is-unresolved:hover {
-		--link-color-hover: var(--magenta);
+	.markdown-source-view.mod-cm6 .cm-inline-code:hover {
 		color: var(--code-foreground);
 	}
 }
