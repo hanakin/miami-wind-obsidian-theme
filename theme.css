@@ -205,6 +205,8 @@
 
 /* === legacy.css === */
 
+/* === headings.css === */
+
 /* Headers */
 
 .cm-header-1,
@@ -236,6 +238,8 @@
 .markdown-rendered h6 {
 	color: var(--text-title-h6);
 }
+
+/* === legacy.css (continued) === */
 
 /* === code.css === */
 
