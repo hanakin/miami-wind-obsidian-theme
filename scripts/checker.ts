@@ -6,6 +6,20 @@ import selectorParser from "postcss-selector-parser";
 export const tagHoverSelector =
 	".cm-hashtag-begin:has(+ .cm-hashtag-end:hover)";
 
+function compoundDepth(selector: selectorParser.Selector): number {
+	const direct =
+		1 + selector.nodes.filter((node) => node.type === "combinator").length;
+	let nested = 0;
+	for (const node of selector.nodes) {
+		if (node.type !== "pseudo" || !node.nodes) continue;
+		for (const argument of node.nodes) {
+			if (argument.type === "selector")
+				nested = Math.max(nested, compoundDepth(argument) - 1);
+		}
+	}
+	return direct + nested;
+}
+
 // shortcut: untouched 1.x rules are grandfathered only in the checksum-locked legacy file.
 export function checkCss(legacyFile?: string): Plugin {
 	return {
@@ -64,11 +78,7 @@ export function checkCss(legacyFile?: string): Plugin {
 						)
 							fail("No type-qualified classes");
 					});
-					if (
-						selector.nodes.filter((node) => node.type === "combinator").length >
-						2
-					)
-						fail("Maximum depth is 3 compounds");
+					if (compoundDepth(selector) > 3) fail("Maximum depth is 3 compounds");
 					const specificity = Specificity.calculate(selector.toString())[0];
 					if (
 						!specificity ||

@@ -630,10 +630,10 @@ input.metadata-property-key-input {
 /* Status bar */
 
 .status-bar {
-	padding: 0;
-	color: var(--magenta);
 	background-color: var(--grey-11);
+	color: var(--magenta);
 	border-top: 1px solid var(--cyan);
+	padding: 0;
 	border-radius: 0 !important;
 }
 

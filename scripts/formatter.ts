@@ -14,6 +14,27 @@ function ordered(nodes: ChildNode[]): ChildNode[] {
 		)
 	)
 		return nodes;
+	const families = [
+		"border",
+		"background",
+		"font",
+		"margin",
+		"padding",
+		"animation",
+		"transition",
+		"flex",
+		"grid",
+		"outline",
+	];
+	if (
+		families.some(
+			(family) =>
+				properties.filter(
+					(prop) => prop === family || prop.startsWith(`${family}-`),
+				).length > 1,
+		)
+	)
+		return nodes;
 	const rank = (prop: string) => {
 		const index = (config.propertyOrder as readonly string[]).indexOf(prop);
 		return index === -1 ? config.propertyOrder.length : index;

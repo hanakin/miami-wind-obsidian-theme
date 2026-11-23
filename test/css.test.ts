@@ -45,3 +45,26 @@ it("formats with tabs, ordered properties, section banners and stable output", a
 		(await postcss([formatCss()]).process(result.css, { from: undefined })).css,
 	).toBe(result.css);
 });
+
+it("rejects depth hidden inside functional selectors", async () => {
+	await expect(check(".a :is(.b .c .d) { color: red }")).rejects.toThrow();
+});
+
+it("keeps border shorthand and longhand cascade order", async () => {
+	const result = await postcss([formatCss()]).process(
+		".x {border-color:red; border-top:1px solid blue}",
+		{ from: undefined },
+	);
+	expect(result.css.indexOf("border-color:")).toBeLessThan(
+		result.css.indexOf("border-top:"),
+	);
+});
+
+it("allows exactly the isolated tag hover exception", async () => {
+	const css =
+		".cm-hashtag-begin:has(+ .cm-hashtag-end:hover) { background-color: var(--magenta) }";
+	await expect(
+		postcss([checkCss()]).process(css, { from: "src/tag-hover.css" }),
+	).resolves.toBeDefined();
+	await expect(check(css)).rejects.toThrow();
+});
