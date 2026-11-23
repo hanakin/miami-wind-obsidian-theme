@@ -34,15 +34,17 @@ export function beginFrame(
 export async function captureFrame(cdp: CDPSession): Promise<Buffer> {
 	// Complete pending compositor work, then capture one explicitly driven frame.
 	await beginFrame(cdp);
-	for (let attempt = 0; attempt < 8; attempt++) {
+	const deadline = performance.now() + 30000;
+	while (performance.now() < deadline) {
 		const frame = await beginFrame(cdp, {
 			screenshot: { format: "png" },
 		});
 		if (frame.screenshotData)
 			return Buffer.from(frame.screenshotData, "base64");
+		await new Promise((resolve) => setTimeout(resolve, 0));
 	}
 	throw new Error(
-		"Deterministic beginFrame returned no screenshot after eight frames",
+		"Deterministic beginFrame returned no screenshot within 30 seconds",
 	);
 }
 
@@ -64,10 +66,14 @@ export async function movePointer(
 				done = true;
 			},
 		);
-	for (let frame = 0; !done && frame < 8; frame++) await beginFrame(cdp);
+	const deadline = performance.now() + 30000;
+	while (!done && performance.now() < deadline) {
+		await beginFrame(cdp);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	}
 	if (!done)
 		throw new Error(
-			"Pointer did not settle after eight driven compositor frames",
+			"Pointer did not settle within 30 seconds of driven compositor frames",
 		);
 	await action;
 	if (failure) throw failure;
