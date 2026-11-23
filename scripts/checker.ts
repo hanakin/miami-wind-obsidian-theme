@@ -24,7 +24,7 @@ function compoundDepth(selector: selectorParser.Selector): number {
 export function checkCss(legacyFile?: string): Plugin {
 	return {
 		postcssPlugin: "miami-wind-check",
-		Once(root) {
+		OnceExit(root) {
 			const isLegacy = (file?: string) =>
 				!!legacyFile && file === path.resolve(legacyFile);
 			root.walkDecls((decl) => {

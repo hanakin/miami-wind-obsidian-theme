@@ -1,4 +1,6 @@
 import postcss from "postcss";
+import mixins from "postcss-mixins";
+import nested from "postcss-nested";
 import { describe, expect, it } from "vitest";
 import { checkCss } from "../scripts/checker";
 import { formatCss } from "../scripts/formatter";
@@ -67,4 +69,18 @@ it("allows exactly the isolated tag hover exception", async () => {
 		postcss([checkCss()]).process(css, { from: "src/tag-hover.css" }),
 	).resolves.toBeDefined();
 	await expect(check(css)).rejects.toThrow();
+});
+
+it("checks selectors and declarations after nesting and component expansion", async () => {
+	await expect(
+		postcss([nested(), checkCss()]).process(".a .b { & .c .d { color:red } }", {
+			from: "src/tabs.css",
+		}),
+	).rejects.toThrow();
+	await expect(
+		postcss([mixins(), checkCss()]).process(
+			"@define-mixin bad { color:red!important } .a { @mixin bad }",
+			{ from: "src/components/bad.css" },
+		),
+	).rejects.toThrow();
 });
