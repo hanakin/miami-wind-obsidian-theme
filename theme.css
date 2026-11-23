@@ -636,14 +636,16 @@ input.metadata-property-key-input {
 	border-radius: 0;
 }
 
+/* === status-bar.css === */
+
 /* Status bar */
 
 .status-bar {
 	background-color: var(--grey-11);
-	color: var(--magenta);
+	--status-bar-text-color: var(--magenta);
 	border-top: 1px solid var(--cyan);
 	padding: 0;
-	border-radius: 0 !important;
+	--status-bar-radius: 0;
 }
 
 .status-bar-item,
@@ -658,6 +660,8 @@ input.metadata-property-key-input {
 	background-color: var(--cyan-transparent);
 	color: var(--magenta);
 }
+
+/* === legacy.css (continued) === */
 
 .nav-file-title.is-active {
 	color: var(--text-normal);

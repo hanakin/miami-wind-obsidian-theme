@@ -171,27 +171,7 @@ input.metadata-property-key-input {
 	border-radius: 0;
 }
 
-/* Status bar */
-.status-bar {
-	background-color: var(--grey-11);
-	color: var(--magenta);
-	border-top: 1px solid var(--cyan);
-	padding: 0;
-	border-radius: 0 !important;
-}
-
-.status-bar-item,
-.status-bar-item.mod-clickable {
-	padding: 4px 8px;
-	cursor: pointer;
-	border-radius: 0;
-}
-
-.status-bar-item:hover,
-.status-bar-item.mod-clickable:hover {
-	background-color: var(--cyan-transparent);
-	color: var(--magenta);
-}
+@pilot status-bar;
 
 .nav-file-title.is-active {
 	color: var(--text-normal);
