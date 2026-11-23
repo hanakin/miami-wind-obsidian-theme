@@ -929,6 +929,8 @@ input.metadata-property-key-input {
 
 /* === legacy.css (continued) === */
 
+/* === dropdowns.css === */
+
 .modal .dropdown,
 .dropdown,
 select,
@@ -937,8 +939,9 @@ select:focus,
 select:focus-visible,
 select:focus-within,
 select:active {
-	color: var(--black) !important;
-	background-color: var(--magenta) !important;
+	color: var(--black);
+	--dropdown-background: var(--magenta);
+	--dropdown-background-hover: var(--magenta);
 	cursor: pointer;
 }
 
@@ -950,10 +953,10 @@ select option {
 	cursor: pointer;
 }
 
-.modal .dropdown::-webkit-scrollbar-thumb,
-.dropdown::-webkit-scrollbar-thumb,
-select::-webkit-scrollbar-thumb {
-	background-color: var(--black) !important;
+.dropdown,
+select {
+	--scrollbar-thumb-bg: var(--black);
+	--scrollbar-active-thumb-bg: var(--black);
 }
 
 .modal .dropdown option:hover,
@@ -962,8 +965,25 @@ select::-webkit-scrollbar-thumb {
 .dropdown option:checked,
 select option:hover,
 select option:checked {
-	background-color: var(--cyan) !important;
+	background-color: var(--cyan);
 }
+
+/* Obsidian's query conjunction uses a literal fill; its hover reads this leaf variable. */
+
+.filter-group-header .conjunction.dropdown {
+	background-color: var(--magenta);
+	--background-modifier-hover: var(--magenta);
+}
+
+/* Search-result sorting also uses literal fills and separate rest/hover text colors. */
+
+.search-results-info .dropdown,
+.search-results-info .dropdown:hover {
+	background-color: var(--magenta);
+	color: var(--black);
+}
+
+/* === legacy.css (continued) === */
 
 .prompt {
 	border-color: var(--magenta);
