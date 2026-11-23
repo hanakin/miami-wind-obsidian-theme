@@ -115,3 +115,39 @@ test("renders a background worker tab without waiting for its paused animation f
 	);
 	await context.close();
 }, 3000);
+
+test("hides the focused caret only in screenshots and still compares theme caret colors", async () => {
+	const page = await browser.newPage({ viewport: { width: 400, height: 200 } });
+	const cdp = await page.context().newCDPSession(page);
+	await cdp.send("DOM.enable");
+	await cdp.send("CSS.enable");
+	const html =
+		'<textarea data-capture-target data-capture-pseudo data-capture-state="focus-visible" autofocus>Text caret</textarea>';
+	const f = { component: "textarea", surface: "test", state: "focus-visible" };
+	const red = { cm: "", app: "", theme: "textarea {caret-color:red}" };
+	await render(page, cdp, html, red, f);
+	await page.locator("textarea").focus();
+	const a = await render(page, cdp, html, red, f);
+	expect(
+		await page
+			.locator("textarea")
+			.evaluate((el) => getComputedStyle(el).caretColor),
+	).toBe("rgba(0, 0, 0, 0)");
+	const b = await render(
+		page,
+		cdp,
+		html,
+		{ ...red, theme: "textarea {caret-color:blue}" },
+		f,
+	);
+	expect(
+		styleDiff(a.styles, b.styles).some(
+			(d) =>
+				d.property === "caret-color" &&
+				d.before === "rgb(255, 0, 0)" &&
+				d.after === "rgb(0, 0, 255)",
+		),
+	).toBe(true);
+	expect(a.png.equals(b.png)).toBe(true);
+	await page.close();
+});

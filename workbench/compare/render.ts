@@ -94,7 +94,7 @@ export async function render(
 			);
 			if (suppression)
 				suppression.textContent =
-					"*,*::before,*::after,*::-webkit-slider-thumb,*::-webkit-slider-runnable-track,*::-webkit-progress-bar,*::-webkit-progress-value,*::-webkit-scrollbar-thumb { animation: none !important; transition: none !important; }";
+					"*,*::before,*::after,*::-webkit-slider-thumb,*::-webkit-slider-runnable-track,*::-webkit-progress-bar,*::-webkit-progress-value,*::-webkit-scrollbar-thumb { animation: none !important; transition: none !important; caret-color: transparent !important; }";
 			const media = document.createElement("style");
 			media.textContent =
 				"video::-webkit-media-controls,audio::-webkit-media-controls { visibility:hidden !important }";

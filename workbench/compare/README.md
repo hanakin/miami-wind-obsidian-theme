@@ -26,7 +26,7 @@ The command restores recorded pseudo-states through CDP. Hover and active states
 
 Style reads compare standard computed properties on every element. Applicable pseudo-elements include generated content, markers, selection, placeholders, scrollbars, scrollbar thumbs, tracks, corners, and file-selector buttons. Offscreen probes resolve graph, canvas, and PDF colors that Obsidian reads through JavaScript.
 
-The command disables animation suppression during computed-style reads. It enables suppression for screenshots. Native media control UI remains hidden because its internal loading state is not serialized. Pixel comparison is exact, including antialiasing. There is no pixel tolerance.
+The command disables animation and caret suppression during computed-style reads. It enables suppression for screenshots. Caret-color changes remain visible in computed-style differences. Native media control UI remains hidden because its internal loading state is not serialized. Pixel comparison is exact, including antialiasing. There is no pixel tolerance.
 
 Before-vs-before must have zero style and pixel changes. A noisy fixture receives diagnostic images and a noise record. Computed-style differences retain `different` status despite pixel noise. Noise downgrades pixel-only results to `not-proven`. The command completes the remaining fixtures. It does not classify sanity noise as a theme difference.
 
