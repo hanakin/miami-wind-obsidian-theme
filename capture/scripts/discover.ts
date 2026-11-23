@@ -90,7 +90,7 @@ const CONTEXTS: { id: string; setup: (ctx: Ctx) => Promise<void> }[] = [
 		setup: async (ctx) => {
 			await ctx.open("Markdown/Kitchen sink.md", "live");
 			await ctx.js(
-				"const e = app.workspace.activeEditor.editor; e.focus(); const n = e.getValue().split('\\n').findIndex((l) => l.startsWith('Text with')); e.setSelection({ line: n, ch: 10 }, { line: n, ch: 14 });",
+				"for (let i = 0; i < 30 && !app.workspace.activeEditor; i++) await sleep(100); const e = app.workspace.activeEditor.editor; e.focus(); const n = e.getValue().split('\\n').findIndex((l) => l.startsWith('Text with')); e.setSelection({ line: n, ch: 10 }, { line: n, ch: 14 });",
 			);
 		},
 	},
@@ -99,7 +99,7 @@ const CONTEXTS: { id: string; setup: (ctx: Ctx) => Promise<void> }[] = [
 		setup: async (ctx) => {
 			await ctx.open("Markdown/Tables.md", "source");
 			await ctx.js(
-				"const e = app.workspace.activeEditor.editor; e.focus(); e.setCursor({ line: 4, ch: 3 });",
+				"for (let i = 0; i < 30 && !app.workspace.activeEditor; i++) await sleep(100); const e = app.workspace.activeEditor.editor; e.focus(); e.setCursor({ line: 4, ch: 3 });",
 			);
 		},
 	},
@@ -108,7 +108,7 @@ const CONTEXTS: { id: string; setup: (ctx: Ctx) => Promise<void> }[] = [
 		setup: async (ctx) => {
 			await ctx.open("Markdown/Headings.md", "source");
 			await ctx.js(
-				"const e = app.workspace.activeEditor.editor; e.focus(); e.setCursor({ line: 4, ch: 4 });",
+				"for (let i = 0; i < 30 && !app.workspace.activeEditor; i++) await sleep(100); const e = app.workspace.activeEditor.editor; e.focus(); e.setCursor({ line: 4, ch: 4 });",
 			);
 		},
 	},

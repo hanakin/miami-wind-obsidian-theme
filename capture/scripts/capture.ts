@@ -1,12 +1,14 @@
 // Step 2: captures every checklist item from the real app into capture/fixtures/.
-// Usage: bun run capture:run [--only <id prefix>]...
+// Usage: bun run capture:run [--windowed] [--only <id prefix>]...
+// Headless by default; --windowed runs only the scenes that need a real window on the desktop.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { Page } from "playwright";
+import { liveSelector } from "./css.ts";
 import type { AppInventory, CommandResult } from "./discover.ts";
 import { closeExtraPages, pagesOf, restoreLayout, snapshotLayout } from "./discover.ts";
 import { type CaptureOut, ensureDirs, install, makeCtx, runScene } from "./engine.ts";
 import { close, launch, SCREENSHOTS, type Session, verifyIsolation } from "./obsidian.ts";
-import { allScenes, CAPTURE } from "./plan.ts";
+import { allScenes, CAPTURE, themeSelectors } from "./plan.ts";
 import type { FixtureEntry, Scene } from "./types.ts";
 import { platformVariants } from "./variants.ts";
 
@@ -25,6 +27,7 @@ const checklist = JSON.parse(readFileSync(`${CAPTURE}checklist.json`, "utf8")) a
 	obsidianVersion: string;
 };
 const only = process.argv.flatMap((a, i) => (process.argv[i - 1] === "--only" ? [a] : []));
+const windowed = process.argv.includes("--windowed");
 const wanted = (id: string) => only.length === 0 || only.some((p) => id.startsWith(p));
 
 const FIXTURES = `${CAPTURE}fixtures/`;
@@ -32,21 +35,33 @@ const out: CaptureOut = {
 	fixturesDir: FIXTURES,
 	screenshotsDir: SCREENSHOTS,
 	version: checklist.obsidianVersion,
+	live: themeSelectors().map((t) => {
+		const l = liveSelector(t.selector);
+		return { id: t.id, sel: l.sel, ...(l.needs ? { needs: l.needs } : {}) };
+	}),
 };
 ensureDirs(out);
 
 const fixturesPath = `${CAPTURE}fixtures.json`;
-const previous: FixturesFile | undefined =
-	only.length && existsSync(fixturesPath)
-		? (JSON.parse(readFileSync(fixturesPath, "utf8")) as FixturesFile)
-		: undefined;
+// Earlier results are kept for items this run does not attempt (other --only prefixes, and the
+// windowed scenes during a headless run or the reverse).
+const previous: FixturesFile | undefined = existsSync(fixturesPath)
+	? (JSON.parse(readFileSync(fixturesPath, "utf8")) as FixturesFile)
+	: undefined;
+const censusPath = `${CAPTURE}class-census.json`;
+const fullRun = !only.length && !windowed;
+const census = new Set<string>(
+	!fullRun && existsSync(censusPath)
+		? (JSON.parse(readFileSync(censusPath, "utf8")) as string[])
+		: [],
+);
 
 let scenes: Scene[] = [];
-const session = await launch();
+const session = await launch({ windowed });
 const entries = new Map<string, FixtureEntry>((previous?.fixtures ?? []).map((f) => [f.id, f]));
 const failed = new Map<string, string>((previous?.failed ?? []).map((f) => [f.id, f.error]));
 try {
-	console.log(verifyIsolation(session.proc.pid ?? 0).join("\n"));
+	console.log(verifyIsolation(session.pid, session.windowed).join("\n"));
 	const main = session.page;
 	await install(main);
 	await saveRuntimeStyles(main);
@@ -54,6 +69,7 @@ try {
 	scenes = allScenes(checklist.inventory, checklist.commands, () => layout);
 	let done = 0;
 	for (const scene of scenes) {
+		if (Boolean(scene.windowed) !== windowed) continue;
 		const items = scene.items.filter((i) => wanted(i.id));
 		if (!items.length) continue;
 		await restoreLayout(main, layout).catch(() => undefined);
@@ -63,6 +79,7 @@ try {
 			scene,
 			out,
 			new Set(items.map((i) => i.id)),
+			census,
 		);
 		for (const i of items) {
 			entries.delete(i.id);
@@ -105,11 +122,13 @@ const file: FixturesFile = {
 	generated: new Date().toISOString(),
 	fixtures,
 	failed: [...failed.entries()]
+		.filter(([id]) => known.has(id))
 		.map(([id, error]) => ({ id, error }))
 		.sort((a, b) => a.id.localeCompare(b.id)),
 	components: Object.fromEntries(Object.entries(components).sort(([a], [b]) => a.localeCompare(b))),
 };
 writeFileSync(fixturesPath, `${JSON.stringify(file, null, "\t")}\n`);
+writeFileSync(censusPath, `${JSON.stringify([...census].sort(), null, "\t")}\n`);
 // Drop fixture files no entry points to (renamed or removed items).
 const keep = new Set(fixtures.map((f) => f.file));
 for (const name of readdirSync(FIXTURES)) if (!keep.has(name)) rmSync(`${FIXTURES}${name}`);

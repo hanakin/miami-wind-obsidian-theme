@@ -33,6 +33,8 @@ export interface ItemDef {
 	state?: string;
 	/** Pseudo-classes to force on `pseudoOn` (default: the target). */
 	pseudo?: Pseudo[];
+	/** The state comes from the real pointer placed by `before` (not forced); only verified. */
+	pointer?: boolean;
 	pseudoOn?: Target;
 	/** Runs before the element is looked up, after the scene setup and previous items. */
 	before?: (ctx: Ctx) => Promise<void>;
@@ -41,6 +43,16 @@ export interface ItemDef {
 	/** Overrides the scene surface. */
 	surface?: string;
 	note?: string;
+	/** Selector the target must match, proving an app-driven state (".is-active", ...). */
+	expect?: string;
+	/** Set when the state is scripted rather than reached through the UI: says how. */
+	synthetic?: string;
+	/** Lowest share of sample points where the target must be topmost (default 0.6). */
+	minUnobscured?: number;
+	/** Huge lists: keep `keep` matches of `sel` plus any matching `keepAlso`, and record the trim. */
+	trim?: { sel: string; keep: number; keepAlso: string };
+	/** CDP media emulation for this item (print, forced-colors, hover: none). */
+	media?: { media?: string; features?: { name: string; value: string }[] };
 }
 
 export interface Scene {
@@ -54,6 +66,8 @@ export interface Scene {
 	window?: "main" | "popout" | "starter";
 	/** For popout/starter scenes: runs in the main window and must open the new window. */
 	opener?: (main: Ctx) => Promise<void>;
+	/** Needs a real window on the desktop (full screen, maximized); captured by --windowed runs. */
+	windowed?: boolean;
 }
 
 export interface ChecklistItem {
@@ -67,6 +81,11 @@ export interface ChecklistItem {
 	note?: string;
 	/** Set when the item can never be captured, with the reason. */
 	excluded?: string;
+	/** What the fixture must prove: forced pseudo-classes, a state selector, a scripted state. */
+	pseudo?: string[];
+	expect?: string;
+	synthetic?: string;
+	minUnobscured?: number;
 }
 
 export interface FixtureEntry {
@@ -85,4 +104,29 @@ export interface FixtureEntry {
 	variantOf?: string;
 	platform?: "macos" | "windows";
 	note?: string;
+	synthetic?: string;
+	/** Set when repeated children were dropped from the fixture (see ItemDef.trim). */
+	trimmed?: string;
+	evidence?: Evidence;
+}
+
+/** What the capture proved about one fixture, checked again by the coverage script. */
+export interface Evidence {
+	/** Target box and its part inside the window, in CSS pixels. */
+	box: number[];
+	inView: number[];
+	/** Share of 9 sample points where the target (or its subtree) is the topmost element. */
+	unobscured: number;
+	/** Element counts per mark written from Element.matches() (hover, focus, ...) and our own marks. */
+	marks: Record<string, number>;
+	/** Pseudo-classes held during the snapshot (Chromium confirmed each through matches()). */
+	forced: string[];
+	/** How they were held: DevTools CSS.forcePseudoState or the real pointer. */
+	via?: "devtools" | "pointer";
+	/** Selector the target matched to prove the app state, if the item has one. */
+	expect?: string;
+	/** theme.css selector ids Chromium matched in the live page within the fixture's scope. */
+	live: string[];
+	media?: string;
+	screenshot?: { sha256: string; width: number; height: number; colors: number };
 }

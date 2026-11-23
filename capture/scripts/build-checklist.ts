@@ -51,7 +51,7 @@ if (recheck.length) {
 } else {
 	const session = await launch();
 	try {
-		const isolation = verifyIsolation(session.proc.pid ?? 0);
+		const isolation = verifyIsolation(session.pid, session.windowed);
 		await install(session.page);
 		const inv = await inventory(session.page);
 		console.log(
@@ -136,10 +136,11 @@ function markdown(c: {
 	out.push(
 		"## How coverage is proven",
 		"",
-		"- Each item has a scene (how to reach it in the app) and a target element. `bun run capture:run` reaches it in an isolated Obsidian, saves the element with its ancestor wrappers and the html/body classes to `fixtures/<item>.html`, and a screenshot to `~/Work/miami-wind-obsidian-capture/screenshots/<item>.png`.",
-		'- Interactive states (hover, active, focus, focus-visible, focus-within) are forced through the DevTools protocol (`CSS.forcePseudoState`). The forced element carries `data-capture-state="<state>"` in its fixture. App-driven states (`is-active`, `is-selected`, collapsed, ...) are real classes set by Obsidian.',
-		"- `bun run capture:coverage` matches every theme.css selector against every fixture in Chromium. `:hover`/`:active` match an element marked with that state or containing one; `:focus` matches focus or focus-visible marks; `::selection` needs a `selection` mark; `::-webkit-scrollbar-*:hover` needs `scrollbar-hover`; other pseudo-elements are dropped (they render on the element that remains).",
-		"- App classes count as covered when any fixture contains them. A class is excluded when every app.css rule using it is gated to a context we do not run (mobile, macOS, Windows, right-to-left, print, forced colors) or when `exclusions.json` gives a reason.",
+		"- Each item has a scene (how to reach it) and a target element. `bun run capture:run` reaches it in an isolated Obsidian and fails the item unless the target has a nonzero box inside the window, is not hidden, and is topmost at most of 9 sample points (`elementFromPoint`). It saves the element with its ancestor wrappers and the html/body classes to `fixtures/<item>.html`, and a screenshot (SHA-256 and color count recorded) to `~/Work/miami-wind-obsidian-capture/screenshots/<item>.png`.",
+		"- Interactive states are held through the DevTools protocol (`CSS.forcePseudoState`) or the real pointer. The fixture marks `data-capture-state` only on elements for which Chromium's `Element.matches()` returned true, so no state is inferred for ancestors. App-driven states are proven by an `expect` selector the target must match, or by the target selector itself.",
+		"- `bun run capture:coverage` checks every fixture again (target present, state marks, expect, screenshot) and matches every theme.css selector both against the fixtures and against the live matches recorded at capture time; a selector counts only when both agree.",
+		"- App classes count when a valid fixture contains them. Exclusions are real limits only (mobile, signed-in Sync/Publish, other platforms, code-verified), plus classes never seen in the runtime class census that no string in Obsidian's code could build.",
+		"- Scripted states are labeled `synthetic` and say what was scripted; macOS/Windows variants swap the body platform class on a Linux capture and have no screenshot.",
 		"",
 	);
 	out.push("## Items by surface", "");

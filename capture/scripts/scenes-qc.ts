@@ -1,0 +1,1219 @@
+// Scenes added after QC: states the first capture excluded as "not reached" although the app
+// can show them, plus window states, media emulation and interacting markdown.
+import { baseLayout, click, settingsWindow } from "./scenes.ts";
+import type { Ctx, ItemDef, Pseudo, Scene, Target } from "./types.ts";
+
+const p = (
+	id: string,
+	component: string,
+	target: Target,
+	pseudo: Pseudo[],
+	extra: Partial<ItemDef> = {},
+): ItemDef => ({ id, component, target, pseudo, state: pseudo.join("+"), ...extra });
+
+const leaf = (sel: string, text?: string): Target => ({
+	sel,
+	in: "leaf",
+	...(text ? { text } : {}),
+});
+
+async function center(ctx: Ctx, t: Target): Promise<[number, number]> {
+	const b = await ctx.js<[number, number] | null>(
+		"const el = cap.find(arg); if (!el) return null; const r = el.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2];",
+		t,
+	);
+	if (!b) throw new Error(`nothing at ${JSON.stringify(t)}`);
+	return b;
+}
+
+/** Starts a drag with Playwright's drag support (it drives Chromium's drag interception). */
+async function dragTo(ctx: Ctx, from: Target, to: Target, fx = 0.5): Promise<void> {
+	await ctx.page.mouse.up().catch(() => undefined);
+	const a = await center(ctx, from);
+	await ctx.page.mouse.move(a[0], a[1]);
+	await ctx.page.mouse.down();
+	await ctx.page.mouse.move(a[0] + 15, a[1] + 5, { steps: 3 });
+	const r = await ctx.js<[number, number, number, number]>(
+		"const r = cap.find(arg).getBoundingClientRect(); return [r.x, r.y, r.width, r.height];",
+		to,
+	);
+	await ctx.page.mouse.move(r[0] + r[2] * fx, r[1] + r[3] / 2, { steps: 8 });
+	await ctx.sleep(500);
+}
+
+async function endDrag(ctx: Ctx): Promise<void> {
+	await ctx.page.keyboard.press("Escape");
+	await ctx.page.mouse.up();
+	await ctx.sleep(400);
+}
+
+/** Interacting markdown: links holding code, code and tags in headings, code inside highlights. */
+const comboStates: Scene = {
+	id: "qc.combo-states",
+	surface: "editor-reading-view",
+	source: "catalog:markdown-combinations",
+	setup: (ctx) => ctx.open("Markdown/Combinations.md", "reading"),
+	items: [
+		p(
+			"qc.combo.external-code-link.hover",
+			"external-link",
+			leaf(".markdown-reading-view a.external-link:has(code)"),
+			["hover"],
+		),
+		p(
+			"qc.combo.external-code-link.focus",
+			"external-link",
+			leaf(".markdown-reading-view a.external-link:has(code)"),
+			["focus"],
+		),
+		p(
+			"qc.combo.internal-code-link.hover",
+			"internal-link",
+			leaf(".markdown-reading-view a.internal-link:not(.is-unresolved):has(code)"),
+			["hover"],
+		),
+		p(
+			"qc.combo.internal-code-link.focus",
+			"internal-link",
+			leaf(".markdown-reading-view a.internal-link:not(.is-unresolved):has(code)"),
+			["focus"],
+		),
+		p(
+			"qc.combo.unresolved-code-link.hover",
+			"internal-link",
+			leaf(".markdown-reading-view a.internal-link.is-unresolved:has(code)"),
+			["hover"],
+		),
+		p(
+			"qc.combo.heading-link.hover",
+			"internal-link",
+			leaf(".markdown-reading-view h2 a.internal-link"),
+			["hover"],
+		),
+		p("qc.combo.heading-tag.hover", "tag", leaf(".markdown-reading-view h1 a.tag"), ["hover"]),
+		p(
+			"qc.combo.live.external-code-link.hover",
+			"external-link",
+			leaf(".markdown-source-view .cm-line .cm-underline", "code in link"),
+			["hover"],
+			{
+				surface: "editor-live-preview",
+				before: (ctx) => ctx.open("Markdown/Combinations.md", "live"),
+			},
+		),
+		p(
+			"qc.combo.live.internal-code-link.hover",
+			"internal-link",
+			leaf(".markdown-source-view .cm-line .cm-underline", "code alias"),
+			["hover"],
+			{
+				surface: "editor-live-preview",
+			},
+		),
+		p(
+			"qc.combo.live.internal-code-link.focus",
+			"internal-link",
+			leaf(".markdown-source-view .cm-line .cm-underline", "code alias"),
+			["focus"],
+			{
+				surface: "editor-live-preview",
+			},
+		),
+		p(
+			"qc.combo.live.heading-tag.hover",
+			"tag",
+			leaf(".markdown-source-view .HyperMD-header-1 .cm-hashtag-end"),
+			["hover"],
+			{
+				surface: "editor-live-preview",
+			},
+		),
+	],
+};
+
+/** Find in file, the selection layer and other editor states the first pass missed. */
+const editorQc: Scene = {
+	id: "qc.editor",
+	surface: "editor-live-preview",
+	source: "catalog:editor-qc",
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+		await ctx.open("Markdown/Kitchen sink.md", "live");
+	},
+	items: [
+		{
+			id: "qc.find.bar",
+			component: "search-input",
+			target: leaf(".document-search-container"),
+			before: async (ctx) => {
+				await ctx.js("app.workspace.activeEditor.editor.focus(); await sleep(200);");
+				await ctx.command("editor:open-search");
+				await ctx.sleep(300);
+				await ctx.page.keyboard.type("task", { delay: 30 });
+				await ctx.sleep(500);
+			},
+		},
+		{
+			id: "qc.find.match",
+			component: "editor-line",
+			target: leaf(".obsidian-search-match-highlight"),
+			note: "Obsidian marks find-in-file matches with .obsidian-search-match-highlight.",
+		},
+		{
+			id: "qc.find.replace",
+			component: "search-input",
+			target: leaf(".document-search-container.mod-replace-mode"),
+			expect: ".mod-replace-mode",
+			before: async (ctx) => {
+				await ctx.command("editor:open-search-replace");
+				await ctx.sleep(400);
+			},
+		},
+		{
+			id: "qc.selection.layer",
+			component: "editor-line",
+			target: leaf(".markdown-source-view .cm-editor"),
+			state: "selection",
+			expect: ".cm-editor:has(.cm-selectionLayer)",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.js(
+					"const e = app.workspace.activeEditor.editor; e.focus(); const n = e.getValue().split('\\n').findIndex((l) => l.startsWith('Text with')); e.setSelection({ line: n, ch: 0 }, { line: n + 3, ch: 10 }); await sleep(300);",
+				);
+			},
+			note: "Target is .cm-editor so the fixture holds .cm-selectionLayer (sibling of .cm-content) as well as the native selection.",
+		},
+		{
+			id: "qc.highlight-color-widget",
+			component: "inline-mark",
+			target: leaf(".markdown-source-view .cm-line:has(.cm-highlight-color-widget)"),
+			before: async (ctx) => {
+				await ctx.open("Markdown/Inline.md", "live");
+				await ctx.js(
+					"const e = app.workspace.activeEditor.editor; const n = e.getValue().split('\\n').findIndex((l) => l.startsWith('Colored highlights')); e.focus(); e.setCursor({ line: n, ch: 22 }); await sleep(400);",
+				);
+			},
+			note: "Live Preview shows the color swatch widget while the cursor is inside a colored highlight.",
+		},
+		{
+			id: "qc.flash",
+			component: "heading",
+			surface: "editor-reading-view",
+			target: leaf(".markdown-reading-view .is-flashing"),
+			expect: ".is-flashing",
+			before: async (ctx) => {
+				await ctx.open("Markdown/Links.md", "reading");
+				await ctx.js(
+					"app.workspace.openLinkText('Headings#Heading 3', 'Markdown/Links.md', false); for (let i = 0; i < 40 && !document.querySelector('.is-flashing'); i++) await sleep(50);",
+				);
+			},
+			note: "Opening a link to a heading flashes the heading for about a second.",
+		},
+		{
+			id: "qc.rtl",
+			component: "markdown-view",
+			target: leaf(".workspace-leaf-content"),
+			state: "right-to-left",
+			expect: ".workspace-leaf-content:has(.rtl, .is-rtl)",
+			full: true,
+			before: async (ctx) => {
+				await ctx.js("app.vault.setConfig('rightToLeft', true); await sleep(300);");
+				await ctx.open("Markdown/Kitchen sink.md", "live");
+				await ctx.sleep(500);
+			},
+		},
+		{
+			id: "qc.rtl-reading",
+			component: "markdown-view",
+			surface: "editor-reading-view",
+			target: leaf(".workspace-leaf-content"),
+			state: "right-to-left",
+			expect: ".workspace-leaf-content:has(.rtl)",
+			full: true,
+			before: async (ctx) => {
+				await ctx.open("Markdown/Kitchen sink.md", "reading");
+				await ctx.sleep(500);
+			},
+		},
+		{
+			id: "qc.rtl-off",
+			component: "markdown-view",
+			target: leaf(".workspace-leaf-content"),
+			state: "default",
+			full: true,
+			before: async (ctx) => {
+				await ctx.js("app.vault.setConfig('rightToLeft', false); await sleep(300);");
+				await ctx.open("Markdown/Kitchen sink.md", "live");
+			},
+		},
+	],
+};
+
+const tabsQc: Scene = {
+	id: "qc.tabs",
+	surface: "workspace",
+	source: "catalog:tab-states",
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+		await ctx.open("Markdown/Headings.md", "live", { newLeaf: true });
+	},
+	items: [
+		{
+			id: "qc.tab.pinned",
+			component: "tab-header",
+			target:
+				".mod-root .workspace-tab-header.is-active .workspace-tab-header-status-icon.mod-pinned",
+			before: async (ctx) => {
+				await ctx.js(
+					"cap.ROOTS.leaf(); app.workspace.getMostRecentLeaf(app.workspace.rootSplit).setPinned(true); await sleep(300);",
+				);
+			},
+		},
+		{
+			id: "qc.tab.pinned-header",
+			component: "tab-header",
+			target: ".mod-root .workspace-tab-header.is-active",
+			expect: ":has(.mod-pinned)",
+		},
+		{
+			id: "qc.tab.linked",
+			component: "tab-header",
+			target: ".mod-root .workspace-tab-header-status-icon.mod-linked",
+			before: async (ctx) => {
+				await ctx.js(
+					"const a = app.workspace.getMostRecentLeaf(app.workspace.rootSplit); a.setPinned(false); const b = app.workspace.getLeaf('split'); await b.setViewState({ type: 'markdown', state: { file: 'Markdown/Kitchen sink.md' } }); a.setGroup('capture-link'); b.setGroup('capture-link'); await sleep(500);",
+				);
+			},
+		},
+	],
+};
+
+const dragQc: Scene = {
+	id: "qc.drag",
+	surface: "workspace",
+	source: "catalog:drag",
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+		await ctx.open("Markdown/Kitchen sink.md", "live");
+	},
+	items: [
+		{
+			id: "qc.drag.over-folder",
+			component: "tree-item",
+			surface: "left-sidebar",
+			target: ".nav-folder.is-being-dragged-over",
+			expect: ".is-being-dragged-over",
+			before: (ctx) => dragTo(ctx, ".nav-file-title", ".nav-folder-title"),
+		},
+		{ id: "qc.drag.ghost", component: "drag-ghost", target: ".drag-ghost", minUnobscured: 0.3 },
+		{
+			id: "qc.drag.dragged-item",
+			component: "nav-file",
+			surface: "left-sidebar",
+			target: ".nav-file-title.is-being-dragged",
+			expect: ".is-being-dragged",
+		},
+		{
+			id: "qc.drag.drop-overlay",
+			component: "drag-ghost",
+			target: ".workspace-drop-overlay",
+			before: async (ctx) => {
+				await ctx.page.mouse.move(
+					...(await center(ctx, ".mod-root .workspace-tab-header-container")),
+					{ steps: 8 },
+				);
+				await ctx.sleep(300);
+				await ctx.page.mouse.move(...(await center(ctx, ".mod-root .view-content")), { steps: 8 });
+				await ctx.sleep(500);
+			},
+			minUnobscured: 0.3,
+		},
+		{
+			id: "qc.drag.done",
+			component: "workspace",
+			target: ".app-container",
+			state: "default",
+			full: true,
+			before: endDrag,
+		},
+	],
+};
+
+const basesQc: Scene = {
+	id: "qc.bases",
+	surface: "bases",
+	source: "catalog:bases-qc",
+	setup: (ctx) => ctx.open("Base.base", "live"),
+	items: [
+		{
+			id: "qc.bases.active-cell",
+			component: "bases-table",
+			target: leaf(".bases-table-active-cell"),
+			before: async (ctx) => {
+				await click(ctx, leaf(".bases-tbody .bases-td", undefined));
+				await ctx.page.keyboard.press("ArrowRight");
+				await ctx.sleep(300);
+			},
+		},
+		{
+			id: "qc.bases.selection",
+			component: "bases-table",
+			target: leaf(".bases-table-selection"),
+			before: async (ctx) => {
+				// A pointer drag across cells selects a range (the table gets .has-selection).
+				const a = await center(ctx, { sel: ".bases-tbody .bases-td", nth: 1, in: "leaf" });
+				const b = await center(ctx, { sel: ".bases-tbody .bases-td", nth: 9, in: "leaf" });
+				await ctx.page.mouse.move(a[0], a[1]);
+				await ctx.page.mouse.down();
+				await ctx.page.mouse.move(b[0], b[1], { steps: 8 });
+				await ctx.page.mouse.up();
+				await ctx.sleep(300);
+			},
+		},
+		{
+			id: "qc.bases.formula-error",
+			component: "bases-table",
+			target: leaf(".bases-td[data-property='formula.broken']"),
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+			},
+		},
+		{
+			id: "qc.bases.summary-menu",
+			component: "suggestion",
+			surface: "menu",
+			target: ".bases-summary-menu-item",
+			before: async (ctx) => {
+				await click(ctx, leaf(".bases-table-footer .bases-td"));
+			},
+		},
+		p(
+			"qc.bases.summary-menu.hover",
+			"suggestion",
+			".bases-summary-menu-item:not(.is-selected)",
+			["hover"],
+			{
+				surface: "menu",
+			},
+		),
+		{
+			id: "qc.bases.new-item",
+			component: "popover",
+			surface: "popover",
+			target: ".bases-new-item-popover",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await click(ctx, leaf(".bases-toolbar-new-item-menu"));
+				await ctx.sleep(600);
+			},
+		},
+		{
+			id: "qc.bases.group-menu",
+			component: "menu",
+			surface: "menu",
+			target: { sel: ".bases-groupby-container", closest: ".menu" },
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await click(ctx, leaf(".bases-toolbar-group-menu"));
+			},
+		},
+		{
+			id: "qc.bases.results-page",
+			component: "menu",
+			surface: "menu",
+			target: { sel: ".bases-results-page", closest: ".menu" },
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await click(ctx, leaf(".bases-toolbar-results-menu"));
+			},
+		},
+		{
+			id: "qc.bases.properties-page",
+			component: "menu",
+			surface: "menu",
+			target: { sel: ".bases-properties-page", closest: ".menu" },
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await click(ctx, leaf(".bases-toolbar-properties-menu"));
+				await click(ctx, { sel: ".menu .bases-toolbar-menu-item.mod-formula" });
+			},
+		},
+		{
+			id: "qc.bases.filter-group",
+			component: "filter-row",
+			surface: "menu",
+			target: { sel: ".input-group-container, .filter-group", closest: ".menu" },
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await click(ctx, leaf(".bases-toolbar-filter-menu"));
+				await ctx.js(
+					"[...document.querySelectorAll('.menu .text-icon-button')].find((b) => /add filter group/i.test(b.textContent ?? ''))?.click(); await sleep(500);",
+				);
+			},
+		},
+		{
+			id: "qc.bases.formula-editor",
+			component: "formula-editor",
+			surface: "menu",
+			target: { sel: ".formula-editor", closest: ".bases-toolbar-section-content, .menu" },
+			before: async (ctx) => {
+				await ctx.js(
+					"[...document.querySelectorAll('.menu .clickable-icon')].find((b) => b.getAttribute('aria-label') === 'Advanced filter' && b.getBoundingClientRect().width > 0)?.click(); await sleep(600);",
+				);
+			},
+		},
+		{
+			id: "qc.bases.autocomplete",
+			component: "suggestion",
+			surface: "suggestion-popup",
+			target: ".cm-tooltip-autocomplete",
+			before: async (ctx) => {
+				const b = await center(ctx, { sel: ".menu .formula-editor .cm-content" });
+				await ctx.page.mouse.click(b[0], b[1]);
+				await ctx.page.keyboard.press("End");
+				await ctx.page.keyboard.type(" && file.na", { delay: 60 });
+				await ctx.sleep(800);
+			},
+		},
+		{
+			id: "qc.bases.docstring",
+			component: "tooltip",
+			surface: "suggestion-popup",
+			target: ".cm-tooltip-docstring",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Enter");
+				await ctx.page.keyboard.type(".contains(", { delay: 60 });
+				await ctx.sleep(800);
+			},
+		},
+		{
+			id: "qc.bases.list-view",
+			component: "bases-list",
+			target: leaf(".bases-view:has(.bases-list-separator)"),
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await ctx.command("bases:change-view");
+				await ctx.sleep(400);
+				await ctx.js(
+					"[...document.querySelectorAll('.suggestion-item')].find((e) => e.textContent.includes('List view'))?.click(); await sleep(800);",
+				);
+			},
+		},
+		{
+			id: "qc.bases.grouped-summary",
+			component: "bases-table",
+			target: leaf(".bases-table-group-summary-row"),
+			before: async (ctx) => {
+				await ctx.command("bases:change-view");
+				await ctx.sleep(400);
+				await ctx.js(
+					"[...document.querySelectorAll('.suggestion-item')].find((e) => e.textContent.includes('Grouped'))?.click(); await sleep(800);",
+				);
+			},
+		},
+	],
+};
+
+const canvasQc: Scene = {
+	id: "qc.canvas",
+	surface: "canvas",
+	source: "catalog:canvas-qc",
+	setup: async (ctx) => {
+		await ctx.open("Canvas.canvas", "live");
+		await ctx.js("app.workspace.activeLeaf.view.canvas.zoomToFit(); await sleep(700);");
+	},
+	items: [
+		{
+			id: "qc.canvas.interaction-layer",
+			component: "canvas-node",
+			target: ".canvas-node-interaction-layer",
+			minUnobscured: 0.3,
+			before: async (ctx) => {
+				const b = await center(ctx, { sel: ".canvas-node", text: "Colored card 2" });
+				await ctx.page.mouse.click(b[0], b[1]);
+				await ctx.page.mouse.move(b[0] + 3, b[1] + 3, { steps: 2 });
+				await ctx.sleep(400);
+			},
+			note: "Node resizers and connection points of the selected node live in this layer.",
+		},
+		{
+			id: "qc.canvas.resizer",
+			component: "canvas-node",
+			target: ".canvas-node-interaction-layer .canvas-node-resizer",
+			minUnobscured: 0.3,
+		},
+		{
+			id: "qc.canvas.connection-point",
+			component: "canvas-node",
+			target: ".canvas-node-interaction-layer .canvas-node-connection-point",
+			minUnobscured: 0.3,
+		},
+		{
+			id: "qc.canvas.connecting",
+			component: "canvas-edge",
+			target: ".canvas-wrapper",
+			state: "connecting",
+			expect: ":has(.is-connecting), .canvas-wrapper:has(.canvas.is-connecting)",
+			full: true,
+			before: async (ctx) => {
+				const b = await center(
+					ctx,
+					".canvas-node-interaction-layer .canvas-node-connection-point[data-side='right']",
+				);
+				await ctx.page.mouse.move(b[0], b[1]);
+				await ctx.page.mouse.down();
+				await ctx.page.mouse.move(b[0] + 80, b[1] + 60, { steps: 8 });
+				await ctx.sleep(400);
+			},
+		},
+		{
+			id: "qc.canvas.selection-box",
+			component: "canvas",
+			target: ".canvas-selection",
+			minUnobscured: 0.3,
+			note: "The selection box is drawn under the cards it crosses, so part of it is hidden by design.",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.mouse.up();
+				await ctx.js("app.workspace.activeLeaf.view.canvas.deselectAll(); await sleep(200);");
+				const r = await ctx.js<[number, number]>(
+					"const r = cap.ROOTS.leaf().querySelector('.canvas-wrapper').getBoundingClientRect(); return [r.x + 30, r.bottom - 40];",
+				);
+				await ctx.page.mouse.move(r[0], r[1]);
+				await ctx.page.mouse.down();
+				await ctx.page.mouse.move(r[0] + 260, r[1] - 220, { steps: 10 });
+				await ctx.sleep(300);
+			},
+		},
+		{
+			id: "qc.canvas.snaps",
+			component: "canvas",
+			target: ".canvas-wrapper",
+			state: "dragging-node",
+			full: true,
+			expect: ":has(.canvas-snaps)",
+			before: async (ctx) => {
+				await ctx.page.mouse.up();
+				await ctx.js("app.workspace.activeLeaf.view.canvas.deselectAll(); await sleep(200);");
+				const b = await center(ctx, { sel: ".canvas-node", text: "Colored card 3" });
+				await ctx.page.mouse.move(b[0], b[1]);
+				await ctx.page.mouse.down();
+				await ctx.page.mouse.move(b[0] - 240, b[1] + 2, { steps: 12 });
+				await ctx.sleep(400);
+			},
+		},
+		{
+			id: "qc.canvas.zoomed-out",
+			component: "canvas",
+			target: ".canvas-wrapper.mod-zoomed-out",
+			full: true,
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.mouse.up();
+				await ctx.js("app.workspace.activeLeaf.view.canvas.zoomBy(-6); await sleep(900);");
+			},
+		},
+		{
+			id: "qc.canvas.node-placeholder",
+			component: "canvas-node",
+			target: ".canvas-node-placeholder",
+		},
+	],
+};
+
+const pdfQc: Scene = {
+	id: "qc.pdf",
+	surface: "pdf",
+	source: "catalog:pdf-qc",
+	setup: async (ctx) => {
+		await ctx.open("Attachments/sample.pdf", "live");
+		await ctx.sleep(1500);
+	},
+	items: [
+		{
+			id: "qc.pdf.find-settings",
+			component: "pdf",
+			target: leaf(".pdf-findbar-settings"),
+			before: async (ctx) => {
+				await ctx.js("cap.ROOTS.leaf().querySelector('.pdf-viewer-container')?.focus();");
+				await ctx.page.keyboard.press("Control+f");
+				await ctx.page.keyboard.type("Lorem", { delay: 20 });
+				await ctx.sleep(500);
+				await click(ctx, leaf(".pdf-findbar-settings-btn"));
+			},
+		},
+		{
+			id: "qc.pdf.spread",
+			component: "pdf",
+			target: leaf(".pdfViewer .spread"),
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.js(
+					"const v = app.workspace.getMostRecentLeaf(app.workspace.rootSplit).view; const pv = v.viewer?.child?.pdfViewer?.pdfViewer; pv.spreadMode = 1; await sleep(800);",
+				);
+			},
+		},
+		{
+			id: "qc.pdf.wrapped",
+			component: "pdf",
+			target: leaf(".pdfViewer.scrollWrapped"),
+			before: async (ctx) => {
+				await ctx.js(
+					"const pv = app.workspace.getMostRecentLeaf(app.workspace.rootSplit).view.viewer.child.pdfViewer.pdfViewer; pv.spreadMode = 0; pv.scrollMode = 2; await sleep(800);",
+				);
+			},
+		},
+		{
+			id: "qc.pdf.horizontal",
+			component: "pdf",
+			target: leaf(".pdfViewer.scrollHorizontal"),
+			before: async (ctx) => {
+				await ctx.js(
+					"const pv = app.workspace.getMostRecentLeaf(app.workspace.rootSplit).view.viewer.child.pdfViewer.pdfViewer; pv.scrollMode = 1; await sleep(800);",
+				);
+			},
+		},
+		{
+			id: "qc.pdf.themed",
+			component: "pdf",
+			target: leaf(".pdf-container.mod-themed"),
+			full: true,
+			before: async (ctx) => {
+				await ctx.js(
+					"const pv = app.workspace.getMostRecentLeaf(app.workspace.rootSplit).view.viewer.child.pdfViewer.pdfViewer; pv.scrollMode = 0; app.saveLocalStorage('pdfjs-is-themed', 'true'); await sleep(200);",
+				);
+				await ctx.open("Attachments/sample.pdf", "live", { newLeaf: true });
+				await ctx.sleep(1500);
+			},
+			note: 'PDF toolbar menu "Adapt to theme" (stored as pdfjs-is-themed).',
+		},
+		{
+			id: "qc.pdf.password",
+			component: "pdf",
+			target: leaf(".pdf-password-dialog"),
+			before: async (ctx) => {
+				await ctx.js("app.saveLocalStorage('pdfjs-is-themed', null);");
+				await ctx.open("Attachments/locked.pdf", "live");
+				await ctx.sleep(1500);
+			},
+			note: "locked.pdf is sample.pdf encrypted with qpdf (password capture-user).",
+		},
+		{
+			id: "qc.pdf.forms",
+			component: "pdf",
+			target: leaf(".annotationLayer"),
+			before: async (ctx) => {
+				await ctx.open("Attachments/forms.pdf", "live");
+				await ctx.sleep(2000);
+			},
+			note: "forms.pdf is a hand-written sample with AcroForm fields and annotations.",
+		},
+		p(
+			"qc.pdf.text-field.focus",
+			"text-input",
+			leaf(".annotationLayer .textWidgetAnnotation input"),
+			["focus"],
+		),
+	],
+};
+
+const recoveryQc: Scene = {
+	id: "qc.file-recovery",
+	surface: "modal",
+	source: "catalog:file-recovery",
+	setup: async (ctx) => {
+		await ctx.js(
+			"const fr = app.internalPlugins.plugins['file-recovery'].instance; const f = app.vault.getAbstractFileByPath('Markdown/Kitchen sink.md'); const now = await app.vault.read(f); await fr.forceAdd(f.path, now.replace('Kitchen sink', 'Kitchen sink (older)').replace('A callout.', 'A changed callout.') + '\\nAn older line.'); await sleep(300);",
+		);
+		await ctx.open("Markdown/Kitchen sink.md", "live");
+		await ctx.command("file-recovery:open");
+		await ctx.sleep(800);
+	},
+	items: [
+		{
+			id: "qc.file-recovery.diff",
+			component: "diff",
+			target: ".modal .diff-view",
+			before: async (ctx) => {
+				await ctx.js(
+					"const m = cap.last('.modal-container'); m.querySelector('.file-recovery-list-item-header')?.click(); await sleep(400); const t = m.querySelector('.modal-setting-titlebar-toggle'); (t.querySelector('input') ?? t).click(); await sleep(800);",
+				);
+			},
+		},
+		{
+			id: "qc.file-recovery.diff-changed",
+			component: "diff",
+			target: ".modal .diff-view .diff-changed",
+		},
+	],
+};
+
+const searchQc: Scene = {
+	id: "qc.search",
+	surface: "modal",
+	source: "catalog:copy-search-results",
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+		await ctx.js(
+			"const l = app.workspace.getLeavesOfType('search')[0]; app.workspace.revealLeaf(l); l.view.setQuery('heading'); await sleep(1200); l.view.onCopyResultsClick(new MouseEvent('click')); await sleep(600);",
+		);
+	},
+	items: [
+		{
+			id: "qc.search.copy-results",
+			component: "modal",
+			target: ".modal:has(.copy-search-result-container)",
+		},
+		p(
+			"qc.search.copy-results.textarea.focus",
+			"textarea",
+			".copy-search-result-textarea",
+			["focus"],
+			{},
+		),
+	],
+};
+
+const hotkeysQc: Scene = {
+	id: "qc.hotkeys",
+	surface: "settings",
+	source: "catalog:hotkeys-qc",
+	window: "popout",
+	opener: async (main) => {
+		// Two commands on the same keys make a conflict; a custom key adds the restore button.
+		await main.js(
+			"app.hotkeyManager.setHotkeys('editor:toggle-italics', [{ modifiers: ['Mod'], key: 'B' }]); await sleep(200);",
+		);
+		await settingsWindow("hotkeys")(main);
+	},
+	setup: async (ctx) => {
+		await ctx.js(
+			"cap.clearSettingsSearch(); app.setting.openTabById('hotkeys'); await sleep(600);",
+		);
+		await click(ctx, ".modal .search-input-container.mod-hotkey input");
+		await ctx.page.keyboard.type("Toggle italic", { delay: 20 });
+		await ctx.sleep(500);
+	},
+	items: [
+		{
+			id: "qc.hotkeys.conflict",
+			component: "hotkey",
+			target: ".modal .setting-hotkey.has-conflict",
+		},
+		{
+			id: "qc.hotkeys.restore",
+			component: "clickable-icon",
+			target: ".modal .setting-restore-hotkey-button",
+		},
+		{
+			id: "qc.hotkeys.filter",
+			component: "search-input",
+			target: ".modal .mod-active-hotkey-filter",
+			before: async (ctx) => {
+				await ctx.js(
+					"const i = document.querySelector('.modal .search-input-container.mod-hotkey input'); i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('.modal .search-input-container.mod-hotkey .input-right-decorator').click(); await sleep(300);",
+				);
+				await ctx.page.keyboard.press("Control+b");
+				await ctx.sleep(400);
+			},
+		},
+	],
+};
+
+const spellQc: Scene = {
+	id: "qc.spellcheck",
+	surface: "settings",
+	source: "catalog:spellcheck-dictionary",
+	window: "popout",
+	opener: async (main) => {
+		await main.js(
+			"const s = electron.remote.getCurrentWebContents().session; for (const w of ['miamiwind', 'obsidianish', 'hanakin']) s.addWordToSpellCheckerDictionary(w); await sleep(300);",
+		);
+		await settingsWindow("editor")(main);
+	},
+	setup: async (ctx) => {
+		await ctx.js(
+			"cap.clearSettingsSearch(); app.setting.openTabById('editor'); await sleep(500); const row = [...document.querySelectorAll('.modal.mod-settings .setting-item')].find((e) => /spell ?check/i.test(e.querySelector('.setting-item-name')?.textContent ?? '')); row?.querySelector('.clickable-icon')?.click(); await sleep(800);",
+		);
+	},
+	items: [
+		{
+			id: "qc.spellcheck.dictionary",
+			component: "list",
+			target: ".spellchecker-dictionary-container",
+		},
+	],
+};
+
+const graphQc: Scene = {
+	id: "qc.graph",
+	surface: "graph",
+	source: "catalog:graph-qc",
+	setup: async (ctx) => {
+		await ctx.command("graph:open");
+		await ctx.sleep(1500);
+		await ctx.js(
+			"const v = app.workspace.getMostRecentLeaf(app.workspace.rootSplit).view; const o = v.dataEngine.getOptions(); v.dataEngine.setOptions({ ...o, showTags: true, showAttachments: true, hideUnresolved: false, showOrphans: true, colorGroups: [{ query: 'path:Markdown', color: { a: 1, rgb: 16068278 } }] }); await sleep(2500);",
+		);
+	},
+	items: [
+		{
+			id: "qc.graph.all-node-kinds",
+			component: "graph",
+			target: leaf(".workspace-leaf-content"),
+			full: true,
+			note: "Tags, attachments, orphans, unresolved links and a color group are on; Pixi draws them on a canvas with the colors Obsidian reads from .graph-view.color-* probes.",
+		},
+		{
+			id: "qc.graph.color-probes",
+			component: "graph",
+			target: leaf(".workspace-leaf-content"),
+			full: true,
+			synthetic:
+				"probe elements re-created exactly as GraphRenderer.testCSS() creates them (document.body.createDiv({ cls: 'graph-view ' + name })) and moved into the graph leaf for the snapshot; Obsidian reads their color and detaches them at once",
+			before: async (ctx) => {
+				await ctx.js(
+					"const host = cap.ROOTS.leaf().querySelector('.workspace-leaf-content'); for (const c of ['color-fill', 'color-fill-focused', 'color-fill-tag', 'color-fill-unresolved', 'color-fill-attachment', 'color-arrow', 'color-circle', 'color-line', 'color-text', 'color-fill-highlight', 'color-line-highlight']) { const d = document.body.createDiv({ cls: 'graph-view ' + c }); d.setAttribute('data-capture-probe', ''); d.style.cssText = 'position:absolute;width:0;height:0'; host.appendChild(d); }",
+				);
+			},
+		},
+	],
+};
+
+const mediaQc: Scene = {
+	id: "qc.media",
+	surface: "workspace",
+	source: "catalog:media-emulation",
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+		await ctx.open("Markdown/Kitchen sink.md", "reading");
+	},
+	items: [
+		{
+			id: "qc.media.print",
+			component: "markdown-view",
+			surface: "editor-reading-view",
+			target: "body > .print",
+			full: true,
+			media: { media: "print" },
+			before: async (ctx) => {
+				await ctx.open("Markdown/Kitchen sink.md", "live");
+				await ctx.js(
+					"let p = Object.getPrototypeOf(app.setting); let base = null; while (p && p !== Object.prototype) { if (Object.hasOwn(p, 'open')) base = p; p = Object.getPrototypeOf(p); } const open = base.open; base.open = function () { window.__capModal = this; return open.apply(this, arguments); }; app.commands.executeCommandById('workspace:export-pdf'); await sleep(600); base.open = open; const m = window.__capModal; m.close(); await m.testPrint(); await sleep(1200);",
+				);
+			},
+			note: "Obsidian's export modal testPrint() renders the print layout (body > .print) into the window; @media print emulated through Emulation.setEmulatedMedia.",
+		},
+		{
+			id: "qc.media.forced-colors",
+			component: "workspace",
+			target: ".app-container",
+			full: true,
+			media: { features: [{ name: "forced-colors", value: "active" }] },
+		},
+		{
+			id: "qc.media.hover-none",
+			component: "workspace",
+			target: ".app-container",
+			full: true,
+			media: {
+				features: [
+					{ name: "hover", value: "none" },
+					{ name: "pointer", value: "coarse" },
+				],
+			},
+		},
+		{
+			id: "qc.translucent",
+			component: "workspace",
+			target: ".app-container",
+			full: true,
+			state: "is-translucent",
+			synthetic:
+				"body.is-translucent added by script: Obsidian only enables translucency on macOS (app.js enableTranslucency runs when process.platform === 'darwin')",
+			before: async (ctx) => {
+				await ctx.js("document.body.addClass('is-translucent'); await sleep(300);");
+			},
+		},
+		{
+			id: "qc.translucent-off",
+			component: "workspace",
+			target: ".app-container",
+			full: true,
+			state: "default",
+			before: async (ctx) => {
+				await ctx.js("document.body.removeClass('is-translucent'); await sleep(200);");
+			},
+		},
+	],
+};
+
+/** Needs a real window: Hyprland applies full screen and maximize, headless Chromium cannot. */
+const windowQc: Scene = {
+	id: "qc.window",
+	surface: "workspace",
+	source: "catalog:window-states",
+	windowed: true,
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+	},
+	items: [
+		{
+			id: "qc.window.fullscreen",
+			component: "workspace",
+			target: ".app-container",
+			state: "is-fullscreen",
+			expect: "body.is-fullscreen .app-container",
+			full: true,
+			before: async (ctx) => {
+				await ctx.js("electronWindow.setFullScreen(true); await sleep(1500);");
+			},
+		},
+		{
+			id: "qc.window.maximized",
+			component: "workspace",
+			target: ".app-container",
+			state: "is-maximized",
+			expect: "body.is-maximized .app-container",
+			full: true,
+			before: async (ctx) => {
+				await ctx.js(
+					"electronWindow.setFullScreen(false); await sleep(1500); electronWindow.maximize(); await sleep(1500);",
+				);
+			},
+		},
+		{
+			id: "qc.window.titlebar-maximized",
+			component: "titlebar",
+			target: ".titlebar",
+			state: "is-maximized",
+			expect: "body.is-maximized .titlebar",
+		},
+	],
+};
+
+/** Buttons that only show while their block is hovered: the real pointer hovers block and button. */
+const hoverReveal: Scene = {
+	id: "qc.hover-reveal",
+	surface: "editor-reading-view",
+	source: "catalog:hover-revealed-buttons",
+	setup: (ctx) => ctx.open("Markdown/Code.md", "reading"),
+	items: [
+		{
+			id: "qc.copy-code-button.hover",
+			component: "clickable-icon",
+			target: leaf(".markdown-reading-view pre .copy-code-button"),
+			pseudo: ["hover"],
+			pointer: true,
+			state: "hover",
+			before: async (ctx) => {
+				const pre = await center(ctx, leaf(".markdown-reading-view pre"));
+				await ctx.page.mouse.move(pre[0], pre[1], { steps: 3 });
+				await ctx.sleep(300);
+				await ctx.page.mouse.move(
+					...(await center(ctx, leaf(".markdown-reading-view pre .copy-code-button"))),
+					{ steps: 3 },
+				);
+				await ctx.sleep(300);
+			},
+		},
+		{
+			id: "qc.embedded-backlinks.live",
+			component: "backlinks",
+			surface: "editor-live-preview",
+			target: leaf(".markdown-source-view .embedded-backlinks"),
+			before: async (ctx) => {
+				await ctx.page.mouse.move(5, 500);
+				await ctx.open("Markdown/Headings.md", "live");
+				await ctx.command("backlink:toggle-backlinks-in-document");
+				await ctx.sleep(800);
+			},
+			note: '"Backlinks in document" is off by default; the scene turns it on, then off again.',
+		},
+		{
+			id: "qc.embedded-backlinks.reading",
+			component: "backlinks",
+			target: leaf(".markdown-reading-view .embedded-backlinks"),
+			before: async (ctx) => {
+				await ctx.open("Markdown/Headings.md", "reading");
+				await ctx.sleep(600);
+			},
+		},
+		{
+			id: "qc.embedded-backlinks.off",
+			component: "markdown-view",
+			target: leaf(".workspace-leaf-content"),
+			full: true,
+			state: "default",
+			before: async (ctx) => {
+				await ctx.command("backlink:toggle-backlinks-in-document");
+				await ctx.sleep(500);
+			},
+		},
+	],
+};
+
+const IN_WINDOW =
+	"Settings opened inside the main window (settingsPopoutWindow off): Chromium applies neither CSS.forcePseudoState nor the real pointer's :hover/:active inside Obsidian's popout windows (tested headless and in a real window, focused); the Settings DOM and its .modal rules are the same";
+
+const tab = (id: string) => async (ctx: Ctx) => {
+	await ctx.js(
+		`cap.clearSettingsSearch(); app.setting.openTabById(${JSON.stringify(id)}); await sleep(500);`,
+	);
+};
+
+/** Hover and active states of Settings controls, with Settings in the main window. */
+const settingsInWindow: Scene = {
+	id: "qc.settings-in-window",
+	surface: "settings",
+	source: "catalog:settings-hover-states",
+	setup: async (ctx) => {
+		await ctx.js(
+			"app.vault.setConfig('settingsPopoutWindow', false); await sleep(200); app.setting.open(); app.setting.openTabById('editor'); await sleep(700);",
+		);
+	},
+	items: [
+		p(
+			"modal.vertical-tab.hover",
+			"vertical-tab",
+			".modal .vertical-tab-nav-item:not(.is-active)",
+			["hover"],
+			{ note: IN_WINDOW },
+		),
+		p(
+			"modal.vertical-tab.active.hover",
+			"vertical-tab",
+			".modal .vertical-tab-nav-item.is-active",
+			["hover"],
+			{ note: IN_WINDOW },
+		),
+		p("modal.dropdown.hover", "dropdown", ".modal select.dropdown", ["hover"], { note: IN_WINDOW }),
+		p("modal.dropdown.active", "dropdown", ".modal select.dropdown", ["active"], {
+			note: IN_WINDOW,
+		}),
+		p("modal.slider.hover", "slider", ".modal input[type=range]", ["hover"], { note: IN_WINDOW }),
+		p("extra.select-option.hover", "dropdown", ".modal select.dropdown option", ["hover"], {
+			note: IN_WINDOW,
+			synthetic:
+				"size=6 set on the <select> so Chromium draws its options in the page (the real dropdown list is a native popup outside the page)",
+			before: async (ctx) => {
+				await ctx.js(
+					"document.querySelector('.modal select.dropdown').setAttribute('size', '6'); await sleep(200);",
+				);
+			},
+		}),
+		p(
+			"extra.select-option.checked.hover",
+			"dropdown",
+			".modal select.dropdown option:checked",
+			["hover"],
+			{
+				note: IN_WINDOW,
+				synthetic: "size=6 set on the <select> so Chromium draws its options in the page",
+			},
+		),
+		p(
+			"modal.button.hover",
+			"button",
+			".modal .vertical-tab-content button:not(.mod-cta)",
+			["hover"],
+			{
+				note: IN_WINDOW,
+				before: async (ctx) => {
+					await ctx.js(
+						"document.querySelector('.modal select.dropdown[size]')?.removeAttribute('size');",
+					);
+					await tab("about")(ctx);
+				},
+			},
+		),
+		p("modal.button-cta.hover", "button-cta", ".modal button.mod-cta", ["hover"], {
+			note: IN_WINDOW,
+			before: tab("sync"),
+		}),
+		p(
+			"modal.text-input.hover",
+			"text-input",
+			".modal .vertical-tab-content input[type=text]",
+			["hover"],
+			{
+				note: IN_WINDOW,
+				before: tab("file"),
+			},
+		),
+		p(
+			"modal.clickable-icon.hover",
+			"clickable-icon",
+			".modal .vertical-tab-content .clickable-icon",
+			["hover"],
+			{
+				note: IN_WINDOW,
+				before: tab("hotkeys"),
+			},
+		),
+		p("modal.hotkey.hover", "hotkey", ".modal .setting-hotkey", ["hover"], { note: IN_WINDOW }),
+		p(
+			"modal.search-clear.hover",
+			"clickable-icon",
+			".modal .search-input-container.mod-hotkey .search-input-clear-button",
+			["hover"],
+			{
+				note: IN_WINDOW,
+				before: async (ctx) => {
+					await click(ctx, ".modal .search-input-container.mod-hotkey input");
+					await ctx.page.keyboard.type("bold", { delay: 20 });
+					await ctx.sleep(300);
+				},
+			},
+		),
+		p("extra.community.item.hover", "community-browser", ".community-item", ["hover"], {
+			note: IN_WINDOW,
+			before: async (ctx) => {
+				await tab("community-plugins")(ctx);
+				await ctx.js(
+					"[...document.querySelectorAll('.modal.mod-settings button')].find((e) => /exit restricted/i.test(e.textContent ?? ''))?.click(); await sleep(800); [...document.querySelectorAll('.modal.mod-settings button')].find((e) => /browse/i.test(e.textContent ?? ''))?.click(); await sleep(5000);",
+				);
+			},
+		}),
+		{
+			id: "qc.settings-in-window.restore",
+			component: "workspace",
+			target: ".app-container",
+			full: true,
+			state: "default",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await ctx.js(
+					"app.setting.close(); app.vault.setConfig('settingsPopoutWindow', true); await sleep(300);",
+				);
+			},
+		},
+	],
+};
+
+export function qcScenes(): Scene[] {
+	return [
+		hoverReveal,
+		comboStates,
+		editorQc,
+		tabsQc,
+		dragQc,
+		basesQc,
+		canvasQc,
+		pdfQc,
+		recoveryQc,
+		searchQc,
+		hotkeysQc,
+		spellQc,
+		graphQc,
+		mediaQc,
+		windowQc,
+		settingsInWindow,
+	];
+}

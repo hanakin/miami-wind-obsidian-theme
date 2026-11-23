@@ -3,6 +3,7 @@ filters:
     - file.inFolder("Markdown")
 formulas:
   name_length: file.name.length
+  broken: file.name.notAFunction()
 properties:
   file.name:
     displayName: Name
@@ -14,6 +15,7 @@ views:
       - file.folder
       - tags
       - formula.name_length
+      - formula.broken
       - file.mtime
     sort:
       - property: file.name
@@ -29,6 +31,8 @@ views:
     name: List view
     order:
       - file.name
+      - file.folder
+      - tags
   - type: kanban
     name: Board
     groupBy:
@@ -40,7 +44,10 @@ views:
   - type: table
     name: Grouped
     groupBy:
-      property: file.folder
+      property: tags
       direction: ASC
     order:
       - file.name
+      - formula.name_length
+    summaries:
+      formula.name_length: Sum

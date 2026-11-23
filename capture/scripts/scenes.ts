@@ -538,6 +538,90 @@ const FEATURES: Feature[] = [
 		live: ".bases-embed",
 	},
 	{
+		id: "combo-heading-code-tag",
+		component: "heading",
+		note: "Markdown/Combinations.md",
+		reading: { sel: "h1", text: "Heading with" },
+		editor: { sel: ".HyperMD-header-1", text: "Heading with" },
+	},
+	{
+		id: "combo-heading-tag",
+		component: "tag",
+		note: "Markdown/Combinations.md",
+		reading: "h1 a.tag",
+		editor: ".HyperMD-header-1 .cm-hashtag-end",
+	},
+	{
+		id: "combo-heading-link",
+		component: "internal-link",
+		note: "Markdown/Combinations.md",
+		reading: "h2 a.internal-link",
+		editor: ".HyperMD-header-2",
+	},
+	{
+		id: "combo-heading-highlight",
+		component: "inline-mark",
+		note: "Markdown/Combinations.md",
+		reading: "h3 mark",
+		editor: ".HyperMD-header-3",
+	},
+	{
+		id: "combo-external-link-code",
+		component: "external-link",
+		note: "Markdown/Combinations.md",
+		reading: "p > a.external-link:has(code)",
+		editor: { sel: ".cm-line", text: "External link with code" },
+	},
+	{
+		id: "combo-internal-link-code",
+		component: "internal-link",
+		note: "Markdown/Combinations.md",
+		reading: "a.internal-link:not(.is-unresolved):has(code)",
+		editor: { sel: ".cm-line", text: "Resolved link with code" },
+	},
+	{
+		id: "combo-unresolved-link-code",
+		component: "internal-link",
+		note: "Markdown/Combinations.md",
+		reading: "a.internal-link.is-unresolved:has(code)",
+		editor: { sel: ".cm-line", text: "Unresolved link with code" },
+	},
+	{
+		id: "combo-bare-url-code",
+		component: "external-link",
+		note: "Markdown/Combinations.md",
+		reading: { sel: "p", text: "Bare URL next to code" },
+		editor: { sel: ".cm-line", text: "Bare URL next to code" },
+	},
+	{
+		id: "combo-highlight-code",
+		component: "inline-mark",
+		note: "Markdown/Combinations.md",
+		reading: "mark:has(code)",
+		editor: { sel: ".cm-line", text: "Highlight with code" },
+	},
+	{
+		id: "combo-bold-link",
+		component: "internal-link",
+		note: "Markdown/Combinations.md",
+		reading: "strong a.internal-link",
+		editor: { sel: ".cm-line", text: "Bold link" },
+	},
+	{
+		id: "combo-tag-code",
+		component: "tag",
+		note: "Markdown/Combinations.md",
+		reading: { sel: "p", text: "Tag next to code" },
+		editor: { sel: ".cm-line", text: "Tag next to code" },
+	},
+	{
+		id: "combo-list-link-code",
+		component: "external-link",
+		note: "Markdown/Combinations.md",
+		reading: "li a.external-link:has(code)",
+		editor: { sel: ".cm-line", text: "listed code link" },
+	},
+	{
 		id: "embed-base-codeblock",
 		component: "embed",
 		note: "Markdown/Embeds.md",
@@ -692,7 +776,6 @@ const FEATURES: Feature[] = [
 		component: "html",
 		note: "Markdown/Blocks.md",
 		reading: "iframe",
-		live: ".cm-html-embed iframe, iframe",
 	},
 	{
 		id: "comment-block",
@@ -707,13 +790,6 @@ const FEATURES: Feature[] = [
 		reading: ".inline-title",
 		live: ".inline-title",
 		source: ".inline-title",
-	},
-	{
-		id: "embedded-backlinks",
-		component: "backlinks",
-		note: "Markdown/Headings.md",
-		reading: ".embedded-backlinks",
-		live: ".embedded-backlinks",
 	},
 ];
 
@@ -833,7 +909,12 @@ const chrome: Scene = {
 	},
 	items: [
 		{ id: "chrome.window", component: "workspace", target: ".app-container", full: true },
-		{ id: "chrome.titlebar", component: "titlebar", target: ".titlebar" },
+		{
+			id: "chrome.titlebar",
+			component: "titlebar",
+			target: ".titlebar .titlebar-button-container.mod-right",
+			note: "With Obsidian's hidden frame the .titlebar sits behind the tab bar; only its window buttons show.",
+		},
 		pseudoItem("chrome.titlebar-button.hover", "titlebar-button", ".titlebar-button.mod-close", [
 			"hover",
 		]),
@@ -1091,7 +1172,10 @@ const chrome: Scene = {
 				const p = await ctx.js<[number, number] | null>(
 					"const s = cap.ROOTS.leaf().querySelector('.cm-scroller'); if (!s) return null; const r = s.getBoundingClientRect(); return [r.right - 4, r.top + 40];",
 				);
-				if (p) await ctx.page.mouse.move(p[0], p[1]);
+				if (p) {
+					await ctx.page.mouse.move(p[0], p[1]);
+					await ctx.js("window.__capPointer = arg;", p);
+				}
 				await ctx.sleep(200);
 			},
 			note: "Real pointer over the scrollbar thumb; ::-webkit-scrollbar-thumb:hover.",
@@ -1118,18 +1202,6 @@ const editorStates: Scene = {
 					"app.workspace.activeEditor.editor.setCursor({ line: 7, ch: 3 }); app.workspace.activeEditor.editor.focus();",
 				);
 			},
-		},
-		{
-			id: "editor.selection",
-			component: "editor-line",
-			target: { sel: ".cm-content", in: "leaf" },
-			state: "selection",
-			before: async (ctx) => {
-				await ctx.js(
-					"const e = app.workspace.activeEditor.editor; e.focus(); e.setSelection({ line: 7, ch: 0 }, { line: 7, ch: 40 });",
-				);
-			},
-			note: "Native selection in the editor: ::selection and .cm-selectionBackground.",
 		},
 		{
 			id: "editor.reading-selection",
@@ -1206,27 +1278,15 @@ const editorStates: Scene = {
 			},
 		},
 		pseudoItem(
-			"editor.edit-block-button.hover",
-			"clickable-icon",
-			{ sel: ".cm-embed-block .edit-block-button", in: "leaf" },
-			["hover"],
-		),
-		pseudoItem(
 			"editor.task-checkbox.hover",
 			"checkbox",
 			{ sel: ".markdown-source-view .task-list-item-checkbox", in: "leaf" },
 			["hover"],
 			{ before: (ctx) => ctx.open("Markdown/Lists and tasks.md", "live") },
 		),
-		pseudoItem(
-			"editor.copy-code-button.hover",
-			"clickable-icon",
-			{ sel: ".markdown-reading-view pre .copy-code-button", in: "leaf" },
-			["hover"],
-			{ surface: "editor-reading-view", before: (ctx) => ctx.open("Markdown/Code.md", "reading") },
-		),
 		{
 			id: "editor.code-block.hover",
+			before: (ctx) => ctx.open("Markdown/Code.md", "reading"),
 			component: "code-block",
 			target: { sel: ".markdown-reading-view pre", in: "leaf" },
 			pseudo: ["hover"],
@@ -1260,6 +1320,7 @@ const editorStates: Scene = {
 		},
 		{
 			id: "editor.list-collapsed",
+			expect: ":has(.cm-fold-indicator.is-collapsed)",
 			component: "list",
 			target: { sel: ".markdown-source-view .cm-line", text: "Parent item that folds", in: "leaf" },
 			state: "folded",
@@ -1272,13 +1333,14 @@ const editorStates: Scene = {
 		},
 		{
 			id: "editor.folded-heading-live",
+			expect: ":has(.cm-fold-indicator.is-collapsed)",
 			component: "heading",
 			target: { sel: ".markdown-source-view .cm-line.HyperMD-header", in: "leaf" },
 			state: "folded",
 			before: async (ctx) => {
 				await ctx.open("Markdown/Headings.md", "live");
 				await ctx.js(
-					"const ed = app.workspace.activeEditor.editor; ed.setCursor({ line: 0, ch: 1 }); app.commands.executeCommandById('editor:toggle-fold'); await sleep(300);",
+					"app.workspace.activeEditor.editor.focus(); app.commands.executeCommandById('editor:fold-all'); await sleep(400);",
 				);
 			},
 		},
@@ -1293,6 +1355,7 @@ const editorStates: Scene = {
 		},
 		{
 			id: "editor.readable-line-length-off",
+			expect: ":not(:has(.is-readable-line-width))",
 			component: "markdown-view",
 			target: { sel: ".workspace-leaf-content", in: "leaf" },
 			state: "readable-line-length-off",
@@ -1301,37 +1364,6 @@ const editorStates: Scene = {
 				await ctx.js(
 					"app.vault.setConfig('showLineNumber', false); app.vault.setConfig('readableLineLength', false); await sleep(400);",
 				);
-			},
-		},
-		{
-			id: "editor.document-search",
-			component: "search-input",
-			target: { sel: ".document-search-container", in: "leaf" },
-			before: async (ctx) => {
-				await ctx.js("app.vault.setConfig('readableLineLength', true);");
-				await ctx.open("Markdown/Kitchen sink.md", "live");
-				await ctx.command("editor:open-search");
-				await ctx.page.keyboard.type("task");
-				await ctx.sleep(400);
-			},
-		},
-		{
-			id: "editor.document-search-match",
-			component: "editor-line",
-			target: { sel: ".cm-searchMatch, .cm-line", in: "leaf" },
-			state: "search-match",
-		},
-		{
-			id: "editor.document-replace",
-			component: "search-input",
-			target: {
-				sel: ".document-search-container.mod-replace-mode, .document-search-container",
-				in: "leaf",
-			},
-			state: "replace-mode",
-			before: async (ctx) => {
-				await ctx.command("editor:open-search-replace");
-				await ctx.sleep(300);
 			},
 		},
 		pseudoItem(
@@ -1414,6 +1446,7 @@ const propertyStates: Scene = {
 		),
 		{
 			id: "properties.collapsed",
+			expect: ".is-collapsed",
 			component: "metadata-container",
 			target: { sel: ".metadata-container", in: "leaf" },
 			state: "collapsed",
@@ -1538,6 +1571,7 @@ const menus: Scene[] = [
 		},
 		{
 			id: "menu.file.submenu",
+			expect: ".menu:not(:has(.menu-item.is-warning))",
 			component: "menu",
 			target: { sel: ".menu", nth: 1 },
 			state: "submenu-open",
@@ -1635,6 +1669,7 @@ const popovers: Scene = {
 		{ id: "popover.page-preview", component: "popover", target: ".popover.hover-popover" },
 		{
 			id: "popover.footnote",
+			expect: ":has([data-type='footnote'])",
 			component: "popover",
 			target: ".popover.hover-popover",
 			state: "footnote",
@@ -1716,6 +1751,7 @@ const prompts: Scene = {
 		},
 		{
 			id: "prompt.quick-switcher",
+			expect: ":has(.prompt-input)",
 			component: "prompt",
 			target: ".prompt",
 			state: "quick-switcher",
@@ -1763,6 +1799,7 @@ const modalControls: Scene = {
 	items: [
 		{
 			id: "modal.shell",
+			expect: "body.is-popout-modal",
 			component: "modal",
 			target: "body",
 			state: "settings-window",
@@ -1770,30 +1807,10 @@ const modalControls: Scene = {
 			note: "Settings open in their own popout window (body.is-popout-modal) in Obsidian 1.14.",
 		},
 		{
-			id: "modal.header-button",
-			component: "clickable-icon",
-			target: ".modal .modal-header-button",
-		},
-		pseudoItem("modal.header-button.hover", "clickable-icon", ".modal .modal-header-button", [
-			"hover",
-		]),
-		{
 			id: "modal.vertical-tab-group-title",
 			component: "vertical-tab",
 			target: ".modal .vertical-tab-header-group-title",
 		},
-		pseudoItem(
-			"modal.vertical-tab.hover",
-			"vertical-tab",
-			".modal .vertical-tab-nav-item:not(.is-active)",
-			["hover"],
-		),
-		pseudoItem(
-			"modal.vertical-tab.active.hover",
-			"vertical-tab",
-			".modal .vertical-tab-nav-item.is-active",
-			["hover"],
-		),
 		{
 			id: "modal.vertical-tab.active",
 			component: "vertical-tab",
@@ -1816,17 +1833,21 @@ const modalControls: Scene = {
 			"focus-visible",
 		]),
 		{ id: "modal.dropdown", component: "dropdown", target: ".modal select.dropdown" },
-		pseudoItem("modal.dropdown.hover", "dropdown", ".modal select.dropdown", ["hover"]),
-		pseudoItem("modal.dropdown.active", "dropdown", ".modal select.dropdown", ["active"]),
 		pseudoItem("modal.dropdown.focus", "dropdown", ".modal select.dropdown", ["focus"]),
 		{
 			id: "modal.dropdown-option.checked",
 			component: "dropdown",
 			target: ".modal select.dropdown option:checked",
 			state: "checked",
+			synthetic:
+				"size=6 set on the <select> so Chromium draws its options in the page (the real dropdown list is a native popup outside the page)",
+			before: async (ctx) => {
+				await ctx.js(
+					"const s = document.querySelector('.modal select.dropdown'); s.setAttribute('size', '6'); await sleep(200);",
+				);
+			},
 		},
 		{ id: "modal.slider", component: "slider", target: ".modal input[type=range]" },
-		pseudoItem("modal.slider.hover", "slider", ".modal input[type=range]", ["hover"]),
 		{ id: "modal.setting-item", component: "setting-item", target: ".modal .setting-item" },
 		{
 			id: "modal.setting-heading",
@@ -1841,9 +1862,16 @@ const modalControls: Scene = {
 				await ctx.js("app.setting.openTabById('about'); await sleep(400);");
 			},
 		},
-		pseudoItem("modal.button.hover", "button", ".modal button:not(.mod-cta)", ["hover"]),
-		{ id: "modal.button-cta", component: "button-cta", target: ".modal button.mod-cta" },
-		pseudoItem("modal.button-cta.hover", "button-cta", ".modal button.mod-cta", ["hover"]),
+		{
+			id: "modal.button-cta",
+			component: "button-cta",
+			target: ".modal button.mod-cta",
+			before: async (ctx) => {
+				await ctx.js(
+					"cap.clearSettingsSearch(); app.setting.openTabById('sync'); await sleep(500);",
+				);
+			},
+		},
 		{
 			id: "modal.text-input",
 			component: "text-input",
@@ -1853,36 +1881,17 @@ const modalControls: Scene = {
 			},
 		},
 		pseudoItem(
-			"modal.text-input.hover",
-			"text-input",
-			".modal input[type=text], .modal input:not([type])",
-			["hover"],
-		),
-		pseudoItem(
 			"modal.text-input.focus",
 			"text-input",
 			".modal input[type=text], .modal input:not([type])",
 			["focus"],
 		),
-		pseudoItem("modal.clickable-icon.hover", "clickable-icon", ".modal .clickable-icon", ["hover"]),
 		{
 			id: "modal.hotkey",
 			component: "hotkey",
 			target: ".modal .setting-hotkey",
 			before: async (ctx) => {
 				await ctx.js("app.setting.openTabById('hotkeys'); await sleep(600);");
-			},
-		},
-		pseudoItem("modal.hotkey.hover", "hotkey", ".modal .setting-hotkey", ["hover"]),
-		{
-			id: "modal.hotkey.recording",
-			component: "hotkey",
-			target: ".modal .setting-item",
-			state: "recording",
-			before: async (ctx) => {
-				await ctx.js(
-					"const b = document.querySelector('.modal .setting-command-hotkeys .clickable-icon[aria-label=\"Customize this command\"]'); b?.click(); await sleep(300);",
-				);
 			},
 		},
 		{
@@ -1896,9 +1905,6 @@ const modalControls: Scene = {
 				await ctx.sleep(300);
 			},
 		},
-		pseudoItem("modal.search-clear.hover", "clickable-icon", ".modal .search-input-clear-button", [
-			"hover",
-		]),
 		{
 			id: "modal.appearance",
 			component: "setting-item",
@@ -1926,6 +1932,7 @@ const lightMode: Scene = {
 	items: [
 		{
 			id: "light-mode.window",
+			expect: "body.theme-light .app-container",
 			component: "workspace",
 			target: ".app-container",
 			state: "theme-light",
@@ -1934,6 +1941,7 @@ const lightMode: Scene = {
 		},
 		{
 			id: "light-mode.restore",
+			expect: "body.theme-dark .app-container",
 			component: "workspace",
 			target: ".app-container",
 			state: "theme-dark",
@@ -1999,19 +2007,27 @@ const canvas: Scene = {
 		{
 			id: "canvas.node-link",
 			component: "canvas-node",
-			target: ".canvas-node.is-themed, .canvas-node:has(.canvas-link)",
+			target: ".canvas-node:has(.canvas-link)",
 		},
-		{ id: "canvas.group", component: "canvas-node", target: ".canvas-node.canvas-node-group" },
+		{
+			id: "canvas.group",
+			component: "canvas-node",
+			target: ".canvas-node.canvas-node-group",
+			minUnobscured: 0.3,
+			note: "Canvas groups lay a transparent pointer blocker over their area; the hit test sees it, the eye does not.",
+		},
 		{ id: "canvas.edge", component: "canvas-edge", target: ".canvas-edges" },
 		{
 			id: "canvas.edge-label",
+			minUnobscured: 0.3,
+			note: "Canvas groups lay a transparent pointer blocker over their area; the hit test sees it, the eye does not.",
 			component: "canvas-edge",
 			target: ".canvas-path-label-wrapper, .canvas-path-label",
 		},
 		{
 			id: "canvas.node-selected",
 			component: "canvas-node",
-			target: ".canvas-node.is-focused, .canvas-node.is-selected",
+			target: ".canvas-node.is-focused",
 			state: "selected",
 			before: async (ctx) => {
 				await ctx.js(
@@ -2037,8 +2053,9 @@ const canvas: Scene = {
 		]),
 		{
 			id: "canvas.color-menu",
+			expect: ".canvas-submenu",
 			component: "canvas-menu",
-			target: ".canvas-submenu, .canvas-menu",
+			target: ".canvas-submenu",
 			state: "color-picker",
 			before: async (ctx) => {
 				await ctx.js(
@@ -2095,7 +2112,7 @@ const bases: Scene = {
 		{
 			id: "bases.table",
 			component: "bases-table",
-			target: { sel: ".bases-table-container, .bases-view", in: "leaf" },
+			target: { sel: ".bases-table-container", in: "leaf" },
 		},
 		{
 			id: "bases.table-header",
@@ -2105,7 +2122,7 @@ const bases: Scene = {
 		{
 			id: "bases.table-row",
 			component: "bases-table",
-			target: { sel: ".bases-tbody .bases-tr, .bases-tr", in: "leaf" },
+			target: { sel: ".bases-tbody .bases-tr", in: "leaf" },
 		},
 		{
 			id: "bases.table-footer",
@@ -2215,7 +2232,7 @@ const bases: Scene = {
 		{
 			id: "bases.filter-menu",
 			component: "menu",
-			target: ".menu, .popover",
+			target: { sel: ".filter-row", closest: ".menu" },
 			surface: "menu",
 			before: async (ctx) => {
 				await ctx.page.keyboard.press("Escape");
@@ -2391,6 +2408,7 @@ const pdf: Scene = {
 		},
 		{
 			id: "pdf.highlight",
+			expect: ".highlight",
 			component: "pdf",
 			target: { sel: ".textLayer .highlight", in: "leaf" },
 			state: "search-highlight",
@@ -2466,16 +2484,6 @@ const mediaAndOther: Scene = {
 			},
 		},
 		{
-			id: "view.pinned-tab",
-			component: "tab-header",
-			target: ".mod-root .workspace-tab-header.is-active",
-			state: "pinned",
-			before: async (ctx) => {
-				await ctx.command("workspace:toggle-pin");
-				await ctx.sleep(300);
-			},
-		},
-		{
 			id: "view.window-unfocused",
 			component: "workspace",
 			target: ".app-container",
@@ -2485,10 +2493,11 @@ const mediaAndOther: Scene = {
 				await ctx.command("workspace:toggle-pin");
 				await ctx.js("document.body.classList.remove('is-focused'); await sleep(300);");
 			},
-			note: "is-focused removed by script: the headless window never loses OS focus.",
+			synthetic: "body.is-focused removed by script: the headless window never loses OS focus",
 		},
 		{
 			id: "view.ribbon-hidden",
+			expect: "body:not(.show-ribbon) .app-container",
 			component: "workspace",
 			target: ".app-container",
 			state: "ribbon-hidden",
@@ -2501,56 +2510,17 @@ const mediaAndOther: Scene = {
 		},
 		{
 			id: "view.sidebars-collapsed",
+			expect:
+				".app-container:has(.mod-left-split.is-sidedock-collapsed):has(.mod-right-split.is-sidedock-collapsed)",
 			component: "workspace",
 			target: ".app-container",
 			state: "sidebars-collapsed",
 			full: true,
 			before: async (ctx) => {
 				await ctx.command("app:toggle-ribbon");
-				await ctx.command("app:toggle-left-sidebar");
-				await ctx.command("app:toggle-right-sidebar");
-				await ctx.sleep(500);
-			},
-		},
-		{
-			id: "view.drag-ghost",
-			component: "drag-ghost",
-			target: ".drag-ghost",
-			before: async (ctx) => {
-				await ctx.command("app:toggle-left-sidebar");
-				await ctx.command("app:toggle-right-sidebar");
-				await ctx.sleep(400);
-				const box = await ctx.js<[number, number]>(
-					"const r = document.querySelector('.nav-folder-title, .nav-file-title').getBoundingClientRect(); return [r.x + 30, r.y + r.height / 2];",
+				await ctx.js(
+					"app.workspace.leftSplit.collapse(); app.workspace.rightSplit.collapse(); await sleep(500);",
 				);
-				await ctx.page.mouse.move(box[0], box[1]);
-				await ctx.page.mouse.down();
-				await ctx.page.mouse.move(box[0] + 60, box[1] + 40, { steps: 6 });
-				await ctx.page.mouse.move(box[0] + 400, box[1] + 200, { steps: 10 });
-				await ctx.sleep(300);
-			},
-		},
-		{
-			id: "view.drop-overlay",
-			component: "drag-ghost",
-			target: ".workspace-drop-overlay, .app-container",
-			state: "dragging",
-			full: true,
-			before: async (ctx) => {
-				await ctx.page.mouse.move(900, 500, { steps: 5 });
-				await ctx.sleep(300);
-			},
-		},
-		{
-			id: "view.drag-end",
-			component: "workspace",
-			target: ".app-container",
-			state: "after-drag",
-			full: true,
-			before: async (ctx) => {
-				await ctx.page.keyboard.press("Escape");
-				await ctx.page.mouse.up();
-				await ctx.sleep(400);
 			},
 		},
 	],
@@ -2595,8 +2565,7 @@ const sidebarViews: Scene = {
 			id: "sidebar.search-options",
 			component: "search-input",
 			surface: "left-sidebar",
-			target:
-				'.workspace-leaf-content[data-type="search"] .search-params, .workspace-leaf-content[data-type="search"] .search-row',
+			target: '.workspace-leaf-content[data-type="search"] .search-params',
 			before: async (ctx) => {
 				await ctx.js(
 					'const b = document.querySelector(\'.workspace-leaf-content[data-type="search"] .clickable-icon[aria-label="Search settings"]\'); b?.click(); await sleep(400);',
@@ -2656,8 +2625,7 @@ const sidebarViews: Scene = {
 		{
 			id: "sidebar.outline-active",
 			component: "tree-item",
-			target:
-				'.workspace-leaf-content[data-type="outline"] .tree-item-self.is-active, .workspace-leaf-content[data-type="outline"]',
+			target: '.workspace-leaf-content[data-type="outline"] .tree-item-self.is-active',
 			state: "is-active",
 			before: async (ctx) => {
 				await ctx.open("Markdown/Headings.md", "live");
@@ -2683,10 +2651,10 @@ const sidebarViews: Scene = {
 		},
 		{
 			id: "sidebar.file-explorer.rename",
+			expect: "[contenteditable]",
 			component: "text-input",
 			surface: "left-sidebar",
-			target:
-				".nav-file-title .nav-file-title-content[contenteditable], .nav-file-title.is-being-renamed, .is-being-renamed",
+			target: ".nav-file-title-content[contenteditable]",
 			state: "renaming",
 			before: async (ctx) => {
 				await ctx.js(
