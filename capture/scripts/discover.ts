@@ -83,32 +83,59 @@ export async function inventory(page: Page): Promise<AppInventory> {
 	}))()`)) as AppInventory;
 }
 
+/** Opens a note and waits for its editor; a leftover modal or view can swallow the first open. */
+async function openEditor(
+	ctx: Ctx,
+	file: string,
+	mode: "live" | "source",
+	then: string,
+): Promise<void> {
+	for (let i = 0; i < 3; i++) {
+		await ctx.open(file, mode, { newLeaf: i > 0 });
+		const ok = await ctx.js(
+			"for (let i = 0; i < 30 && !app.workspace.activeEditor?.editor; i++) await sleep(100); return !!app.workspace.activeEditor?.editor;",
+		);
+		if (ok)
+			return void (await ctx.js(`const e = app.workspace.activeEditor.editor; e.focus(); ${then}`));
+		await ctx.page.keyboard.press("Escape");
+		await ctx.js(
+			"app.setting?.close?.(); for (const w of app.workspace.floatingSplit?.children ?? []) w.win?.close(); await sleep(300);",
+		);
+	}
+	const why = await ctx.js<string>(
+		"const w = app.workspace; const l = w.activeLeaf; return JSON.stringify({ active: l?.view?.getViewType?.(), file: l?.view?.file?.path, inRoot: l?.getRoot?.() === w.rootSplit, floating: w.floatingSplit?.children?.length ?? 0, docFocus: document.hasFocus(), activeDocMain: activeDocument === document, modals: document.querySelectorAll('.modal-container').length });",
+	);
+	throw new Error(`no editor for ${file}: ${why}`);
+}
+
 /** Contexts tried in order until a command accepts. */
 const CONTEXTS: { id: string; setup: (ctx: Ctx) => Promise<void> }[] = [
 	{
 		id: "note",
 		setup: async (ctx) => {
-			await ctx.open("Markdown/Kitchen sink.md", "live");
-			await ctx.js(
-				"const e = app.workspace.activeEditor.editor; e.focus(); const n = e.getValue().split('\\n').findIndex((l) => l.startsWith('Text with')); e.setSelection({ line: n, ch: 10 }, { line: n, ch: 14 });",
+			await openEditor(
+				ctx,
+				"Markdown/Kitchen sink.md",
+				"live",
+				"const n = e.getValue().split('\\n').findIndex((l) => l.startsWith('Text with')); e.setSelection({ line: n, ch: 10 }, { line: n, ch: 14 });",
 			);
 		},
 	},
 	{
 		id: "table",
 		setup: async (ctx) => {
-			await ctx.open("Markdown/Tables.md", "source");
-			await ctx.js(
-				"const e = app.workspace.activeEditor.editor; e.focus(); e.setCursor({ line: 4, ch: 3 });",
-			);
+			await openEditor(ctx, "Markdown/Tables.md", "source", "e.setCursor({ line: 4, ch: 3 });");
 		},
 	},
 	{
 		id: "heading",
 		setup: async (ctx) => {
-			await ctx.open("Markdown/Headings.md", "source");
-			await ctx.js(
-				"const e = app.workspace.activeEditor.editor; e.focus(); e.setCursor({ line: 4, ch: 4 });",
+			// Kitchen sink in Live Preview: Headings.md can carry a saved fold from the folded-heading item.
+			await openEditor(
+				ctx,
+				"Markdown/Kitchen sink.md",
+				"live",
+				"const n = e.getValue().split('\\n').findIndex((l) => l.startsWith('# ')); e.setCursor({ line: n, ch: 4 });",
 			);
 		},
 	},
@@ -133,7 +160,7 @@ const CONTEXTS: { id: string; setup: (ctx: Ctx) => Promise<void> }[] = [
 		id: "webviewer",
 		setup: async (ctx) => {
 			await ctx.js(
-				"const l = app.workspace.getLeaf(false); await l.setViewState({ type: 'webviewer', state: { url: 'about:blank' }, active: true }); await sleep(800);",
+				"const l = app.workspace.getMostRecentLeaf(app.workspace.rootSplit) ?? app.workspace.getLeaf('tab'); await l.setViewState({ type: 'webviewer', state: { url: 'about:blank' }, active: true }); await sleep(800);",
 			);
 		},
 	},
@@ -399,18 +426,9 @@ export function settingsScenes(inv: AppInventory): Scene[] {
 					id: `settings.${t.id}`,
 					component: "settings-page",
 					target: ".modal.mod-settings",
-					note: `Settings tab "${t.name}"`,
-				},
-				{
-					id: `settings.${t.id}.end`,
-					component: "settings-page",
-					target: ".modal.mod-settings",
-					state: "scrolled-to-end",
-					before: async (ctx) => {
-						await ctx.js(
-							"const c = document.querySelector('.modal.mod-settings .vertical-tab-content-container'); if (c) c.scrollTop = c.scrollHeight; await sleep(300);",
-						);
-					},
+					// .vertical-tab-content is the element that scrolls (its container only clips).
+					scroll: ".modal.mod-settings .vertical-tab-content",
+					note: `Settings tab "${t.name}", scrolled top to bottom; the screenshot stacks every position`,
 				},
 			],
 		}),

@@ -1,0 +1,53 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [] /XFA 4 0 R /DR << /Font << /Helv 5 0 R >> >> /DA (/Helv 0 Tf 0 g) >> /NeedsRendering true >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+endobj
+4 0 obj
+<< /Length 2254 >>
+stream
+<?xml version="1.0" encoding="UTF-8"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+<template xmlns="http://www.xfa.org/schema/xfa-template/3.3/">
+<subform name="form1" layout="tb" locale="en_US">
+<pageSet><pageArea name="Page1" id="Page1"><contentArea x="0.5in" y="0.5in" w="7.5in" h="10in"/><medium stock="letter" short="8.5in" long="11in"/></pageArea></pageSet>
+<subform name="body" w="7.5in" layout="tb">
+<draw name="Title" w="7in" h="12mm"><value><text>XFA form sample</text></value><font typeface="Helvetica" size="16pt"/></draw>
+<field name="Name" w="5in" h="10mm"><ui><textEdit/></ui><caption reserve="30mm"><value><text>Name</text></value></caption><border><edge/></border></field>
+<field name="Notes" w="5in" h="20mm"><ui><textEdit multiLine="1"/></ui><caption reserve="30mm"><value><text>Notes</text></value></caption><border><edge/></border></field>
+<field name="Agree" w="5in" h="10mm"><ui><checkButton size="5mm"/></ui><caption reserve="30mm"><value><text>Agree</text></value></caption><items><integer>1</integer><integer>0</integer></items></field>
+<field name="Size" w="5in" h="10mm"><ui><checkButton shape="round" size="5mm"/></ui><caption reserve="30mm"><value><text>Radio</text></value></caption><items><integer>1</integer><integer>0</integer></items></field>
+<field name="Pick" w="5in" h="10mm"><ui><choiceList/></ui><caption reserve="30mm"><value><text>Choice</text></value></caption><items><text>One</text><text>Two</text></items><border><edge/></border></field>
+<field name="Locked" w="5in" h="10mm" access="readOnly"><ui><textEdit/></ui><caption reserve="30mm"><value><text>Read only</text></value></caption><value><text>Fixed</text></value><border><edge/></border></field>
+<field name="Press" w="2in" h="10mm"><ui><button/></ui><caption><value><text>Press</text></value></caption><border><edge/><fill><color value="200,200,200"/></fill></border></field>
+<draw name="Link" w="5in" h="10mm"><value><exData contentType="text/html"><body xmlns="http://www.w3.org/1999/xhtml"><p>Rich <b>text</b> and <a href="https://example.com">a link</a></p></body></exData></value></draw>
+</subform>
+</subform>
+</template>
+<xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><xfa:data><form1/></xfa:data></xfa:datasets>
+</xdp:xdp>
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Name /Helv /Encoding /WinAnsiEncoding >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000178 00000 n 
+0000000235 00000 n 
+0000000306 00000 n 
+0000002612 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+2721
+%%EOF
