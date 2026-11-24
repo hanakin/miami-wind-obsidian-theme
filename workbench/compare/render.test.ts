@@ -54,14 +54,14 @@ test
 	.each([
 		"command.workspace:export-pdf",
 		"extra.community.plugin-browser",
-		"extra.canvas.after-select",
+		"canvas.node-selected",
 		"md.embed-video.live",
 		"command.app:open-vault",
 		"command.bases:add-view",
 		"settings.webviewer",
 		"extra.textarea.focus",
 		"chrome.window",
-		"chrome.window.macos",
+		"qc.window.fullscreen.macos",
 		"view.empty.action.hover",
 	])(
 	"keeps %s pixels stable across identical replays",
