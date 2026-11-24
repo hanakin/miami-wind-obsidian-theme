@@ -4,14 +4,13 @@
 }
 
 .metadata-property[data-property-key="tags"] .multi-select-pill {
-	--pill-color: var(--black);
-	--pill-color-hover: var(--black);
-	--pill-background: var(--purple);
+	color: var(--black);
+	background-color: var(--purple);
 	cursor: pointer;
 }
 
 .metadata-property[data-property-key="tags"] .multi-select-pill:hover {
-	--pill-background-hover: var(--magenta);
+	background-color: var(--magenta);
 }
 
 .metadata-container .metadata-show-source-button,

@@ -1,0 +1,198 @@
+/* Miami Wind b478dc8: unchanged editor rules used as the parity reference. */
+
+.cm-header-1, .markdown-rendered h1 { color: var(--text-title-h1); }
+.cm-header-2, .markdown-rendered h2 { color: var(--text-title-h2); }
+.cm-header-3, .markdown-rendered h3 { color: var(--text-title-h3); }
+.cm-header-4, .markdown-rendered h4 { color: var(--text-title-h4); }
+.cm-header-5, .markdown-rendered h5 { color: var(--text-title-h5); }
+.cm-header-6, .markdown-rendered h6 { color: var(--text-title-h6); }
+.markdown-rendered code {
+	font-family: var(--font-monospace-theme);
+	background-color: var(--code-background);
+	color: var(--markup-code);
+	padding: 2px 4px;
+	border-radius: 3px;
+}
+
+.cm-inline-code {
+	background-color: var(--code-background);
+	color: var(--code-foreground) !important;
+}
+
+.markdown-rendered pre {
+	background-color: var(--code-background);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 5px;
+}
+
+.markdown-rendered pre code {
+	background-color: transparent;
+	color: var(--code-foreground);
+}
+.markdown-rendered mark,
+.cm-s-obsidian span.cm-highlight,
+mark {
+	background-color: var(--highlight) !important;
+	color: var(--background-primary) !important;
+	border-radius: 3px;
+	padding: 2px 4px;
+}
+.markdown-rendered a { color: var(--link-unresolved-color); }
+
+.markdown-rendered a:hover {
+	color: var(--link-color-hover);
+	text-decoration: var(--link-decoration-hover);
+}
+
+.markdown-rendered a:visited,
+.markdown-rendered a:active,
+.markdown-rendered a:focus {
+	color: var(--link-color);
+	text-decoration: var(--link-decoration);
+}
+
+.markdown-rendered a:hover:visited,
+.markdown-rendered a:hover:active,
+.markdown-rendered a:hover:focus {
+	color: var(--link-color-hover);
+	text-decoration: var(--link-decoration);
+}
+.markdown-rendered blockquote {
+	border-left: 4px solid var(--blockquote);
+	padding: 8px 16px 16px 16px !important;
+}
+
+.metadata-property[data-property-key="tags"] .multi-select-pill {
+	color: var(--black);
+	background-color: var(--purple);
+	cursor: pointer;
+}
+
+.metadata-property[data-property-key="tags"] .multi-select-pill:hover {
+	background-color: var(--magenta);
+}
+
+.multi-select-pill-remove-button:hover {
+	color: var(--red-bright);
+	cursor: pointer;
+}
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"] {
+	text-decoration: line-through;
+	color: var(--red) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"] input {
+	border-color: var(--red) !important;
+	background-color: var(--red) !important;
+	color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"] {
+	text-decoration: underline !important;
+	color: var(--magenta) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="/"] input {
+	border-color: var(--magenta) !important;
+	background-color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"] {
+	text-decoration: none !important;
+	color: var(--orange) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="!"] input {
+	border-color: var(--orange) !important;
+	background-color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"] {
+	text-decoration: none !important;
+	color: var(--blue) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="?"] input {
+	border-color: var(--blue) !important;
+	background-color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"] {
+	text-decoration: none !important;
+	color: var(--green) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="x"] input {
+	border-color: var(--green) !important;
+	background-color: var(--green) !important;
+	color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=" "],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=" "] {
+	text-decoration: none !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=" "] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=" "] input {
+	border-color: var(--cyan) !important;
+	background-color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"] {
+	text-decoration: none !important;
+	color: var(--yellow) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="*"] input {
+	border-color: var(--yellow) !important;
+	background-color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"] {
+	text-decoration: none !important;
+	color: var(--grey-3) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="q"] input {
+	border-color: var(--grey-3) !important;
+	background-color: var(--black) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"],
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"] {
+	text-decoration: none !important;
+	color: var(--purple) !important;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"] input,
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=">"] input {
+	border-color: var(--purple) !important;
+	background-color: var(--black) !important;
+}
+.markdown-rendered table { border: 1px solid var(--background-modifier-border); }
+
+.markdown-rendered th {
+	background-color: var(--code-background);
+	color: var(--text-accent);
+}
+
+.markdown-rendered td { border: 1px solid var(--background-modifier-border); }
+
+.markdown-reading-view .tag {
+	color: var(--black);
+}

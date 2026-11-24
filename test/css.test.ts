@@ -133,6 +133,13 @@ it.each(["cm-footref", "cm-hmd-footnote"])(
 it.each([
 	".cm-s-obsidian span.cm-highlight",
 	".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
+	".cm-s-obsidian span.is-flashing:where(.cm-highlight)",
+	".cm-s-obsidian span.cm-hashtag.cm-hmd-escape-backslash:where(.cm-highlight)",
+	".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight)",
+	".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight):hover",
+	".markdown-source-view.mod-cm6 span.cm-highlight.cm-footref",
+	".markdown-source-view.mod-cm6 span.cm-highlight.cm-hmd-footnote",
+	".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)",
 ])(
 	"limits the highlight exception to its exact surface: %s",
 	async (selector) => {
