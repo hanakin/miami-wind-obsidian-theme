@@ -46,9 +46,7 @@ it("styles captured srcdoc iframes like the outer frame and locks them down", ()
 	expect(doc).not.toContain("evil");
 	expect(doc).not.toContain("app://obsidian.md");
 	// The inner document carries the same stylesheet links, escaped inside the attribute.
-	expect(doc).toContain(
-		"<head><link rel=&quot;stylesheet&quot; href=&quot;/css/app.css&quot;>",
-	);
+	expect(doc).toContain("<head><link rel=&quot;stylesheet&quot; href=&quot;/css/app.css&quot;>");
 	expect(doc).toContain("A &amp;amp; B");
 	expect(doc).toContain('"width":480,"height":270');
 	expect(frameCsp("http://127.0.0.1:5175", "N1")).toContain("frame-src about:");

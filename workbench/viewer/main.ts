@@ -21,6 +21,8 @@ const PAD = 8;
 const GAP = 8;
 // How many captures to try when looking for one that really shows a component.
 const MAX_TRIES = 6;
+// Properties listed per row before the rest fold into "+N more" (full list in its tooltip).
+const MAX_PROPS = 8;
 
 function h(tag: string, attrs: Record<string, string> = {}, ...children: Child[]): HTMLElement {
 	const el = document.createElement(tag);
@@ -314,7 +316,13 @@ function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLEle
 					"ul",
 					{ class: "props" },
 					h("li", { class: "props-title" }, "Off the shared look"),
-					...props.map((p) => h("li", {}, p)),
+					...props.slice(0, MAX_PROPS).map((p) => h("li", {}, p)),
+					props.length > MAX_PROPS &&
+						h(
+							"li",
+							{ class: "props-title", title: props.slice(MAX_PROPS).join("\n") },
+							`+${props.length - MAX_PROPS} more`,
+						),
 				),
 		),
 		h(
