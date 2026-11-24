@@ -8,7 +8,7 @@ await writeFile(
 	`${JSON.stringify(result, null, "\t")}\n`,
 );
 console.log(
-	`Base-l Stylelint: ${result.unexpected.length} unexpected, ${result.permanent} Obsidian exceptions, ${result.temporary} temporary source-format exceptions.`,
+	`Base-l Stylelint: ${result.unexpected.length} unexpected, ${result.permanent} Obsidian exceptions, ${result.temporary} temporary source/legacy exceptions.`,
 );
 console.log(JSON.stringify(result.counts, null, 2));
 console.log(
