@@ -356,6 +356,8 @@ const dragQc: Scene = {
 		},
 		{
 			id: "qc.drag.kanban-column",
+			// The dragged column's ghost floats over the board by design.
+			minUnobscured: 0,
 			component: "bases-kanban",
 			surface: "bases",
 			target: leaf(".bases-kanban-container"),

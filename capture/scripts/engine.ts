@@ -317,8 +317,11 @@ export async function captureItem(
 	);
 	// Park the real pointer on the empty middle of the top edge, so whatever the last item hovered
 	// does not stay hovered; items that click or hover move it from there.
-	const mid = (await page.evaluate("Math.round(innerWidth / 2)")) as number;
-	await page.mouse.move(mid, 1);
+	// Items without a before() keep the previous item's pointer (they capture what it opened).
+	if (item.before) {
+		const mid = (await page.evaluate("Math.round(innerWidth / 2)")) as number;
+		await page.mouse.move(mid, 1);
+	}
 	if (item.before) await item.before(ctx);
 	const target: Target = item.target;
 	const found = (await page.evaluate(

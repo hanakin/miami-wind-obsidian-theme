@@ -90,6 +90,23 @@ const CASES: { name: string; html: string; seen: boolean }[] = [
 		seen: true,
 	},
 	{
+		// A border-only frame laid over a field (like pdf.js XFA borders) covers only its edges.
+		name: "field under a border-only frame",
+		html: `<div id="t" style="position:absolute;left:10px;top:10px;width:200px;height:40px;background:blue"></div><div style="position:absolute;left:5px;top:5px;width:210px;height:50px;border:2px solid black"></div>`,
+		seen: true,
+	},
+	{
+		// A full-size <svg> layer (canvas edges) paints only where its shapes are.
+		name: "element under an empty full-size svg layer",
+		html: `<div id="t" style="width:200px;height:100px;background:blue"></div><svg style="position:absolute;left:0;top:0" width="300" height="300"><path d="M250 250 L260 260" stroke="red"/></svg>`,
+		seen: true,
+	},
+	{
+		name: "element under an svg shape",
+		html: `<div id="t" style="width:200px;height:100px;background:blue"></div><svg style="position:absolute;left:0;top:0" width="300" height="300"><rect x="0" y="0" width="300" height="300" fill="red"/></svg>`,
+		seen: false,
+	},
+	{
 		// A zero-size wrapper of absolutely placed boxes (like .search-highlight) shows through them.
 		name: "zero-size wrapper of painted children",
 		html: `<div style="position:relative;width:300px;height:200px"><div id="t"><div style="position:absolute;left:10px;top:10px;width:80px;height:20px;background:yellow"></div></div></div>`,

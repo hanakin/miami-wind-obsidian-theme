@@ -220,7 +220,9 @@ export const INPAGE = String.raw`
 		if (["Top", "Right", "Bottom", "Left"].some((k) => parseFloat(cs["border" + k + "Width"]) > 0 && alphaOf(cs["border" + k + "Color"]) > 0)) return false;
 		if (cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0) return false;
 		for (const pe of ["::before", "::after"]) { const p = win.getComputedStyle(e, pe); if (p.content !== "none" && p.content !== "normal") return false; }
-		return ![...e.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) && !["img", "svg", "canvas", "video", "iframe", "input", "textarea", "select"].includes(e.localName);
+		// <svg>/<g> paint nothing themselves (their shapes do, and are hit where they paint).
+		if (e.namespaceURI === "http://www.w3.org/2000/svg" && !["svg", "g", "defs", "symbol"].includes(e.localName)) return false;
+		return ![...e.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) && !["img", "canvas", "video", "iframe", "input", "textarea", "select"].includes(e.localName);
 	}
 	/** True when h paints a background (color with alpha, or an image) over its area. */
 	function paintsBackground(win, h) {
@@ -261,9 +263,20 @@ export const INPAGE = String.raw`
 			}
 			// Anything else above e (an ancestor included: a child with a negative z-index paints
 			// under its parent) hides it unless it paints nothing.
-			if (!clear(win, h)) return false;
+			if (!clear(win, h) && !frameOnlyAt(win, h, x, y)) return false;
 		}
 		return false;
+	}
+	/** True when h paints only a border/outline (no fill, shadow, pseudo-element or text) and x,y lies inside that frame. */
+	function frameOnlyAt(win, h, x, y) {
+		if (h.namespaceURI === "http://www.w3.org/2000/svg") return false;
+		const cs = win.getComputedStyle(h);
+		if (alphaOf(cs.backgroundColor) >= 0.5 || cs.backgroundImage !== "none" || cs.boxShadow !== "none") return false;
+		for (const pe of ["::before", "::after"]) { const p = win.getComputedStyle(h, pe); if (p.content !== "none" && p.content !== "normal") return false; }
+		if ([...h.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) || ["img", "svg", "canvas", "video", "iframe", "input", "textarea", "select"].includes(h.localName)) return false;
+		const r = h.getBoundingClientRect();
+		const bw = (k) => parseFloat(cs["border" + k + "Width"]) || 0;
+		return x > r.left + bw("Left") && x < r.right - bw("Right") && y > r.top + bw("Top") && y < r.bottom - bw("Bottom");
 	}
 	/** Center and quadrant centers of e's own boxes (line fragments for inline elements) inside r: a partly covered element still shows where any of them is on top. */
 	function samplePoints(e, r) {
