@@ -7,6 +7,8 @@ export interface Fixture {
 	note?: string;
 	/** Fixture file size in bytes. */
 	size: number;
+	/** The window size it was captured at, when not the desktop default (emulated mobile). */
+	viewport?: [number, number];
 }
 
 export interface ComponentEntry {
@@ -26,8 +28,9 @@ export type Diffs = Record<string, Record<string, { same: boolean; props: string
 
 /** The compare tool's verdict on one fixture, current theme against new build. */
 export type CompareState =
-	| { kind: "same" | "changed" | "hidden" }
-	| { kind: "unsupported"; what: string[] };
+	| { status: "same" }
+	| { status: "different" }
+	| { status: "not-proven"; reasons: string[] };
 
 export interface ViewerData {
 	/** False until `bun run capture:extract-app-css` has run. */

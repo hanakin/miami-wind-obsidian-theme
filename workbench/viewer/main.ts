@@ -1,4 +1,5 @@
-import type { Fixture, Theme, ViewerData } from "./types.ts";
+import { combine } from "./compare-states.ts";
+import type { CompareState, Fixture, Theme, ViewerData } from "./types.ts";
 
 type Mode = Theme | "both";
 type Child = Node | string | false | null | undefined;
@@ -9,9 +10,13 @@ const MODES: [Mode, string][] = [
 	["new", "New build"],
 	["both", "Side by side"],
 ];
-// The window size the fixtures were captured at (capture/scripts/obsidian.ts).
-const FRAME_W = 1600;
-const FRAME_H = 1000;
+// The desktop window size the fixtures were captured at (capture/scripts/obsidian.ts).
+const DESKTOP: [number, number] = [1600, 1000];
+const SURFACE_LABELS: Record<string, string> = {
+	"mobile-phone": "Phone (emulated)",
+	"mobile-tablet": "Tablet (emulated)",
+};
+const surfaceLabel = (surface: string) => SURFACE_LABELS[surface] ?? surface;
 const PAD = 8;
 const GAP = 8;
 // How many captures to try when looking for one that really shows a component.
@@ -51,12 +56,18 @@ let mode: Mode = MODES.find(([m]) => m === stored("mw-viewer-mode"))?.[0] ?? "ne
 
 // --- Navigation ---------------------------------------------------------------------------
 
-/** "differs" when any surface differs, "same" when all match, undefined when not compared. */
-function status(component: string): "same" | "differs" | undefined {
-	const d = data.diffs?.[component];
-	if (!d) return undefined;
-	return Object.values(d).some((s) => !s.same) ? "differs" : "same";
+/** Current theme against new build, over the component's own captures. */
+function status(component: string): CompareState | undefined {
+	if (!data.compare) return undefined;
+	const own = data.fixtures.filter((f) => f.component === component);
+	return combine(own.map((f) => data.compare?.[f.id]));
 }
+
+const DOT_TITLES = {
+	same: "Same in the new build",
+	different: "Differs in the new build",
+	"not-proven": "Not proven the same",
+};
 
 function navLink(name: string, count?: number): HTMLElement {
 	const s = status(name);
@@ -64,8 +75,7 @@ function navLink(name: string, count?: number): HTMLElement {
 		"a",
 		{ href: `#${name}`, "data-name": name },
 		h("span", { class: "nav-name" }, name),
-		s &&
-			h("span", { class: `dot ${s}`, title: s === "same" ? "Same on every surface" : "Differs" }),
+		s && h("span", { class: `dot ${s.status}`, title: DOT_TITLES[s.status] }),
 		count !== undefined && h("span", { class: "nav-count" }, String(count)),
 	);
 }
@@ -108,7 +118,7 @@ function renderNav(): void {
 					h(
 						"div",
 						{ class: "group" },
-						h("h3", {}, s),
+						h("h3", {}, surfaceLabel(s)),
 						...(bySurface.get(s) ?? []).map((n) => navLink(n)),
 					),
 				),
@@ -137,8 +147,8 @@ function shot(f: Fixture, theme: Theme, label: boolean, focus?: string): HTMLEle
 		title: `${f.id} (${theme})`,
 		// Captured markup is untrusted: no same-origin access, only the viewer's own measuring script.
 		sandbox: "allow-scripts",
-		width: String(FRAME_W),
-		height: String(FRAME_H),
+		width: String((f.viewport ?? DESKTOP)[0]),
+		height: String((f.viewport ?? DESKTOP)[1]),
 		tabindex: "-1",
 	});
 	const crop = h("div", { class: "crop" }, frame);
@@ -157,14 +167,15 @@ const onMissing = new WeakMap<Element, () => void>();
 
 /** Sizes a figure's crops. Side by side, captures wider than half the row stack at full size. */
 function layout(figure: Element): void {
-	const room = figure.closest(".captures")?.clientWidth ?? FRAME_W;
+	const room = figure.closest(".captures")?.clientWidth ?? DESKTOP[0];
 	const boxes = [...figure.querySelectorAll(".crop")].flatMap((crop) => {
 		const r = rects.get(crop);
-		if (!r) return [];
+		const frame = crop.querySelector("iframe");
+		if (!r || !frame) return [];
 		const left = Math.max(0, r[0] - PAD);
 		const top = Math.max(0, r[1] - PAD);
-		const width = Math.min(FRAME_W, r[0] + r[2] + PAD) - left;
-		const height = Math.min(FRAME_H, r[1] + r[3] + PAD) - top;
+		const width = Math.min(Number(frame.width), r[0] + r[2] + PAD) - left;
+		const height = Math.min(Number(frame.height), r[1] + r[3] + PAD) - top;
 		return [{ crop: crop as HTMLElement, left, top, width, height }];
 	});
 	const half = (room - GAP) / 2 - 2;
@@ -224,10 +235,9 @@ function capture(f: Fixture, focus?: string): HTMLElement {
 			h("span", { class: f.state === "default" ? "state" : "state forced" }, f.state),
 			h("code", {}, f.id),
 			focus && f.component !== focus && h("span", { class: "aside" }, `in ${f.component}`),
-			verdict?.kind === "changed" && h("span", { class: "changed" }, "Changed"),
-			verdict?.kind === "hidden" && h("span", { class: "aside" }, "Hidden when compared"),
-			verdict?.kind === "unsupported" &&
-				h("span", { class: "aside" }, `Not comparable (${verdict.what.join(", ")})`),
+			verdict?.status === "different" && h("span", { class: "changed" }, "Differs"),
+			verdict?.status === "not-proven" &&
+				h("span", { class: "unproven" }, `Not proven (${verdict.reasons.join("; ")})`),
 		),
 	);
 }
@@ -236,14 +246,20 @@ function capture(f: Fixture, focus?: string): HTMLElement {
  * The first of `candidates` in which the component is really found and visible, tried one at a
  * time as the frames report back. When none qualifies, `none()` takes its place.
  */
-function firstShowing(candidates: Fixture[], focus: string, none: () => Node): Node {
+function firstShowing(
+	candidates: Fixture[],
+	focus: string,
+	none: () => Node,
+	trying?: (f: Fixture | undefined) => void,
+): Node {
 	const [f, ...rest] = candidates;
+	trying?.(f);
 	if (!f) return none();
 	const figure = capture(f, focus);
 	onMissing.set(figure, () => {
 		const row = figure.closest(".surface");
 		const section = figure.closest("section");
-		figure.replaceWith(firstShowing(rest, focus, none));
+		figure.replaceWith(firstShowing(rest, focus, none, trying));
 		settle(row);
 		// A "Shared look" left with nothing to show goes away.
 		if (section?.classList.contains("shared") && !section.querySelector("figure")) section.remove();
@@ -255,32 +271,51 @@ function firstShowing(candidates: Fixture[], focus: string, none: () => Node): N
 
 const bySize = (a: Fixture, b: Fixture) => a.size - b.size;
 
-function badge(component: string, surface: string, shown: Fixture[]): HTMLElement {
-	const d = data.diffs?.[component]?.[surface];
-	if (!d) return h("span", { class: "badge" }, "Not compared yet");
-	if (!d.same) return h("span", { class: "badge differs" }, "Differs");
-	// Captures the compare tool found hidden are no evidence that the surface looks the same.
-	const hidden = shown.length > 0 && shown.every((f) => data.compare?.[f.id]?.kind === "hidden");
-	return hidden
-		? h("span", { class: "badge" }, "Nothing visible")
-		: h("span", { class: "badge same" }, "Same");
+/** Current theme against new build: "Differs", "Same" or "Not proven (reason)", three distinct states. */
+function badge(verdict: CompareState | undefined): HTMLElement {
+	if (!verdict) return h("span", { class: "badge" }, "Not compared yet");
+	if (verdict.status === "different") return h("span", { class: "badge differs" }, "Differs");
+	if (verdict.status === "same") return h("span", { class: "badge same" }, "Same");
+	const [first, ...more] = verdict.reasons;
+	return h(
+		"span",
+		{ class: "badge unproven", title: verdict.reasons.join("\n") },
+		`Not proven (${first ?? "no reason given"}${more.length ? `, +${more.length}` : ""})`,
+	);
+}
+
+/** The verdict for a surface row: over the component's own captures there, when it has any. */
+function rowVerdict(component: string, surface: string, all: Fixture[]): CompareState | undefined {
+	const own = all.filter((f) => f.surface === surface && f.component === component);
+	return data.compare ? combine(own.map((f) => data.compare?.[f.id])) : undefined;
 }
 
 function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLElement {
 	const here = all.filter((f) => f.surface === surface);
 	const own = here.filter((f) => f.component === component);
+	// From component-diffs.json: how this surface departs from the component's shared look.
 	const props = data.diffs?.[component]?.[surface]?.props ?? [];
+	const verdict = h("div", {}, badge(rowVerdict(component, surface, all)));
 	const none = () =>
 		h("p", { class: "none" }, "No capture of this component on this surface.") as Node;
+	// Without a capture of its own, the row is judged by the larger capture it ends up showing.
+	const trying = (f: Fixture | undefined) =>
+		verdict.replaceChildren(badge(f ? data.compare?.[f.id] : undefined));
 	const row = h(
 		"section",
 		{ class: "surface" },
 		h(
 			"header",
 			{},
-			h("h3", {}, surface),
-			badge(component, surface, own),
-			props.length > 0 && h("ul", { class: "props" }, ...props.map((p) => h("li", {}, p))),
+			h("h3", {}, surfaceLabel(surface)),
+			verdict,
+			props.length > 0 &&
+				h(
+					"ul",
+					{ class: "props" },
+					h("li", { class: "props-title" }, "Off the shared look"),
+					...props.map((p) => h("li", {}, p)),
+				),
 		),
 		h(
 			"div",
@@ -288,7 +323,7 @@ function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLEle
 			// Captures of the component itself; failing that, one larger capture that visibly has it.
 			...(own.length
 				? own.map((f) => capture(f))
-				: [firstShowing(here.toSorted(bySize).slice(0, MAX_TRIES), component, none)]),
+				: [firstShowing(here.toSorted(bySize).slice(0, MAX_TRIES), component, none, trying)]),
 		),
 	);
 	settle(row);
@@ -387,18 +422,20 @@ function renderPage(): void {
 	const entry = data.components[name];
 	const all = (entry?.fixtures ?? []).flatMap((id) => fixtures.get(id) ?? []);
 	const own = all.filter((f) => f.component === name);
-	const diffs = data.diffs?.[name];
-	const differs = (s: string) => diffs?.[s]?.same === false;
+	const verdicts = new Map(
+		(entry?.surfaces ?? []).map((x) => [x, rowVerdict(name, x, all)?.status]),
+	);
+	const differs = (x: string) => verdicts.get(x) === "different";
 	// Differing surfaces first; the sort is stable, so each group stays alphabetical.
 	const surfaces = (entry?.surfaces ?? []).toSorted(
 		(a, b) => Number(differs(b)) - Number(differs(a)),
 	);
+	const compared = surfaces.filter((x) => verdicts.get(x)).length;
 	const meta = entry
 		? [
 				plural(surfaces.length, "surface"),
 				plural(all.length, "capture"),
-				diffs &&
-					`${surfaces.filter(differs).length} of ${surfaces.filter((x) => diffs[x]).length} differ`,
+				compared > 0 && `${surfaces.filter(differs).length} of ${compared} differ`,
 			]
 				.filter(Boolean)
 				.join(" · ")

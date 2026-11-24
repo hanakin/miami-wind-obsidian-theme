@@ -12,7 +12,7 @@ import { appAsar } from "../../capture/scripts/obsidian.ts";
 import { runtimeCss } from "../compare/runtime.ts";
 import { compareStates } from "./compare-states.ts";
 import { forceStates } from "./force-states.ts";
-import { frameCsp, frameDocument } from "./frame.ts";
+import { frameCsp, frameDocument, type ImageSize } from "./frame.ts";
 import type { ViewerData } from "./types.ts";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
@@ -48,7 +48,15 @@ function moreSpecific(component: string): string[] {
 const json = (path: string): unknown =>
 	existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
 
-type FixtureIndex = Pick<ViewerData, "fixtures" | "components">;
+type FixtureIndex = Pick<ViewerData, "components"> & {
+	fixtures: (ViewerData["fixtures"][number] & { imageSizes?: ImageSize[] })[];
+};
+
+// The window sizes of the emulated mobile captures (capture/scripts/obsidian.ts).
+const VIEWPORTS: Record<string, [number, number]> = {
+	"mobile-phone": [390, 844],
+	"mobile-tablet": [1024, 768],
+};
 
 function data(index: FixtureIndex): ViewerData {
 	const report = json(paths.compare);
@@ -63,6 +71,7 @@ function data(index: FixtureIndex): ViewerData {
 			state,
 			note,
 			size: statSync(`${ROOT}capture/fixtures/${id}.html`).size,
+			viewport: VIEWPORTS[surface],
 		})),
 		components: index.components,
 		usage: (json(paths.usage) as ViewerData["usage"] | null) ?? [],
@@ -97,7 +106,7 @@ export function viewer(): Plugin {
 		name: "miami-wind-viewer",
 		async configureServer(server) {
 			const index = json(paths.fixtures) as FixtureIndex;
-			const fixtureIds = new Set(index.fixtures.map((f) => f.id));
+			const byId = new Map(index.fixtures.map((f) => [f.id, f]));
 			const currentCss = forceStates(
 				execFileSync("git", ["show", `${CURRENT_REF}:theme.css`], { cwd: ROOT, encoding: "utf8" }),
 			);
@@ -125,7 +134,7 @@ export function viewer(): Plugin {
 				if (url.pathname === "/api/data") {
 					return send(res, 200, "application/json", JSON.stringify(data(index)));
 				}
-				if (area === "frame" && (a === "current" || a === "new") && b && fixtureIds.has(b)) {
+				if (area === "frame" && (a === "current" || a === "new") && b && byId.has(b)) {
 					const nonce = randomUUID();
 					const component = url.searchParams.get("focus") ?? "";
 					const selector = COMPONENTS[component];
@@ -138,7 +147,7 @@ export function viewer(): Plugin {
 						res,
 						200,
 						"text/html; charset=utf-8",
-						frameDocument(html, styles, focus, nonce),
+						frameDocument(html, styles, focus, nonce, byId.get(b)?.imageSizes),
 					);
 				}
 				if (area === "css" && a === "public" && b && /^[\w.-]+$/.test(b)) {

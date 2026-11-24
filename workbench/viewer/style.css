@@ -17,6 +17,7 @@
 	--cyan: #22d3ee;
 	--green: #34d399;
 	--orange: #fdba74;
+	--yellow: #fef08a;
 	--border: color-mix(in srgb, #ffffff 7%, transparent);
 	--radius: 6px;
 	--mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
@@ -169,8 +170,12 @@ nav a[aria-current="page"] {
 	background: var(--green);
 }
 
-.dot.differs {
+.dot.different {
 	background: var(--orange);
+}
+
+.dot.not-proven {
+	background: var(--yellow);
 }
 
 /* Page */
@@ -298,6 +303,16 @@ main h2 {
 	color: var(--orange);
 }
 
+.badge.unproven {
+	background: color-mix(in srgb, var(--yellow) 12%, transparent);
+	color: var(--yellow);
+}
+
+.props-title {
+	color: var(--grey-400);
+	font-family: system-ui, sans-serif;
+}
+
 .props {
 	margin: 12px 0 0;
 	padding: 0;
@@ -408,6 +423,10 @@ figcaption[title] {
 
 .changed {
 	color: var(--orange);
+}
+
+.unproven {
+	color: var(--yellow);
 }
 
 /* Build usage */
