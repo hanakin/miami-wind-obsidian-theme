@@ -207,3 +207,24 @@ it("does not shorten a shorthand whose variables can expand into multiple values
 	);
 	expect(result.css).toContain("padding: var(--p) var(--p) var(--p) var(--p);");
 });
+
+it.each([
+	"overflow-wrap: break-word; word-wrap: normal",
+	"gap: 2px; grid-gap: 1px",
+	"break-before: page; page-break-before: avoid",
+])(
+	"keeps legacy alias declarations in source order: %s",
+	async (declarations) => {
+		const result = await postcss([formatCss()]).process(
+			`.x { ${declarations} }`,
+			{ from: undefined },
+		);
+		const [first, second] = declarations.split("; ");
+		expect(result.css.indexOf(first ?? "")).toBeLessThan(
+			result.css.indexOf(second ?? ""),
+		);
+		expect(
+			result.messages.some((message) => message.type === "order-preserved"),
+		).toBe(true);
+	},
+);

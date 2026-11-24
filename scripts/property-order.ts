@@ -6,6 +6,17 @@ const properties = data as Record<string, { initial: string | string[] }>;
 const order = reference.config.rules["order/properties-order"][0] as string[];
 const plain = (name: string) =>
 	name.toLowerCase().replace(/^-(webkit|moz|ms|o)-/, "");
+// MDN's initial/longhand lists do not encode these legacy aliases.
+const aliases: Record<string, string> = {
+	"word-wrap": "overflow-wrap",
+	"font-width": "font-stretch",
+	"grid-gap": "gap",
+	"grid-row-gap": "row-gap",
+	"grid-column-gap": "column-gap",
+	"page-break-before": "break-before",
+	"page-break-after": "break-after",
+	"page-break-inside": "break-inside",
+};
 const family = (name: string) => {
 	if (name.startsWith("border-") && name.endsWith("radius"))
 		return "border-radius";
@@ -21,13 +32,14 @@ const family = (name: string) => {
 };
 
 function leaves(name: string): string[] {
+	name = aliases[name] ?? name;
 	const initial = properties[name]?.initial;
 	return Array.isArray(initial) ? initial.flatMap(leaves) : [name];
 }
 
 export function orderRisk(declarations: Declaration[]): string | undefined {
 	const names = declarations
-		.map((decl) => plain(decl.prop))
+		.map((decl) => aliases[plain(decl.prop)] ?? plain(decl.prop))
 		.filter((name) => !name.startsWith("--"));
 	if (new Set(names).size !== names.length)
 		return "duplicate or vendor-alias declarations";
