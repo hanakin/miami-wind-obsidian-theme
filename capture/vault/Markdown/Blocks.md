@@ -17,7 +17,7 @@ Paragraph after rules.
   <details><summary>Details summary</summary>Details body.</details>
 </div>
 
-<iframe src="about:blank" width="200" height="60"></iframe>
+<iframe srcdoc="<p style='color:#888'>Embedded frame</p>" width="200" height="60"></iframe>
 
 %%
 Block comment, hidden in reading view.

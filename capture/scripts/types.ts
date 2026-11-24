@@ -33,6 +33,8 @@ export interface ItemDef {
 	state?: string;
 	/** Pseudo-classes to force on `pseudoOn` (default: the target). */
 	pseudo?: Pseudo[];
+	/** The state comes from the real pointer placed by `before` (not forced); only verified. */
+	pointer?: boolean;
 	pseudoOn?: Target;
 	/** Runs before the element is looked up, after the scene setup and previous items. */
 	before?: (ctx: Ctx) => Promise<void>;
@@ -41,6 +43,26 @@ export interface ItemDef {
 	/** Overrides the scene surface. */
 	surface?: string;
 	note?: string;
+	/** Selector the target must match, proving an app-driven state (".is-active", ...). */
+	expect?: string;
+	/** Set when the state is scripted rather than reached through the UI: says how. */
+	synthetic?: string;
+	/** Lowest share of sample points where the target must be topmost (default 0.6). */
+	minUnobscured?: number;
+	/** Scroll this container top to bottom, screenshot every position and stack the shots. */
+	scroll?: Target;
+	/**
+	 * JS body run in the page after the screenshot; its JSON result is stored as evidence.record.
+	 * A `graphColors` map ({ "color-fill": 0xrrggbb, ... }) also gets exact-pixel counts from the
+	 * screenshot (evidence.record.graphPixels).
+	 */
+	record?: string;
+	/** Extra milliseconds to wait after forcing the state (CSS transitions with a delay). */
+	settle?: number;
+	/** Huge lists: keep `keep` matches of `sel` plus any matching `keepAlso`, and record the trim. */
+	trim?: { sel: string; keep: number; keepAlso: string };
+	/** CDP media emulation for this item (print, forced-colors, hover: none). */
+	media?: { media?: string; features?: { name: string; value: string }[] };
 }
 
 export interface Scene {
@@ -54,6 +76,12 @@ export interface Scene {
 	window?: "main" | "popout" | "starter";
 	/** For popout/starter scenes: runs in the main window and must open the new window. */
 	opener?: (main: Ctx) => Promise<void>;
+	/** Needs a real window on the desktop (full screen, maximized); captured by --windowed runs. */
+	windowed?: boolean;
+	/** Needs a desktop without a mouse ((hover: none)); captured by --no-pointer runs. */
+	noPointer?: boolean;
+	/** Emulated mobile app (Obsidian's app.emulateMobile) at phone or tablet size; captured by --mobile runs. */
+	mobile?: "phone" | "tablet";
 }
 
 export interface ChecklistItem {
@@ -67,6 +95,11 @@ export interface ChecklistItem {
 	note?: string;
 	/** Set when the item can never be captured, with the reason. */
 	excluded?: string;
+	/** What the fixture must prove: forced pseudo-classes, a state selector, a scripted state. */
+	pseudo?: string[];
+	expect?: string;
+	synthetic?: string;
+	minUnobscured?: number;
 }
 
 export interface FixtureEntry {
@@ -85,4 +118,59 @@ export interface FixtureEntry {
 	variantOf?: string;
 	platform?: "macos" | "windows";
 	note?: string;
+	synthetic?: string;
+	/** Set when repeated children were dropped from the fixture (see ItemDef.trim). */
+	trimmed?: string;
+	evidence?: Evidence;
+	/**
+	 * Intrinsic size (naturalWidth/naturalHeight) of each image whose source does not load offline
+	 * (app:, https:, file:), by zero-based index in the saved fixture's document.images order.
+	 */
+	imageSizes?: { index: number; width: number; height: number }[];
+}
+
+/** What the capture proved about one fixture, checked again by the coverage script. */
+export interface Evidence {
+	/** Target box and its part inside the window, in CSS pixels. */
+	box: number[];
+	inView: number[];
+	/** Share of 9 sample points where the target (or its subtree) is the topmost element. */
+	unobscured: number;
+	/** Element counts per mark written from Element.matches() (hover, focus, ...) and our own marks. */
+	marks: Record<string, number>;
+	/** Pseudo-classes held during the snapshot (Chromium confirmed each through matches()). */
+	forced: string[];
+	/** How they were held: DevTools CSS.forcePseudoState or the real pointer. */
+	via?: "devtools" | "pointer";
+	/** Selector the target matched to prove the app state, if the item has one. */
+	expect?: string;
+	/** theme.css selector ids that hit a seen element in the off-page copy of the live document. */
+	live: string[];
+	/** Selector ids that only hit elements in the scope that were not visibly painted. */
+	domOnly?: string[];
+	/** Number of elements recorded as visibly painted inside the screenshot clip. */
+	seen?: number;
+	/** Screenshot clip in CSS pixels. */
+	clip?: number[];
+	/** Author rules per forced pseudo-class that Chromium matched on the forced element. */
+	painted?: Record<string, number>;
+	/** Result of the item's record script (see ItemDef.record). */
+	record?: {
+		graphColors?: Record<string, number>;
+		graphPixels?: Record<string, number>;
+		[k: string]: unknown;
+	};
+	/** Claimed states proven live (Element.matches) or by a DevTools-matched author rule. */
+	verified?: string[];
+	/** Claimed states nothing proved; they are not marked in the fixture. */
+	unverified?: string[];
+	/** Element boxes (with ::before/::after) whose painted style changed when the state was forced. */
+	styleChanged?: number;
+	/** When nothing of the target was recorded as painted: the hit stack at its center (top first). */
+	stackAtCenter?: string[];
+	/** Which boxes and properties changed (first 12). */
+	styleProps?: string[];
+	scroll?: { positions: number[]; scrollHeight: number; clientHeight: number };
+	media?: string;
+	screenshot?: { sha256: string; width: number; height: number; colors: number };
 }

@@ -1,12 +1,21 @@
 // Step 2: captures every checklist item from the real app into capture/fixtures/.
-// Usage: bun run capture:run [--only <id prefix>]...
+// Usage: bun run capture:run [--windowed | --no-pointer | --mobile phone|tablet] [--only <id prefix>]... [--until <scene id>]
+// Headless by default; --windowed runs only the scenes that need a real window on the desktop.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { Page } from "playwright";
+import { liveSelector, normSelector } from "./css.ts";
 import type { AppInventory, CommandResult } from "./discover.ts";
 import { closeExtraPages, pagesOf, restoreLayout, snapshotLayout } from "./discover.ts";
 import { type CaptureOut, ensureDirs, install, makeCtx, runScene } from "./engine.ts";
-import { close, launch, SCREENSHOTS, type Session, verifyIsolation } from "./obsidian.ts";
-import { allScenes, CAPTURE } from "./plan.ts";
+import {
+	close,
+	launch,
+	leaveMobile,
+	SCREENSHOTS,
+	type Session,
+	verifyIsolation,
+} from "./obsidian.ts";
+import { allScenes, CAPTURE, themeSelectors } from "./plan.ts";
 import type { FixtureEntry, Scene } from "./types.ts";
 import { platformVariants } from "./variants.ts";
 
@@ -25,6 +34,18 @@ const checklist = JSON.parse(readFileSync(`${CAPTURE}checklist.json`, "utf8")) a
 	obsidianVersion: string;
 };
 const only = process.argv.flatMap((a, i) => (process.argv[i - 1] === "--only" ? [a] : []));
+const windowed = process.argv.includes("--windowed");
+// --no-pointer: only the scenes that need (hover: none), in a headless app without a mouse.
+const noPointer = process.argv.includes("--no-pointer");
+// --mobile phone|tablet: only the emulated-mobile scenes of that size.
+const mobileArg = process.argv[process.argv.indexOf("--mobile") + 1];
+const mobile = process.argv.includes("--mobile")
+	? mobileArg === "tablet"
+		? "tablet"
+		: "phone"
+	: undefined;
+// --until <scene id>: stop after that scene (to reproduce order-dependent failures quickly).
+const until = process.argv[process.argv.indexOf("--until") + 1];
 const wanted = (id: string) => only.length === 0 || only.some((p) => id.startsWith(p));
 
 const FIXTURES = `${CAPTURE}fixtures/`;
@@ -32,21 +53,44 @@ const out: CaptureOut = {
 	fixturesDir: FIXTURES,
 	screenshotsDir: SCREENSHOTS,
 	version: checklist.obsidianVersion,
+	// Same selector form as the fixtures; evaluated on an off-page copy of the whole live document.
+	live: themeSelectors().map((t) => {
+		const l = liveSelector(t.selector);
+		return {
+			id: t.id,
+			live: l.sel,
+			...(l.needs ? { needs: l.needs } : {}),
+			norm: normSelector(t.selector),
+		};
+	}),
 };
 ensureDirs(out);
 
 const fixturesPath = `${CAPTURE}fixtures.json`;
-const previous: FixturesFile | undefined =
-	only.length && existsSync(fixturesPath)
-		? (JSON.parse(readFileSync(fixturesPath, "utf8")) as FixturesFile)
-		: undefined;
+// Earlier results are kept for items this run does not attempt (other --only prefixes, and the
+// windowed scenes during a headless run or the reverse).
+const previous: FixturesFile | undefined = existsSync(fixturesPath)
+	? (JSON.parse(readFileSync(fixturesPath, "utf8")) as FixturesFile)
+	: undefined;
+const censusPath = `${CAPTURE}class-census.json`;
+const fullRun =
+	!only.length && !windowed && !noPointer && !mobile && !process.argv.includes("--until");
+const census = new Set<string>(
+	!fullRun && existsSync(censusPath)
+		? (JSON.parse(readFileSync(censusPath, "utf8")) as string[])
+		: [],
+);
 
 let scenes: Scene[] = [];
-const session = await launch();
+const session = await launch({
+	windowed,
+	noPointer: noPointer || !!mobile,
+	...(mobile ? { mobile } : {}),
+});
 const entries = new Map<string, FixtureEntry>((previous?.fixtures ?? []).map((f) => [f.id, f]));
 const failed = new Map<string, string>((previous?.failed ?? []).map((f) => [f.id, f.error]));
 try {
-	console.log(verifyIsolation(session.proc.pid ?? 0).join("\n"));
+	console.log(verifyIsolation(session.pid, session.windowed).join("\n"));
 	const main = session.page;
 	await install(main);
 	await saveRuntimeStyles(main);
@@ -54,6 +98,12 @@ try {
 	scenes = allScenes(checklist.inventory, checklist.commands, () => layout);
 	let done = 0;
 	for (const scene of scenes) {
+		if (
+			Boolean(scene.windowed) !== windowed ||
+			Boolean(scene.noPointer) !== noPointer ||
+			scene.mobile !== mobile
+		)
+			continue;
 		const items = scene.items.filter((i) => wanted(i.id));
 		if (!items.length) continue;
 		await restoreLayout(main, layout).catch(() => undefined);
@@ -63,6 +113,7 @@ try {
 			scene,
 			out,
 			new Set(items.map((i) => i.id)),
+			census,
 		);
 		for (const i of items) {
 			entries.delete(i.id);
@@ -75,9 +126,11 @@ try {
 		await closeExtraPages(session, main);
 		done += items.length;
 		process.stdout.write(`\r${done} items, ${failed.size} failed   `);
+		if (process.argv.includes("--until") && scene.id === until) break;
 	}
 	process.stdout.write("\n");
 } finally {
+	if (mobile) await leaveMobile(session);
 	await close(session);
 }
 
@@ -105,11 +158,13 @@ const file: FixturesFile = {
 	generated: new Date().toISOString(),
 	fixtures,
 	failed: [...failed.entries()]
+		.filter(([id]) => known.has(id))
 		.map(([id, error]) => ({ id, error }))
 		.sort((a, b) => a.id.localeCompare(b.id)),
 	components: Object.fromEntries(Object.entries(components).sort(([a], [b]) => a.localeCompare(b))),
 };
 writeFileSync(fixturesPath, `${JSON.stringify(file, null, "\t")}\n`);
+writeFileSync(censusPath, `${JSON.stringify([...census].sort(), null, "\t")}\n`);
 // Drop fixture files no entry points to (renamed or removed items).
 const keep = new Set(fixtures.map((f) => f.file));
 for (const name of readdirSync(FIXTURES)) if (!keep.has(name)) rmSync(`${FIXTURES}${name}`);
