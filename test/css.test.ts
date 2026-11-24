@@ -145,3 +145,17 @@ it.each([".modal button.mod-cta", ".modal button.mod-cta:hover"])(
 		).rejects.toThrow();
 	},
 );
+
+it("allows only the exact disabled community-sidebar rival in overrides.css", async () => {
+	const css =
+		".mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true']) { color: var(--text-disabled) }";
+	await expect(
+		postcss([checkCss()]).process(css, { from: "src/overrides.css" }),
+	).resolves.toBeDefined();
+	await expect(check(css)).rejects.toThrow();
+	await expect(
+		postcss([checkCss()]).process(css.replace("button.", "div."), {
+			from: "src/overrides.css",
+		}),
+	).rejects.toThrow();
+});

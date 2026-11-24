@@ -4,7 +4,18 @@
 	@mixin icon-background;
 }
 
-/* Sidebar icon-tab fills lose to Obsidian 1.15.1; omit them for parity. */
+/* Pointerless devices lack Obsidian's stronger hover rivals. */
+@media (hover: none) {
+	.mod-left-split .workspace-tab-header:hover,
+	.mod-right-split .workspace-tab-header:hover {
+		background-color: var(--icon-background-hover);
+	}
+
+	.mod-left-split .workspace-tab-header.is-active:hover,
+	.mod-right-split .workspace-tab-header.is-active:hover {
+		background-color: var(--icon-background-active);
+	}
+}
 
 body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-profile {
 	border-top-color: var(--cyan);

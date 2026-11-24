@@ -418,7 +418,19 @@ mark {
 	background-color: var(--mw-icon-background);
 }
 
-/* Sidebar icon-tab fills lose to Obsidian 1.15.1; omit them for parity. */
+/* Pointerless devices lack Obsidian's stronger hover rivals. */
+
+@media (hover: none) {
+	.mod-left-split .workspace-tab-header:hover,
+	.mod-right-split .workspace-tab-header:hover {
+		background-color: var(--icon-background-hover);
+	}
+
+	.mod-left-split .workspace-tab-header.is-active:hover,
+	.mod-right-split .workspace-tab-header.is-active:hover {
+		background-color: var(--icon-background-active);
+	}
+}
 
 body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-profile {
 	border-top-color: var(--cyan);
@@ -1084,6 +1096,7 @@ hr {
 
 .menu .bases-toolbar-menu-item:hover .clickable-icon,
 .menu .bases-toolbar-menu-item.is-selected .clickable-icon {
+	--text-on-accent: var(--magenta);
 	color: var(--magenta);
 }
 
@@ -1229,6 +1242,29 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 
 .clickable-icon[aria-disabled='true'],
 .clickable-icon[aria-disabled='true']:is(:hover, :active, .is-active, .has-active-menu):where(:not(.modal-close-button:hover)) {
+	color: var(--text-disabled);
+}
+
+/* Sheet actions read accent text directly at 0,5,0 / 0,6,0. */
+
+.filter-row-actions .clickable-icon:where([aria-disabled='true']),
+.filter-group-header-actions .clickable-icon:where([aria-disabled='true']) {
+	--text-on-accent: var(--text-disabled);
+}
+
+.filter-group-header-actions .clickable-icon:where([aria-disabled='true']) {
+	--text-faint: transparent;
+}
+
+/* The old filter hover fill outranked the old disabled fill. */
+
+.filter-row-actions .clickable-icon:where([aria-disabled='true']):hover {
+	background-color: var(--magenta-transparent);
+}
+
+/* Tie Obsidian 1.15.1's 0,3,1 sidebar button color without changing child variables. */
+
+.mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true']) {
 	color: var(--text-disabled);
 }
 

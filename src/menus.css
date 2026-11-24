@@ -22,6 +22,7 @@
 
 .menu .bases-toolbar-menu-item:hover .clickable-icon,
 .menu .bases-toolbar-menu-item.is-selected .clickable-icon {
+	--text-on-accent: var(--magenta);
 	color: var(--magenta);
 }
 

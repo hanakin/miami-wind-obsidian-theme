@@ -18,8 +18,8 @@ afterAll(async () => {
 	await browser.close();
 });
 
-async function compareStates(html: string, legacy: string) {
-	const page = await browser.newPage();
+async function compareStates(html: string, legacy: string, touch = false) {
+	const page = await browser.newPage({ isMobile: touch, hasTouch: touch });
 	try {
 		const results = [];
 		for (const css of [theme + legacy, theme]) {
@@ -136,5 +136,72 @@ it("preserves both phone Bases menu row shapes without changing descendant paint
 			.bases-toolbar-menu-item.mod-hidden:hover { background-color: transparent !important; color: var(--text-disabled); cursor: default; }
 		`,
 		);
+	}
+});
+
+const disabledPaintReference = `
+ .clickable-icon { --text-faint: #888 !important; --text-on-accent: #fff !important; }
+ .clickable-icon[aria-disabled='true'] { color: var(--text-disabled) !important; background-color: transparent !important; }
+ .filter-row-actions .clickable-icon { background-color: transparent !important; }
+ .filter-row-actions .clickable-icon:hover { background-color: var(--magenta-transparent) !important; }
+ .menu .bases-toolbar-menu-item:hover .clickable-icon,
+ .menu .bases-toolbar-menu-item.is-selected .clickable-icon { color: var(--magenta) !important; }
+`;
+
+it("preserves disabled community-sidebar icon text", async () => {
+	await compareStates(
+		`<div class="modal mod-community-modal"><div class="modal-sidebar"><button class="clickable-icon" aria-disabled="true" data-target><svg stroke="currentColor"><path d="M0 0h8" /></svg></button></div></div>`,
+		disabledPaintReference,
+	);
+});
+
+it("preserves disabled sheet group-header action paint", async () => {
+	for (const container of ["menu mod-sheet", "drag-reorder-ghost mod-sheet"]) {
+		await compareStates(
+			`<div class="${container}"><div class="bases-filter-page"><div class="filter-row"><div class="filter-group-header-actions"><button class="clickable-icon" aria-disabled="true" data-target><svg stroke="currentColor"><path d="M0 0h8" /></svg></button></div></div></div></div>`,
+			disabledPaintReference,
+		);
+	}
+});
+
+it("preserves disabled filter-action hover fills", async () => {
+	for (const container of [
+		"menu mod-sheet",
+		"drag-reorder-ghost mod-sheet",
+		"menu",
+	]) {
+		await compareStates(
+			`<div class="${container}"><div class="bases-filter-page"><div class="filter-row"><div class="filter-row-actions"><button class="clickable-icon" aria-disabled="true" data-target><svg stroke="currentColor"><path d="M0 0h8" /></svg></button></div></div></div></div>`,
+			disabledPaintReference,
+		);
+	}
+});
+
+it("preserves hovered and selected menu-parent icon color in sheet actions", async () => {
+	for (const actions of ["filter-row-actions", "filter-group-header-actions"]) {
+		for (const parentState of ["", "is-selected"]) {
+			await compareStates(
+				`<div class="menu mod-sheet"><div class="bases-filter-page"><div class="bases-toolbar-menu-item ${parentState}" data-target><div class="filter-row"><div class="${actions}"><button class="clickable-icon" data-target><svg stroke="currentColor"><path d="M0 0h8" /></svg></button><button class="clickable-icon" aria-disabled="true" data-target><svg stroke="currentColor"><path d="M0 0h8" /></svg></button></div></div></div></div></div>`,
+				disabledPaintReference,
+			);
+		}
+	}
+});
+
+it("preserves sidebar tab hover paint with and without a mouse", async () => {
+	for (const touch of [false, true]) {
+		for (const side of [
+			"mod-primary-split mod-left-split",
+			"mod-secondary-split mod-right-split",
+		]) {
+			await compareStates(
+				`<div class="${side}"><div class="workspace-tab-header-container"><div class="workspace-tab-header" data-target>Tab</div><div class="workspace-tab-header is-active" data-target>Active</div><div class="workspace-tab-header has-active-menu" data-target>Menu</div></div></div>`,
+				`
+				.mod-left-split .workspace-tab-header:hover, .mod-right-split .workspace-tab-header:hover { background-color: var(--icon-background-hover); }
+				.mod-left-split .workspace-tab-header.is-active, .mod-left-split .workspace-tab-header.is-active:hover, .mod-right-split .workspace-tab-header.is-active, .mod-right-split .workspace-tab-header.is-active:hover { background-color: var(--icon-background-active); }
+			`,
+				touch,
+			);
+		}
 	}
 });

@@ -89,6 +89,15 @@ export function checkCss(legacyFile?: string): Plugin {
 						)
 							return;
 
+						// Obsidian 1.15.1's community sidebar button.clickable-icon reads
+						// --text-normal at 0,3,1; the zero-weight state keeps an exact tie.
+						if (
+							rule.source?.input.file === path.resolve("src/overrides.css") &&
+							selector.toString().trim() ===
+								".mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true'])"
+						)
+							return;
+
 						const siblings = tag.parent?.nodes ?? [];
 						const index = siblings.indexOf(tag);
 						const before = siblings
