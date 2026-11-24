@@ -52,25 +52,6 @@ export async function compile() {
 				slots.push(slot);
 			});
 			for (const slot of slots) {
-				if (
-					![
-						"code",
-						"tabs",
-						"tag-hover",
-						"headings",
-						"inline-marks",
-						"selection",
-						"links",
-						"blockquotes",
-						"properties",
-						"tasks",
-						"tables",
-						"callouts",
-						"tags",
-						"horizontal-rule",
-					].includes(slot.params)
-				)
-					throw slot.error("Unknown pilot surface");
 				const file = path.resolve(`src/${slot.params}.css`);
 				const content = postcss.parse(await readFile(file, "utf8"), {
 					from: file,
