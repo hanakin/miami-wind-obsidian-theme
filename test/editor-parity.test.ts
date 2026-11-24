@@ -29,7 +29,7 @@ async function compare(
 	try {
 		await page.emulateMedia({ media: options.print ? "print" : "screen" });
 		await page.setContent(
-			`<body dir="${options.classes?.includes("rtl") ? "rtl" : "ltr"}" class="theme-dark ${options.classes ?? ""}">${html}</body>`,
+			`<body dir="${options.classes?.includes("rtl") ? "rtl" : "ltr"}" class="theme-${options.print ? "light" : "dark"} ${options.classes ?? ""}">${html}</body>`,
 		);
 		await page.addStyleTag({ content: rivals });
 		const style = await page.addStyleTag({ content: before });
@@ -97,10 +97,10 @@ it.each([false, true])(
 	},
 );
 
-it("preserves PDF export highlight text", async () => {
+it("preserves light-mode PDF export highlight text", async () => {
 	const result = await compare(
-		'<div class="markdown-preview-view markdown-rendered"><mark data-probe>highlight</mark></div>',
-		{ print: true, classes: "print" },
+		'<div class="print"><div class="markdown-preview-view markdown-rendered"><mark data-probe>highlight</mark></div></div>',
+		{ print: true },
 	);
 	expect(result.expected[0]?.color).toBe("rgb(30, 30, 46)");
 });
