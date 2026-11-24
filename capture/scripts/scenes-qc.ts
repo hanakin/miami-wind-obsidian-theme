@@ -980,6 +980,23 @@ const graphQc: Scene = {
 			record:
 				"const v = app.workspace.getLeavesOfType('graph')[0]?.view; const c = v?.renderer?.colors ?? {}; const map = { fill: 'color-fill', fillFocused: 'color-fill-focused', fillTag: 'color-fill-tag', fillUnresolved: 'color-fill-unresolved', fillAttachment: 'color-fill-attachment', arrow: 'color-arrow', circle: 'color-circle', line: 'color-line', text: 'color-text', fillHighlight: 'color-fill-highlight', lineHighlight: 'color-line-highlight' }; const graphColors = {}; const graphAlpha = {}; for (const [k, cls] of Object.entries(map)) if (c[k]) { graphColors[cls] = c[k].rgb; graphAlpha[cls] = c[k].a; } return { graphColors, graphAlpha };",
 		},
+		{
+			id: "qc.graph.node-hover",
+			component: "graph",
+			target: leaf(".workspace-leaf-content"),
+			full: true,
+			state: "default",
+			before: async (ctx) => {
+				const at = await ctx.js<[number, number]>(
+					"const v = app.workspace.getLeavesOfType('graph')[0].view; const rd = v.renderer; const n = rd.nodes.find((x) => x.id === 'Markdown/Kitchen sink.md') ?? rd.nodes[0]; const g = n.circle.getGlobalPosition(); const c = v.contentEl.querySelector('canvas').getBoundingClientRect(); const res = rd.px?.renderer?.resolution ?? 1; return [c.x + g.x / res, c.y + g.y / res];",
+				);
+				await ctx.page.mouse.move(at[0], at[1], { steps: 4 });
+				await ctx.sleep(1500);
+			},
+			record:
+				"const v = app.workspace.getLeavesOfType('graph')[0]?.view; const rd = v?.renderer; const c = rd?.colors ?? {}; const map = { fill: 'color-fill', fillFocused: 'color-fill-focused', fillTag: 'color-fill-tag', fillUnresolved: 'color-fill-unresolved', fillAttachment: 'color-fill-attachment', arrow: 'color-arrow', circle: 'color-circle', line: 'color-line', text: 'color-text', fillHighlight: 'color-fill-highlight', lineHighlight: 'color-line-highlight' }; const graphColors = {}; const graphAlpha = {}; for (const [k, cls] of Object.entries(map)) if (c[k]) { graphColors[cls] = c[k].rgb; graphAlpha[cls] = c[k].a; } return { graphColors, graphAlpha, hovered: rd?.highlightNode?.id ?? rd?.hoverNode?.id ?? null };",
+			note: "The pointer on the Kitchen sink node: Obsidian highlights it and its links (focused fill, circle, highlight colors) and fades the rest.",
+		},
 	],
 };
 
@@ -1005,7 +1022,7 @@ const mediaQc: Scene = {
 					"let p = Object.getPrototypeOf(app.setting); let base = null; while (p && p !== Object.prototype) { if (Object.hasOwn(p, 'open')) base = p; p = Object.getPrototypeOf(p); } const open = base.open; base.open = function () { window.__capModal = this; return open.apply(this, arguments); }; app.commands.executeCommandById('workspace:export-pdf'); await sleep(600); base.open = open; const m = window.__capModal; m.close(); await m.testPrint(); await sleep(1200);",
 				);
 			},
-			note: "Obsidian's export modal testPrint() renders the print layout (body > .print) into the window; @media print emulated through Emulation.setEmulatedMedia.",
+			note: "Debug view, not the export: Obsidian's testPrint() lays the print layout (body > .print) into the dark main window, with @media print emulated. Real Export to PDF renders in its own window with body.theme-light: see qc.print.export-window.",
 		},
 		{
 			id: "qc.media.forced-colors",
@@ -1652,7 +1669,8 @@ const gapsQc: Scene = {
 				await ctx.command("graph:open");
 				await ctx.sleep(1500);
 				await click(ctx, leaf(".graph-controls .graph-controls-button.mod-close"));
-				await ctx.sleep(300);
+				await ctx.page.mouse.move(await ctx.js<number>("return Math.round(innerWidth / 2);"), 1);
+				await ctx.sleep(600);
 			},
 		},
 		{
@@ -1867,6 +1885,242 @@ const gapsQc: Scene = {
 	],
 };
 
+/** Clicks the first visible element matching sel whose text matches re (real pointer). */
+async function clickText(ctx: Ctx, sel: string, re: RegExp): Promise<void> {
+	const at = await ctx.js<[number, number] | null>(
+		`const e = [...document.querySelectorAll(${JSON.stringify(sel)})].find((x) => x.getClientRects().length && ${re.toString()}.test(x.textContent)); if (!e) return null; e.scrollIntoView({ block: "nearest" }); const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2];`,
+	);
+	if (!at) throw new Error(`nothing matching ${re} in ${sel}`);
+	await ctx.page.mouse.click(at[0], at[1]);
+	await ctx.sleep(700);
+}
+
+let readerServer: ReturnType<typeof Bun.serve> | null = null;
+let throttle: import("playwright").CDPSession | null = null;
+const ARTICLE = new URL("../web/article.html", import.meta.url).pathname;
+
+/** More theme-affected states: Bases group rows, drag targets, reader mode, loading states. */
+const gaps2Qc: Scene = {
+	id: "qc.gaps2",
+	surface: "workspace",
+	source: "catalog:theme-affected-gaps",
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+	},
+	items: [
+		{
+			id: "qc.gap.bases-group-rows",
+			component: "menu",
+			surface: "menu",
+			target: { sel: ".menu .bases-group-list", closest: ".menu" },
+			expect: ":has(.bases-group-row)",
+			before: async (ctx) => {
+				await openBase("Grouped")(ctx);
+				await click(ctx, leaf(".bases-toolbar-group-menu"));
+				await click(ctx, { sel: ".menu .bases-groupby-container .bases-sort-direction" });
+				await clickText(ctx, ".suggestion-container .suggestion-item", /Manual/);
+			},
+			note: "Group menu with Manual order: one row per group (with counts, hidden ones dimmed).",
+		},
+		{
+			id: "qc.gap.bases-add-group",
+			component: "menu",
+			surface: "menu",
+			target: { sel: ".menu .bases-group-row.is-editing", closest: ".menu" },
+			expect: ":has(.bases-group-row.is-editing)",
+			before: async (ctx) => {
+				await clickText(ctx, ".menu .suggestion-item, .menu .bases-toolbar-menu-item", /Add group/);
+			},
+			note: "The Add group row being edited.",
+		},
+		{
+			id: "qc.gap.drag-header-highlight",
+			component: "view-header",
+			target: leaf(".view-header.is-highlighted"),
+			expect: ".is-highlighted",
+			before: async (ctx) => {
+				// Back to A to Z group order first (the base is shared with later scenes).
+				await click(ctx, { sel: ".menu .bases-groupby-container .bases-sort-direction" })
+					.then(() => clickText(ctx, ".suggestion-container .suggestion-item", /A → Z/))
+					.catch(() => undefined);
+				await closeOverlays(ctx);
+				await ctx.js("app.workspace.leftSplit.expand(); await sleep(400);");
+				await ctx.open("Markdown/Kitchen sink.md", "live");
+				await dragTo(ctx, ".nav-file-title", leaf(".view-header"));
+				await ctx.sleep(300);
+			},
+			note: "A file dragged over the open note's header: the header is highlighted as a drop target.",
+		},
+		{
+			id: "qc.gap.reader-mode",
+			component: "webviewer",
+			target: leaf(".workspace-leaf-content[data-type='webviewer']"),
+			expect: ":has(.view-action.mod-webviewer):has(.reader-mode-content)",
+			full: true,
+			before: async (ctx) => {
+				await endDrag(ctx);
+				readerServer = Bun.serve({
+					hostname: "127.0.0.1",
+					port: 0,
+					fetch: () =>
+						new Response(Bun.file(ARTICLE), { headers: { "content-type": "text/html" } }),
+				});
+				await ctx.js(
+					`const ws = app.workspace; const l = ws.getMostRecentLeaf(ws.rootSplit); await l.setViewState({ type: 'webviewer', state: { url: 'http://127.0.0.1:${readerServer.port}/article.html' }, active: true }); ws.setActiveLeaf(l, { focus: true }); await sleep(3000); app.commands.executeCommandById('webviewer:toggle-reader-mode'); await sleep(2500);`,
+				);
+			},
+			note: "Web viewer reader mode on a local test page (capture/web/article.html served on 127.0.0.1 only).",
+		},
+		{
+			id: "qc.gap.pdf-page-loading",
+			component: "pdf",
+			surface: "pdf",
+			target: { sel: ".pdf-page-input.mod-page-loading", closest: ".pdf-toolbar" },
+			expect: ":has(.pdf-page-input.mod-page-loading)",
+			minUnobscured: 0.3,
+			before: async (ctx) => {
+				await ctx.js(
+					"app.commands.executeCommandById('webviewer:toggle-reader-mode'); await sleep(300);",
+				);
+				readerServer?.stop(true);
+				readerServer = null;
+				// Open the PDF once at full speed, then reopen it in a new tab with the CPU slowed, so
+				// pdf.js is still loading pages when the shot is taken.
+				await ctx.open("Attachments/outline.pdf", "live");
+				await ctx.sleep(1500);
+				// Once the app turns the indicator on, keep it from being turned off until the shot.
+				await ctx.js(
+					"const tb = app.workspace.activeLeaf.view._children[0].child.toolbar; const proto = Object.getPrototypeOf(tb); const orig = proto.updateLoadingIndicatorState; window.__capPdfLoad = { proto, orig }; proto.updateLoadingIndicatorState = function (t) { if (t) orig.call(this, t); };",
+				);
+				await ctx.open("Markdown/Code.md", "reading");
+				throttle = await ctx.page.context().newCDPSession(ctx.page);
+				await throttle.send("Emulation.setCPUThrottlingRate", { rate: 40 });
+				await ctx.js(
+					"const l = app.workspace.getLeaf('tab'); l.setViewState({ type: 'pdf', state: { file: 'Attachments/outline.pdf' }, active: true }); for (let i = 0; i < 150 && !document.querySelector('.pdf-page-input.mod-page-loading'); i++) await sleep(100);",
+				);
+				await throttle.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+				await ctx.sleep(800);
+			},
+			note: "A PDF still loading its pages: the toolbar's page box shows .mod-page-loading. The CPU is slowed 40x until Obsidian turns the indicator on; its reset is then held until the shot (released in the next item).",
+		},
+		{
+			id: "qc.gap.button-loading",
+			component: "button",
+			surface: "modal",
+			target: ".modal button.mod-cta.mod-loading",
+			expect: ".mod-loading",
+			before: async (ctx) => {
+				await throttle?.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+				await throttle?.detach().catch(() => undefined);
+				throttle = null;
+				await ctx.js(
+					"const h = window.__capPdfLoad; if (h) { h.proto.updateLoadingIndicatorState = h.orig; for (const l of app.workspace.getLeavesOfType('pdf')) l.view._children?.[0]?.child?.toolbar?.updateLoadingIndicatorState(false); }",
+				);
+				await closeOverlays(ctx);
+				await ctx.open("Markdown/Kitchen sink.md", "reading");
+				// The native save dialog cannot show here: hold it open so the button keeps its
+				// loading state, as it does while the dialog is up.
+				await ctx.js(
+					"const real = window.electron; window.__capElectron = real; window.__capDialog = new Promise((r) => { window.__capDialogDone = () => r({ canceled: true }); }); const dialog = new Proxy(real.remote.dialog, { get: (t, k) => (k === 'showSaveDialog' ? () => window.__capDialog : t[k]) }); const remote = new Proxy(real.remote, { get: (t, k) => (k === 'dialog' ? dialog : t[k]) }); window.electron = new Proxy(real, { get: (t, k) => (k === 'remote' ? remote : t[k]) }); app.commands.executeCommandById('workspace:export-pdf'); await sleep(700);",
+				);
+				await click(ctx, { sel: ".modal button.mod-cta" });
+				await ctx.sleep(400);
+			},
+			note: "Export to PDF's button while its save dialog is open (the dialog itself is held, since a native dialog cannot show here).",
+		},
+		{
+			id: "qc.gaps2.restore",
+			component: "workspace",
+			target: ".app-container",
+			state: "default",
+			full: true,
+			before: async (ctx) => {
+				await ctx.js(
+					"window.__capDialogDone?.(); await sleep(300); if (window.__capElectron) window.electron = window.__capElectron; await sleep(300);",
+				);
+				await closeOverlays(ctx);
+			},
+		},
+	],
+};
+
+/** Settings forms: the Vim confirmation dialog and the Add excluded filter dialog. */
+const settingsForms: Scene = {
+	id: "qc.settings-forms",
+	surface: "modal",
+	source: "catalog:settings-forms",
+	window: "popout",
+	opener: settingsWindow("editor"),
+	setup: async (ctx) => {
+		await ctx.js(
+			"cap.clearSettingsSearch(); (window.app ?? window.opener.app).setting.openTabById('editor'); await sleep(900);",
+		);
+	},
+	items: [
+		{
+			id: "qc.gap.vim-confirm",
+			component: "modal",
+			target: ".modal:has(.form-field)",
+			expect: ":has(.form-field .input-label)",
+			before: async (ctx) => {
+				await ctx.js(
+					"const it = [...document.querySelectorAll('.setting-item')].find((e) => /Vim key bindings/.test(e.textContent)); it.scrollIntoView({ block: 'center' }); await sleep(200); it.querySelector('.checkbox-container').click(); await sleep(900);",
+				);
+			},
+			note: "Turning on Vim key bindings asks a question in a form field first.",
+		},
+		{
+			id: "qc.gap.excluded-filter-form",
+			component: "modal",
+			target: ".modal:has(.form-field)",
+			expect: ":has(.form-field .form-field-help)",
+			before: async (ctx) => {
+				await clickText(ctx, ".modal button", /Cancel/);
+				await ctx.js(
+					"const a = window.app ?? window.opener.app; if (a.vault.getConfig('vimMode')) a.vault.setConfig('vimMode', false); a.setting.openTabById('file'); await sleep(900); const it = [...document.querySelectorAll('.setting-item.mod-navigable')].find((e) => /Excluded files/.test(e.textContent)); it.scrollIntoView({ block: 'center' }); await sleep(200); it.click(); await sleep(900); const b = [...document.querySelectorAll('.vertical-tab-content .clickable-icon')].find((x) => x.getClientRects().length && /add/i.test(x.getAttribute('aria-label') ?? '')); b?.click(); await sleep(900);",
+				);
+			},
+			note: "Files and links > Excluded files > Add exclusion: a form field with help text.",
+		},
+	],
+};
+
+/** Export to PDF as Obsidian renders it: its own hidden window, body.theme-light, print media. */
+const printExport: Scene = {
+	id: "qc.print-export",
+	surface: "window",
+	source: "catalog:print-export",
+	window: "popout",
+	opener: async (main) => {
+		await main.open("Markdown/Kitchen sink.md", "reading");
+		await main.js(
+			`let p = Object.getPrototypeOf(app.setting); let base = null; while (p && p !== Object.prototype) { if (Object.hasOwn(p, 'open')) base = p; p = Object.getPrototypeOf(p); } const open = base.open; base.open = function () { window.__capModal = this; return open.apply(this, arguments); }; app.commands.executeCommandById('workspace:export-pdf'); await sleep(600); base.open = open; const m = window.__capModal; m.close(); const sl = window.sleep; let n = 0; window.__capHold = new Promise((r) => { window.__capRelease = r; }); window.sleep = async (ms) => { n++; if (n === 2) { window.sleep = sl; await window.__capHold; } return sl(ms); }; window.__capPdf = m.printToPdf({ includeName: true, pageSize: 'Letter', landscape: false, marginsType: 0, scale: 1, open: false, filepath: ${JSON.stringify(`${process.env.CAPTURE_WORK ?? `${process.env.HOME}/Work/miami-wind-obsidian-capture`}/export-test.pdf`)} });`,
+		);
+	},
+	setup: async (ctx) => {
+		// The export window is hidden; show it (inactive) so it paints for the screenshot.
+		await ctx.js(
+			"require('electron').remote.getCurrentWindow().showInactive(); await sleep(1200);",
+		);
+	},
+	teardown: async (main) => {
+		await main.js(
+			"window.__capRelease?.(); await window.__capPdf?.catch(() => null); await sleep(500);",
+		);
+	},
+	items: [
+		{
+			id: "qc.print.export-window",
+			component: "print",
+			target: ".print",
+			expect: "body.theme-light > .print",
+			full: true,
+			media: { media: "print" },
+			note: "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs.",
+		},
+	],
+};
+
 /** The Help window (help.html), opened by app:open-help in its own window. */
 const helpWindow: Scene = {
 	id: "qc.help-window",
@@ -2062,6 +2316,9 @@ export function qcScenes(): Scene[] {
 		settingsPopoutHover,
 		migrationQc,
 		gapsQc,
+		gaps2Qc,
+		settingsForms,
+		printExport,
 		noPointerQc,
 		hotkeyConflict,
 		helpWindow,

@@ -1,12 +1,19 @@
 // Step 2: captures every checklist item from the real app into capture/fixtures/.
 // Usage: bun run capture:run [--windowed | --no-pointer | --mobile phone|tablet] [--only <id prefix>]... [--until <scene id>]
 // Headless by default; --windowed runs only the scenes that need a real window on the desktop.
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { Page } from "playwright";
 import { liveSelector, normSelector } from "./css.ts";
 import type { AppInventory, CommandResult } from "./discover.ts";
 import { closeExtraPages, pagesOf, restoreLayout, snapshotLayout } from "./discover.ts";
-import { type CaptureOut, ensureDirs, install, makeCtx, runScene } from "./engine.ts";
+import {
+	type CaptureOut,
+	ensureDirs,
+	install,
+	makeCtx,
+	runScene,
+	saveRuntimeStyles,
+} from "./engine.ts";
 import {
 	close,
 	launch,
@@ -93,7 +100,6 @@ try {
 	console.log(verifyIsolation(session.pid, session.windowed).join("\n"));
 	const main = session.page;
 	await install(main);
-	await saveRuntimeStyles(main);
 	const layout = await snapshotLayout(main);
 	scenes = allScenes(checklist.inventory, checklist.commands, () => layout);
 	let done = 0;
@@ -123,12 +129,15 @@ try {
 			if (r.entry) entries.set(r.entry.id, r.entry);
 			if (r.error) failed.set(r.id, r.error);
 		}
+		if (scene.teardown) await scene.teardown(makeCtx(main)).catch(() => undefined);
 		await closeExtraPages(session, main);
 		done += items.length;
 		process.stdout.write(`\r${done} items, ${failed.size} failed   `);
 		if (process.argv.includes("--until") && scene.id === until) break;
 	}
 	process.stdout.write("\n");
+	// CodeMirror and other runtime styles exist once editors have opened: save them at the end.
+	if (!mobile && !windowed) await saveRuntimeStyles(main);
 } finally {
 	if (mobile) await leaveMobile(session);
 	await close(session);
@@ -190,19 +199,4 @@ async function pageFor(s: Session, scene: Scene): Promise<Page> {
 		await Bun.sleep(250);
 	}
 	throw new Error(`${scene.id}: no new window opened`);
-}
-
-/** Obsidian's runtime <style> and adopted stylesheets, for rendering fixtures locally (gitignored). */
-async function saveRuntimeStyles(page: Page): Promise<void> {
-	const css = (await page.evaluate(`(() => {
-		const parts = [];
-		for (const s of document.head.querySelectorAll("style")) {
-			if (s === app.customCss.styleEl) continue;
-			parts.push("/* <style" + (s.id ? " id=" + s.id : "") + "> */\\n" + s.textContent);
-		}
-		for (const sheet of document.adoptedStyleSheets) parts.push("/* adopted */\\n" + [...sheet.cssRules].map((r) => r.cssText).join("\\n"));
-		return parts.join("\\n\\n");
-	})()`)) as string;
-	mkdirSync(`${CAPTURE}.app`, { recursive: true });
-	writeFileSync(`${CAPTURE}.app/runtime-styles.css`, css);
 }

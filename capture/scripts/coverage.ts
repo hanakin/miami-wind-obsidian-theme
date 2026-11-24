@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { chromium } from "playwright";
-import { matchable, selectors, themeAffectedClasses } from "./css.ts";
+import { matchable, replayCss, selectors, themeAffectedClasses } from "./css.ts";
 import { pngStats } from "./engine.ts";
 import { SCREENSHOTS } from "./obsidian.ts";
 import {
@@ -71,7 +71,10 @@ async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promi
 	const forced = (claim?.pseudo ?? []).filter((p) => p !== "visited");
 	const r = (await page.evaluate(
 		([html, sels, expect, forced]) => {
-			const doc = new DOMParser().parseFromString(html, "text/html");
+			const doc = new DOMParser().parseFromString(
+				html,
+				html.startsWith("<?xml") ? "application/xhtml+xml" : "text/html",
+			);
 			const target = doc.querySelector("[data-capture-target]");
 			const pel = doc.querySelector("[data-capture-pseudo]") ?? target;
 			const marks = (pel?.getAttribute("data-capture-state") ?? "").split(" ");
@@ -206,6 +209,91 @@ for (const f of fx.fixtures) {
 	if (c.ok) valid.set(f.id, c);
 	else invalid.set(f.id, c.why);
 }
+
+// Each saved fixture must show its target when rendered alone, the way a viewer replays it:
+// app.css + Obsidian's runtime styles (CodeMirror) + theme.css, state pseudo-classes rewritten to
+// the capture marks, hover media as captured (desktop: mouse; emulated mobile: touch), and
+// data-capture-placeholder stand-ins hidden.
+const runtimePath = `${CAPTURE}.app/runtime-styles.css`;
+if (!existsSync(runtimePath) || !readFileSync(runtimePath, "utf8").trim())
+	throw new Error(
+		"capture/.app/runtime-styles.css is missing or empty: run `bun run capture:extract-runtime-css`.",
+	);
+const renderCss = (touch: boolean) => {
+	const sheets = [`${CAPTURE}.app/app.css`, runtimePath, `${CAPTURE}../theme.css`];
+	const css = sheets.map((p) => replayCss(readFileSync(p, "utf8"), touch)).join("\n");
+	return `${css}\n[data-capture-placeholder] { display: none !important; }`;
+};
+const render = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+await render.route("**", (r) => r.abort());
+await render.setContent(
+	'<!doctype html><html><head><style id="replay"></style></head><body></body></html>',
+);
+let touchMode: boolean | null = null;
+const renderOrder = [...valid.keys()].filter((id) => !byId.get(id)?.variantOf).sort();
+for (const id of renderOrder) {
+	const f = byId.get(id) as FixtureEntry;
+	const touch = id.startsWith("mobile.");
+	const size = id.startsWith("mobile.phone.")
+		? [390, 844]
+		: id.startsWith("mobile.tablet.")
+			? [1024, 768]
+			: [1600, 1000];
+	if (touch !== touchMode) {
+		await render.evaluate((css) => {
+			(document.getElementById("replay") as HTMLStyleElement).textContent = css;
+		}, renderCss(touch));
+		touchMode = touch;
+	}
+	await render.setViewportSize({ width: size[0] ?? 1600, height: size[1] ?? 1000 });
+	const why = (await render.evaluate(
+		([html, sizes]) => {
+			const d = new DOMParser().parseFromString(
+				html,
+				html.startsWith("<?xml") ? "application/xhtml+xml" : "text/html",
+			);
+			for (const [from, to] of [
+				[d.documentElement, document.documentElement],
+				[d.body, document.body],
+			] as const) {
+				for (const a of [...to.attributes]) to.removeAttribute(a.name);
+				for (const a of [...from.attributes]) to.setAttribute(a.name, a.value);
+			}
+			document.body.replaceChildren(
+				...[...d.body.childNodes].map((n) => document.importNode(n, true)),
+			);
+			// Offline images get same-size stand-ins from the recorded imageSizes.
+			for (const { index, width, height } of sizes) {
+				const im = document.images[index];
+				if (im) {
+					im.width = width;
+					im.height = height;
+				}
+			}
+			const t = document.querySelector("[data-capture-target]");
+			if (!t) return "no target";
+			for (let a: Element | null = t; a; a = a.parentElement) {
+				const cs = getComputedStyle(a);
+				if (cs.display === "none")
+					return `display: none on ${a.localName}.${[...a.classList].join(".")}`;
+				if (a === t && cs.visibility === "hidden")
+					return `visibility: hidden on ${a.localName}.${[...a.classList].join(".")}`;
+			}
+			const area = (e: Element) =>
+				[...e.getClientRects()].reduce((s, r) => s + r.width * r.height, 0);
+			if (area(t) > 0) return "";
+			for (const d2 of t.querySelectorAll("*"))
+				if (area(d2) > 0 && getComputedStyle(d2).visibility !== "hidden") return "";
+			return "renders with no box";
+		},
+		[readFileSync(`${CAPTURE}fixtures/${f.file}`, "utf8"), f.imageSizes ?? []] as const,
+	)) as string;
+	if (why) {
+		valid.delete(id);
+		invalid.set(id, [`does not render alone: ${why}`]);
+	}
+}
+await render.close();
 
 // 1. Checklist items.
 const coveredBy = new Map<string, string>();
@@ -354,7 +442,10 @@ async function dupeFacts(id: string) {
 	const mode = MODES.exec(id)?.[1];
 	return (await page.evaluate(
 		([html, sels, modeSel]) => {
-			const doc = new DOMParser().parseFromString(html, "text/html");
+			const doc = new DOMParser().parseFromString(
+				html,
+				html.startsWith("<?xml") ? "application/xhtml+xml" : "text/html",
+			);
 			const target = doc.querySelector("[data-capture-target]");
 			const styled = sels.filter((s) => {
 				try {
@@ -524,7 +615,7 @@ const lines = [
 	`Obsidian ${checklist.obsidianVersion} · ${fx.fixtures.length} fixtures, ${valid.size} with valid evidence (${fx.fixtures.filter((f) => f.variantOf).length} synthetic macOS/Windows variants)`,
 	`Checklist items shown in their claimed state: ${shown.length}/${n} (${pct(shown.length, n)}); ${syntheticItems.length} of them scripted or synthetic (labeled); state applied but its change not visible (limitation, listed): ${notVisibleItems.length}; excluded with reason: ${excludedItems.length}; missing: ${missingItems.length}`,
 	`theme.css selectors visibly matched (fixture and live agree, on painted elements): ${themeMatched.length}/${theme.length} (${pct(themeMatched.length, theme.length)}); excluded with reason: ${themeExcluded.length}; scripted only (labeled): ${themeScripted.length}; missing: ${themeMissing.length} (${themeDomOnly.length} only on hidden/clipped elements, ${themeSyntheticOnly.length} only in scripted fixtures); fixture/live disagreements: ${disagreements.length}`,
-	`App CSS classes visibly captured: ${appCovered.length} (${[...graphPainted.keys()].length} of them graph probes credited by canvas pixels), excluded ${appExcluded.length}, not theme-affected (accepted gaps) ${appNotAffected.length}, theme-affected but out of scope (labeled) ${appOutOfScope.length}, theme-affected missing ${appMissing.length}, of ${app.length}; of the theme-affected missing: ${appDomOnly.length} in the DOM but never painted, ${appSyntheticOnly.length} only in scripted fixtures, ${appCensusOnly.length} seen in the runtime census only`,
+	`App CSS classes visibly captured: ${appCovered.length} (${[...graphPainted.keys()].length} of them classes credited by screenshot pixels (graph probes, tab-drag overlay)), excluded ${appExcluded.length}, not theme-affected (accepted gaps) ${appNotAffected.length}, theme-affected but out of scope (labeled) ${appOutOfScope.length}, theme-affected missing ${appMissing.length}, of ${app.length}; of the theme-affected missing: ${appDomOnly.length} in the DOM but never painted, ${appSyntheticOnly.length} only in scripted fixtures, ${appCensusOnly.length} seen in the runtime census only`,
 	`Screenshots: ${screenshotsHere ? "files re-checked against recorded hashes" : "files not on this machine; recorded evidence used"}; ${dupeReasons.length + dupeLimits.length + dupes.length} groups of identical screenshots (${dupeReasons.length} explained by their fixtures, ${dupeLimits.length} where a state applies but does not show (limitation), ${dupes.length} unexplained)`,
 	...crossCheck.map((c) => `Expert cross-check, ${c}`),
 ];
@@ -660,6 +751,7 @@ function report(): string {
 			(ex.appClassesOutOfScope?.[c.name] && affected.has(c.name)
 				? `out of scope (theme-affected): ${ex.appClassesOutOfScope[c.name]}`
 				: undefined) ??
+			(ex.appClassGaps?.[c.name] ? `**open gap**: ${ex.appClassGaps[c.name]}` : undefined) ??
 			(!affected.has(c.name)
 				? "not theme-affected (accepted gap): no theme.css selector names it and no app.css rule for it reads a variable theme.css sets"
 				: undefined) ??
@@ -678,9 +770,9 @@ function report(): string {
 	if (graphPainted.size || graphReadOnly.size)
 		out.push(
 			"",
-			"## Graph colors",
+			"## Classes credited by screenshot pixels",
 			"",
-			"Obsidian reads the graph's colors from short-lived `.graph-view.color-*` probe elements and paints them on a canvas. A probe class counts as painted when the renderer read a color from it and that exact color is in the graph screenshot (`evidence.record.graphPixels`).",
+			"Some classes cannot be witnessed through the DOM: the graph's short-lived `.graph-view.color-*` probe elements (Obsidian paints their colors on a canvas) and the tab-drag overlay (drawn in a transformed copy of the app). They count as painted when their recorded color is in the screenshot (`evidence.record.graphPixels`; colors with alpha are matched blended over the background).",
 			"",
 			...[...graphPainted.entries()].map(([c, id]) => `- \`${c}\`: painted (\`${id}\`)`),
 			...[...graphReadOnly.entries()].map(

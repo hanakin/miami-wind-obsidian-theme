@@ -61,6 +61,35 @@ const CASES: { name: string; html: string; seen: boolean }[] = [
 		seen: true,
 	},
 	{
+		// An opaque layer that ignores the pointer still paints over the element.
+		name: "element under an opaque pointer-events: none sibling",
+		html: `<div id="t" style="width:200px;height:100px;background:blue"></div><div style="position:absolute;left:0;top:0;width:300px;height:300px;background:green;pointer-events:none"></div>`,
+		seen: false,
+	},
+	{
+		// Modern color syntax: the ancestor's oklch() background covers its negative-z child.
+		name: "negative-z child under an opaque oklch() parent",
+		html: `<div id="p" style="width:200px;height:100px;background:oklch(0.6 0.2 25)"><div id="t" style="position:relative;z-index:-1;width:100px;height:50px;background:blue"></div></div>`,
+		seen: false,
+	},
+	{
+		name: "element under an oklch() 10% tint",
+		html: `<div id="t" style="width:200px;height:100px;background:blue"></div><div style="position:absolute;left:0;top:0;width:300px;height:300px;background:oklch(0.6 0.2 25 / 0.1)"></div>`,
+		seen: true,
+	},
+	{
+		// An invisible tap target (opacity: 0 select over a label) paints nothing.
+		name: "label under an opacity: 0 select",
+		html: `<label style="position:relative;display:inline-block"><span id="t" style="color:blue;font:16px sans-serif">vault</span><select style="position:absolute;inset:0;opacity:0;width:100%"><option>a</option></select></label>`,
+		seen: true,
+	},
+	{
+		// A child sets visibility back to visible inside a hidden parent (Obsidian's tab-drag overlay).
+		name: "visible child of a visibility: hidden parent",
+		html: `<div style="visibility:hidden;width:300px;height:200px;background:red"><div id="t" style="visibility:visible;width:100px;height:50px;background:blue"></div></div>`,
+		seen: true,
+	},
+	{
 		// A zero-size wrapper of absolutely placed boxes (like .search-highlight) shows through them.
 		name: "zero-size wrapper of painted children",
 		html: `<div style="position:relative;width:300px;height:200px"><div id="t"><div style="position:absolute;left:10px;top:10px;width:80px;height:20px;background:yellow"></div></div></div>`,
