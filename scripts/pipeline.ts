@@ -42,7 +42,9 @@ export async function compile() {
 				if (file && file !== previous) {
 					root.insertBefore(
 						node,
-						postcss.comment({ text: `@section ${path.basename(file)}` }),
+						postcss.comment({
+							text: `@section ${path.relative(process.cwd(), file)}`,
+						}),
 					);
 					previous = file;
 				}
@@ -59,9 +61,9 @@ export async function compile() {
 					from: file,
 				});
 				slot.replaceWith(
-					postcss.comment({ text: `@section ${slot.params}.css` }),
+					postcss.comment({ text: `@section src/${slot.params}.css` }),
 					...content.nodes,
-					postcss.comment({ text: "@section legacy.css (continued)" }),
+					postcss.comment({ text: "@section src/legacy.css (continued)" }),
 				);
 			}
 			root.prepend(postcss.comment({ text: formatConfig.header }));

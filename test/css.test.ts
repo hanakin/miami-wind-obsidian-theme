@@ -32,13 +32,13 @@ describe("theme rules", () => {
 	});
 });
 
-it("formats with tabs, source property order, section banners and stable output", async () => {
+it("formats with tabs, safe property order, section banners and stable output", async () => {
 	const input =
 		"/* @section code.css */ .x{color:red;display:block;background:blue} @media (hover: hover){.y{color:green}}";
 	const result = await postcss([formatCss()]).process(input, {
 		from: undefined,
 	});
-	expect(result.css).toContain("/* === code.css === */");
+	expect(result.css).toContain(" * @components: Code");
 	expect(result.css).toContain("\t display".replace(" ", ""));
 	expect(result.css.indexOf("color:")).toBeLessThan(
 		result.css.indexOf("display:"),
@@ -92,7 +92,7 @@ it.each(["line-height: 2; font: 12px serif", "top: 1px; inset: 0"])(
 			`.x { ${declarations} }`,
 			{ from: undefined },
 		);
-		expect(result.css).toBe(
+		expect(result.css).toContain(
 			`.x {\n\t${declarations.split("; ").join(";\n\t")};\n}\n`,
 		);
 	},
@@ -129,3 +129,81 @@ it.each(["cm-footref", "cm-hmd-footnote"])(
 		await expect(check(css.replace(state, "cm-link"))).rejects.toThrow();
 	},
 );
+
+it("generates base-l file, section, subsection and component comments", async () => {
+	const input =
+		"/* @section code.css */ /* Syntax highlighting */ .x { /* Component: surface-background */ background-color: black; }";
+	const result = await postcss([formatCss()]).process(input, {
+		from: undefined,
+	});
+	expect(result.css).toContain(
+		"/* -----------------------------------------------------------------------------\n * Miami Wind: Obsidian theme\n * -----------------------------------------------------------------------------",
+	);
+	expect(result.css).toContain(" * @components: Code\n");
+	expect(result.css).toContain(" * @source: src/code.css\n");
+	expect(result.css).toContain(
+		"/*\n * Syntax highlighting\n * -----------------------------------------------------------------------------\n */",
+	);
+	expect(result.css).toContain(
+		"\t/*\n\t * @component: surface-background\n\t */",
+	);
+});
+
+it("uses base-l property order for independent declarations", async () => {
+	const result = await postcss([formatCss()]).process(
+		".x { display: block; color: red; font-size: 12px; }",
+		{ from: undefined },
+	);
+	expect(result.css.indexOf("font-size:")).toBeLessThan(
+		result.css.indexOf("color:"),
+	);
+	expect(result.css.indexOf("color:")).toBeLessThan(
+		result.css.indexOf("display:"),
+	);
+});
+
+it.each([
+	"margin-left: 1px; margin-inline-start: 2px",
+	"width: 10px; inline-size: 20px",
+	"font-size-adjust: 1; font: 12px serif",
+])("keeps possibly overlapping declarations: %s", async (declarations) => {
+	const result = await postcss([formatCss()]).process(
+		`.x { ${declarations} }`,
+		{ from: undefined },
+	);
+	const [first, second] = declarations.split("; ");
+	expect(result.css.indexOf(first ?? "")).toBeLessThan(
+		result.css.indexOf(second ?? ""),
+	);
+	expect(
+		result.messages.some((message) => message.type === "order-preserved"),
+	).toBe(true);
+});
+
+it("keeps reverse footnotes attached when safely sorting declarations", async () => {
+	const result = await postcss([formatCss()]).process(
+		".x { display: block; /* [1] */ color: red; }",
+		{ from: undefined },
+	);
+	expect(result.css).toContain("display: block; /* [1] */");
+});
+
+it("preserves license and Style Settings comment contents verbatim", async () => {
+	const license = "/*! Copyright Example\n * SPDX-License-Identifier: MIT\n */";
+	const settings =
+		"/* @settings\nname: Test\nsettings:\n  - id: test\n    title: Test\n*/";
+	const result = await postcss([formatCss()]).process(
+		`${license}\n${settings}\n.x { color: red }`,
+		{ from: undefined },
+	);
+	expect(result.css).toContain(license);
+	expect(result.css).toContain(settings);
+});
+
+it("does not shorten a shorthand whose variables can expand into multiple values", async () => {
+	const result = await postcss([formatCss()]).process(
+		".x { padding: var(--p) var(--p) var(--p) var(--p); }",
+		{ from: undefined },
+	);
+	expect(result.css).toContain("padding: var(--p) var(--p) var(--p) var(--p);");
+});

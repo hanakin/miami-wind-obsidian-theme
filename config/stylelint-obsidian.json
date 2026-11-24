@@ -1,0 +1,102 @@
+[
+	{
+		"file": "theme.css",
+		"rule": "selector-no-qualifying-type",
+		"reason": "Obsidian app.css specificity ties; exact selector allowlist also enforced by scripts/checker.ts.",
+		"selectors": [
+			{
+				"selector": ".markdown-source-view.mod-cm6 span.cm-inline-code.cm-footref, .markdown-source-view.mod-cm6 span.cm-inline-code.cm-hmd-footnote",
+				"count": 2
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-keyword",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-string",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-number",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-comment",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-operator",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-variable",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-def",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "theme.css",
+		"rule": "selector-pseudo-class-disallowed-list",
+		"reason": "Obsidian tag-hover parity: the single isolated :has selector.",
+		"selectors": [
+			{
+				"selector": ".cm-hashtag-begin:has(+ .cm-hashtag-end:hover)",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/code.css",
+		"rule": "selector-no-qualifying-type",
+		"reason": "Obsidian app.css specificity ties; exact selector allowlist also enforced by scripts/checker.ts.",
+		"selectors": [
+			{
+				"selector": ".markdown-source-view.mod-cm6 span.cm-inline-code.cm-footref, .markdown-source-view.mod-cm6 span.cm-inline-code.cm-hmd-footnote",
+				"count": 2
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-keyword",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-string",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-number",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-comment",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-operator",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-variable",
+				"count": 1
+			},
+			{
+				"selector": ".cm-s-obsidian span.cm-def",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/tag-hover.css",
+		"rule": "selector-pseudo-class-disallowed-list",
+		"reason": "Obsidian tag-hover parity: the single isolated :has selector.",
+		"selectors": [
+			{
+				"selector": ".cm-hashtag-begin:has(+ .cm-hashtag-end:hover)",
+				"count": 1
+			}
+		]
+	}
+]
