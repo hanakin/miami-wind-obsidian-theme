@@ -51,7 +51,7 @@ if (recheck.length) {
 } else {
 	const session = await launch();
 	try {
-		const isolation = verifyIsolation(session.proc.pid ?? 0);
+		const isolation = verifyIsolation(session.pid, session.windowed);
 		await install(session.page);
 		const inv = await inventory(session.page);
 		console.log(
@@ -136,10 +136,14 @@ function markdown(c: {
 	out.push(
 		"## How coverage is proven",
 		"",
-		"- Each item has a scene (how to reach it in the app) and a target element. `bun run capture:run` reaches it in an isolated Obsidian, saves the element with its ancestor wrappers and the html/body classes to `fixtures/<item>.html`, and a screenshot to `~/Work/miami-wind-obsidian-capture/screenshots/<item>.png`.",
-		'- Interactive states (hover, active, focus, focus-visible, focus-within) are forced through the DevTools protocol (`CSS.forcePseudoState`). The forced element carries `data-capture-state="<state>"` in its fixture. App-driven states (`is-active`, `is-selected`, collapsed, ...) are real classes set by Obsidian.',
-		"- `bun run capture:coverage` matches every theme.css selector against every fixture in Chromium. `:hover`/`:active` match an element marked with that state or containing one; `:focus` matches focus or focus-visible marks; `::selection` needs a `selection` mark; `::-webkit-scrollbar-*:hover` needs `scrollbar-hover`; other pseudo-elements are dropped (they render on the element that remains).",
-		"- App classes count as covered when any fixture contains them. A class is excluded when every app.css rule using it is gated to a context we do not run (mobile, macOS, Windows, right-to-left, print, forced colors) or when `exclusions.json` gives a reason.",
+		"- Each item has a scene (how to reach it) and a target element. `bun run capture:run` reaches it in an isolated Obsidian and fails the item unless the target has a nonzero box inside the window, is not hidden, and is topmost at most of 9 sample points (`elementFromPoint`). It saves the element with its ancestor wrappers and the html/body classes to `fixtures/<item>.html`, and a screenshot (SHA-256 and color count recorded) to `~/Work/miami-wind-obsidian-capture/screenshots/<item>.png`.",
+		"- Interactive states are held through the DevTools protocol (`CSS.forcePseudoState`) or the real pointer. The capture records, per item, how many author rules Chromium matched for the forced state (`CSS.getMatchedStylesForNode`; this also works in popout windows where `Element.matches()` misses forced states) and which painted styles (colors, borders, shadows, decorations, `::before`/`::after`) changed on the target and its children when the state was forced. Every non-default state has an explicit `expect` selector the target must match.",
+		"- Capture works on an off-page copy of the whole document, so the live DOM is never marked. Visual credit needs a witness: an element recorded as painted (displayed, not transparent, inside the screenshot clip, topmost at its visible center). Elements only present in the DOM, and selectors met only in scripted fixtures, are counted separately.",
+		"- Settings tabs are captured by scrolling `.vertical-tab-content` (the element that scrolls) through every position, verifying the end is reached, and stacking the screens.",
+		"- `bun run capture:coverage` checks every fixture again (target present, state marks, expect, witnesses, screenshot) and matches every theme.css selector both against the fixtures and against the live matches recorded at capture time; a selector counts only when both agree.",
+		"- App classes count when a painted element in a valid fixture carries them. Exclusions are real limits only (mobile, signed-in Sync/Publish, other platforms, code-verified), plus classes never seen in the runtime class census that no string in Obsidian's code could build.",
+		"- Identical screenshots of different items must be explained by their fixtures: the same DOM, the same target element, or the same element in another editor mode or window, with any differing state shown to paint nothing new (no rule styles it) or listed with the exact style change that does not show in the shot. Anything else is reported as unexplained.",
+		"- Scripted states are labeled `synthetic` and say what was scripted; macOS/Windows variants swap the body platform class on a Linux capture and have no screenshot.",
 		"",
 	);
 	out.push("## Items by surface", "");

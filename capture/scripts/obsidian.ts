@@ -55,8 +55,20 @@ export const HEIGHT = 1000;
 export interface Session {
 	browser: Browser;
 	page: Page;
-	proc: ChildProcess;
+	/** Obsidian's main process. */
+	pid: number;
+	/** Set for headless runs (our child); windowed runs are started through Hyprland. */
+	proc?: ChildProcess;
+	windowed: boolean;
 }
+
+/** Mike's Wayland socket, by absolute path: windowed runs get the display but no runtime dir or bus. */
+const WAYLAND_SOCKET = join(
+	process.env.XDG_RUNTIME_DIR ?? "/run/user/1000",
+	process.env.WAYLAND_DISPLAY ?? "wayland-1",
+);
+/** Hyprland workspace the windowed capture opens on, so it does not cover Mike's current one. */
+export const CAPTURE_WORKSPACE = "name:mwcapture";
 
 /** Copies the sample vault and theme into the throwaway work dir. Fresh every run. */
 function prepareVault(): void {
@@ -88,15 +100,17 @@ function prepareVault(): void {
 }
 
 /** Fails loudly if any process we started can see Mike's real Obsidian config. */
-export function verifyIsolation(pid: number): string[] {
+export function verifyIsolation(pid: number, windowed = false): string[] {
 	const evidence: string[] = [];
 	const pids = [pid, ...descendants(pid)];
 	for (const p of pids) {
 		const cmd = readFileSync(`/proc/${p}/cmdline`, "utf8").replaceAll("\0", " ");
 		if (cmd.includes(REAL_CONFIG)) throw new Error(`pid ${p} cmdline mentions ${REAL_CONFIG}`);
 		const env = readFileSync(`/proc/${p}/environ`, "utf8").split("\0");
-		const leaked = env.find((e) =>
-			SESSION_VARS.some((v) => e.startsWith(`${v}=`) && !e.includes(WORK)),
+		const leaked = env.find(
+			(e) =>
+				SESSION_VARS.some((v) => e.startsWith(`${v}=`) && !e.includes(WORK)) &&
+				!(windowed && e === `WAYLAND_DISPLAY=${WAYLAND_SOCKET}`),
 		);
 		if (leaked) throw new Error(`pid ${p} can reach the desktop session: ${leaked}`);
 		for (const fd of safeFds(p)) {
@@ -104,7 +118,9 @@ export function verifyIsolation(pid: number): string[] {
 		}
 	}
 	evidence.push(
-		`${pids.length} processes checked: none reference ${REAL_CONFIG}, none can reach the desktop session (no display, bus or runtime dir)`,
+		windowed
+			? `${pids.length} processes checked: none reference ${REAL_CONFIG}; the only desktop handle is the Wayland socket ${WAYLAND_SOCKET} (no session bus, no Hyprland socket, private runtime dir)`
+			: `${pids.length} processes checked: none reference ${REAL_CONFIG}, none can reach the desktop session (no display, bus or runtime dir)`,
 	);
 	if (
 		!existsSync(join(USER_DATA, "Local Storage")) &&
@@ -129,7 +145,10 @@ function safeFds(pid: number): string[] {
 	return out.stdout.toString().split("\n");
 }
 
-export async function launch(): Promise<Session> {
+export async function launch(
+	opts: { windowed?: boolean; noPointer?: boolean; mobile?: "phone" | "tablet" } = {},
+): Promise<Session> {
+	const windowed = opts.windowed === true;
 	prepareVault();
 	const env: Record<string, string> = {};
 	for (const [k, v] of Object.entries(process.env)) {
@@ -141,25 +160,55 @@ export async function launch(): Promise<Session> {
 	env.BROWSER = "/bin/false";
 	env.XDG_CONFIG_HOME = CONFIG_HOME;
 	env.ELECTRON_DISABLE_SECURITY_WARNINGS = "1";
-	const proc = spawn(
-		ELECTRON,
-		[
-			APP,
-			`--user-data-dir=${USER_DATA}`,
-			"--ozone-platform=headless",
-			`--ozone-override-screen-size=${WIDTH},${HEIGHT}`,
-			`--remote-debugging-port=${PORT}`,
-			"--remote-debugging-address=127.0.0.1",
-			"--disable-gpu",
-			// Mike's vault uses the "system" base theme; his desktop is dark, a headless window is not.
-			"--force-dark-mode",
-			"--force-device-scale-factor=1",
-		],
-		{ env, stdio: ["ignore", "pipe", "pipe"], detached: false },
-	);
-	proc.stderr?.on("data", (d: Buffer) => {
-		if (process.env.CAPTURE_DEBUG) process.stderr.write(d);
-	});
+	const args = [
+		APP,
+		`--user-data-dir=${USER_DATA}`,
+		`--remote-debugging-port=${PORT}`,
+		"--remote-debugging-address=127.0.0.1",
+		"--disable-gpu",
+		// Mike's vault uses the "system" base theme; his desktop is dark, a headless window is not.
+		"--force-dark-mode",
+		"--force-device-scale-factor=1",
+		"--disable-backgrounding-occluded-windows",
+		"--disable-renderer-backgrounding",
+		...(windowed
+			? ["--ozone-platform=wayland"]
+			: [
+					"--ozone-platform=headless",
+					`--ozone-override-screen-size=${WIDTH},${HEIGHT}`,
+					// Headless has no pointer device, so Blink reports (hover: none) and turns off
+					// Obsidian's @media (hover: hover) rules. Report a mouse, as on Mike's desktop.
+					...(opts.noPointer
+						? []
+						: [
+								"--blink-settings=primaryPointerType=4,availablePointerTypes=4,primaryHoverType=2,availableHoverTypes=2",
+							]),
+				]),
+	];
+	let proc: ChildProcess | undefined;
+	let pid = 0;
+	if (windowed) {
+		env.WAYLAND_DISPLAY = WAYLAND_SOCKET;
+		// Started through Hyprland so the exec rule puts the window on its own workspace, silently.
+		const envArgs = Object.entries(env).map(([k, v]) => `${k}=${shellQuote(v)}`);
+		const cmd = `/usr/bin/env -i ${envArgs.join(" ")} ${ELECTRON} ${args.map(shellQuote).join(" ")}`;
+		// Hyprland 0.56 takes Lua: exec with a workspace rule bound to the new process.
+		const lua = `hl.exec_cmd([==[${cmd}]==], { workspace = "${CAPTURE_WORKSPACE} silent" })`;
+		const r = Bun.spawnSync(["hyprctl", "eval", lua]);
+		const said = `${r.stdout}${r.stderr}`;
+		if (r.exitCode !== 0 || /error/i.test(said)) throw new Error(`hyprctl eval failed: ${said}`);
+		for (let i = 0; i < 40 && !pid; i++) {
+			await Bun.sleep(250);
+			pid = mainPid();
+		}
+		if (!pid) throw new Error("windowed Obsidian did not start");
+	} else {
+		proc = spawn(ELECTRON, args, { env, stdio: ["ignore", "pipe", "pipe"], detached: false });
+		proc.stderr?.on("data", (d: Buffer) => {
+			if (process.env.CAPTURE_DEBUG) process.stderr.write(d);
+		});
+		pid = proc.pid ?? 0;
+	}
 	let browser: Browser | undefined;
 	for (let i = 0; i < 60 && !browser; i++) {
 		await Bun.sleep(500);
@@ -183,12 +232,63 @@ export async function launch(): Promise<Session> {
 		null,
 		{ timeout: 30000 },
 	);
-	return { browser, page, proc };
+	// Obsidian's own mobile emulation (app.emulateMobile) lives in localStorage of this profile:
+	// set it for --mobile runs, and make sure no other run ever starts emulated.
+	const size = opts.mobile === "phone" ? [390, 844] : opts.mobile === "tablet" ? [1024, 768] : null;
+	const emulated = (await page.evaluate("!!localStorage.getItem('EmulateMobile')")) as boolean;
+	if (size || emulated) {
+		await page.evaluate(
+			`(() => { ${size ? "localStorage.setItem('EmulateMobile', '1')" : "localStorage.removeItem('EmulateMobile')"}; require("electron").remote.getCurrentWindow().setContentSize(${size?.[0] ?? WIDTH}, ${size?.[1] ?? HEIGHT}); })()`,
+		);
+		await Bun.sleep(400);
+		await page.evaluate("location.reload()").catch(() => undefined);
+		await Bun.sleep(1500);
+		await page.waitForFunction(
+			() =>
+				"app" in window &&
+				(window as { app?: { workspace?: { layoutReady?: boolean } } }).app?.workspace
+					?.layoutReady === true,
+			null,
+			{ timeout: 30000 },
+		);
+		const mobileNow = (await page.evaluate(
+			"document.body.classList.contains('is-mobile')",
+		)) as boolean;
+		if (mobileNow !== !!size)
+			throw new Error(
+				`mobile emulation is ${mobileNow ? "on" : "off"}, wanted ${size ? "on" : "off"}`,
+			);
+	}
+	return { browser, page, pid, windowed, ...(proc ? { proc } : {}) };
 }
+
+/** Turns Obsidian's mobile emulation off again in this profile (end of a --mobile run). */
+export async function leaveMobile(s: Session): Promise<void> {
+	await s.page.evaluate("localStorage.removeItem('EmulateMobile')").catch(() => undefined);
+}
+
+function shellQuote(v: string): string {
+	return `'${v.replaceAll("'", "'\\''")}'`;
+}
+
+/** The Electron main process of this capture's profile (no --type= switch). */
+function mainPid(): number {
+	const out = Bun.spawnSync(["pgrep", "-f", `user-data-dir=${USER_DATA}`])
+		.stdout.toString()
+		.trim();
+	for (const p of out.split("\n").filter(Boolean)) {
+		const cmd = readFileSync(`/proc/${p}/cmdline`, "utf8");
+		if (cmd.startsWith(ELECTRON) && !cmd.includes("--type=")) return Number(p);
+	}
+	return 0;
+}
+
+const alive = (pid: number) => existsSync(`/proc/${pid}`);
 
 export async function close(s: Session): Promise<void> {
 	await s.browser.close().catch(() => undefined);
-	s.proc.kill("SIGTERM");
-	for (let i = 0; i < 20 && s.proc.exitCode === null; i++) await Bun.sleep(250);
-	if (s.proc.exitCode === null) s.proc.kill("SIGKILL");
+	if (!s.pid) return;
+	process.kill(s.pid, "SIGTERM");
+	for (let i = 0; i < 20 && alive(s.pid); i++) await Bun.sleep(250);
+	if (alive(s.pid)) process.kill(s.pid, "SIGKILL");
 }

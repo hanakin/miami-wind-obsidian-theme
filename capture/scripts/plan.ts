@@ -1,5 +1,5 @@
 // Turns the app inventory and the catalog into the full scene list and the checklist items.
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import selectorParser from "postcss-selector-parser";
 import { classesOf, keyClassesOf, type SelectorEntry, selectors } from "./css.ts";
 import {
@@ -11,6 +11,8 @@ import {
 } from "./discover.ts";
 import { catalogScenes } from "./scenes.ts";
 import { extraScenes } from "./scenes-extra.ts";
+import { mobileScenes } from "./scenes-mobile.ts";
+import { qcScenes } from "./scenes-qc.ts";
 import type { ChecklistItem, Scene, Target } from "./types.ts";
 
 export const ROOT = new URL("../../", import.meta.url).pathname;
@@ -29,23 +31,49 @@ export interface Exclusions {
 	themeSelectors: Record<string, string>;
 	/** Platform-only app.css selectors a class-swapped variant cannot reach, with the reason. */
 	platformSelectors: Record<string, string>;
+	/** Theme-affected app classes this capture cannot show (account, platform, mobile, no producer), with the reason. */
+	appClassesOutOfScope?: Record<string, string>;
+	/** theme.css selectors only met in a labeled scripted fixture, with the label. */
+	themeSelectorsScripted?: Record<string, string>;
 }
 
-export const DEAD =
-	"name never appears in Obsidian's shipped JavaScript or HTML (capture/.app/js), so no element can carry it: dead CSS in this version";
-
-let shipped: Set<string> | undefined;
-/** True when the class name occurs as a whole token in Obsidian's shipped JS/HTML. */
-export function referenced(name: string): boolean {
-	if (shipped === undefined) {
+/** Every class seen on any element while the capture ran (runtime DOM census, capture.ts). */
+let shippedText: string | undefined;
+/**
+ * True when Obsidian's shipped code holds a string that could build the class: the whole name, or
+ * a quoted prefix ("mod-) or suffix (-item") that a template could join with something else.
+ */
+export function constructible(name: string): boolean {
+	if (shippedText === undefined) {
 		const dir = `${CAPTURE}.app/js/`;
-		shipped = new Set<string>();
+		const parts: string[] = [];
 		for (const f of readdirSync(dir, { recursive: true }).map(String)) {
-			if (!/\.(m?js|html)$/.test(f)) continue;
-			for (const m of readFileSync(`${dir}${f}`, "utf8").matchAll(/[\w-]+/g)) shipped.add(m[0]);
+			if (/\.(m?js|html)$/.test(f)) parts.push(readFileSync(`${dir}${f}`, "utf8"));
 		}
+		shippedText = parts.join("\n");
 	}
-	return shipped.has(name);
+	const text = shippedText;
+	if (new RegExp(`(^|[^\\w-])${name.replace(/[-]/g, "\\-")}([^\\w-]|$)`).test(text)) return true;
+	const bits = name.split("-");
+	for (let k = 1; k < bits.length; k++) {
+		// Only a standalone fragment can be joined: "head-" / `head-${…}` or "-tail" / ${…}-tail.
+		const head = `${bits.slice(0, k).join("-")}-`;
+		const tail = `-${bits.slice(k).join("-")}`;
+		for (const q of ['"', "'", "`"]) {
+			if (text.includes(`${q}${head}${q}`) || text.includes(`${q}${tail}${q}`)) return true;
+		}
+		if (text.includes(`\`${head}\${`) || text.includes(`}${tail}`)) return true;
+	}
+	return false;
+}
+
+export const UNSEEN =
+	"dead CSS: never seen in the runtime class census of the full capture (headless and windowed runs), and Obsidian's shipped code holds no string that could build it (not the name, nor a quoted prefix or suffix a template could join)";
+
+export function census(): Set<string> {
+	const path = `${CAPTURE}class-census.json`;
+	if (!existsSync(path)) return new Set();
+	return new Set(JSON.parse(readFileSync(path, "utf8")) as string[]);
 }
 
 export function loadExclusions(): Exclusions {
@@ -60,6 +88,8 @@ export function allScenes(
 	return [
 		...catalogScenes(),
 		...extraScenes(),
+		...qcScenes(),
+		...mobileScenes(),
 		...viewScenes(inv),
 		...settingsScenes(inv),
 		...commandScenes(cmds, layout),
@@ -82,6 +112,10 @@ export function checklistItems(scenes: Scene[]): ChecklistItem[] {
 				source: s.source,
 				target: i.target,
 				...(i.note ? { note: i.note } : {}),
+				...(i.pseudo?.length ? { pseudo: i.pseudo } : {}),
+				...(i.expect ? { expect: i.expect } : {}),
+				...(i.synthetic ? { synthetic: i.synthetic } : {}),
+				...(i.minUnobscured !== undefined ? { minUnobscured: i.minUnobscured } : {}),
 			});
 		}
 	}
@@ -124,6 +158,7 @@ export function appClassStatuses(app: SelectorEntry[], ex: Exclusions): AppClass
 			if (ex.appClassGates[c]) return ex.appClassGates[c];
 		return undefined;
 	};
+	const seen = census();
 	return [...byClass.entries()]
 		.sort(([a], [b]) => a.localeCompare(b))
 		.map(([name, list]) => {
@@ -133,9 +168,9 @@ export function appClassStatuses(app: SelectorEntry[], ex: Exclusions): AppClass
 			}
 			if (ex.appClassGates[name]) return { name, excluded: ex.appClassGates[name] };
 			const gates = list.map(gateOf);
+			if (!seen.has(name) && !constructible(name)) return { name, excluded: UNSEEN };
 			if (gates.every((g) => g !== undefined))
 				return { name, excluded: [...new Set(gates)].join("; ") };
-			if (!referenced(name)) return { name, excluded: DEAD };
 			return { name };
 		});
 }
@@ -176,14 +211,9 @@ export function appSelectors(): SelectorEntry[] {
 	return selectors(readFileSync(`${CAPTURE}.app/app.css`, "utf8"));
 }
 
-/** Reason a theme.css selector can never match, from exclusions.json or a dead class in it. */
+/** Reason a theme.css selector can never match, from exclusions.json. */
 export function themeExclusion(selector: string, ex: Exclusions): string | undefined {
-	if (ex.themeSelectors[selector]) return ex.themeSelectors[selector];
-	const dead = positiveClassesOf(selector).filter((c) => !referenced(c));
-	if (dead.length) {
-		return `uses ${dead.map((c) => `.${c}`).join(", ")}, whose ${DEAD}`;
-	}
-	return undefined;
+	return ex.themeSelectors[selector];
 }
 
 export interface PlatformItem {
@@ -228,13 +258,11 @@ export function platformChecklistItems(): ChecklistItem[] {
 		source: `app:app.css:${p.line}`,
 		target: p.selector,
 		note: `A fixture with body.mod-${p.platform} must match this app.css selector (synthetic variant of a Linux capture).`,
+		synthetic: `body.mod-linux swapped for mod-${p.platform} on a Linux capture`,
 		...(p.excluded ? { excluded: p.excluded } : {}),
 	}));
 }
 
 function platformExclusion(selector: string, ex: Exclusions): string | undefined {
-	if (ex.platformSelectors[selector]) return ex.platformSelectors[selector];
-	const dead = positiveClassesOf(selector).filter((c) => !referenced(c));
-	if (dead.length) return `uses ${dead.map((c) => `.${c}`).join(", ")}, whose ${DEAD}`;
-	return undefined;
+	return ex.platformSelectors[selector];
 }
