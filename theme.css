@@ -1004,6 +1004,17 @@ select option:checked {
 	background-color: var(--magenta);
 }
 
+/* pdf.js XFA resets color/fill on every child, then clears focused select fills. */
+
+.xfaSelect {
+	color: var(--black);
+	background-color: var(--magenta);
+}
+
+.xfaSelect:focus {
+	background-color: var(--magenta);
+}
+
 /* === legacy.css (continued) === */
 
 /* === prompts.css === */

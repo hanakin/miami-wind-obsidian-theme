@@ -205,3 +205,10 @@ it("preserves sidebar tab hover paint with and without a mouse", async () => {
 		}
 	}
 });
+
+it("preserves XFA select color and fill through focus", async () => {
+	await compareStates(
+		`<div class="xfaLayer" style="color: rgb(0, 0, 255)"><select class="xfaSelect" data-target><option>Choice</option></select><select class="xfaSelect" disabled data-target><option>Disabled</option></select></div>`,
+		`select { color: var(--black) !important; background-color: var(--magenta) !important; }`,
+	);
+});
