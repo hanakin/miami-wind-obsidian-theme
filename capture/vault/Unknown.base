@@ -1,0 +1,3 @@
+views:
+  - type: no-such-view
+    name: Missing view

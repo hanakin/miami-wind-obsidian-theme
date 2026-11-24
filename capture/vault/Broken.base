@@ -1,0 +1,8 @@
+filters:
+  and:
+    - file.name.contains(
+views:
+  - type: table
+    name: Table
+    order:
+      - file.name
