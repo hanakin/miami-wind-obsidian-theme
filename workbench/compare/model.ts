@@ -111,7 +111,7 @@ export function outcome(input: {
 	replayIssues: string[];
 }) {
 	const reasons = [...input.replayIssues];
-	if (input.noise) reasons.push("before-vs-before stylesheet-swap noise");
+	if (input.noise) reasons.push("same-CSS repeat noise");
 	if (input.invisible) reasons.push("target has no visible box");
 	for (const kind of new Set(input.unsupported))
 		if (
@@ -120,12 +120,14 @@ export function outcome(input: {
 			)
 		)
 			reasons.push(`${kind} content is not reconstructed`);
-	const status = input.noise
-		? "not-proven"
-		: input.differences || input.pixels
-			? "different"
-			: reasons.length
-				? "not-proven"
-				: "same";
+	const status = input.differences
+		? "different"
+		: input.noise
+			? "not-proven"
+			: input.pixels
+				? "different"
+				: reasons.length
+					? "not-proven"
+					: "same";
 	return { status, same: status === "same", notProvenReasons: reasons };
 }
