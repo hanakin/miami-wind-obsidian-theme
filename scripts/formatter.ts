@@ -99,7 +99,6 @@ function contents(root: Container): string {
 			node.text.match(/@source: (src\/\S+\.css)/)?.[1];
 		if (!file) continue;
 		const source = file.replace(/ \(continued\)$/, "");
-		const name = source.split("/").at(-1) ?? source;
 		if (files.includes(source)) continue;
 		files.push(source);
 	}
