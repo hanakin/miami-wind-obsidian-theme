@@ -382,7 +382,8 @@ for (const f of fx.fixtures) {
 	const rec = f.evidence?.record;
 	if (!rec?.graphColors) continue;
 	for (const [cls, n] of Object.entries(rec.graphPixels ?? {})) {
-		if (n > 0) {
+		// At least 25 pixels, so a stray antialiased pixel of the same color does not count.
+		if (n >= 25) {
 			graphPainted.set(cls, f.id);
 			graphPainted.set("graph-view", f.id);
 		} else if (!graphPainted.has(cls)) graphReadOnly.set(cls, f.id);
@@ -615,7 +616,7 @@ const lines = [
 	`Obsidian ${checklist.obsidianVersion} · ${fx.fixtures.length} fixtures, ${valid.size} with valid evidence (${fx.fixtures.filter((f) => f.variantOf).length} synthetic macOS/Windows variants)`,
 	`Checklist items shown in their claimed state: ${shown.length}/${n} (${pct(shown.length, n)}); ${syntheticItems.length} of them scripted or synthetic (labeled); state applied but its change not visible (limitation, listed): ${notVisibleItems.length}; excluded with reason: ${excludedItems.length}; missing: ${missingItems.length}`,
 	`theme.css selectors visibly matched (fixture and live agree, on painted elements): ${themeMatched.length}/${theme.length} (${pct(themeMatched.length, theme.length)}); excluded with reason: ${themeExcluded.length}; scripted only (labeled): ${themeScripted.length}; missing: ${themeMissing.length} (${themeDomOnly.length} only on hidden/clipped elements, ${themeSyntheticOnly.length} only in scripted fixtures); fixture/live disagreements: ${disagreements.length}`,
-	`App CSS classes visibly captured: ${appCovered.length} (${[...graphPainted.keys()].length} of them classes credited by screenshot pixels (graph probes, tab-drag overlay)), excluded ${appExcluded.length}, not theme-affected (accepted gaps) ${appNotAffected.length}, theme-affected but out of scope (labeled) ${appOutOfScope.length}, theme-affected missing ${appMissing.length}, of ${app.length}; of the theme-affected missing: ${appDomOnly.length} in the DOM but never painted, ${appSyntheticOnly.length} only in scripted fixtures, ${appCensusOnly.length} seen in the runtime census only`,
+	`App CSS classes visibly captured: ${appCovered.length} (${[...graphPainted.keys()].length} of them classes credited by screenshot pixels (graph probes)), excluded ${appExcluded.length}, not theme-affected (accepted gaps) ${appNotAffected.length}, theme-affected but out of scope (labeled) ${appOutOfScope.length}, theme-affected missing ${appMissing.length}, of ${app.length}; of the theme-affected missing: ${appDomOnly.length} in the DOM but never painted, ${appSyntheticOnly.length} only in scripted fixtures, ${appCensusOnly.length} seen in the runtime census only`,
 	`Screenshots: ${screenshotsHere ? "files re-checked against recorded hashes" : "files not on this machine; recorded evidence used"}; ${dupeReasons.length + dupeLimits.length + dupes.length} groups of identical screenshots (${dupeReasons.length} explained by their fixtures, ${dupeLimits.length} where a state applies but does not show (limitation), ${dupes.length} unexplained)`,
 	...crossCheck.map((c) => `Expert cross-check, ${c}`),
 ];
@@ -772,7 +773,7 @@ function report(): string {
 			"",
 			"## Classes credited by screenshot pixels",
 			"",
-			"Some classes cannot be witnessed through the DOM: the graph's short-lived `.graph-view.color-*` probe elements (Obsidian paints their colors on a canvas) and the tab-drag overlay (drawn in a transformed copy of the app). They count as painted when their recorded color is in the screenshot (`evidence.record.graphPixels`; colors with alpha are matched blended over the background).",
+			"The graph's short-lived `.graph-view.color-*` probe elements cannot be witnessed through the DOM (Obsidian paints their colors on a canvas). They count as painted when at least 25 screenshot pixels have their recorded color (`evidence.record.graphPixels`; colors with alpha are matched blended over the background).",
 			"",
 			...[...graphPainted.entries()].map(([c, id]) => `- \`${c}\`: painted (\`${id}\`)`),
 			...[...graphReadOnly.entries()].map(

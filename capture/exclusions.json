@@ -129,6 +129,8 @@
 		"community-modal-search-results-status-content": "capture limit: the community browser's load-error message needs the plugin list download to fail; those requests go through Electron's net module, which DevTools cannot block",
 		"community-plugins-debug-list": "capture limit: the list is built empty and has no box until a community plugin is enabled; the capture vault has none enabled",
 		"workspace-fake-target-overlay": "present during a tab drag, but Obsidian draws it inside an off-screen, visibility: hidden copy of the app (its own background equals the app background); the visible docking hint is .workspace-drop-overlay, which is captured. No painted witness or pixel proof was possible",
-		"is-in-sidebar": "present during a tab drag, but Obsidian draws it inside an off-screen, visibility: hidden copy of the app (its own background equals the app background); the visible docking hint is .workspace-drop-overlay, which is captured. No painted witness or pixel proof was possible"
+		"is-in-sidebar": "present during a tab drag, but Obsidian draws it inside an off-screen, visibility: hidden copy of the app (its own background equals the app background); the visible docking hint is .workspace-drop-overlay, which is captured. No painted witness or pixel proof was possible",
+		"color-fill-focused": "the graph renderer read this color (recorded in qc.graph.all-node-kinds and qc.graph.node-hover); hovering a node did not paint a measurable area in exactly this color (1 pixel), so there is no pixel proof",
+		"color-circle": "the graph renderer read this color (recorded in qc.graph.all-node-kinds and qc.graph.node-hover); hovering a node did not paint a measurable area in exactly this color (1 pixel), so there is no pixel proof"
 	}
 }
