@@ -38,7 +38,7 @@ it("formats with tabs, safe property order, section banners and stable output", 
 	const result = await postcss([formatCss()]).process(input, {
 		from: undefined,
 	});
-	expect(result.css).toContain(" * @components: Code");
+	expect(result.css).toContain(" * @component: Code");
 	expect(result.css).toContain("\t display".replace(" ", ""));
 	expect(result.css.indexOf("color:")).toBeLessThan(
 		result.css.indexOf("display:"),
@@ -85,18 +85,20 @@ it("checks selectors and declarations after nesting and component expansion", as
 	).rejects.toThrow();
 });
 
-it.each(["line-height: 2; font: 12px serif", "top: 1px; inset: 0"])(
-	"keeps declaration order for %s",
-	async (declarations) => {
-		const result = await postcss([formatCss()]).process(
-			`.x { ${declarations} }`,
-			{ from: undefined },
-		);
-		expect(result.css).toContain(
-			`.x {\n\t${declarations.split("; ").join(";\n\t")};\n}\n`,
-		);
-	},
-);
+it.each([
+	"line-height: 2; font: 12px serif",
+	"top: 1px; inset: 0",
+	"white-space: nowrap; text-wrap: balance",
+	"all: unset; color: red",
+])("keeps declaration order for %s", async (declarations) => {
+	const result = await postcss([formatCss()]).process(
+		`.x { ${declarations} }`,
+		{ from: undefined },
+	);
+	expect(result.css).toContain(
+		`.x {\n\t${declarations.split("; ").join(";\n\t")};\n}\n`,
+	);
+});
 
 it.each([
 	"keyword",
@@ -132,14 +134,14 @@ it.each(["cm-footref", "cm-hmd-footnote"])(
 
 it("generates base-l file, section, subsection and component comments", async () => {
 	const input =
-		"/* @section code.css */ /* Syntax highlighting */ .x { /* Component: surface-background */ background-color: black; }";
+		"/* @section code.css */ /* @heading Syntax highlighting */ .x { /* Component: surface-background */ background-color: black; }";
 	const result = await postcss([formatCss()]).process(input, {
 		from: undefined,
 	});
 	expect(result.css).toContain(
 		"/* -----------------------------------------------------------------------------\n * Miami Wind: Obsidian theme\n * -----------------------------------------------------------------------------",
 	);
-	expect(result.css).toContain(" * @components: Code\n");
+	expect(result.css).toContain(" * @component: Code\n");
 	expect(result.css).toContain(" * @source: src/code.css\n");
 	expect(result.css).toContain(
 		"/*\n * Syntax highlighting\n * -----------------------------------------------------------------------------\n */",
@@ -175,9 +177,6 @@ it.each([
 	expect(result.css.indexOf(first ?? "")).toBeLessThan(
 		result.css.indexOf(second ?? ""),
 	);
-	expect(
-		result.messages.some((message) => message.type === "order-preserved"),
-	).toBe(true);
 });
 
 it("keeps reverse footnotes attached when safely sorting declarations", async () => {
@@ -223,8 +222,57 @@ it.each([
 		expect(result.css.indexOf(first ?? "")).toBeLessThan(
 			result.css.indexOf(second ?? ""),
 		);
-		expect(
-			result.messages.some((message) => message.type === "order-preserved"),
-		).toBe(true);
 	},
 );
+
+it("preserves comment lists, descriptions, explicit headings and literal replacement codes", async () => {
+	const license = "/*! Copyright $& $' */";
+	const result = await postcss([formatCss()]).process(
+		`${license}
+/* 1. First item
+2. Second item
+- Last item */
+.x { color: red; }
+/* Hover state */
+.y { color: blue; }
+/* @heading States */
+.z { color: green; }`,
+		{ from: undefined },
+	);
+	expect(result.css).toContain(license);
+	expect(result.css).toContain(
+		" * 1. First item\n * 2. Second item\n * - Last item",
+	);
+	expect(result.css).toContain(" * Hover state\n */\n.y");
+	expect(result.css).toContain(
+		" * States\n * -----------------------------------------------------------------------------\n */\n\n.z",
+	);
+});
+
+it("lists only emitted sections, counts continuations after the first banner, and reformats idempotently", async () => {
+	const input =
+		"/* @section src/components/empty.css */ /* @section src/legacy.css (continued) */ .x { color:red; } /* @section src/code.css */ .y { color:blue; } /* @section src/legacy.css (continued) */ .z { color:green; }";
+	const once = await postcss([formatCss()]).process(input, { from: undefined });
+	expect(once.css).not.toContain("empty.css");
+	expect(once.css.match(/@theme: Legacy \(continued\)/g)).toHaveLength(1);
+	const twice = await postcss([formatCss()]).process(once.css, {
+		from: undefined,
+	});
+	expect(twice.css).toBe(once.css);
+});
+
+it("keeps user comments that mention generated header words and repeated selectors", async () => {
+	const result = await postcss([formatCss()]).process(
+		"/* CONTENTS of this example mention Miami Wind: Obsidian theme */ .x, .x { color: red; }",
+		{ from: undefined },
+	);
+	expect(result.css).toContain(
+		"CONTENTS of this example mention Miami Wind: Obsidian theme",
+	);
+	expect(
+		postcss
+			.parse(result.css)
+			.nodes.find((node) => node.type === "rule")
+			?.toString(),
+	).toContain(".x,\n.x");
+});

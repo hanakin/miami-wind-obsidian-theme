@@ -21,7 +21,7 @@ interface ComponentUsage {
 	}[];
 }
 
-export async function compile() {
+export async function compile(options: { format?: boolean } = {}) {
 	const legacyPath = path.resolve("src/legacy.css");
 	const legacy = await readFile(legacyPath, "utf8");
 	if (
@@ -92,7 +92,7 @@ export async function compile() {
 		mixins(),
 		nested(),
 		checkCss(legacyPath),
-		formatCss(),
+		...(options.format === false ? [] : [formatCss()]),
 	]).process(input, { from: path.resolve("src/index.css"), map: false });
 	return {
 		css: result.css,

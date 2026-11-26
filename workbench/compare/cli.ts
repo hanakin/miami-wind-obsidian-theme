@@ -5,6 +5,7 @@ import pixelmatch from "pixelmatch";
 import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import type { FixtureEntry } from "../../capture/scripts/types";
+import { compile } from "../../scripts/pipeline";
 import {
 	componentDiffs,
 	filterFixtures,
@@ -19,6 +20,7 @@ const { values } = parseArgs({
 	args: process.argv.slice(2),
 	options: {
 		before: { type: "string" },
+		formatting: { type: "boolean" },
 		after: { type: "string" },
 		id: { type: "string" },
 		component: { type: "string" },
@@ -28,10 +30,12 @@ const { values } = parseArgs({
 });
 if (values.help) {
 	console.log(
-		"bun run compare [--before path] [--after path] [--id substring] [--component name] [--surface name]\nDefaults: b478dc8:theme.css vs freshly built theme.css. Outputs: workbench/out/{compare.json,compare.md,component-diffs.json,diffs/}.",
+		"bun run compare [--formatting] [--before path] [--after path] [--id substring] [--component name] [--surface name]\nDefaults: b478dc8:theme.css vs freshly built theme.css. Outputs: workbench/out/{compare.json,compare.md,component-diffs.json,diffs/}.",
 	);
 	process.exit(0);
 }
+if (values.formatting && (values.before || values.after))
+	throw new Error("--formatting cannot be combined with --before or --after");
 const started = performance.now();
 const out = "workbench/out";
 for (const file of ["compare.json", "compare.md", "component-diffs.json"])
@@ -45,10 +49,16 @@ const registry = (await Bun.file("capture/fixtures.json").json()) as {
 const fixtures = filterFixtures(registry.fixtures, values);
 if (!fixtures.length)
 	throw new Error("No fixtures match the requested filters");
+if (values.formatting) {
+	const beforeFormat = await compile({ format: false });
+	await Bun.write(`${out}/before-format.css`, beforeFormat.css);
+}
 if (!values.after) execFileSync("bun", ["run", "build"], { stdio: "inherit" });
-const before = values.before
-	? await Bun.file(values.before).text()
-	: execFileSync("git", ["show", "b478dc8:theme.css"], { encoding: "utf8" });
+const before = values.formatting
+	? await Bun.file(`${out}/before-format.css`).text()
+	: values.before
+		? await Bun.file(values.before).text()
+		: execFileSync("git", ["show", "b478dc8:theme.css"], { encoding: "utf8" });
 const after = await Bun.file(values.after ?? "theme.css").text();
 if (!(await Bun.file("capture/.app/app.css").exists()))
 	throw new Error("Missing app CSS: run bun run capture:extract-app-css first");

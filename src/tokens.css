@@ -80,7 +80,9 @@
 	--header: var(--purple);
 	--header-alt: var(--blue);
 	--inline-code: var(--green);
-	--strikethrough: var(--red); /* invalid, error, undefined, null, etc. */
+
+	/* invalid, error, undefined, null, etc. */
+	--strikethrough: var(--red);
 	--bold: var(--orange);
 	--italic: var(--yellow);
 	--highlight: var(--magenta);
@@ -219,7 +221,10 @@
 	--font-text-theme: "Liberation Sans";
 	--font-monospace-theme: "CaskaydiaMono Nerd Font";
 
+	/* @heading Ribbon */
 	--ribbon-background: var(--grey-11);
+
+	/* @heading Status bar */
 	--status-bar-background: var(--grey-11);
 }
 

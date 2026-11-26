@@ -6,6 +6,12 @@ Run `bun run capture:extract-app-css`.
 Run `bun run compare`.
 
 The default command builds the after theme first. It compares `b478dc8:theme.css` with the built root `theme.css`.
+Run `bun run compare:formatting` to compare the same sources before and after the formatter.
+This command saves the pre-format build as `workbench/out/before-format.css`, then builds the formatted `theme.css`.
+It runs the full fixture set by default. It accepts the same fixture filters.
+Use this command for formatting parity after merging port branches into a preview worktree.
+The default `bun run compare` baseline remains 1.x.
+
 Use `--before path` to select a baseline file.
 Use `--after path` to select an after file without building.
 

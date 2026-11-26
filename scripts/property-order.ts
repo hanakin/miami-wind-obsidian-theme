@@ -41,6 +41,17 @@ export function orderRisk(declarations: Declaration[]): string | undefined {
 	const names = declarations
 		.map((decl) => aliases[plain(decl.prop)] ?? plain(decl.prop))
 		.filter((name) => !name.startsWith("--"));
+	if (names.includes("all") && declarations.length > 1)
+		return "all resets other declarations";
+	const wrapping = new Set([
+		"white-space",
+		"white-space-collapse",
+		"text-wrap",
+		"text-wrap-mode",
+		"text-wrap-style",
+	]);
+	if (names.filter((name) => wrapping.has(name)).length > 1)
+		return "overlapping text wrapping declarations";
 	if (new Set(names).size !== names.length)
 		return "duplicate or vendor-alias declarations";
 	if (names.some((name) => !properties[name]))

@@ -1,12 +1,7 @@
-import postcss, {
-	type ChildNode,
-	type Container,
-	type Declaration,
-	type Plugin,
-} from "postcss";
+import postcss, { type Container, type Plugin } from "postcss";
 import stylelint from "stylelint";
 import { formatConfig as config } from "./format-config";
-import { ordered, orderRisk } from "./property-order";
+import { ordered } from "./property-order";
 import { syntaxFormatConfig } from "./stylelint-config";
 
 function block(lines: string[], depth = 0): string {
@@ -20,57 +15,111 @@ function block(lines: string[], depth = 0): string {
 function banner(title: string, lines: string[]): string {
 	return `/* ${config.rule}\n * ${title}\n * ${config.rule}\n${lines.map((line) => ` *${line ? ` ${line}` : ""}`).join("\n")}\n * ${config.closingRule} */`;
 }
-function section(file: string): string {
-	const continued = file.endsWith(" (continued)");
+function fileInfo(file: string) {
 	const source = file.replace(/ \(continued\)$/, "");
 	const name = source.split("/").at(-1) ?? source;
-	const settings = config.sections[name];
-	const label = name
-		.replace(/\.css$/, "")
-		.replaceAll("-", " ")
-		.toUpperCase();
-	return (
-		banner(
-			`@${settings?.layer ?? (source.includes("/components/") ? "objects" : "components")}: ${label.toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase())}${continued ? " (continued)" : ""}`,
-			[
-				`@source: ${source.startsWith("src/") ? source : `src/${source}`}`,
-				"@description:",
-				"",
-				settings?.description ?? `Obsidian ${label.toLowerCase()} surface.`,
-				"",
-			],
-		) +
-		"\n\n" +
-		`/* ${name === "tokens.css" ? "#tokens" : "#rules"} */`
+	return {
+		source: source.startsWith("src/") ? source : `src/${source}`,
+		name,
+		label: name.replace(/\.css$/, "").replaceAll("-", " "),
+		layer:
+			config.sections[name]?.layer ??
+			(source.includes("/components/") ? "object" : "component"),
+	};
+}
+function sectionBanner(file: string, continued: boolean): string {
+	const { source, name, label, layer } = fileInfo(file);
+	return banner(
+		`@${layer}: ${label.replace(/\b\w/g, (letter) => letter.toUpperCase())}${continued ? " (continued)" : ""}`,
+		[
+			`@source: ${source}`,
+			"@description:",
+			"",
+			config.sections[name]?.description ?? `Obsidian ${label} surface.`,
+			"",
+		],
 	);
+}
+function contents(files: string[]): string {
+	return files.length
+		? block([
+				"CONTENTS",
+				"",
+				...files.map((file, index) => {
+					const { source, label, layer } = fileInfo(file);
+					const title = `${index + 1}. ${layer}: ${label}`;
+					return `${title}${".".repeat(Math.max(2, 38 - title.length))}${source}`;
+				}),
+			])
+		: "";
+}
+const commentText = (css: string) =>
+	(postcss.parse(css).first as postcss.Comment).text;
+const cleanLines = (text: string) =>
+	text.split("\n").map((line) => line.replace(/^\s*\* ?/, "").trim());
+function heading(text: string, depth: number): string | undefined {
+	const explicit = text.match(/^@heading\s+(.+)$/)?.[1];
+	if (explicit) return explicit;
+	const lines = cleanLines(text).filter(Boolean);
+	const title = lines[0];
+	// Recognize only our exact generated heading; plain short notes stay descriptions.
+	if (
+		title &&
+		text ===
+			commentText(
+				block(
+					[title, config.rule.slice(0, config.rule.length - depth * 4)],
+					depth,
+				),
+			)
+	)
+		return title;
 }
 function comment(text: string, depth: number): string {
 	const component = text.match(/^(?:Component:|@component:)\s*(.+)$/s);
 	if (component) return block([`@component: ${component[1]}`], depth);
-	// Our generated banners already contain their metadata and spacing.
-	if (text.startsWith("---") && /@source:/.test(text)) return `/* ${text} */`;
-	const clean = text
-		.split("\n")
-		.map((line) => line.replace(/^\s*\* ?/, "").trim())
-		.filter((line) => line && !/^-+$/.test(line))
-		.join(" ");
-	if (["#css", "#settings", "#rules", "#tokens"].includes(clean))
-		return `${config.indent.repeat(depth)}/* ${clean} */`;
-	if (/^[A-Za-z][A-Za-z0-9 /_-]{1,60}$/.test(clean))
+	const title = heading(text, depth);
+	if (title)
 		return block(
-			[clean, config.rule.slice(0, config.rule.length - depth * 4)],
+			[title, config.rule.slice(0, config.rule.length - depth * 4)],
 			depth,
 		);
-	const lines: string[] = [];
-	for (const word of clean.split(/\s+/)) {
-		const last = lines.at(-1);
-		if (
-			last &&
-			last.length + word.length + 1 <= config.commentWidth - depth * 4 - 3
+	const paragraphs: string[] = [];
+	for (const line of cleanLines(text)) {
+		if (!line) {
+			if (paragraphs.at(-1)) paragraphs.push("");
+		} else if (
+			/^(?:\d+\.|-)(?:\s|$)/.test(line) ||
+			!paragraphs.length ||
+			!paragraphs.at(-1) ||
+			/^(?:\d+\.|-)(?:\s|$)/.test(paragraphs.at(-1) ?? "")
 		)
-			lines[lines.length - 1] = `${last} ${word}`;
-		else lines.push(word);
+			paragraphs.push(line);
+		else paragraphs[paragraphs.length - 1] += ` ${line}`;
 	}
+	const lines: string[] = [];
+	for (const paragraph of paragraphs) {
+		if (!paragraph) {
+			lines.push("");
+			continue;
+		}
+		if (/^(?:\d+\.|-)(?:\s|$)/.test(paragraph)) {
+			lines.push(paragraph);
+			continue;
+		}
+		const wrapped: string[] = [];
+		for (const word of paragraph.split(/\s+/)) {
+			const last = wrapped.at(-1);
+			if (
+				last &&
+				last.length + word.length + 1 <= config.commentWidth - depth * 4 - 3
+			)
+				wrapped[wrapped.length - 1] = `${last} ${word}`;
+			else wrapped.push(word);
+		}
+		lines.push(...wrapped);
+	}
+	while (lines.at(-1) === "") lines.pop();
 	return block(lines, depth);
 }
 function numericBoxValue(property: string, value: string): string {
@@ -89,41 +138,21 @@ function numericBoxValue(property: string, value: string): string {
 	if (parts.length === 2 && parts[0] === parts[1]) parts.pop();
 	return parts.join(" ");
 }
-
-function contents(root: Container): string {
-	const files: string[] = [];
-	for (const node of root.nodes ?? []) {
-		if (node.type !== "comment") continue;
-		const file =
-			node.text.match(/^@section (.+)$/)?.[1] ??
-			node.text.match(/@source: (src\/\S+\.css)/)?.[1];
-		if (!file) continue;
-		const source = file.replace(/ \(continued\)$/, "");
-		if (files.includes(source)) continue;
-		files.push(source);
-	}
-	if (!files.length) return "";
-	return block([
-		"CONTENTS",
-		"",
-		...files.map((file, index) => {
-			const name = file.split("/").at(-1) ?? file;
-			const title = `${index + 1}. ${config.sections[name]?.layer ?? (file.includes("/components/") ? "objects" : "components")}: ${name.replace(/\.css$/, "").replaceAll("-", " ")}`;
-			return `${title}${".".repeat(Math.max(2, 38 - title.length))}${file.startsWith("src/") ? file : `src/${file}`}`;
-		}),
-	]);
-}
-
 function render(
 	container: Container,
-	depth = 0,
-	protectedComments: string[] = [],
+	depth: number,
+	protectedComments: string[],
+	files: string[],
 ): string {
 	const indent = config.indent.repeat(depth);
-	const source = container.nodes ?? [];
-	const nodes = ordered(source);
-	const output: { text: string; major: boolean; comment: boolean }[] = [];
-	let activeSection = "";
+	const nodes = ordered(container.nodes ?? []);
+	const output: {
+		text: string;
+		major: boolean;
+		comment: boolean;
+		title: boolean;
+	}[] = [];
+	const seen = new Set<string>();
 	for (let index = 0; index < nodes.length; index++) {
 		const node = nodes[index];
 		if (!node) continue;
@@ -136,7 +165,12 @@ function render(
 			) {
 				const marker = `/* @mw-preserve-${protectedComments.length} */`;
 				protectedComments.push(node.toString());
-				output.push({ text: marker, major: false, comment: true });
+				output.push({
+					text: marker,
+					major: false,
+					comment: true,
+					title: false,
+				});
 				continue;
 			}
 			const previous = output.at(-1);
@@ -149,43 +183,39 @@ function render(
 				previous.text += ` /* ${node.text.trim()} */`;
 				continue;
 			}
-
-			if (
-				node.text === config.header ||
-				node.text.includes(config.title) ||
-				/CONTENTS/.test(node.text)
-			)
-				continue;
 			const marker = node.text.match(/^@section (.+)$/);
-			if (marker) {
-				activeSection = marker[1] ?? "";
-				// Mixin definitions disappear; their comments remain next to each use.
-				if (
-					nodes[index + 1]?.type === "comment" &&
-					(nodes[index + 1] as ChildNode & { text: string }).text.startsWith(
-						"@section",
+			if (marker?.[1]) {
+				// Only sections containing output rules receive banners and contents entries.
+				let end = index + 1;
+				while (
+					end < nodes.length &&
+					!(
+						nodes[end]?.type === "comment" &&
+						/^@section /.test((nodes[end] as postcss.Comment).text)
 					)
 				)
+					end++;
+				if (
+					!nodes.slice(index + 1, end).some((item) => item.type !== "comment")
+				)
 					continue;
+				const { source, name } = fileInfo(marker[1]);
+				const continued = seen.has(source);
+				seen.add(source);
+				if (!files.includes(source)) files.push(source);
 				output.push({
-					text: section(activeSection),
+					text: `${sectionBanner(source, continued)}\n\n/* ${name === "tokens.css" ? "#settings" : "#css"} */`,
 					major: true,
 					comment: true,
+					title: true,
 				});
 				continue;
 			}
-			if (
-				node.text.toLowerCase() ===
-				(activeSection.split("/").at(-1) ?? activeSection)
-					.replace(/\.css.*$/, "")
-					.replaceAll("-", " ")
-					.toLowerCase()
-			)
-				continue;
 			output.push({
 				text: comment(node.text, depth),
-				major: node.text.startsWith("---") && /@source:/.test(node.text),
+				major: false,
 				comment: true,
+				title: !!heading(node.text, depth),
 			});
 			continue;
 		}
@@ -194,19 +224,21 @@ function render(
 				text: `${indent}${node.prop}: ${numericBoxValue(node.prop, node.value)}${node.important ? " !important" : ""};`,
 				major: false,
 				comment: false,
+				title: false,
 			});
 			continue;
 		}
-		const heading =
+		const selector =
 			node.type === "rule"
 				? node.selectors.join(`,\n${indent}`)
 				: `@${node.name}${node.params ? ` ${node.params}` : ""}`;
 		output.push({
 			text: node.nodes
-				? `${indent}${heading} {\n${render(node, depth + 1, protectedComments)}\n${indent}}`
-				: `${indent}${heading};`,
+				? `${indent}${selector} {\n${render(node, depth + 1, protectedComments, files)}\n${indent}}`
+				: `${indent}${selector};`,
 			major: false,
 			comment: false,
+			title: false,
 		});
 	}
 	return output
@@ -215,33 +247,19 @@ function render(
 			const previous = output[index - 1];
 			const separator = item.major
 				? "\n\n\n"
-				: container.type === "rule" && !item.comment
-					? "\n"
-					: "\n\n";
-			return `${previous ? separator : ""}${item.text}`;
+				: previous?.title
+					? "\n\n"
+					: previous?.comment || (container.type === "rule" && !item.comment)
+						? "\n"
+						: "\n\n";
+			return `${separator}${item.text}`;
 		})
 		.join("");
 }
-
 export function formatCss(): Plugin {
 	return {
 		postcssPlugin: "miami-wind-format",
 		async OnceExit(root, { result }) {
-			root.walkRules((rule) => {
-				const reason = orderRisk(
-					rule.nodes.filter(
-						(node): node is Declaration => node.type === "decl",
-					),
-				);
-				if (reason)
-					result.messages.push({
-						type: "order-preserved",
-						plugin: "miami-wind-format",
-						selector: rule.selector,
-						file: rule.source?.input.file,
-						reason,
-					});
-			});
 			const header = banner(config.title, [
 				`@author: ${config.author}`,
 				`@version: ${config.version}`,
@@ -249,32 +267,49 @@ export function formatCss(): Plugin {
 				"Generated by bun run build. Edit src/; do not edit this file.",
 				"",
 			]);
-			const protectedComments: string[] = [];
-			const table = contents(root);
-			const css = `${header}\n\n\n${table ? `${table}\n\n\n` : ""}${render(root, 0, protectedComments)}\n`;
+			for (const node of [...root.nodes]) {
+				if (node.type !== "comment") continue;
+				if (node.text === config.header || node.text === commentText(header)) {
+					node.remove();
+					continue;
+				}
+				const file = node.text.match(/@source: (src\/\S+\.css)/)?.[1];
+				if (
+					file &&
+					[false, true].some(
+						(continued) =>
+							node.text === commentText(sectionBanner(file, continued)),
+					)
+				) {
+					const next = node.next();
+					if (
+						next?.type === "comment" &&
+						["#css", "#settings"].includes(next.text)
+					)
+						next.remove();
+					node.text = `@section ${file}`;
+					continue;
+				}
+				const files = cleanLines(node.text).flatMap(
+					(line) =>
+						line.match(/^\d+\. [\w ]+: .+\.{2,}(src\/\S+\.css)$/)?.[1] ?? [],
+				);
+				if (files.length && node.text === commentText(contents(files)))
+					node.remove();
+			}
+			const protectedComments: string[] = [],
+				files: string[] = [];
+			const body = render(root, 0, protectedComments, files);
+			const table = contents(files);
+			const css = `${header}\n\n\n${table ? `${table}\n\n\n` : ""}${body}\n`;
 			const formatted = await stylelint.lint({
 				code: css,
 				config: syntaxFormatConfig,
 				fix: true,
 			});
-			const output = postcss.parse(formatted.code ?? css);
-			// Quote normalization can expose exact duplicate selector-list entries. Removing a repeated entry is cascade-neutral.
-			output.walkRules((rule) => {
-				const unique = [
-					...new Set(rule.selectors.map((selector) => selector.trim())),
-				];
-				if (unique.length === rule.selectors.length) return;
-				let depth = 0;
-				let parent = rule.parent;
-				while (parent && parent.type !== "root") {
-					depth++;
-					parent = parent.parent;
-				}
-				rule.selector = unique.join(`,\n${config.indent.repeat(depth)}`);
-			});
-			let final = output.toString();
+			let final = formatted.code ?? css;
 			for (const [index, original] of protectedComments.entries())
-				final = final.replace(`/* @mw-preserve-${index} */`, original);
+				final = final.replace(`/* @mw-preserve-${index} */`, () => original);
 			result.opts.stringifier = (_node, builder) => builder(final);
 		},
 	};

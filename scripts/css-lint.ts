@@ -4,7 +4,6 @@ import postcss from "postcss";
 import stylelint from "stylelint";
 import permanent from "../config/stylelint-obsidian.json";
 import temporary from "../config/stylelint-temporary.json";
-import { orderRisk } from "./property-order";
 import { stylelintConfig } from "./stylelint-config";
 
 export interface Finding {
@@ -56,7 +55,10 @@ export function partitionFindings(
 			finding,
 		);
 	}
-	return { excepted, unexpected };
+	const stale = exceptions.filter(
+		(exception) => (used.get(identity(exception)) ?? 0) < exception.count,
+	);
+	return { excepted, unexpected, stale };
 }
 
 function context(
@@ -98,8 +100,6 @@ export async function inspectCss() {
 	];
 	const result = await stylelint.lint({ files, config: stylelintConfig });
 	const findings: Finding[] = [];
-	const retainedOrder: { file: string; selector: string; reason: string }[] =
-		[];
 	for (const file of result.results) {
 		if (!file.source) throw new Error("Stylelint returned an unnamed source");
 		const relative = path.relative(process.cwd(), file.source);
@@ -116,23 +116,12 @@ export async function inspectCss() {
 					"first used earlier",
 				),
 			});
-		root.walkRules((rule) => {
-			const reason = orderRisk(
-				rule.nodes.filter((node) => node.type === "decl"),
-			);
-			if (reason)
-				retainedOrder.push({
-					file: relative,
-					selector: rule.selectors.map((item) => item.trim()).join(", "),
-					reason,
-				});
-		});
 	}
-	return { findings, retainedOrder };
+	return { findings };
 }
 
 export async function lintCss() {
-	const { findings, retainedOrder } = await inspectCss();
+	const { findings } = await inspectCss();
 	const permanentResult = partitionFindings(
 		findings,
 		expand(permanent as ExceptionGroup[]),
@@ -147,7 +136,7 @@ export async function lintCss() {
 	return {
 		counts,
 		findings,
-		retainedOrder,
+		stale: [...permanentResult.stale, ...temporaryResult.stale],
 		permanent: permanentResult.excepted.length,
 		temporary: temporaryResult.excepted.length,
 		unexpected: temporaryResult.unexpected,

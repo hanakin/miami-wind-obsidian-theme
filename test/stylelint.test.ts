@@ -82,3 +82,22 @@ it("bounds exceptions to an exact file, rule, selector and occurrence count", ()
 	expect(result.excepted).toEqual([finding]);
 	expect(result.unexpected).toHaveLength(4);
 });
+
+it("detects unused exception entries and counts above their remaining findings", () => {
+	const exception: CssException = {
+		file: "src/code.css",
+		rule: "selector-no-qualifying-type",
+		selector: ".cm-s-obsidian span.cm-keyword",
+		count: 2,
+		reason: "specificity tie",
+	};
+	const finding: Finding = {
+		...exception,
+		property: "",
+		value: "",
+		text: "rival",
+	};
+	expect(partitionFindings([finding], [exception]).stale).toEqual([exception]);
+	expect(partitionFindings([], [exception]).stale).toEqual([exception]);
+	expect(partitionFindings([finding, finding], [exception]).stale).toEqual([]);
+});

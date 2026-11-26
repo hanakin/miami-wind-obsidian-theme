@@ -15,6 +15,7 @@
 		"build": "bun scripts/build.ts",
 		"check:css": "bun scripts/check-css.ts",
 		"compare": "bun workbench/compare/cli.ts",
+		"compare:formatting": "bun workbench/compare/cli.ts --formatting",
 		"test": "playwright install chromium && vitest run",
 		"lint:css": "bun scripts/lint-css.ts"
 	},

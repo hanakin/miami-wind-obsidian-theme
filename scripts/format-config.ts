@@ -13,7 +13,7 @@ export const formatConfig = {
 	commentWidth: 80,
 	sections: {
 		"tokens.css": {
-			layer: "settings",
+			layer: "setting",
 			description: "Palette and Obsidian variable assignments.",
 		},
 		"legacy.css": {

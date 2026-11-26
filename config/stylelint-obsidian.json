@@ -55,30 +55,6 @@
 			{
 				"selector": "body:not(.is-phone) .horizontal-tab-nav-item.is-active, body:not(.is-phone) .vertical-tab-nav-item.is-active, .modal .vertical-tab-nav-item.is-active, .modal .vertical-tab-nav-item.is-active:hover",
 				"count": 2
-			},
-			{
-				"selector": ".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 span.cm-highlight.cm-footref, .markdown-source-view.mod-cm6 span.cm-highlight.cm-hmd-footnote",
-				"count": 2
-			},
-			{
-				"selector": ".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)",
-				"count": 1
-			},
-			{
-				"selector": ".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight), .cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight):hover",
-				"count": 2
-			},
-			{
-				"selector": "mark:where(.is-flashing), .markdown-rendered mark[data-highlight]:where(.is-flashing), .cm-s-obsidian span.is-flashing:where(.cm-highlight)",
-				"count": 3
-			},
-			{
-				"selector": ".cm-s-obsidian .cm-line.HyperMD-footnote .cm-hmd-footnote-url-title:where(.cm-highlight), .cm-s-obsidian span.cm-hashtag.cm-hmd-escape-backslash:where(.cm-highlight)",
-				"count": 1
 			}
 		]
 	},
@@ -139,100 +115,6 @@
 		"selectors": [
 			{
 				"selector": ".cm-hashtag-begin:has(+ .cm-hashtag-end:hover)",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "theme.css",
-		"rule": "selector-max-specificity",
-		"reason": "Obsidian 1.15.1 footnote formatting rival is 0,5,1; the exact highlight selector is also bounded by the port checker.",
-		"selectors": [
-			{
-				"selector": ".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/inline-marks.css",
-		"rule": "selector-max-specificity",
-		"reason": "Obsidian 1.15.1 footnote formatting rival is 0,5,1; the exact highlight selector is also bounded by the port checker.",
-		"selectors": [
-			{
-				"selector": ".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/inline-marks.css",
-		"rule": "selector-no-qualifying-type",
-		"reason": "Obsidian-owned element/state targeting or exact app.css specificity tie; preserve this exact selector. Code/highlight/CTA ties also have PostCSS checker allowlists.",
-		"selectors": [
-			{
-				"selector": ".markdown-rendered mark, .cm-s-obsidian span.cm-highlight, mark",
-				"count": 1
-			},
-			{
-				"selector": ".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 span.cm-highlight.cm-footref, .markdown-source-view.mod-cm6 span.cm-highlight.cm-hmd-footnote",
-				"count": 2
-			},
-			{
-				"selector": ".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)",
-				"count": 1
-			},
-			{
-				"selector": ".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight), .cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight):hover",
-				"count": 2
-			},
-			{
-				"selector": "mark:where(.is-flashing), .markdown-rendered mark[data-highlight]:where(.is-flashing), .cm-s-obsidian span.is-flashing:where(.cm-highlight)",
-				"count": 3
-			},
-			{
-				"selector": ".cm-s-obsidian .cm-line.HyperMD-footnote .cm-hmd-footnote-url-title:where(.cm-highlight), .cm-s-obsidian span.cm-hashtag.cm-hmd-escape-backslash:where(.cm-highlight)",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/modals.css",
-		"rule": "selector-no-qualifying-type",
-		"reason": "Obsidian-owned element/state targeting or exact app.css specificity tie; preserve this exact selector. Code/highlight/CTA ties also have PostCSS checker allowlists.",
-		"selectors": [
-			{
-				"selector": ".modal button.mod-cta",
-				"count": 1
-			},
-			{
-				"selector": ".modal button.mod-cta:hover",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/overrides.css",
-		"rule": "selector-no-qualifying-type",
-		"reason": "Obsidian-owned element/state targeting or exact app.css specificity tie; preserve this exact selector. Code/highlight/CTA ties also have PostCSS checker allowlists.",
-		"selectors": [
-			{
-				"selector": "body:not(.is-phone) .horizontal-tab-nav-item.is-active, body:not(.is-phone) .vertical-tab-nav-item.is-active, .modal .vertical-tab-nav-item.is-active, .modal .vertical-tab-nav-item.is-active:hover",
-				"count": 2
-			}
-		]
-	},
-	{
-		"file": "src/sidebars.css",
-		"rule": "selector-no-qualifying-type",
-		"reason": "Obsidian-owned element/state targeting or exact app.css specificity tie; preserve this exact selector. Code/highlight/CTA ties also have PostCSS checker allowlists.",
-		"selectors": [
-			{
-				"selector": "body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-profile",
 				"count": 1
 			}
 		]
