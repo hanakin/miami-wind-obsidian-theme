@@ -662,7 +662,16 @@ export async function runScene(
 	only?: Set<string>,
 	census?: Set<string>,
 ): Promise<ItemResult[]> {
-	const page = await pageFor(scene);
+	// A window that does not open fails this scene's items, not the whole run.
+	let page: Page;
+	try {
+		page = await pageFor(scene);
+	} catch (e) {
+		const why = `scene window did not open: ${(e as Error).message.split("\n")[0]}`;
+		return scene.items
+			.filter((i) => !only || only.has(i.id))
+			.map((i) => ({ id: i.id, error: why }));
+	}
 	await install(page);
 	const cdp = await page.context().newCDPSession(page);
 	await cdp.send("DOM.enable");
