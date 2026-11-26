@@ -1,7 +1,9 @@
 import { type Browser, chromium } from "playwright";
 import { afterAll, beforeAll, expect, test } from "vitest";
+import { acceptanceScope, acceptedOutcome } from "./accepted";
 import { BROWSER_OPTIONS } from "./browser";
-import { componentDiffs, styleDiff } from "./model";
+import { componentDiffs, outcome, styleDiff } from "./model";
+import { repeatedPixels } from "./pixels";
 import { render } from "./render";
 
 let browser: Browser;
@@ -18,6 +20,15 @@ async function setup() {
 	await cdp.send("CSS.enable");
 	return { page, cdp };
 }
+const changed = (differences: number) =>
+	outcome({
+		differences,
+		pixels: 0,
+		noise: false,
+		invisible: false,
+		unsupported: [],
+		replayIssues: [],
+	});
 const fixture = { component: "test", surface: "test", state: "default" };
 
 test("loads XHTML without HTML parser repairs and injects working styles", async () => {
@@ -142,5 +153,75 @@ test("CodeMirror tooltip contributes to the shared tooltip component", async () 
 		test: { same: true, props: [] },
 		editor: { same: true, props: [] },
 	});
+	await page.close();
+});
+
+test("attributes the inline PDF select decision without accepting a sibling popup", async () => {
+	const { page, cdp } = await setup();
+	const html = `<body><div class="annotationLayer"><div class="choiceWidgetAnnotation">
+		<select style="color:rgb(0,0,0);background-color:transparent" data-capture-target><option>PDF</option></select>
+		<select style="color:rgb(0,0,0);background-color:magenta"></select>
+		<div style="color:rgb(0,0,0);background-color:transparent"></div>
+	</div><div class="popup">Annotation popup</div></div>
+	<select style="color:rgb(0,0,0);background-color:transparent"></select></body>`;
+	const css = {
+		cm: "",
+		app: "option {color:black;background:white}",
+		theme:
+			"select[data-capture-target] {color:magenta!important;background:magenta!important}",
+	};
+	const a = await render(page, cdp, html, css, fixture);
+	const b = await render(page, cdp, html, { ...css, theme: "" }, fixture);
+	expect(a.acceptanceMatches).toHaveLength(1);
+	expect(a.acceptanceMatches[0]?.element).toMatch(/:select$/);
+	const scope = acceptanceScope([
+		a.acceptanceMatches,
+		a.acceptanceMatches,
+		b.acceptanceMatches,
+		b.acceptanceMatches,
+	]);
+	const differences = styleDiff(a.styles, b.styles);
+	const pixel = repeatedPixels([a.png, a.png], [b.png, b.png], scope.rects);
+	expect(pixel.count).toBeGreaterThan(0);
+	expect(pixel.outsideAcceptance).toBe(0);
+	expect(differences.length).toBeGreaterThan(0);
+	expect(
+		acceptedOutcome(changed(differences.length), {
+			scope,
+			differences,
+			outsidePixels: pixel.outsideAcceptance,
+			noise: false,
+		}).status,
+	).toBe("accepted");
+	const sibling = await render(
+		page,
+		cdp,
+		html,
+		{ ...css, theme: ".popup {color:cyan}" },
+		fixture,
+	);
+	const siblingDifferences = styleDiff(b.styles, sibling.styles);
+	expect(siblingDifferences.some((d) => d.element.includes(".popup"))).toBe(
+		true,
+	);
+	expect(
+		acceptedOutcome(changed(differences.length + siblingDifferences.length), {
+			scope,
+			differences: [...differences, ...siblingDifferences],
+			outsidePixels: 0,
+			noise: false,
+		}).status,
+	).toBe("different");
+	const wrongInline = await render(
+		page,
+		cdp,
+		html.replace(
+			'color:rgb(0,0,0);background-color:transparent" data-capture-target',
+			'color:red;background-color:transparent" data-capture-target',
+		),
+		css,
+		fixture,
+	);
+	expect(wrongInline.acceptanceMatches).toEqual([]);
 	await page.close();
 });

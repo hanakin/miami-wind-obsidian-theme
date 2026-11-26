@@ -4,7 +4,11 @@ import { parseArgs } from "node:util";
 import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import type { FixtureEntry } from "../../capture/scripts/types";
-import { acceptedOutcome, comparisonExitCode } from "./accepted";
+import {
+	acceptanceScope,
+	acceptedOutcome,
+	comparisonExitCode,
+} from "./accepted";
 import { BROWSER_OPTIONS } from "./browser";
 import {
 	componentDiffs,
@@ -90,6 +94,8 @@ type Result = {
 	repeats: { before: number; after: number };
 	pixelDiff: number;
 	rawPixelDiff: number;
+	pixelsOutsideAcceptance: number;
+	acceptanceScope: ReturnType<typeof acceptanceScope>;
 	differences: ReturnType<typeof styleDiff>;
 	images?: { before: string; after: string; diff: string };
 	invisibleTarget: boolean;
@@ -135,9 +141,16 @@ try {
 					f,
 				);
 				const afterStyles = styleDiff(b.styles, afterRepeat.styles);
+				const scope = acceptanceScope([
+					a.acceptanceMatches,
+					sanity.acceptanceMatches,
+					b.acceptanceMatches,
+					afterRepeat.acceptanceMatches,
+				]);
 				const pixel = repeatedPixels(
 					[a.png, sanity.png],
 					[b.png, afterRepeat.png],
+					scope.rects,
 				);
 				const sanityPixels = pixel.noise.before;
 				const styleNoise = sanityStyles.length + afterStyles.length;
@@ -168,7 +181,6 @@ try {
 				}
 				const differences = styleDiff(a.styles, b.styles);
 				const verdict = acceptedOutcome(
-					f.id,
 					outcome({
 						differences: differences.length,
 						pixels: pixel.count,
@@ -177,6 +189,12 @@ try {
 						unsupported: b.unsupported,
 						replayIssues: b.replayIssues,
 					}),
+					{
+						scope,
+						differences,
+						outsidePixels: pixel.outsideAcceptance,
+						noise: !!(styleNoise || pixel.noise.pixels),
+					},
 				);
 				const result: Result = {
 					id: f.id,
@@ -193,6 +211,8 @@ try {
 					repeats: { before: 2, after: 2 },
 					pixelDiff: pixel.count,
 					rawPixelDiff: pixel.rawCount,
+					pixelsOutsideAcceptance: pixel.outsideAcceptance,
+					acceptanceScope: scope,
 					differences,
 					invisibleTarget: b.invisibleTarget,
 					unsupported: b.unsupported,
