@@ -113,14 +113,20 @@ try {
 		const items = scene.items.filter((i) => wanted(i.id));
 		if (!items.length) continue;
 		await restoreLayout(main, layout).catch(() => undefined);
-		const results = await runScene(
-			session,
-			(s) => pageFor(session, s),
-			scene,
-			out,
-			new Set(items.map((i) => i.id)),
-			census,
-		);
+		let results: Awaited<ReturnType<typeof runScene>>;
+		try {
+			results = await runScene(
+				session,
+				(s) => pageFor(session, s),
+				scene,
+				out,
+				new Set(items.map((i) => i.id)),
+				census,
+			);
+		} finally {
+			// Always undo what the scene changed app-wide (held work, a dead proxy).
+			if (scene.teardown) await scene.teardown(makeCtx(main)).catch(() => undefined);
+		}
 		for (const i of items) {
 			entries.delete(i.id);
 			failed.delete(i.id);
@@ -129,7 +135,6 @@ try {
 			if (r.entry) entries.set(r.entry.id, r.entry);
 			if (r.error) failed.set(r.id, r.error);
 		}
-		if (scene.teardown) await scene.teardown(makeCtx(main)).catch(() => undefined);
 		await closeExtraPages(session, main);
 		done += items.length;
 		process.stdout.write(`\r${done} items, ${failed.size} failed   `);
@@ -137,7 +142,7 @@ try {
 	}
 	process.stdout.write("\n");
 	// CodeMirror and other runtime styles exist once editors have opened: save them at the end.
-	if (!mobile && !windowed) await saveRuntimeStyles(main);
+	if (!mobile && !windowed && !only.length) await saveRuntimeStyles(main);
 } finally {
 	if (mobile) await leaveMobile(session);
 	await close(session);
@@ -175,8 +180,14 @@ const file: FixturesFile = {
 writeFileSync(fixturesPath, `${JSON.stringify(file, null, "\t")}\n`);
 writeFileSync(censusPath, `${JSON.stringify([...census].sort(), null, "\t")}\n`);
 // Drop fixture files no entry points to (renamed or removed items).
-const keep = new Set(fixtures.map((f) => f.file));
-for (const name of readdirSync(FIXTURES)) if (!keep.has(name)) rmSync(`${FIXTURES}${name}`);
+const keep = new Set(
+	fixtures.flatMap((f) => [f.file, ...(f.canvasPixels ?? []).map((c) => c.file)]),
+);
+for (const name of readdirSync(FIXTURES))
+	if (name !== "pixels" && !keep.has(name)) rmSync(`${FIXTURES}${name}`);
+if (existsSync(`${FIXTURES}pixels`))
+	for (const name of readdirSync(`${FIXTURES}pixels`))
+		if (!keep.has(`pixels/${name}`)) rmSync(`${FIXTURES}pixels/${name}`);
 console.log(`${fixtures.length} fixtures, ${file.failed.length} failed`);
 for (const f of file.failed) console.log(`  ✗ ${f.id}: ${f.error}`);
 

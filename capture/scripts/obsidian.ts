@@ -209,40 +209,24 @@ export async function launch(
 		});
 		pid = proc.pid ?? 0;
 	}
+	// Everything after the spawn can fail (no DevTools port, no window, never ready): never leave
+	// the spawned Obsidian or the DevTools connection behind.
 	let browser: Browser | undefined;
-	for (let i = 0; i < 60 && !browser; i++) {
-		await Bun.sleep(500);
-		browser = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`).catch(() => undefined);
-	}
-	if (!browser) throw new Error("Could not reach Obsidian's DevTools port");
-	let page: Page | undefined;
-	for (let i = 0; i < 60 && !page; i++) {
-		page = browser
-			.contexts()
-			.flatMap((c) => c.pages())
-			.find((p) => p.url().includes("index.html"));
-		if (!page) await Bun.sleep(500);
-	}
-	if (!page) throw new Error("Obsidian's main window did not open");
-	await page.waitForFunction(
-		() =>
-			"app" in window &&
-			(window as { app?: { workspace?: { layoutReady?: boolean } } }).app?.workspace
-				?.layoutReady === true,
-		null,
-		{ timeout: 30000 },
-	);
-	// Obsidian's own mobile emulation (app.emulateMobile) lives in localStorage of this profile:
-	// set it for --mobile runs, and make sure no other run ever starts emulated.
-	const size = opts.mobile === "phone" ? [390, 844] : opts.mobile === "tablet" ? [1024, 768] : null;
-	const emulated = (await page.evaluate("!!localStorage.getItem('EmulateMobile')")) as boolean;
-	if (size || emulated) {
-		await page.evaluate(
-			`(() => { ${size ? "localStorage.setItem('EmulateMobile', '1')" : "localStorage.removeItem('EmulateMobile')"}; require("electron").remote.getCurrentWindow().setContentSize(${size?.[0] ?? WIDTH}, ${size?.[1] ?? HEIGHT}); })()`,
-		);
-		await Bun.sleep(400);
-		await page.evaluate("location.reload()").catch(() => undefined);
-		await Bun.sleep(1500);
+	try {
+		for (let i = 0; i < 60 && !browser; i++) {
+			await Bun.sleep(500);
+			browser = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`).catch(() => undefined);
+		}
+		if (!browser) throw new Error("Could not reach Obsidian's DevTools port");
+		let page: Page | undefined;
+		for (let i = 0; i < 60 && !page; i++) {
+			page = browser
+				.contexts()
+				.flatMap((c) => c.pages())
+				.find((p) => p.url().includes("index.html"));
+			if (!page) await Bun.sleep(500);
+		}
+		if (!page) throw new Error("Obsidian's main window did not open");
 		await page.waitForFunction(
 			() =>
 				"app" in window &&
@@ -251,15 +235,44 @@ export async function launch(
 			null,
 			{ timeout: 30000 },
 		);
-		const mobileNow = (await page.evaluate(
-			"document.body.classList.contains('is-mobile')",
-		)) as boolean;
-		if (mobileNow !== !!size)
-			throw new Error(
-				`mobile emulation is ${mobileNow ? "on" : "off"}, wanted ${size ? "on" : "off"}`,
+		// Obsidian's own mobile emulation (app.emulateMobile) lives in localStorage of this profile:
+		// set it for --mobile runs, and make sure no other run ever starts emulated.
+		const size =
+			opts.mobile === "phone" ? [390, 844] : opts.mobile === "tablet" ? [1024, 768] : null;
+		const emulated = (await page.evaluate("!!localStorage.getItem('EmulateMobile')")) as boolean;
+		if (size || emulated) {
+			await page.evaluate(
+				`(() => { ${size ? "localStorage.setItem('EmulateMobile', '1')" : "localStorage.removeItem('EmulateMobile')"}; require("electron").remote.getCurrentWindow().setContentSize(${size?.[0] ?? WIDTH}, ${size?.[1] ?? HEIGHT}); })()`,
 			);
+			await Bun.sleep(400);
+			await page.evaluate("location.reload()").catch(() => undefined);
+			await Bun.sleep(1500);
+			await page.waitForFunction(
+				() =>
+					"app" in window &&
+					(window as { app?: { workspace?: { layoutReady?: boolean } } }).app?.workspace
+						?.layoutReady === true,
+				null,
+				{ timeout: 30000 },
+			);
+			const mobileNow = (await page.evaluate(
+				"document.body.classList.contains('is-mobile')",
+			)) as boolean;
+			if (mobileNow !== !!size)
+				throw new Error(
+					`mobile emulation is ${mobileNow ? "on" : "off"}, wanted ${size ? "on" : "off"}`,
+				);
+		}
+		return { browser, page, pid, windowed, ...(proc ? { proc } : {}) };
+	} catch (e) {
+		await browser?.close().catch(() => undefined);
+		if (pid && alive(pid)) {
+			process.kill(pid, "SIGTERM");
+			for (let i = 0; i < 20 && alive(pid); i++) await Bun.sleep(250);
+			if (alive(pid)) process.kill(pid, "SIGKILL");
+		}
+		throw e;
 	}
-	return { browser, page, pid, windowed, ...(proc ? { proc } : {}) };
 }
 
 /** Turns Obsidian's mobile emulation off again in this profile (end of a --mobile run). */

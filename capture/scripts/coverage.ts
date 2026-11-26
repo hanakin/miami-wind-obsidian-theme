@@ -3,12 +3,13 @@
 // theme.css selector counts only when it matches a valid fixture AND Chromium matched it in the
 // live app at capture time. App classes count when a valid fixture contains them.
 // Usage: bun run capture:coverage    (exit code 1 while any gap is neither covered nor excluded)
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { chromium } from "playwright";
 import { matchable, replayCss, selectors, themeAffectedClasses } from "./css.ts";
 import { pngStats } from "./engine.ts";
-import { SCREENSHOTS } from "./obsidian.ts";
+import { INPAGE } from "./inpage.ts";
+import { SCREENSHOTS, WORK } from "./obsidian.ts";
 import {
 	appClassStatuses,
 	appSelectors,
@@ -18,6 +19,7 @@ import {
 	themeExclusion,
 	themeSelectors,
 } from "./plan.ts";
+import { replayFixture } from "./replay.ts";
 import type { ChecklistItem, FixtureEntry } from "./types.ts";
 
 if (!existsSync(`${CAPTURE}.app/app.css`)) {
@@ -38,8 +40,11 @@ const byId = new Map(fx.fixtures.map((f) => [f.id, f]));
 const theme = themeSelectors();
 const rewritten = theme.map((s) => matchable(s.selector));
 const screenshotsHere = existsSync(SCREENSHOTS);
+/** Share of 16 px blocks of the target that must match the live screenshot when replayed alone. */
+const REPLAY_MIN_MATCH = 0.97;
 
-const browser = await chromium.launch();
+// Scrollbars take layout space in Obsidian; headless Chromium hides them unless told not to.
+const browser = await chromium.launch({ ignoreDefaultArgs: ["--hide-scrollbars"] });
 const page = await browser.newPage();
 await page.route("**", (r) => r.abort());
 
@@ -210,90 +215,190 @@ for (const f of fx.fixtures) {
 	else invalid.set(f.id, c.why);
 }
 
-// Each saved fixture must show its target when rendered alone, the way a viewer replays it:
-// app.css + Obsidian's runtime styles (CodeMirror) + theme.css, state pseudo-classes rewritten to
-// the capture marks, hover media as captured (desktop: mouse; emulated mobile: touch), and
-// data-capture-placeholder stand-ins hidden.
+// Each saved fixture must show its target when rendered alone, the way a viewer replays it, and
+// look like the live screenshot: see replay.ts and the "Replay alone" section of COVERAGE.md.
 const runtimePath = `${CAPTURE}.app/runtime-styles.css`;
 if (!existsSync(runtimePath) || !readFileSync(runtimePath, "utf8").trim())
 	throw new Error(
 		"capture/.app/runtime-styles.css is missing or empty: run `bun run capture:extract-runtime-css`.",
 	);
-const renderCss = (touch: boolean) => {
-	const sheets = [`${CAPTURE}.app/app.css`, runtimePath, `${CAPTURE}../theme.css`];
-	const css = sheets.map((p) => replayCss(readFileSync(p, "utf8"), touch)).join("\n");
-	return `${css}\n[data-capture-placeholder] { display: none !important; }`;
+const sheetPath: Record<string, string> = {
+	app: `${CAPTURE}.app/app.css`,
+	runtime: runtimePath,
+	theme: `${CAPTURE}../theme.css`,
+};
+const cssCache = new Map<string, string>();
+/** The stylesheets the fixture's window applied (all three when not recorded), with replay rewrites. */
+const renderCss = (styles: string[], touch: boolean) => {
+	const key = `${styles.join(" ")}|${touch}`;
+	let css = cssCache.get(key);
+	if (css === undefined) {
+		css = Object.keys(sheetPath)
+			.filter((k) => styles.includes(k))
+			.map((k) => replayCss(readFileSync(sheetPath[k] as string, "utf8"), touch))
+			.join("\n");
+		// Stand-ins keep their box (layout around the target holds) but paint nothing.
+		css += "\n[data-capture-placeholder] { visibility: hidden !important; }";
+		cssCache.set(key, css);
+	}
+	return css;
 };
 const render = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 await render.route("**", (r) => r.abort());
 await render.setContent(
 	'<!doctype html><html><head><style id="replay"></style></head><body></body></html>',
 );
-let touchMode: boolean | null = null;
+await render.evaluate(INPAGE);
+const cmp = await browser.newPage();
+/** Fixtures whose replay cannot be compared with the live screenshot, and why. */
+const replayLimits = new Map<string, string>();
+/** Per fixture: share of compared 16 px blocks that match the live screenshot. */
+const replayMatch = new Map<string, number>();
+const replayDir = `${WORK}/replay`;
+mkdirSync(replayDir, { recursive: true });
+let cssKey = "";
 const renderOrder = [...valid.keys()].filter((id) => !byId.get(id)?.variantOf).sort();
 for (const id of renderOrder) {
 	const f = byId.get(id) as FixtureEntry;
 	const touch = id.startsWith("mobile.");
-	const size = id.startsWith("mobile.phone.")
-		? [390, 844]
-		: id.startsWith("mobile.tablet.")
-			? [1024, 768]
-			: [1600, 1000];
-	if (touch !== touchMode) {
-		await render.evaluate((css) => {
-			(document.getElementById("replay") as HTMLStyleElement).textContent = css;
-		}, renderCss(touch));
-		touchMode = touch;
+	const size =
+		f.viewport ??
+		(id.startsWith("mobile.phone.")
+			? [390, 844]
+			: id.startsWith("mobile.tablet.")
+				? [1024, 768]
+				: [1600, 1000]);
+	const styles = f.styles ?? Object.keys(sheetPath);
+	const key = `${styles.join(" ")}|${touch}`;
+	if (key !== cssKey) {
+		await render.evaluate(
+			(css) => {
+				(document.getElementById("replay") as HTMLStyleElement).textContent = css;
+			},
+			renderCss(styles, touch),
+		);
+		cssKey = key;
 	}
 	await render.setViewportSize({ width: size[0] ?? 1600, height: size[1] ?? 1000 });
-	const why = (await render.evaluate(
-		([html, sizes]) => {
-			const d = new DOMParser().parseFromString(
-				html,
-				html.startsWith("<?xml") ? "application/xhtml+xml" : "text/html",
-			);
-			for (const [from, to] of [
-				[d.documentElement, document.documentElement],
-				[d.body, document.body],
-			] as const) {
-				for (const a of [...to.attributes]) to.removeAttribute(a.name);
-				for (const a of [...from.attributes]) to.setAttribute(a.name, a.value);
-			}
-			document.body.replaceChildren(
-				...[...d.body.childNodes].map((n) => document.importNode(n, true)),
-			);
-			// Offline images get same-size stand-ins from the recorded imageSizes.
-			for (const { index, width, height } of sizes) {
-				const im = document.images[index];
-				if (im) {
-					im.width = width;
-					im.height = height;
-				}
-			}
-			const t = document.querySelector("[data-capture-target]");
-			if (!t) return "no target";
-			for (let a: Element | null = t; a; a = a.parentElement) {
-				const cs = getComputedStyle(a);
-				if (cs.display === "none")
-					return `display: none on ${a.localName}.${[...a.classList].join(".")}`;
-				if (a === t && cs.visibility === "hidden")
-					return `visibility: hidden on ${a.localName}.${[...a.classList].join(".")}`;
-			}
-			const area = (e: Element) =>
-				[...e.getClientRects()].reduce((s, r) => s + r.width * r.height, 0);
-			if (area(t) > 0) return "";
-			for (const d2 of t.querySelectorAll("*"))
-				if (area(d2) > 0 && getComputedStyle(d2).visibility !== "hidden") return "";
-			return "renders with no box";
-		},
-		[readFileSync(`${CAPTURE}fixtures/${f.file}`, "utf8"), f.imageSizes ?? []] as const,
-	)) as string;
-	if (why) {
+	const pixels = (f.canvasPixels ?? []).map((c) => ({
+		index: c.index,
+		b64: readFileSync(`${CAPTURE}fixtures/${c.file}`).toString("base64"),
+	}));
+	const got = await replayFixture(
+		render,
+		readFileSync(`${CAPTURE}fixtures/${f.file}`, "utf8"),
+		f.imageSizes ?? [],
+		pixels,
+	);
+	if (got.why) {
 		valid.delete(id);
-		invalid.set(id, [`does not render alone: ${why}`]);
+		invalid.set(id, [`does not render alone: ${got.why}`]);
+		continue;
+	}
+	// Pixel check against the live screenshot.
+	const ev = f.evidence;
+	const shot = `${SCREENSHOTS}/${f.id}.png`;
+	if (!screenshotsHere || !ev?.clip || !existsSync(shot)) {
+		replayLimits.set(id, "live screenshot not on this machine");
+		continue;
+	}
+	if (f.trimmed) {
+		replayLimits.set(id, "trimmed fixture: the live screenshot shows the untrimmed list");
+		continue;
+	}
+	const [cx = 0, cy = 0, cw = 0, ch = 0] = ev.clip;
+	const [lx = 0, ly = 0, lw = 0, lh = 0] = ev.inView;
+	const [rx = 0, ry = 0, rw = 0, rh = 0] = got.inView ?? [];
+	if (Math.max(Math.abs(lx - rx), Math.abs(ly - ry), Math.abs(lw - rw), Math.abs(lh - rh)) > 4) {
+		valid.delete(id);
+		invalid.set(id, [
+			`replay layout differs: target at ${[lx, ly, lw, lh].map(Math.round).join(",")} live, ${[rx, ry, rw, rh].map(Math.round).join(",")} replayed alone`,
+		]);
+		continue;
+	}
+	const replayShot = `${replayDir}/${f.id}.png`;
+	await render.screenshot({ path: replayShot, clip: { x: cx, y: cy, width: cw, height: ch } });
+	const res = (await cmp.evaluate(
+		async ([live, replay, region, masks]) => {
+			const data = async (b64: string) => {
+				const bmp = await createImageBitmap(
+					await (await fetch(`data:image/png;base64,${b64}`)).blob(),
+				);
+				const c = new OffscreenCanvas(bmp.width, bmp.height);
+				const x = c.getContext("2d") as OffscreenCanvasRenderingContext2D;
+				x.drawImage(bmp, 0, 0);
+				return x.getImageData(0, 0, bmp.width, bmp.height);
+			};
+			const a = await data(live);
+			const b = await data(replay);
+			// A scrolled capture stacks every scroll position; the snapshot is of the last one.
+			const dy = a.height - b.height;
+			// Mean color per 16 px block (edge blocks may be smaller): a one-pixel text shift between
+			// Chromium builds stays under the limit; a blank canvas, a different layout or other colors
+			// do not.
+			const B = 16;
+			let blocks = 0;
+			let bad = 0;
+			const where: string[] = [];
+			const [gx, gy, gw, gh] = [...region].map(Math.round) as [number, number, number, number];
+			const x1 = Math.min(b.width, a.width, gx + gw);
+			const y1 = Math.min(b.height, gy + gh);
+			for (let y = Math.max(0, gy); y < y1 - 3; y += B)
+				for (let x = Math.max(0, gx); x < x1 - 3; x += B) {
+					const bw = Math.min(B, x1 - x);
+					const bh = Math.min(B, y1 - y);
+					if (
+						masks.some(
+							([mx, my, mw, mh]) => x < mx + mw && x + bw > mx && y < my + mh && y + bh > my,
+						)
+					)
+						continue;
+					const sa = [0, 0, 0];
+					const sb = [0, 0, 0];
+					for (let j = 0; j < bh; j++)
+						for (let i = 0; i < bw; i++) {
+							const pa = ((y + j + dy) * a.width + x + i) * 4;
+							const pb = ((y + j) * b.width + x + i) * 4;
+							for (let k = 0; k < 3; k++) {
+								sa[k] += a.data[pa + k] ?? 0;
+								sb[k] += b.data[pb + k] ?? 0;
+							}
+						}
+					blocks++;
+					const diff = Math.max(...sa.map((v, k) => Math.abs(v - (sb[k] ?? 0)) / (bw * bh)));
+					if (diff > 24) {
+						bad++;
+						if (where.length < 3) where.push(`${x},${y}`);
+					}
+				}
+			return { blocks, bad, where };
+		},
+		[
+			readFileSync(shot).toString("base64"),
+			readFileSync(replayShot).toString("base64"),
+			[lx - cx, ly - cy, lw, lh],
+			(got.masks ?? []).map(([x = 0, y = 0, w = 0, h = 0]) => [x - cx, y - cy, w, h]),
+		] as const,
+	)) as { blocks: number; bad: number; where: string[] };
+	if (!res.blocks) {
+		replayLimits.set(id, "nothing to compare: the target is all images, media or iframes");
+		continue;
+	}
+	const share = 1 - res.bad / res.blocks;
+	replayMatch.set(id, share);
+	if (share < REPLAY_MIN_MATCH) {
+		valid.delete(id);
+		invalid.set(id, [
+			`replay differs from the live screenshot in ${Math.round((100 * res.bad) / res.blocks)}% of the target (16 px blocks; first at ${res.where.join(" ")} in ${replayShot})`,
+		]);
 	}
 }
 await render.close();
+await cmp.close();
+writeFileSync(
+	`${replayDir}/match.json`,
+	JSON.stringify(Object.fromEntries([...replayMatch].sort((x, y) => x[1] - y[1])), null, 1),
+);
 
 // 1. Checklist items.
 const coveredBy = new Map<string, string>();
@@ -381,9 +486,11 @@ const graphReadOnly = new Map<string, string>();
 for (const f of fx.fixtures) {
 	const rec = f.evidence?.record;
 	if (!rec?.graphColors) continue;
+	const needs = (rec.requires ?? {}) as Record<string, boolean>;
 	for (const [cls, n] of Object.entries(rec.graphPixels ?? {})) {
-		// At least 25 pixels, so a stray antialiased pixel of the same color does not count.
-		if (n >= 25) {
+		// At least 25 pixels inside the graph canvas (controls masked), and the renderer must really
+		// draw that thing (option on, nodes of that type, a hovered or focused node).
+		if (n >= 25 && needs[cls] !== false) {
 			graphPainted.set(cls, f.id);
 			graphPainted.set("graph-view", f.id);
 		} else if (!graphPainted.has(cls)) graphReadOnly.set(cls, f.id);
@@ -618,6 +725,7 @@ const lines = [
 	`theme.css selectors visibly matched (fixture and live agree, on painted elements): ${themeMatched.length}/${theme.length} (${pct(themeMatched.length, theme.length)}); excluded with reason: ${themeExcluded.length}; scripted only (labeled): ${themeScripted.length}; missing: ${themeMissing.length} (${themeDomOnly.length} only on hidden/clipped elements, ${themeSyntheticOnly.length} only in scripted fixtures); fixture/live disagreements: ${disagreements.length}`,
 	`App CSS classes visibly captured: ${appCovered.length} (${[...graphPainted.keys()].length} of them classes credited by screenshot pixels (graph probes)), excluded ${appExcluded.length}, not theme-affected (accepted gaps) ${appNotAffected.length}, theme-affected but out of scope (labeled) ${appOutOfScope.length}, theme-affected missing ${appMissing.length}, of ${app.length}; of the theme-affected missing: ${appDomOnly.length} in the DOM but never painted, ${appSyntheticOnly.length} only in scripted fixtures, ${appCensusOnly.length} seen in the runtime census only`,
 	`Screenshots: ${screenshotsHere ? "files re-checked against recorded hashes" : "files not on this machine; recorded evidence used"}; ${dupeReasons.length + dupeLimits.length + dupes.length} groups of identical screenshots (${dupeReasons.length} explained by their fixtures, ${dupeLimits.length} where a state applies but does not show (limitation), ${dupes.length} unexplained)`,
+	`Replay alone: ${replayMatch.size} fixtures rendered from their own files (recorded window size and stylesheets, canvas pixels, stand-in sizes, scroll offsets) matched their live screenshot in at least ${Math.round(100 * REPLAY_MIN_MATCH)}% of 16 px blocks (lowest ${pct(Math.round(1000 * Math.min(1, ...replayMatch.values())), 1000)}; images, media and iframes masked); replay limits (labeled, not compared): ${replayLimits.size}`,
 	...crossCheck.map((c) => `Expert cross-check, ${c}`),
 ];
 console.log(lines.join("\n"));
@@ -671,6 +779,13 @@ writeFileSync(
 				missing: appMissing.map((c) => c.name),
 			},
 			themeScripted: themeScripted.map((r) => r.selector),
+			replay: {
+				minMatch: REPLAY_MIN_MATCH,
+				match: Object.fromEntries(
+					[...replayMatch].map(([k, v]) => [k, Math.round(1000 * v) / 1000]),
+				),
+				limits: Object.fromEntries(replayLimits),
+			},
 		},
 		null,
 		"\t",
@@ -773,7 +888,7 @@ function report(): string {
 			"",
 			"## Classes credited by screenshot pixels",
 			"",
-			"The graph's short-lived `.graph-view.color-*` probe elements cannot be witnessed through the DOM (Obsidian paints their colors on a canvas). They count as painted when at least 25 screenshot pixels have their recorded color (`evidence.record.graphPixels`; colors with alpha are matched blended over the background).",
+			"The graph's short-lived `.graph-view.color-*` probe elements cannot be witnessed through the DOM (Obsidian paints their colors on a canvas). They count as painted when the renderer really draws that kind of node or link (recorded options and node types) and at least 25 pixels inside the graph canvas (controls masked; the circle around the hovered node, the focused color inside the focused node) have their recorded color (`evidence.record.graphPixels`; colors with alpha are matched blended over the background).",
 			"",
 			...[...graphPainted.entries()].map(([c, id]) => `- \`${c}\`: painted (\`${id}\`)`),
 			...[...graphReadOnly.entries()].map(
@@ -781,6 +896,20 @@ function report(): string {
 					`- \`${c}\`: read by the renderer, no exact pixel (alpha or antialiasing) (\`${id}\`)`,
 			),
 		);
+	out.push(
+		"",
+		"## Replay alone",
+		"",
+		`Every fixture is rendered from its own file in a plain Chromium page: app.css, Obsidian's runtime styles and theme.css as its window applied them (\`styles\`), at its window size (\`viewport\`), with canvas pixels drawn (\`canvasPixels\`), empty stand-ins given their live size, display and collapsed margins (\`data-capture-size\`, \`data-capture-display\`, \`data-capture-margin\`), and scroll offsets restored (\`data-capture-scroll\`). The target must sit where it sat live (within 4 px) and at least ${Math.round(100 * REPLAY_MIN_MATCH)}% of its 16 px blocks must match the live screenshot (mean color within 24 of 255 per channel). Images, media and iframes (which do not load offline, or lose their stylesheets) are masked out of the comparison.`,
+		"",
+		...(replayLimits.size
+			? [
+					"Replay limits (not compared, labeled):",
+					"",
+					...[...replayLimits.entries()].sort().map(([id, why]) => `- \`${id}\`: ${why}`),
+				]
+			: ["No replay limits."]),
+	);
 	if (themeScripted.length)
 		out.push(
 			"",

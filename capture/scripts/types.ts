@@ -38,6 +38,8 @@ export interface ItemDef {
 	pseudoOn?: Target;
 	/** Runs before the element is looked up, after the scene setup and previous items. */
 	before?: (ctx: Ctx) => Promise<void>;
+	/** "document": keep the whole window in the fixture (overlays that show the page under them). */
+	context?: "document";
 	/** Screenshot the whole window instead of the element. */
 	full?: boolean;
 	/** Overrides the scene surface. */
@@ -104,6 +106,26 @@ export interface ChecklistItem {
 	minUnobscured?: number;
 }
 
+/**
+ * One saved fixture. Its file is the target with its ancestors; marks in the markup:
+ * - data-capture-target: the captured element; data-capture-state / -label / -pseudo / -visited:
+ *   the states it was captured in (pseudo-classes are rewritten to these marks for replay).
+ * - data-capture-placeholder: an empty stand-in for a sibling of an ancestor. It keeps element
+ *   order and, with data-capture-size="W H" (border-box CSS px), data-capture-display and
+ *   data-capture-margin="TOP BOTTOM" (margins of its children that collapsed through it), the
+ *   layout around the target. Viewers give it that size, display and margins, and hide it with
+ *   visibility: hidden (not display: none).
+ * - data-capture-size on img (shown size of an image that does not load offline), video, audio,
+ *   iframe, object and embed: their live border-box size.
+ * - data-capture-scroll="TOP LEFT": scroll offsets to restore after layout.
+ * - data-capture-sel-anchor / data-capture-sel-focus="CHILD OFFSET": the native text selection,
+ *   on the nearest element (CHILD -1: OFFSET counts that element's children).
+ * - data-capture-cm-selection: CodeMirror's own selection ranges (reference only; the editor
+ *   draws them as .cm-selectionBackground boxes, which are in the markup).
+ * - data-capture-viewport / data-capture-styles on <html>: as viewport and styles below.
+ * capture/scripts/replay.ts replays a fixture this way; the coverage check compares the result
+ * with the live screenshot.
+ */
 export interface FixtureEntry {
 	id: string;
 	file: string;
@@ -131,6 +153,23 @@ export interface FixtureEntry {
 	imageSizes?: { index: number; width: number; height: number }[];
 	/** "xhtml" when the tree cannot be written as HTML text (e.g. a <div> inside a <p>); parse it as application/xhtml+xml. */
 	format?: "xhtml";
+	/**
+	 * Pixels of each painted <canvas>, by zero-based index in the saved fixture's canvas order:
+	 * a PNG under capture/fixtures/ to draw into it. source "canvas" is the canvas's own pixels;
+	 * "screen" is a crop of the window (WebGL canvases read back empty), so it also holds anything
+	 * drawn over the canvas.
+	 */
+	canvasPixels?: { index: number; file: string; source: "canvas" | "screen" }[];
+	/** Size in CSS pixels of the window the target lived in (also data-capture-viewport on <html>). */
+	viewport?: [number, number];
+	/**
+	 * Stylesheets that window applied, in order (also data-capture-styles on <html>): "app"
+	 * (Obsidian's app.css), "runtime" (styles Obsidian adds at run time, e.g. CodeMirror's, saved
+	 * as capture/.app/runtime-styles.css), "theme" (theme.css). A starter window has no theme.
+	 */
+	styles?: string[];
+	/** "document": the whole window was kept, not just the target's branch (overlays that show the page under them). */
+	context?: "document";
 }
 
 /** What the capture proved about one fixture, checked again by the coverage script. */

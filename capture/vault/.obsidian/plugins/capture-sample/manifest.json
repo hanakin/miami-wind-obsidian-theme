@@ -1,0 +1,9 @@
+{
+	"id": "capture-sample",
+	"name": "Capture sample",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
+	"description": "Does nothing. Listed as enabled so Obsidian's restricted mode shows the installed-plugin info list.",
+	"author": "capture sample",
+	"isDesktopOnly": false
+}

@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-24T08:15:02.677Z",
+	"generated": "2026-11-26T00:48:24.656Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
 		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/config/obsidian"
@@ -13384,6 +13384,17 @@
 			"target": ".modal.mod-settings"
 		},
 		{
+			"id": "extra.community.debug-list",
+			"scene": "extra.community",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:community-browser",
+			"target": ".modal:has(.community-plugins-debug-list)",
+			"note": "Restricted mode with one enabled plugin in the vault: the info button of 'Re-enable plugins' lists it.",
+			"expect": ":has(.community-plugins-debug-list li)"
+		},
+		{
 			"id": "extra.community.enabled",
 			"scene": "extra.community",
 			"surface": "modal",
@@ -13471,6 +13482,16 @@
 			"pseudo": [
 				"hover"
 			]
+		},
+		{
+			"id": "extra.community.theme-browser-offline",
+			"scene": "extra.community-themes-offline",
+			"surface": "community-browser",
+			"component": "community-browser",
+			"state": "default",
+			"source": "catalog:community-browser",
+			"target": ".community-modal-search-results-status-content",
+			"note": "The theme list download fails (the app's network goes through a dead proxy for this scene): the browser shows its load error and Retry."
 		},
 		{
 			"id": "extra.community.theme-browser",
@@ -13899,6 +13920,28 @@
 			"state": "default",
 			"source": "catalog:drag",
 			"target": ".workspace-drop-overlay",
+			"minUnobscured": 0.3
+		},
+		{
+			"id": "qc.drag.tab-split-edge",
+			"scene": "qc.drag",
+			"surface": "workspace",
+			"component": "drag-ghost",
+			"state": "default",
+			"source": "catalog:drag",
+			"target": ".workspace-fake-target-overlay:not(.is-in-sidebar)",
+			"note": "A real tab drag held near the left edge of another tab's view; evidence.record holds the overlay's box, the view's box and the overlay's computed visibility.",
+			"minUnobscured": 0.3
+		},
+		{
+			"id": "qc.drag.tab-sidebar-edge",
+			"scene": "qc.drag",
+			"surface": "left-sidebar",
+			"component": "drag-ghost",
+			"state": "default",
+			"source": "catalog:drag",
+			"target": ".workspace-fake-target-overlay.is-in-sidebar",
+			"note": "The same drag held over the lower part of the file explorer's tab group in the left sidebar (sidebars split only up or down): the overlay gets .is-in-sidebar.",
 			"minUnobscured": 0.3
 		},
 		{
@@ -14443,7 +14486,17 @@
 				"sel": ".workspace-leaf-content",
 				"in": "leaf"
 			},
-			"note": "The pointer on the Kitchen sink node: Obsidian highlights it and its links (focused fill, circle, highlight colors) and fades the rest."
+			"note": "Zoomed in with the wheel, then the pointer on the Kitchen sink node: Obsidian highlights it and its links (highlight fill, circle, highlight line) and fades the rest."
+		},
+		{
+			"id": "qc.graph.focused-file",
+			"scene": "qc.graph",
+			"surface": "graph",
+			"component": "graph",
+			"state": "default",
+			"source": "catalog:graph-qc",
+			"target": ".workspace-leaf-content[data-type='graph']",
+			"note": "A note opened (in the right sidebar) while the graph shows: the graph marks that file's node as focused (its own fill color). The view is panned so that node sits in the middle; the pointer stays off the graph."
 		},
 		{
 			"id": "qc.media.print",
@@ -15619,7 +15672,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".suggestion-bg",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The dimmed backdrop behind a menu sheet (.suggestion-bg).",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The dimmed backdrop behind a menu sheet (.suggestion-bg); the fixture holds the whole window.",
 			"expect": ".suggestion-bg",
 			"minUnobscured": 0.2
 		},

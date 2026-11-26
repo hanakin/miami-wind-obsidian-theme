@@ -386,13 +386,27 @@ const community: Scene = {
 			state: "default",
 		},
 		{
+			// The sample vault lists one enabled plugin (capture-sample, which does nothing), so
+			// restricted mode offers to re-enable it; its info button lists the installed plugins.
+			id: "extra.community.debug-list",
+			component: "modal",
+			target: ".modal:has(.community-plugins-debug-list)",
+			expect: ":has(.community-plugins-debug-list li)",
+			before: async (ctx) => {
+				await ctx.js(
+					"const b = [...document.querySelectorAll('.modal.mod-settings .setting-item')].find((e) => e.querySelector('.extra-setting-button') && /re-?enable/i.test(e.textContent ?? ''))?.querySelector('.extra-setting-button'); b?.click(); await sleep(600);",
+				);
+			},
+			note: "Restricted mode with one enabled plugin in the vault: the info button of 'Re-enable plugins' lists it.",
+		},
+		{
 			id: "extra.community.enabled",
 			component: "settings-page",
 			target: ".modal.mod-settings",
 			state: "default",
 			before: async (ctx) => {
 				await ctx.js(
-					"const b = [...document.querySelectorAll('.modal.mod-settings button')].find((e) => /turn on|restricted/i.test(e.textContent ?? '')); b?.click(); await sleep(1200);",
+					"document.querySelector('.modal:has(.community-plugins-debug-list) .modal-close-button')?.click(); await sleep(300); const b = [...document.querySelectorAll('.modal.mod-settings button')].find((e) => /turn on|restricted/i.test(e.textContent ?? '')); b?.click(); await sleep(1200);",
 				);
 			},
 		},
@@ -532,6 +546,38 @@ const pluginBrowser: Scene = {
 	],
 };
 
+/** Sends the throwaway app's network through a dead proxy (Obsidian downloads in its main process). */
+const OFFLINE =
+	"const ses = window.require('@electron/remote').session.defaultSession; await ses.setProxy({ proxyRules: 'http://127.0.0.1:9' }); await ses.closeAllConnections();";
+const ONLINE =
+	"const ses = window.require('@electron/remote').session.defaultSession; await ses.setProxy({ mode: 'system' }); await ses.closeAllConnections();";
+
+const themeBrowserOffline: Scene = {
+	id: "extra.community-themes-offline",
+	surface: "community-browser",
+	source: "catalog:community-browser",
+	window: "popout",
+	opener: async (main) => {
+		await main.js(OFFLINE);
+		await communityOpener("appearance", /manage/i)(main);
+	},
+	setup: async (ctx) => {
+		await ctx.sleep(3000);
+	},
+	teardown: async (main) => {
+		await main.js(ONLINE);
+	},
+	items: [
+		{
+			id: "extra.community.theme-browser-offline",
+			component: "community-browser",
+			target: ".community-modal-search-results-status-content",
+			full: true,
+			note: "The theme list download fails (the app's network goes through a dead proxy for this scene): the browser shows its load error and Retry.",
+		},
+	],
+};
+
 const themeBrowser: Scene = {
 	id: "extra.community-themes-browser",
 	surface: "community-browser",
@@ -660,6 +706,7 @@ export function extraScenes(): Scene[] {
 		more,
 		settingsPage,
 		pluginBrowser,
+		themeBrowserOffline,
 		themeBrowser,
 	];
 }
