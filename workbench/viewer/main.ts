@@ -303,7 +303,7 @@ function changeLine(c: Change): HTMLElement {
 		" → ",
 		value(c.after),
 		` on ${c.where}`,
-		c.accepted && h("span", { class: "verdict accepted" }, " accepted (intentional)"),
+		c.accepted && h("span", { class: "verdict accepted" }, ", accepted (intentional)"),
 	);
 }
 
