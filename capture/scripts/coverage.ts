@@ -73,6 +73,15 @@ async function inspect(f: FixtureEntry, claim: ChecklistItem | undefined): Promi
 			domClasses: [],
 		};
 	const html = readFileSync(path, "utf8");
+	// The file extension must say how to parse it: .xhtml for format "xhtml", .html otherwise,
+	// and the content must agree.
+	const xhtml = f.format === "xhtml";
+	if (!f.file.endsWith(xhtml ? ".xhtml" : ".html"))
+		why.push(`file extension does not match format ${f.format ?? "html"}: ${f.file}`);
+	if (html.startsWith("<?xml") !== xhtml)
+		why.push(
+			`content is ${html.startsWith("<?xml") ? "XHTML" : "HTML"} but format is ${f.format ?? "html"}`,
+		);
 	const forced = (claim?.pseudo ?? []).filter((p) => p !== "visited");
 	const r = (await page.evaluate(
 		([html, sels, expect, forced]) => {
