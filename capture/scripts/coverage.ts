@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { chromium } from "playwright";
 import { matchable, replayCss, selectors, themeAffectedClasses } from "./css.ts";
-import { pngStats } from "./engine.ts";
+import { APP_CSS_MARK, pngStats, RUNTIME_DIR } from "./engine.ts";
 import { INPAGE } from "./inpage.ts";
 import { SCREENSHOTS, WORK } from "./obsidian.ts";
 import {
@@ -241,13 +241,48 @@ if (!existsSync(`${CAPTURE}.app/assets/public`))
 	throw new Error("Obsidian's fonts are not extracted: run `bun run capture:extract-app-css`.");
 const cssCache = new Map<string, string>();
 /** The stylesheets the fixture's window applied (all three when not recorded), with replay rewrites. */
+/** The window's own stylesheets in document order (FixtureEntry.runtimeStyles), with replay rewrites. */
+const sheetCss = (list: string[], touch: boolean) => {
+	const key = `own ${list.join(" ")}|${touch}`;
+	let css = cssCache.get(key);
+	if (css === undefined) {
+		css = list
+			.map((tok) =>
+				replayCss(
+					readFileSync(
+						tok === "app" || tok === "theme"
+							? (sheetPath[tok] as string)
+							: `${RUNTIME_DIR}${tok}.css`,
+						"utf8",
+					),
+					touch,
+				),
+			)
+			.join("\n")
+			.replaceAll('url("./public/', `url("${ASSETS}public/`)
+			.replaceAll('url("/lib/', `url("${ASSETS}lib/`);
+		css +=
+			"\n[data-capture-placeholder], [data-capture-placeholder] * { visibility: hidden !important; }";
+		cssCache.set(key, css);
+	}
+	return css;
+};
 const renderCss = (styles: string[], touch: boolean) => {
 	const key = `${styles.join(" ")}|${touch}`;
 	let css = cssCache.get(key);
 	if (css === undefined) {
-		css = Object.keys(sheetPath)
-			.filter((k) => styles.includes(k))
-			.map((k) => replayCss(readFileSync(sheetPath[k] as string, "utf8"), touch))
+		// Document order: runtime styles before the app.css marker, app.css, the rest of the runtime
+		// styles, theme.css. A window without app.css or the runtime styles skips them.
+		const read = (k: string) => replayCss(readFileSync(sheetPath[k] as string, "utf8"), touch);
+		const runtime = styles.includes("runtime") ? read("runtime") : "";
+		const at = runtime.indexOf(APP_CSS_MARK);
+		const [before, after] = at < 0 ? ["", runtime] : [runtime.slice(0, at), runtime.slice(at)];
+		css = [
+			before,
+			styles.includes("app") ? read("app") : "",
+			after,
+			styles.includes("theme") ? read("theme") : "",
+		]
 			.join("\n")
 			// The app's own fonts and images, served from the local extract (see the route below).
 			.replaceAll('url("./public/', `url("${ASSETS}public/`)
@@ -279,11 +314,21 @@ const replayMatch = new Map<string, number>();
 const replayDir = `${WORK}/replay`;
 mkdirSync(replayDir, { recursive: true });
 let cssKey = "";
+const sheetTexts = new Map<string, string>();
+const sheetText = (t: string) => {
+	let v = sheetTexts.get(t);
+	if (v === undefined) {
+		v = existsSync(`${RUNTIME_DIR}${t}.css`) ? readFileSync(`${RUNTIME_DIR}${t}.css`, "utf8") : "";
+		sheetTexts.set(t, v);
+	}
+	return v;
+};
 const glyphRules = new Set(
 	[...readFileSync(runtimePath, "utf8").matchAll(/mjx-c\.(mjx-c[0-9A-F]+)/g)].map((m) => m[1]),
 );
 const renderCdp = await render.context().newCDPSession(render);
 let mediaNow = "-";
+let behindBlack = false;
 const renderOrder = [...valid.keys()].filter((id) => !byId.get(id)?.variantOf).sort();
 for (const id of renderOrder) {
 	const f = byId.get(id) as FixtureEntry;
@@ -296,47 +341,83 @@ for (const id of renderOrder) {
 				? [1024, 768]
 				: [1600, 1000]);
 	const styles = f.styles ?? Object.keys(sheetPath);
-	const key = `${styles.join(" ")}|${touch}`;
+	const own = f.runtimeStyles;
+	const lost = (own ?? []).filter(
+		(t) => t !== "app" && t !== "theme" && !existsSync(`${RUNTIME_DIR}${t}.css`),
+	);
+	if (lost.length) {
+		valid.delete(id);
+		invalid.set(id, [`runtime stylesheet missing from capture/.app/runtime: ${lost.join(" ")}`]);
+		continue;
+	}
+	const key = `${(own ?? styles).join(" ")}|${own ? "own" : "shared"}|${touch}`;
 	if (key !== cssKey) {
 		await render.evaluate(
 			(css) => {
 				(document.getElementById("replay") as HTMLStyleElement).textContent = css;
 			},
-			renderCss(styles, touch),
+			own ? sheetCss(own, touch) : renderCss(styles, touch),
 		);
 		cssKey = key;
 	}
 	await render.setViewportSize({ width: size[0] ?? 1600, height: size[1] ?? 1000 });
 	// The media the item was captured under (print, forced colors), or none.
 	// The window's color scheme (forced colors picks its palette from it) plus any emulated media.
-	const media = `${f.evidence?.media ?? ""}|${f.evidence?.inputMedia?.dark ?? true}`;
+	const media = `${f.evidence?.media ?? ""}|${f.evidence?.inputMedia?.dark ?? true}|${f.evidence?.inputMedia?.canvas ?? ""}`;
 	if (media !== mediaNow) {
 		const m = (f.evidence?.media ? JSON.parse(f.evidence.media) : {}) as {
 			media?: string;
 			features?: { name: string; value: string }[];
 		};
-		const scheme = f.evidence?.inputMedia?.dark === false ? "light" : "dark";
+		// Forced colors take their palette from the system: match the recorded Canvas color.
+		const canvas = (f.evidence?.inputMedia?.canvas ?? "").match(/\d+/g)?.map(Number);
+		const forced = (m.features ?? []).some((x) => x.name === "forced-colors");
+		const scheme =
+			forced && canvas
+				? (canvas[0] ?? 0) + (canvas[1] ?? 0) + (canvas[2] ?? 0) < 384
+					? "dark"
+					: "light"
+				: f.evidence?.inputMedia?.dark === false
+					? "light"
+					: "dark";
 		await renderCdp.send("Emulation.setEmulatedMedia", {
 			media: m.media ?? "",
 			features: [...(m.features ?? []), { name: "prefers-color-scheme", value: scheme }],
 		});
 		mediaNow = media;
 	}
-	// MathJax draws each character through its own CSS rule, added when the character is first
-	// used: every character in the fixture needs one in the runtime styles.
+	// MathJax draws each character through its own CSS rule, kept only while the character is on
+	// screen: every character in the fixture needs one, in the fixture's own <head> (or the
+	// runtime styles).
 	const html = readFileSync(`${CAPTURE}fixtures/${f.file}`, "utf8");
 	const noGlyph = [
 		...new Set([...html.matchAll(/class="(mjx-c[0-9A-F]+)"/g)].map((m) => m[1] ?? "")),
-	].filter((c) => !glyphRules.has(c));
+	].filter(
+		(c) =>
+			!glyphRules.has(c) &&
+			!html.includes(`mjx-c.${c}`) &&
+			!(own ?? []).some((t) => t !== "app" && t !== "theme" && sheetText(t).includes(`mjx-c.${c}`)),
+	);
 	if (noGlyph.length) {
 		valid.delete(id);
-		invalid.set(id, [`MathJax glyph rules missing from the runtime styles: ${noGlyph.join(" ")}`]);
+		invalid.set(id, [
+			`MathJax glyph rules missing (fixture <head> and runtime styles): ${noGlyph.join(" ")}`,
+		]);
 		continue;
 	}
 	const pixels = (f.canvasPixels ?? []).map((c) => ({
 		index: c.index,
 		b64: readFileSync(`${CAPTURE}fixtures/${c.file}`).toString("base64"),
 	}));
+	// A translucent window (body.is-translucent) shows what is behind it: the capture saw black.
+	const translucent = /<body[^>]*class="[^"]*\bis-translucent\b/.test(html);
+	if (translucent !== behindBlack) {
+		await renderCdp.send(
+			"Emulation.setDefaultBackgroundColorOverride",
+			translucent ? { color: { r: 0, g: 0, b: 0, a: 1 } } : {},
+		);
+		behindBlack = translucent;
+	}
 	const got = await replayFixture(render, html, f.imageSizes ?? [], pixels);
 	if (got.why) {
 		valid.delete(id);
@@ -435,8 +516,14 @@ for (const id of renderOrder) {
 		[
 			readFileSync(shot).toString("base64"),
 			readFileSync(replayShot).toString("base64"),
-			// The target box padded like the screenshot (8 px), inside the screenshot.
-			[lx - cx - 8, ly - cy - 8, lw + 16, lh + 16],
+			// The target box; a thin one (a slider track) is padded like the screenshot, so a pixel
+			// of drift does not decide alone.
+			[
+				lw < 16 ? lx - cx - 8 : lx - cx,
+				lh < 16 ? ly - cy - 8 : ly - cy,
+				lw < 16 ? lw + 16 : lw,
+				lh < 16 ? lh + 16 : lh,
+			],
 			(got.masks ?? []).map(([x = 0, y = 0, w = 0, h = 0]) => [x - cx, y - cy, w, h]),
 		] as const,
 	)) as { blocks: number; bad: number; where: string[] };

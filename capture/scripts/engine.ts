@@ -1,5 +1,5 @@
 // Drives a running Obsidian: reaches each scene, forces states and records DOM + screenshots.
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CDPSession, Page } from "playwright";
 import { normSelector } from "./css.ts";
@@ -332,6 +332,22 @@ interface Snap {
 	viewport: [number, number];
 	styles: string[];
 	whole: "see-through" | null;
+	sheets: { kind: "app" | "theme" | "runtime"; text?: string }[];
+}
+
+/** Runtime stylesheet texts by content hash (gitignored, like app.css): see FixtureEntry.runtimeStyles. */
+export const RUNTIME_DIR = new URL("../.app/runtime/", import.meta.url).pathname;
+
+function saveSheets(sheets: Snap["sheets"]): string[] {
+	mkdirSync(RUNTIME_DIR, { recursive: true });
+	return sheets.map((sh) => {
+		if (sh.kind !== "runtime") return sh.kind;
+		const text = sh.text ?? "";
+		const hash = new Bun.CryptoHasher("sha256").update(text).digest("hex").slice(0, 20);
+		const path = `${RUNTIME_DIR}${hash}.css`;
+		if (!existsSync(path)) writeFileSync(path, text);
+		return hash;
+	});
 }
 
 /** Captures one item in the current UI state. Fails unless the target is visibly shown in its state. */
@@ -449,8 +465,15 @@ export async function captureItem(
 		if (!probe.expectOk)
 			return { id: item.id, error: `state not shown: target does not match ${item.expect}` };
 		const vp = (await page.evaluate(
-			"({ width: innerWidth, height: innerHeight, hover: matchMedia('(hover: hover)').matches, finePointer: matchMedia('(pointer: fine)').matches, dark: matchMedia('(prefers-color-scheme: dark)').matches })",
-		)) as { width: number; height: number; hover: boolean; finePointer: boolean; dark: boolean };
+			"({ width: innerWidth, height: innerHeight, hover: matchMedia('(hover: hover)').matches, finePointer: matchMedia('(pointer: fine)').matches, dark: matchMedia('(prefers-color-scheme: dark)').matches, canvas: (() => { const d = document.createElement('div'); d.style.backgroundColor = 'Canvas'; document.body.append(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return c; })() })",
+		)) as {
+			width: number;
+			height: number;
+			hover: boolean;
+			finePointer: boolean;
+			dark: boolean;
+			canvas: string;
+		};
 		const [x = 0, y = 0, w = 0, h = 0] = vis.inView ?? [];
 		const pad = 8;
 		const x0 = Math.max(0, x - pad);
@@ -566,6 +589,7 @@ export async function captureItem(
 			...(canvasPixels.length ? { canvasPixels } : {}),
 			viewport: snap.viewport,
 			styles: snap.styles,
+			runtimeStyles: saveSheets(snap.sheets),
 			...(item.context
 				? { context: item.context }
 				: snap.whole
@@ -601,7 +625,12 @@ export async function captureItem(
 				clip: [clip.x, clip.y, clip.width, clip.height].map((v) => Math.round(v)),
 				...(scroll ? { scroll } : {}),
 				...(item.media ? { media: JSON.stringify(item.media) } : {}),
-				inputMedia: { hover: vp.hover, finePointer: vp.finePointer, dark: vp.dark },
+				inputMedia: {
+					hover: vp.hover,
+					finePointer: vp.finePointer,
+					dark: vp.dark,
+					canvas: vp.canvas,
+				},
 				screenshot: { sha256, ...stats },
 				...(record ? { record } : {}),
 			},
@@ -672,11 +701,18 @@ export function ensureDirs(out: CaptureOut): void {
 	mkdirSync(out.screenshotsDir, { recursive: true });
 }
 
+/** Where app.css sits among the runtime styles (they are saved in document order). */
+export const APP_CSS_MARK = "/* capture: app.css here */";
+
 /** Obsidian's runtime <style> and adopted stylesheets, for rendering fixtures locally (gitignored). */
 export async function saveRuntimeStyles(page: Page): Promise<void> {
 	const css = (await page.evaluate(`(() => {
+		const APP_CSS_MARK = ${JSON.stringify(APP_CSS_MARK)};
 		const parts = [];
-		for (const s of document.head.querySelectorAll("style")) {
+		// In document order: CodeMirror puts its styles first in <head>, before app.css, so
+		// app.css wins ties. The marker says where app.css goes.
+		for (const s of document.head.querySelectorAll("style, link[rel=stylesheet]")) {
+			if (s.localName === "link") { if (/(^|\\/)app\\.css$/.test(s.getAttribute("href") ?? "")) parts.push(APP_CSS_MARK); continue; }
 			if (s === app.customCss.styleEl) continue;
 			// Rules added through the CSSOM (MathJax adds one per character) are not in textContent.
 			let text = s.textContent;
@@ -686,7 +722,8 @@ export async function saveRuntimeStyles(page: Page): Promise<void> {
 		for (const sheet of document.adoptedStyleSheets) parts.push("/* adopted */\\n" + [...sheet.cssRules].map((r) => r.cssText).join("\\n"));
 		return parts.join("\\n\\n");
 	})()`)) as string;
-	if (!css.trim()) throw new Error("no runtime styles found (open an editor first)");
+	if (!css.replace(APP_CSS_MARK, "").trim())
+		throw new Error("no runtime styles found (open an editor first)");
 	const dir = new URL("../.app/", import.meta.url).pathname;
 	mkdirSync(dir, { recursive: true });
 	writeFileSync(`${dir}runtime-styles.css`, css);

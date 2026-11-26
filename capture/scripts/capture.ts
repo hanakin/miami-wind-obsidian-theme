@@ -11,6 +11,7 @@ import {
 	ensureDirs,
 	install,
 	makeCtx,
+	RUNTIME_DIR,
 	runScene,
 	saveRuntimeStyles,
 } from "./engine.ts";
@@ -185,6 +186,11 @@ const keep = new Set(
 );
 for (const name of readdirSync(FIXTURES))
 	if (name !== "pixels" && !keep.has(name)) rmSync(`${FIXTURES}${name}`);
+// Runtime stylesheets no fixture names any more.
+const sheetsUsed = new Set(fixtures.flatMap((f) => f.runtimeStyles ?? []));
+if (existsSync(RUNTIME_DIR))
+	for (const name of readdirSync(RUNTIME_DIR))
+		if (!sheetsUsed.has(name.replace(/\.css$/, ""))) rmSync(`${RUNTIME_DIR}${name}`);
 if (existsSync(`${FIXTURES}pixels`))
 	for (const name of readdirSync(`${FIXTURES}pixels`))
 		if (!keep.has(`pixels/${name}`)) rmSync(`${FIXTURES}pixels/${name}`);

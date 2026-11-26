@@ -123,9 +123,12 @@ export interface ChecklistItem {
  *   ancestor and their direct children, to check a replay part by part.
  * - data-capture-sel-anchor / data-capture-sel-focus="CHILD OFFSET": the native text selection,
  *   on the nearest element (CHILD -1: OFFSET counts that element's children).
+ * - data-capture-input-selection="START END DIRECTION" on the focused field: its selected text.
  * - data-capture-cm-selection: CodeMirror's own selection ranges (reference only; the editor
  *   draws them as .cm-selectionBackground boxes, which are in the markup).
  * - data-capture-viewport / data-capture-styles on <html>: as viewport and styles below.
+ * - <style data-capture-runtime="mathjax"> in <head>: MathJax's rule for each character in the
+ *   fixture (MathJax keeps them only while the character is on screen). Viewers apply it.
  * capture/scripts/replay.ts replays a fixture this way; the coverage check compares the result
  * with the live screenshot.
  */
@@ -171,6 +174,13 @@ export interface FixtureEntry {
 	 * as capture/.app/runtime-styles.css), "theme" (theme.css). A starter window has no theme.
 	 */
 	styles?: string[];
+	/**
+	 * Every stylesheet the window applied, in document order: "app" (app.css), "theme"
+	 * (theme.css), or the content hash of a runtime stylesheet saved as
+	 * capture/.app/runtime/<hash>.css (local only, like app.css). Runtime sheets (CodeMirror,
+	 * MathJax glyphs, slides) can exist only while their view shows, so each fixture names its own.
+	 */
+	runtimeStyles?: string[];
 	/**
 	 * "document": the whole window was kept, not just the target's branch: overlays that show the
 	 * page under them (set on the item, or found: a positioned target without a solid background).
@@ -222,6 +232,7 @@ export interface Evidence {
 	scroll?: { positions: number[]; scrollHeight: number; clientHeight: number };
 	media?: string;
 	/** The window's input media at capture: (hover: hover) and (pointer: fine). */
-	inputMedia?: { hover: boolean; finePointer: boolean; dark?: boolean };
+	/** dark: (prefers-color-scheme: dark); canvas: the system color Canvas (forced colors' palette). */
+	inputMedia?: { hover: boolean; finePointer: boolean; dark?: boolean; canvas?: string };
 	screenshot?: { sha256: string; width: number; height: number; colors: number };
 }

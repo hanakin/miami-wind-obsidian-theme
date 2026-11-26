@@ -30,6 +30,10 @@ export async function replayFixture(
 				for (const a of [...to.attributes]) to.removeAttribute(a.name);
 				for (const a of [...from.attributes]) to.setAttribute(a.name, a.value);
 			}
+			// The fixture's own runtime rules (MathJax glyphs) go with it.
+			for (const st of document.head.querySelectorAll("style[data-capture-runtime]")) st.remove();
+			for (const st of d.querySelectorAll("head style[data-capture-runtime]"))
+				document.head.appendChild(document.importNode(st, true));
 			document.body.replaceChildren(
 				...[...d.body.childNodes].map((n) => document.importNode(n, true)),
 			);
@@ -58,7 +62,10 @@ export async function replayFixture(
 			// Empty stand-ins take their recorded live size.
 			for (const e of document.querySelectorAll<HTMLElement>("[data-capture-size]")) {
 				const [w = 0, h = 0] = (e.getAttribute("data-capture-size") ?? "").split(" ").map(Number);
-				const disp = e.getAttribute("data-capture-display");
+				// Unknown outside Electron (<webview>) or empty and inline: a size needs a box.
+				const disp =
+					e.getAttribute("data-capture-display") ??
+					(getComputedStyle(e).display === "inline" ? "inline-block" : null);
 				const [mt, mb] = (e.getAttribute("data-capture-margin") ?? "").split(" ");
 				for (const [k, v] of [
 					...(disp ? [["display", disp]] : []),
@@ -94,6 +101,17 @@ export async function replayFixture(
 				try {
 					getSelection()?.setBaseAndExtent(a[0], a[1], z[0], z[1]);
 				} catch {}
+			// Text selected inside a field (it shows only while the field has focus).
+			const field = document.querySelector<HTMLInputElement>("[data-capture-input-selection]");
+			if (field) {
+				const [from = "0", to = "0", dir = "none"] = (
+					field.getAttribute("data-capture-input-selection") ?? ""
+				).split(" ");
+				try {
+					field.focus();
+					field.setSelectionRange(Number(from), Number(to), dir as "none");
+				} catch {}
+			}
 			// Scroll offsets once fonts have loaded (the content has its final height).
 			await document.fonts.ready;
 			await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));

@@ -412,14 +412,16 @@ export const INPAGE = String.raw`
 	 * returns the fixture: the target with its ancestor wrappers and the html/body attributes.
 	 */
 	/**
-	 * Border-box size in CSS px, unrounded (a 0.1 px spacer must not become 0: an empty 0 px block
-	 * lets margins collapse through it). Transformed boxes use their untransformed size.
+	 * Layout border-box size in CSS px: unrounded (a 0.1 px spacer must not become 0, or margins
+	 * collapse through it) and before any transform of it or its ancestors (a scaled PDF form).
 	 */
 	function layoutSize(win, o) {
-		const r = o.getBoundingClientRect();
-		const plain = win.getComputedStyle(o).transform === "none";
-		const w = plain || o.offsetWidth === undefined ? r.width : o.offsetWidth;
-		const h = plain || o.offsetHeight === undefined ? r.height : o.offsetHeight;
+		const cs = win.getComputedStyle(o);
+		const extra = (a, b) => cs.boxSizing === "border-box" ? 0 : ["padding" + a, "padding" + b, "border" + a + "Width", "border" + b + "Width"].reduce((n, k) => n + (parseFloat(cs[k]) || 0), 0);
+		let w = parseFloat(cs.width) + extra("Left", "Right");
+		let h = parseFloat(cs.height) + extra("Top", "Bottom");
+		if (!Number.isFinite(w)) w = o.offsetWidth ?? o.getBoundingClientRect().width;
+		if (!Number.isFinite(h)) h = o.offsetHeight ?? o.getBoundingClientRect().height;
 		return Math.round(w * 1000) / 1000 + " " + Math.round(h * 1000) / 1000;
 	}
 	/** The margin on one side of e after margins of its first / last children collapse through it. */
@@ -453,6 +455,8 @@ export const INPAGE = String.raw`
 			syncControl(o, c);
 			const s = st.states.get(o);
 			if (s) c.setAttribute("data-capture-state", s.join(" "));
+			// Text selected inside a field is not a document selection: keep its range.
+			if (o === doc.activeElement && typeof o.selectionStart === "number" && o.selectionStart !== o.selectionEnd) c.setAttribute("data-capture-input-selection", o.selectionStart + " " + o.selectionEnd + " " + (o.selectionDirection ?? "none"));
 			// Scroll offsets are not part of the markup; a viewer restores them from this mark.
 			if (o.scrollTop || o.scrollLeft) c.setAttribute("data-capture-scroll", o.scrollTop + " " + o.scrollLeft);
 			// Media and frames get their size from content that does not load offline.
@@ -603,6 +607,18 @@ export const INPAGE = String.raw`
 			const kind = /(^|\/)app\.css$/.test(href) ? "app" : text.startsWith("/* Miami Wind Theme") ? "theme" : text.trim() || href ? "runtime" : "";
 			if (kind && !styles.includes(kind)) styles.push(kind);
 		}
+		// Every stylesheet of the window, in document order: app.css, the theme, and the texts of the
+		// runtime ones (CodeMirror, MathJax, the slides' linked reveal.js sheet...), which can exist
+		// only while their view shows.
+		const sheets = [];
+		for (const sh of doc.querySelectorAll("link[rel=stylesheet], style")) {
+			if (sh.localName === "link" && /(^|\/)app\.css$/.test(sh.getAttribute("href") ?? "")) { sheets.push({ kind: "app" }); continue; }
+			if (sh.localName === "style" && sh.textContent.startsWith("/* Miami Wind Theme")) { sheets.push({ kind: "theme" }); continue; }
+			let text = sh.textContent;
+			try { text = [...sh.sheet.cssRules].map((r) => r.cssText).join("\n"); } catch {}
+			if (text.trim()) sheets.push({ kind: "runtime", text });
+		}
+		for (const sh of doc.adoptedStyleSheets ?? []) { const text = [...sh.cssRules].map((r) => r.cssText).join("\n"); if (text.trim()) sheets.push({ kind: "runtime", text }); }
 		const win = doc.defaultView;
 		const viewport = [win.innerWidth, win.innerHeight];
 		out.documentElement.setAttribute("data-capture-viewport", viewport.join(" "));
@@ -672,6 +688,27 @@ export const INPAGE = String.raw`
 			const k = im.getAttribute("data-capture-img");
 			if (k !== null) { imageSizes.push({ index, width: sizes[+k][0], height: sizes[+k][1] }); im.removeAttribute("data-capture-img"); }
 		});
+		// MathJax keeps a CSS rule per character, only for what is on screen now (it drops the rest
+		// on the next render). Keep the fixture's own glyph rules in its <head>.
+		const glyphs = new Set([...out.querySelectorAll("mjx-c")].flatMap((e) => [...e.classList].filter((c) => /^mjx-c[0-9A-F]+$/.test(c))));
+		let mathCss = "";
+		if (glyphs.size) {
+			const rules = [];
+			for (const sh of [...doc.styleSheets, ...(doc.adoptedStyleSheets ?? [])]) {
+				let rs = [];
+				try { rs = [...sh.cssRules]; } catch {}
+				for (const r of rs) {
+					const sel = r.selectorText ?? "";
+					if (sel.includes("mjx-c.mjx-c") && sel.split(",").some((x) => [...glyphs].some((g) => new RegExp("\\." + g + "(?![0-9A-F])").test(x)))) rules.push(r.cssText);
+				}
+			}
+			mathCss = [...new Set(rules)].join("\n");
+			const st = out.createElement("style");
+			st.setAttribute("data-capture-runtime", "mathjax");
+			st.textContent = mathCss;
+			out.head.appendChild(st);
+		}
+		const headExtra = mathCss ? '<style data-capture-runtime="mathjax">' + mathCss.replace(/<\/style/gi, "<\\/style") + "</style>" : "";
 		// HTML text cannot hold every tree Obsidian builds (a <div> inside a <p>, as in reading-view
 		// embeds): the parser would close the <p> early. Save as HTML when it parses back to the same
 		// tree, else as XHTML, whose XML parser keeps the tree exactly.
@@ -681,9 +718,9 @@ export const INPAGE = String.raw`
 		const format = same ? "html" : "xhtml";
 		const contains = Object.entries(opts.components).filter(([, sel]) => t.matches?.(sel) || t.querySelector(sel)).map(([k]) => k);
 		const fixture = same
-			? "<!doctype html>\n<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8"></head>\n<body' + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
+			? "<!doctype html>\n<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8">' + headExtra + "</head>\n<body" + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
 			: '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(out) + "\n";
-		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, whole: whole && opts.context !== "document" ? "see-through" : null };
+		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, sheets, whole: whole && opts.context !== "document" ? "see-through" : null };
 	}
 	/** Painted style of the target and pseudo subtrees (colors, borders, shadows, decorations, ::before/::after), for a before/after state diff. */
 	const PAINT = ["color", "background-color", "background-image", "border-top-color", "border-right-color", "border-bottom-color", "border-left-color", "outline-color", "outline-style", "outline-width", "box-shadow", "text-decoration-line", "text-decoration-color", "opacity", "filter", "transform", "visibility", "fill", "stroke"];
