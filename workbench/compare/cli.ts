@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdirSync, rmSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { chromium } from "playwright";
@@ -39,6 +40,7 @@ if (values.help) {
 	process.exit(0);
 }
 const started = performance.now();
+const generated = new Date().toISOString();
 const out = "workbench/out";
 for (const file of ["compare.json", "compare.md", "component-diffs.json"])
 	rmSync(`${out}/${file}`, { force: true });
@@ -56,6 +58,25 @@ const before = values.before
 	? await Bun.file(values.before).text()
 	: execFileSync("git", ["show", "b478dc8:theme.css"], { encoding: "utf8" });
 const after = await Bun.file(values.after ?? "theme.css").text();
+mkdirSync(`${out}/themes`, { recursive: true });
+const snapshotTheme = async (
+	side: "before" | "after",
+	css: string,
+	source: string,
+) => {
+	const file = `themes/${side}.css`;
+	await Bun.write(`${out}/${file}`, css);
+	return {
+		sha256: createHash("sha256").update(css, "utf8").digest("hex"),
+		source,
+		file,
+	};
+};
+const [beforeTheme, afterTheme] = await Promise.all([
+	snapshotTheme("before", before, values.before ?? "b478dc8:theme.css"),
+	snapshotTheme("after", after, values.after ?? "theme.css"),
+]);
+const themes = { before: beforeTheme, after: afterTheme };
 if (!(await Bun.file("capture/.app/app.css").exists()))
 	throw new Error("Missing app CSS: run bun run capture:extract-app-css first");
 const appVersion = (
@@ -242,7 +263,13 @@ try {
 	await Bun.write(
 		`${out}/compare.json`,
 		JSON.stringify(
-			{ status: "error", error: String(error), checked: results.length },
+			{
+				generated,
+				themes,
+				status: "error",
+				error: String(error),
+				checked: results.length,
+			},
 			null,
 			2,
 		),
@@ -298,23 +325,26 @@ const limitations = [
 	"Invisible targets remain in style comparisons; screenshots show the 1600×1000 viewport and may not paint them.",
 	"Component diffs describe after-theme surface consistency, not before/after parity; filtered runs only cover selected uses.",
 ];
+const status =
+	exitCode === 1
+		? "different"
+		: exitCode === 2
+			? "not-proven"
+			: accepted.length
+				? "accepted"
+				: "same";
 await Bun.write(
 	`${out}/compare.json`,
 	JSON.stringify(
 		{
 			schemaVersion: 1,
+			generated,
+			themes,
 			rasterization: {
 				flags: BROWSER_OPTIONS.args,
 				capture: "Page.captureScreenshot",
 			},
-			status:
-				exitCode === 1
-					? "different"
-					: exitCode === 2
-						? "not-proven"
-						: accepted.length
-							? "accepted"
-							: "same",
+			status,
 			accepted,
 			notProven,
 			noise,
@@ -338,7 +368,7 @@ await Bun.write(
 		2,
 	),
 );
-const text = `${summary.checked} fixtures checked; ${changed} with differences; ${summary.unchanged} same; ${summary.notProvenOnly} not proven; ${summary.accepted} accepted (intentional); ${seconds}s.\nCoverage limits: ${summary.notProven} fixtures (can overlap differences or accepted results).\nEngine: Playwright Chromium ${browser.version()}. Independent before/after repeats (2 each): ${summary.sanity}.\nInvisible targets: ${summary.invisibleTargets}.\n\nAccepted (intentional):\n${accepted.map((r) => `- ${r.id}: accepted: ${r.reason}`).join("\n")}\n\nNot proven:\n${notProven.map((r) => `- ${r.id}: ${r.reasons.join("; ")}`).join("\n")}\n\nTop element/property differences:\n${topDifferences.map((d) => `- ${d.count}: ${d.elementProperty}`).join("\n")}\n\nLimits:\n${limitations.map((l) => `- ${l}`).join("\n")}\n`;
+const text = `Status: ${status}.\n${summary.checked} fixtures checked; ${changed} with differences; ${summary.unchanged} same; ${summary.notProvenOnly} not proven; ${summary.accepted} accepted (intentional); ${seconds}s.\nCoverage limits: ${summary.notProven} fixtures (can overlap differences or accepted results).\nEngine: Playwright Chromium ${browser.version()}. Independent before/after repeats (2 each): ${summary.sanity}.\nInvisible targets: ${summary.invisibleTargets}.\n\nAccepted (intentional):\n${accepted.map((r) => `- ${r.id}: accepted: ${r.reason}`).join("\n")}\n\nNot proven:\n${notProven.map((r) => `- ${r.id}: ${r.reasons.join("; ")}`).join("\n")}\n\nTop element/property differences:\n${topDifferences.map((d) => `- ${d.count}: ${d.elementProperty}`).join("\n")}\n\nLimits:\n${limitations.map((l) => `- ${l}`).join("\n")}\n`;
 await Bun.write(`${out}/compare.md`, text);
 console.log(text);
 process.exitCode = exitCode;
