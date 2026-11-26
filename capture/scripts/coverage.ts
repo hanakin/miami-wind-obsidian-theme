@@ -279,6 +279,9 @@ const replayMatch = new Map<string, number>();
 const replayDir = `${WORK}/replay`;
 mkdirSync(replayDir, { recursive: true });
 let cssKey = "";
+const glyphRules = new Set(
+	[...readFileSync(runtimePath, "utf8").matchAll(/mjx-c\.(mjx-c[0-9A-F]+)/g)].map((m) => m[1]),
+);
 const renderCdp = await render.context().newCDPSession(render);
 let mediaNow = "-";
 const renderOrder = [...valid.keys()].filter((id) => !byId.get(id)?.variantOf).sort();
@@ -319,16 +322,22 @@ for (const id of renderOrder) {
 		});
 		mediaNow = media;
 	}
+	// MathJax draws each character through its own CSS rule, added when the character is first
+	// used: every character in the fixture needs one in the runtime styles.
+	const html = readFileSync(`${CAPTURE}fixtures/${f.file}`, "utf8");
+	const noGlyph = [
+		...new Set([...html.matchAll(/class="(mjx-c[0-9A-F]+)"/g)].map((m) => m[1] ?? "")),
+	].filter((c) => !glyphRules.has(c));
+	if (noGlyph.length) {
+		valid.delete(id);
+		invalid.set(id, [`MathJax glyph rules missing from the runtime styles: ${noGlyph.join(" ")}`]);
+		continue;
+	}
 	const pixels = (f.canvasPixels ?? []).map((c) => ({
 		index: c.index,
 		b64: readFileSync(`${CAPTURE}fixtures/${c.file}`).toString("base64"),
 	}));
-	const got = await replayFixture(
-		render,
-		readFileSync(`${CAPTURE}fixtures/${f.file}`, "utf8"),
-		f.imageSizes ?? [],
-		pixels,
-	);
+	const got = await replayFixture(render, html, f.imageSizes ?? [], pixels);
 	if (got.why) {
 		valid.delete(id);
 		invalid.set(id, [`does not render alone: ${got.why}`]);
