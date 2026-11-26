@@ -319,7 +319,7 @@ const summary = {
 };
 const limitations = [
 	"Serialized DOM only: canvas pixels, media playback/native controls, iframe contents and Obsidian runtime behavior are not reconstructed.",
-	"Fonts and external images are unavailable; remote requests are blocked. Platform fixtures use host Linux fonts.",
+	"MathJax fonts load from the matching local Obsidian archive; other fonts use host fallbacks. External requests remain blocked. Missing MathJax fonts or glyph metrics are not proven.",
 	"Computed standard properties and applicable selection, placeholder, scrollbar, marker, generated-content and file-button pseudos are compared. Runtime graph/canvas/PDF colors are probed. Animation declarations are read without suppression; suppression is enabled only for screenshots.",
 	"Repeated pixel checks use exact RGBA equality: red marks stable changes, orange marks same-CSS instability. Each fixture records two captures per side.",
 	"Invisible targets remain in style comparisons; screenshots show the 1600×1000 viewport and may not paint them.",

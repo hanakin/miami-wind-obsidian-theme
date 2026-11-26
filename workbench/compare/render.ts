@@ -259,6 +259,56 @@ export async function render(
 	}
 	// A bounded paint interval also works in background worker tabs, whose RAF can be paused.
 	await page.waitForTimeout(120);
+	const failedFonts = await page.evaluate(async () => {
+		await document.fonts.ready;
+		return Array.from(document.fonts)
+			.filter((font) => font.family.includes("MJX-") && font.status === "error")
+			.map((font) => font.family);
+	});
+	for (const font of failedFonts)
+		replayIssues.push(`MathJax font ${font} failed to load`);
+	const missingGlyphs = await page.evaluate(() => {
+		const glyphs = Array.from(document.querySelectorAll("mjx-c")).filter(
+			(el) =>
+				!el.closest("[data-capture-placeholder]") &&
+				el.getBoundingClientRect().width === 0,
+		);
+		if (!glyphs.length) return [];
+		const defined = new Set<string>();
+		const inspect = (rules: CSSRuleList) => {
+			for (const rule of rules) {
+				if (
+					rule instanceof CSSStyleRule &&
+					(rule.style.padding ||
+						rule.style.paddingLeft ||
+						rule.style.paddingRight ||
+						rule.style.width)
+				)
+					for (const match of rule.selectorText.matchAll(/\.mjx-c[\da-f]+\b/gi))
+						defined.add(match[0].slice(1));
+				if ("cssRules" in rule) inspect((rule as CSSGroupingRule).cssRules);
+			}
+		};
+		for (const sheet of document.styleSheets) {
+			try {
+				inspect(sheet.cssRules);
+			} catch {
+				/* Unavailable external sheets provide no captured glyph metrics. */
+			}
+		}
+		// The CHTML zero-width font needs per-glyph sizing rules from the captured runtime sheets.
+		return [
+			...new Set(
+				glyphs.flatMap((el) =>
+					Array.from(el.classList).filter(
+						(name) => /^mjx-c[\da-f]+$/i.test(name) && !defined.has(name),
+					),
+				),
+			),
+		];
+	});
+	for (const glyph of missingGlyphs)
+		replayIssues.push(`MathJax glyph metrics missing for ${glyph}`);
 	await page.locator("style[data-compare-suppression]").evaluate((el) => {
 		(el as HTMLStyleElement).disabled = true;
 	});
