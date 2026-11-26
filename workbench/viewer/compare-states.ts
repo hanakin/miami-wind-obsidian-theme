@@ -4,8 +4,9 @@ interface CompareFixture {
 	id: string;
 	status?: unknown;
 	notProvenReasons?: unknown;
-	acceptedReason?: unknown;
-	reason?: unknown;
+	/** The verdict before acceptance was applied. */
+	comparisonStatus?: unknown;
+	acceptanceReason?: unknown;
 }
 
 /**
@@ -26,9 +27,9 @@ export function compareStates(json: unknown): Record<string, CompareState> | str
 		else if (f.status === "not-proven") {
 			const reasons = Array.isArray(f.notProvenReasons) ? f.notProvenReasons.map(String) : [];
 			out[f.id] = { status: "not-proven", reasons };
-		} else if (typeof f.status === "string" && f.status.startsWith("accepted")) {
-			const reason = [f.acceptedReason, f.reason].find((r) => typeof r === "string" && r);
-			out[f.id] = { status: "accepted", reason: (reason as string) ?? "no reason recorded" };
+		} else if (f.status === "accepted" || f.comparisonStatus === "accepted") {
+			const reason = typeof f.acceptanceReason === "string" ? f.acceptanceReason : "";
+			out[f.id] = { status: "accepted", reason: reason || "no reason recorded" };
 		} else if (typeof f.status === "string") {
 			// A status this viewer does not know yet is never read as "same".
 			out[f.id] = { status: "not-proven", reasons: [`unknown status "${f.status}"`] };
