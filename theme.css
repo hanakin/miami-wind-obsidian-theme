@@ -399,8 +399,6 @@ mark {
 
 /* Flashing ranges use an important background; set its variable on the token. */
 
-mark:where(.is-flashing),
-.markdown-rendered mark[data-highlight]:where(.is-flashing),
 .cm-s-obsidian span.is-flashing:where(.cm-highlight) {
 	--highlight-background: var(--highlight);
 }

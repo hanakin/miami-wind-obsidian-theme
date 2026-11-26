@@ -143,8 +143,8 @@ it.each([
 	);
 });
 
-it("preserves highlighted flashing search ranges, including colored highlights", async () => {
+it("preserves highlighted flashing editor search ranges", async () => {
 	await compare(
-		`<div class="markdown-rendered"><mark class="is-flashing" data-probe>flash</mark><mark class="is-flashing" data-highlight="red" data-probe>red flash</mark></div><div class="markdown-source-view mod-cm6 cm-s-obsidian"><span class="cm-highlight cm-highlight-red is-flashing" data-probe>editor flash</span></div>`,
+		`<div class="markdown-source-view mod-cm6 cm-s-obsidian"><span class="cm-highlight cm-highlight-red is-flashing" data-probe>editor flash</span></div>`,
 	);
 });
