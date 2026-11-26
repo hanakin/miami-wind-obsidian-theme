@@ -156,8 +156,8 @@ export async function replayFixture(
 					continue;
 				for (const r of e.getClientRects()) masks.push([r.x, r.y, r.width, r.height]);
 			}
-			// Positioned stand-ins (the status bar, other floating parts) painted over the target
-			// live; replayed, they are hidden.
+			// Positioned stand-ins that were painted live (the status bar, other floating parts) lay
+			// over the target; replayed, they are hidden.
 			// Only those with a solid background of their own: a transparent bar (the titlebar's
 			// drag area) painted nothing over the target.
 			const solid = (c: string) => {
@@ -167,7 +167,7 @@ export async function replayFixture(
 				ctx.fillRect(0, 0, 1, 1);
 				return (ctx.getImageData(0, 0, 1, 1).data[3] ?? 0) >= 128;
 			};
-			for (const e of document.querySelectorAll("[data-capture-placeholder]")) {
+			for (const e of document.querySelectorAll("[data-capture-placeholder][data-capture-shown]")) {
 				const cs = getComputedStyle(e);
 				if (!/^(absolute|fixed|sticky)$/.test(cs.position)) continue;
 				if (!solid(cs.backgroundColor) && cs.backgroundImage === "none") continue;
@@ -213,7 +213,13 @@ export async function replayFixture(
 					}
 				}
 			}
-			return { why: "", inView: cap.visibleRect(t), masks, moved };
+			return {
+				why: "",
+				inView: cap.visibleRect(t),
+				// Empty boxes (CodeMirror's zero-width widget buffers) cover nothing.
+				masks: masks.filter(([, , w = 0, h = 0]) => w >= 1 && h >= 1),
+				moved,
+			};
 		},
 		[html, sizes, canvases] as const,
 	)) as Replayed;

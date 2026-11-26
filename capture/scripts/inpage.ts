@@ -631,11 +631,16 @@ export const INPAGE = String.raw`
 		// A see-through overlay shows the page under it: keep the whole window. That is a target in
 		// a positioned layer (a modal backdrop, a PDF highlight, a canvas handle, a code block's
 		// edit button) with no solid background between it and that layer.
+		// It is also see-through when something between them is faded or blended (a PDF text
+		// layer at 20% opacity over the page canvas).
 		let seeThrough = false;
+		let solid = false;
+		let veiled = false;
 		for (let a = el; a && a !== doc.body; a = a.parentElement) {
 			const cs = win.getComputedStyle(a);
-			if (alphaOf(cs.backgroundColor) >= 0.99 || cs.backgroundImage !== "none") break;
-			if (/^(absolute|fixed)$/.test(cs.position)) { seeThrough = true; break; }
+			if (parseFloat(cs.opacity) < 1 || cs.mixBlendMode !== "normal") veiled = true;
+			if (alphaOf(cs.backgroundColor) >= 0.99 || cs.backgroundImage !== "none") solid = true;
+			if (/^(absolute|fixed)$/.test(cs.position)) { seeThrough = !solid || veiled; break; }
 		}
 		const whole = opts.context === "document" || seeThrough;
 		if (el === doc.body || el === doc.documentElement || whole) {
@@ -664,6 +669,8 @@ export const INPAGE = String.raw`
 							const ph = out.importNode(c, keep);
 							if (keep) for (const d of ph.querySelectorAll("*")) { d.removeAttribute("data-capture-seen"); d.removeAttribute("data-capture-state"); }
 							ph.setAttribute("data-capture-placeholder", "");
+							// Shown live (visible, not transparent, with a box): a floating one painted over things.
+							if (o) { const cs = win.getComputedStyle(o); const r = o.getBoundingClientRect(); if (cs.visibility === "visible" && parseFloat(cs.opacity) > 0 && r.width * r.height > 0) ph.setAttribute("data-capture-shown", ""); }
 							// The stand-in is empty, so keep its live border-box size for the layout around it.
 							if (o && disp !== "inline" && disp !== "contents" && disp !== "none") {
 								ph.setAttribute("data-capture-size", layoutSize(win, o));

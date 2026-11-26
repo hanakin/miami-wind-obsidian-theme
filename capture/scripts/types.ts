@@ -116,6 +116,7 @@ export interface ChecklistItem {
  *   layout around the target. Viewers give it that size, display and margins, and hide it and
  *   its content with visibility: hidden (not display: none). Small inline-level stand-ins keep
  *   their content (for their text baseline), without painted or state marks.
+ * - data-capture-shown on a stand-in: it was visible live (a floating one painted over parts).
  * - data-capture-size on img (shown size of an image that does not load offline), video, audio,
  *   iframe, object, embed and webview: their live border-box size.
  * - data-capture-scroll="TOP LEFT": scroll offsets to restore after layout.
