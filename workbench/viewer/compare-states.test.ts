@@ -7,6 +7,7 @@ import {
 	pageSummary,
 	rowState,
 } from "./compare-states.ts";
+import { touchedComponents } from "./elements.ts";
 import type { CompareState } from "./types.ts";
 
 it("reads the three statuses and keeps not-proven reasons", () => {
@@ -107,9 +108,13 @@ it("judges a place seen only inside larger captures by every one of them", () =>
 		// One of them is not proven.
 		const oneUnproven = { ...compare, "around-2": same, "around-1": unproven };
 		expect(rowState("button", "modal", list, oneUnproven)?.state).toEqual(unproven);
-		// An accepted change counts for the component only when it is on the component.
+		// An accepted change counts for the component only when it is surely on the component.
+		// Elsewhere (a sibling, or an element the key cannot identify) it proves nothing.
 		const oneAccepted = { ...compare, "around-2": accepted };
-		expect(rowState("button", "modal", list, oneAccepted)?.state).toEqual(same);
+		expect(rowState("button", "modal", list, oneAccepted)?.state).toEqual(elsewhere);
+		expect(rowState("button", "modal", list, oneAccepted, { "around-2": ["menu"] })?.state).toEqual(
+			elsewhere,
+		);
 		expect(
 			rowState("button", "modal", list, oneAccepted, { "around-2": ["button"] })?.state,
 		).toEqual(accepted);
@@ -168,4 +173,43 @@ it("boils a capture's differences down to distinct changes, most common first", 
 			{ properties: ["color"], before: "red", after: "blue", count: 1, accepted: false },
 		],
 	});
+});
+
+it("never reads accepted or same when reasons are unresolved or the status is unknown", () => {
+	const read = (fixture: object) =>
+		(
+			compareStates({ schemaVersion: 1, fixtures: [{ id: "x", ...fixture }] }) as Record<
+				string,
+				CompareState
+			>
+		).x;
+	// Accepted with an unresolved reason is not proven (the compare tool exits 2 for it).
+	expect(read({ status: "accepted", notProvenReasons: ["canvas content"] })).toEqual({
+		status: "not-proven",
+		reasons: ["canvas content"],
+	});
+	expect(read({ status: "same", notProvenReasons: ["canvas content"] })?.status).toBe("not-proven");
+	// `status` is authoritative: another field saying accepted changes nothing.
+	expect(read({ status: "new-unknown-status", comparisonStatus: "accepted" })).toEqual({
+		status: "not-proven",
+		reasons: ['unknown status "new-unknown-status"'],
+	});
+	// A proven difference stays a difference even with coverage limits.
+	expect(read({ status: "different", notProvenReasons: ["canvas content"] })).toEqual(different);
+	expect(read({ status: "accepted", acceptanceReason: "intentional" })).toEqual(accepted);
+});
+
+it("does not read a checkbox as same when an accepted change sits on an input the key cannot identify", () => {
+	const captures = [{ id: "around", component: "task", surface: "editor-reading-view" }];
+	const touched = {
+		around: touchedComponents(
+			[{ element: "2:input.task-list-item-checkbox" }],
+			["checkbox", "task"],
+			{ checkbox: "input[type=checkbox]", task: ".task-list-item" },
+		),
+	};
+	expect(touched.around).toEqual([]);
+	expect(
+		rowState("checkbox", "editor-reading-view", captures, { around: accepted }, touched)?.state,
+	).toEqual({ status: "not-proven", reasons: [CHANGED_ELSEWHERE] });
 });

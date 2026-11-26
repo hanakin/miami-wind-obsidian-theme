@@ -4,8 +4,6 @@ interface CompareFixture {
 	id: string;
 	status?: unknown;
 	notProvenReasons?: unknown;
-	/** The verdict before acceptance was applied. */
-	comparisonStatus?: unknown;
 	acceptanceReason?: unknown;
 }
 
@@ -23,11 +21,14 @@ export function compareStates(json: unknown): Record<string, CompareState> | str
 	}
 	const out: Record<string, CompareState> = {};
 	for (const f of report.fixtures as CompareFixture[]) {
-		if (f.status === "same" || f.status === "different") out[f.id] = { status: f.status };
-		else if (f.status === "not-proven") {
-			const reasons = Array.isArray(f.notProvenReasons) ? f.notProvenReasons.map(String) : [];
+		const reasons = Array.isArray(f.notProvenReasons) ? f.notProvenReasons.map(String) : [];
+		// `status` alone decides. An unresolved reason outranks everything but a proven difference:
+		// a capture with one is never same or accepted.
+		if (f.status === "different") out[f.id] = { status: "different" };
+		else if (reasons.length || f.status === "not-proven") {
 			out[f.id] = { status: "not-proven", reasons };
-		} else if (f.status === "accepted" || f.comparisonStatus === "accepted") {
+		} else if (f.status === "same") out[f.id] = { status: "same" };
+		else if (f.status === "accepted") {
 			const reason = typeof f.acceptanceReason === "string" ? f.acceptanceReason : "";
 			out[f.id] = { status: "accepted", reason: reason || "no reason recorded" };
 		} else if (typeof f.status === "string") {
@@ -61,9 +62,9 @@ export const captureState = (compare: Record<string, CompareState> | null, id: s
  * difference on their own elements.
  *
  * With captures of the component itself, those decide. Otherwise every larger capture that
- * contains it does: same when all are proven same, differs when a difference lands on the
- * component's own elements, and not proven when one is not proven or changed somewhere that
- * cannot be ruled out for this component. Undefined only when no capture contains it there.
+ * contains it does: same when all are proven same; differs or accepted when that capture's
+ * change lands on the component's own elements; and not proven when one is not proven or changed
+ * somewhere that cannot be ruled out for this component. Undefined only when no capture contains it there.
  */
 export function rowState(
 	component: string,
@@ -82,10 +83,9 @@ export function rowState(
 		const state = captureState(compare, f.id);
 		if (state.status === "same" || state.status === "not-proven") return state;
 		if (touched[f.id]?.includes(component)) return state;
-		// An accepted capture differs only on its accepted element; a differing one may differ anywhere.
-		return state.status === "accepted"
-			? { status: "same" }
-			: { status: "not-proven", reasons: [CHANGED_ELSEWHERE] };
+		// The change is not surely on this component's own elements. That does not prove the
+		// component is the same, whether the capture's change was accepted or not.
+		return { status: "not-proven", reasons: [CHANGED_ELSEWHERE] };
 	});
 	return { state: combine(states), inside: true };
 }
