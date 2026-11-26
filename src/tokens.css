@@ -54,7 +54,7 @@
 	--red-bright-transparent: #f43f5e7a;
 	--orange-bright-transparent: #fb923c7a;
 
-	/* Core colors */
+	/* @heading Core colors */
 	--background-primary: var(--grey-9);
 	--background-primary-alt: var(--grey-10);
 	--background-secondary: var(--grey-10);
@@ -76,7 +76,7 @@
 	--text-normal: var(--white);
 	--text-disabled: var(--grey-5);
 
-	/* Markdown Global colors */
+	/* @heading Markdown Global colors */
 	--header: var(--purple);
 	--header-alt: var(--blue);
 	--inline-code: var(--green);
@@ -92,7 +92,7 @@
 	--blockquote: var(--yellow);
 	--hr: var(--blue);
 
-	/* Syntax highlighting colors */
+	/* @heading Syntax highlighting colors */
 	--code-comment: var(--blue);
 	--code-normal: var(--orange);
 	--code-function: var(--green);
@@ -106,7 +106,7 @@
 	--code-value: var(--orange);
 	--code-variable: var(--cyan-bright);
 
-	/* Graph */
+	/* @heading Graph */
 	--canvas-dot-pattern: var(--magenta);
 	--graph-node: var(--magenta);
 	--graph-node-focused: var(--yellow);
@@ -114,7 +114,7 @@
 	--graph-node-attachment: var(--cyan);
 	--graph-node-unresolved: var(--yellow);
 
-	/* UI Icon Buttons */
+	/* @heading UI Icon Buttons */
 	--icon-color-hover: var(--magenta);
 	--icon-color: var(--cyan);
 	--icon-color-active: var(--magenta);
@@ -123,7 +123,7 @@
 	--icon-background-hover: var(--magenta-transparent);
 	--icon-background-active: var(--cyan-transparent);
 
-	/* UI List Items */
+	/* @heading UI List Items */
 	--nav-item-color: var(--text-normal);
 	--nav-item-color-hover: var(--magenta);
 	--nav-item-color-active: var(--text-normal);
@@ -138,7 +138,7 @@
 
 	--list-marker-color: var(--purple);
 
-	/* UI Inputs */
+	/* @heading UI Inputs */
 	--ui-input-background: var(--black-bright);
 	--ui-input-foreground: var(--text-normal);
 	--ui-input-hover-background: var(--black-bright);
@@ -148,7 +148,7 @@
 	--ui-input-disabled-background: var(--black-bright);
 	--ui-input-disabled-foreground: var(--text-normal);
 
-	/* UI Tabs */
+	/* @heading UI Tabs */
 	--tab-text-color: var(--text-normal);
 	--tab-active-background: var(--magenta-transparent);
 	--tab-text-color-active: var(--magenta);
@@ -159,7 +159,7 @@
 	--tab-outline-color: transparent;
 	--tab-divider-color: var(--magenta);
 
-	/* Checkboxes */
+	/* @heading Checkboxes */
 	--checkbox-marker-color: var(--black);
 	--checkbox-color: var(--magenta);
 	--checkbox-color-hover: var(--magenta);
@@ -169,7 +169,7 @@
 	--checklist-done-color: var(--green);
 	--checklist-canceled-color: var(--red);
 
-	/* Links */
+	/* @heading Links */
 	--link-color: var(--cyan-bright);
 	--link-color-hover: var(--magenta);
 	--link-decoration: none;
@@ -182,12 +182,12 @@
 	--link-external-decoration: none;
 	--link-external-decoration-hover: none;
 
-	/* Blockquotes */
+	/* @heading Blockquotes */
 	--blockquote-background-color: var(--grey-10);
 	--blockquote-border-color: var(--yellow);
 	--blockquote-color: var(--yellow);
 
-	/* Code block colors (always distance-based) */
+	/* @heading Code block colors (always distance-based) */
 	--code-background: var(--black);
 	--code-foreground: var(--inline-code);
 
@@ -204,7 +204,7 @@
 	--text-link: var(--cyan-bright);
 	--markup-code: var(--orange);
 
-	/* Additional mappings */
+	/* @heading Additional mappings */
 
 	--scrollbar-bg: var(--grey-11);
 	--scrollbar-thumb-bg: var(--grey-8);
@@ -216,7 +216,7 @@
 	--tag-background: var(--cyan);
 	--tag-background-hover: var(--magenta);
 
-	/* Fonts */
+	/* @heading Fonts */
 	--font-interface-theme: "Liberation Sans";
 	--font-text-theme: "Liberation Sans";
 	--font-monospace-theme: "CaskaydiaMono Nerd Font";

@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import postcss from "postcss";
 import mixins from "postcss-mixins";
 import nested from "postcss-nested";
@@ -283,6 +284,41 @@ it("keeps consecutive source notes as paragraphs directly above their rule", asy
 		{ from: undefined },
 	);
 	expect(result.css).toContain(" * Background note.\n *\n * Callouts\n */\n.x");
+	const twice = await postcss([formatCss()]).process(result.css, {
+		from: undefined,
+	});
+	expect(twice.css).toBe(result.css);
+});
+
+it("prints the actual tokens-block headings with their rule lines", async () => {
+	const tokens = await readFile("src/tokens.css", "utf8");
+	const result = await postcss([formatCss()]).process(tokens, {
+		from: undefined,
+	});
+	expect(result.css).toContain(
+		`\t/*\n\t * Core colors\n\t * ${"-".repeat(73)}\n\t */`,
+	);
+});
+
+it("keeps generated banner rule lines within 80 characters", async () => {
+	const result = await postcss([formatCss()]).process(
+		"/* @section src/code.css */ .x { color: red; }",
+		{ from: undefined },
+	);
+	for (const line of result.css
+		.split("\n")
+		.filter((line) => /^[/ *]+-{3,}/.test(line)))
+		expect(line.length).toBeLessThanOrEqual(80);
+});
+
+it("keeps hanging indents on wrapped numbered and dashed list items", async () => {
+	const result = await postcss([formatCss()]).process(
+		"/* 1. Numbered item\n   continues on this line.\n- Dashed item\n  continues on this line. */ .x { color: red; }",
+		{ from: undefined },
+	);
+	expect(result.css).toContain(
+		" * 1. Numbered item\n *    continues on this line.\n * - Dashed item\n *   continues on this line.",
+	);
 	const twice = await postcss([formatCss()]).process(result.css, {
 		from: undefined,
 	});

@@ -9,7 +9,7 @@ export const formatConfig = {
 	version: manifest.version,
 	indent: "\t",
 	rule: "-".repeat(77),
-	closingRule: "-".repeat(75),
+	closingRule: "-".repeat(74),
 	commentWidth: 80,
 	sections: {
 		"tokens.css": {

@@ -1,4 +1,4 @@
-/* Code */
+/* @heading Code */
 .markdown-rendered code {
 	font-family: var(--font-monospace-theme);
 	--mw-surface-background: var(--code-background);
@@ -42,7 +42,7 @@
 	color: var(--code-foreground);
 }
 
-/* Syntax highlighting */
+/* @heading Syntax highlighting */
 .cm-s-obsidian span.cm-keyword { color: var(--keyword); }
 .cm-s-obsidian span.cm-string { color: var(--string); }
 .cm-s-obsidian span.cm-number { color: var(--value); }

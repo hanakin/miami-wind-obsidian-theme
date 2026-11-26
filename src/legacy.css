@@ -1,4 +1,4 @@
-/* Headers */
+/* @heading Headers */
 .cm-header-1, .markdown-rendered h1 { color: var(--text-title-h1); }
 .cm-header-2, .markdown-rendered h2 { color: var(--text-title-h2); }
 .cm-header-3, .markdown-rendered h3 { color: var(--text-title-h3); }
@@ -8,7 +8,7 @@
 
 @pilot code;
 
-/* Highlighted text */
+/* @heading Highlighted text */
 .markdown-rendered mark,
 .cm-s-obsidian span.cm-highlight,
 mark {
@@ -18,13 +18,13 @@ mark {
 	padding: 2px 4px;
 }
 
-/* Text selection */
+/* @heading Text selection */
 ::selection {
 	background-color: var(--text-selection);
 	color: var(--text-selection-fg);
 }
 
-/* Links */
+/* @heading Links */
 .markdown-rendered a { color: var(--link-unresolved-color); }
 
 .markdown-rendered a:hover {
@@ -46,13 +46,13 @@ mark {
 	text-decoration: var(--link-decoration);
 }
 
-/* Blockquotes */
+/* @heading Blockquotes */
 .markdown-rendered blockquote {
 	border-left: 4px solid var(--blockquote);
 	padding: 8px 16px 16px 16px !important;
 }
 
-/* Icon Buttons */
+/* @heading Icon Buttons */
 .clickable-icon:hover,
 .mod-left-split .workspace-tab-header,
 .mod-right-split .workspace-tab-header {
@@ -64,7 +64,7 @@ mark {
 	background-color: transparent !important;
 }
 
-	/* Panel Ribbon */
+	/* @heading Panel Ribbon */
 	.workspace-ribbon .clickable-icon:hover {
 		background-color: var(--icon-background-hover);
 	}
@@ -73,12 +73,12 @@ mark {
 		background-color: var(--icon-background-active);
 	}
 
-	/* Panel Drawer */
+	/* @heading Panel Drawer */
 	.workspace-drawer-vault-actions .clickable-icon:hover {
 		background-color: var(--icon-background-hover);
 	}
 
-	/* Panel Sidebar Tabs */
+	/* @heading Panel Sidebar Tabs */
 	.mod-left-split .workspace-tab-header:hover,
 	.mod-right-split .workspace-tab-header:hover  {
 		background-color: var(--icon-background-hover);
@@ -91,7 +91,7 @@ mark {
 		background-color: var(--icon-background-active);
 	}
 
-	/* Panel Tabs */
+	/* @heading Panel Tabs */
 	.workspace-tabs .clickable-icon:hover {
 		background-color: var(--icon-background-hover);
 	}
@@ -153,7 +153,7 @@ textarea:focus-within,
 }
 
 
-/* Canvas */
+/* @heading Canvas */
 .canvas-control-group {
 	border: none;
 	box-shadow: none;
@@ -190,7 +190,7 @@ textarea:focus-within,
 }
 
 
-/* Meta */
+/* @heading Meta */
 .metadata-properties-title {
 	color: var(--purple);
 }
@@ -277,7 +277,7 @@ input.metadata-property-key-input {
 	border-radius: 0;
 }
 
-/* Status bar */
+/* @heading Status bar */
 .status-bar {
 	background-color: var(--grey-11);
 	color: var(--magenta);
@@ -307,7 +307,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 	color: var(--text-normal);
 }
 
-/* Checkboxes */
+/* @heading Checkboxes */
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"],
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task="-"] {
 	text-decoration: line-through;
@@ -418,7 +418,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 }
 
 
-/* Tables */
+/* @heading Tables */
 .markdown-rendered table { border: 1px solid var(--background-modifier-border); }
 
 .markdown-rendered th {
@@ -428,7 +428,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 
 .markdown-rendered td { border: 1px solid var(--background-modifier-border); }
 
-/* Callouts */
+/* @heading Callouts */
 .cm-callout .callout[data-callout="note"] {
 	background-color: var(--blue-bright-transparent);
 }
@@ -478,7 +478,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 }
 
 
-/* Modal dialogs */
+/* @heading Modal dialogs */
 .modal {
 	background-color: var(--background-primary);
 	border: 2px solid var(--magenta);
@@ -607,7 +607,7 @@ input.prompt-input:focus-visible {
 }
 
 
-/* Tags */
+/* @heading Tags */
 .cm-hashtag {
 	display: inline-block;
 	margin: 2px 0;
@@ -626,13 +626,13 @@ input.prompt-input:focus-visible {
 
 @pilot tag-hover;
 
-/* Horizontal Rule */
+/* @heading Horizontal Rule */
 hr {
 	border-color: var(--cyan);
 }
 
 
-/* Menus */
+/* @heading Menus */
 .menu {
 	background-color: var(--black);
 	border: 1px solid var(--cyan);
@@ -697,7 +697,7 @@ hr {
 	cursor: default;
 }
 
-/* Overrides */
+/* @heading Overrides */
 
 body:not(.is-phone) .horizontal-tab-nav-item.is-active,
 body:not(.is-phone) .vertical-tab-nav-item.is-active,

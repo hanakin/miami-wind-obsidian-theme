@@ -84,27 +84,26 @@ function comment(text: string, depth: number): string {
 			[title, config.rule.slice(0, config.rule.length - depth * 4)],
 			depth,
 		);
-	const paragraphs: string[] = [];
+	const paragraphs: { text: string; hanging: number }[] = [];
 	for (const line of cleanLines(text)) {
+		const previous = paragraphs.at(-1);
+		const item = line.match(/^(?:\d+\.|-)\s+/);
 		if (!line) {
-			if (paragraphs.at(-1)) paragraphs.push("");
-		} else if (
-			/^(?:\d+\.|-)(?:\s|$)/.test(line) ||
-			!paragraphs.length ||
-			!paragraphs.at(-1) ||
-			/^(?:\d+\.|-)(?:\s|$)/.test(paragraphs.at(-1) ?? "")
-		)
-			paragraphs.push(line);
-		else paragraphs[paragraphs.length - 1] += ` ${line}`;
+			if (previous?.text) paragraphs.push({ text: "", hanging: 0 });
+		} else if (item || !previous?.text) {
+			paragraphs.push({ text: line, hanging: item?.[0].length ?? 0 });
+		} else if (previous.hanging) {
+			previous.text += `\n${" ".repeat(previous.hanging)}${line}`;
+		} else previous.text += ` ${line}`;
 	}
 	const lines: string[] = [];
-	for (const paragraph of paragraphs) {
+	for (const { text: paragraph, hanging } of paragraphs) {
 		if (!paragraph) {
 			lines.push("");
 			continue;
 		}
-		if (/^(?:\d+\.|-)(?:\s|$)/.test(paragraph)) {
-			lines.push(paragraph);
+		if (hanging) {
+			lines.push(...paragraph.split("\n"));
 			continue;
 		}
 		const wrapped: string[] = [];
