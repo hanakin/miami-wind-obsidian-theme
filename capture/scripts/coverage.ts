@@ -236,6 +236,9 @@ const sheetPath: Record<string, string> = {
 	runtime: runtimePath,
 	theme: `${CAPTURE}../theme.css`,
 };
+const ASSETS = "https://obsidian-app.invalid/";
+if (!existsSync(`${CAPTURE}.app/assets/public`))
+	throw new Error("Obsidian's fonts are not extracted: run `bun run capture:extract-app-css`.");
 const cssCache = new Map<string, string>();
 /** The stylesheets the fixture's window applied (all three when not recorded), with replay rewrites. */
 const renderCss = (styles: string[], touch: boolean) => {
@@ -245,15 +248,25 @@ const renderCss = (styles: string[], touch: boolean) => {
 		css = Object.keys(sheetPath)
 			.filter((k) => styles.includes(k))
 			.map((k) => replayCss(readFileSync(sheetPath[k] as string, "utf8"), touch))
-			.join("\n");
+			.join("\n")
+			// The app's own fonts and images, served from the local extract (see the route below).
+			.replaceAll('url("./public/', `url("${ASSETS}public/`)
+			.replaceAll('url("/lib/', `url("${ASSETS}lib/`);
 		// Stand-ins keep their box (layout around the target holds) but paint nothing.
-		css += "\n[data-capture-placeholder] { visibility: hidden !important; }";
+		css +=
+			"\n[data-capture-placeholder], [data-capture-placeholder] * { visibility: hidden !important; }";
 		cssCache.set(key, css);
 	}
 	return css;
 };
 const render = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
-await render.route("**", (r) => r.abort());
+// Nothing loads from the network; Obsidian's bundled fonts and images come from capture/.app.
+await render.route("**", (r) => {
+	const url = r.request().url();
+	const file = `${CAPTURE}.app/assets/${url.slice(ASSETS.length).split("?")[0]}`;
+	if (url.startsWith(ASSETS) && existsSync(file)) return r.fulfill({ path: file });
+	return r.abort();
+});
 await render.setContent(
 	'<!doctype html><html><head><style id="replay"></style></head><body></body></html>',
 );
@@ -267,7 +280,7 @@ const replayDir = `${WORK}/replay`;
 mkdirSync(replayDir, { recursive: true });
 let cssKey = "";
 const renderCdp = await render.context().newCDPSession(render);
-let mediaNow = "";
+let mediaNow = "-";
 const renderOrder = [...valid.keys()].filter((id) => !byId.get(id)?.variantOf).sort();
 for (const id of renderOrder) {
 	const f = byId.get(id) as FixtureEntry;
@@ -292,15 +305,17 @@ for (const id of renderOrder) {
 	}
 	await render.setViewportSize({ width: size[0] ?? 1600, height: size[1] ?? 1000 });
 	// The media the item was captured under (print, forced colors), or none.
-	const media = f.evidence?.media ?? "";
+	// The window's color scheme (forced colors picks its palette from it) plus any emulated media.
+	const media = `${f.evidence?.media ?? ""}|${f.evidence?.inputMedia?.dark ?? true}`;
 	if (media !== mediaNow) {
-		const m = (media ? JSON.parse(media) : {}) as {
+		const m = (f.evidence?.media ? JSON.parse(f.evidence.media) : {}) as {
 			media?: string;
 			features?: { name: string; value: string }[];
 		};
+		const scheme = f.evidence?.inputMedia?.dark === false ? "light" : "dark";
 		await renderCdp.send("Emulation.setEmulatedMedia", {
 			media: m.media ?? "",
-			features: m.features ?? [],
+			features: [...(m.features ?? []), { name: "prefers-color-scheme", value: scheme }],
 		});
 		mediaNow = media;
 	}
@@ -336,7 +351,7 @@ for (const id of renderOrder) {
 	if (Math.max(Math.abs(lx - rx), Math.abs(ly - ry), Math.abs(lw - rw), Math.abs(lh - rh)) > 4) {
 		valid.delete(id);
 		invalid.set(id, [
-			`replay layout differs: target at ${[lx, ly, lw, lh].map(Math.round).join(",")} live, ${[rx, ry, rw, rh].map(Math.round).join(",")} replayed alone`,
+			`replay layout differs: target at ${[lx, ly, lw, lh].map(Math.round).join(",")} live, ${[rx, ry, rw, rh].map(Math.round).join(",")} replayed alone${got.moved ? `; first moved: ${got.moved}` : ""}`,
 		]);
 		continue;
 	}
@@ -365,12 +380,23 @@ for (const id of renderOrder) {
 			let bad = 0;
 			const where: string[] = [];
 			const [gx, gy, gw, gh] = [...region].map(Math.round) as [number, number, number, number];
+			const x0 = Math.max(0, gx);
+			const y0 = Math.max(0, gy);
 			const x1 = Math.min(b.width, a.width, gx + gw);
 			const y1 = Math.min(b.height, gy + gh);
-			for (let y = Math.max(0, gy); y < y1 - 3; y += B)
-				for (let x = Math.max(0, gx); x < x1 - 3; x += B) {
-					const bw = Math.min(B, x1 - x);
-					const bh = Math.min(B, y1 - y);
+			// Even cuts of about B px, so no sliver of a block at the edge decides alone.
+			const cuts = (from: number, to: number) => {
+				const n = Math.max(1, Math.round((to - from) / B));
+				return Array.from({ length: n }, (_, k) => [
+					from + Math.round(((to - from) * k) / n),
+					from + Math.round(((to - from) * (k + 1)) / n),
+				]);
+			};
+			for (const [y, ye] of y1 - y0 >= 1 ? cuts(y0, y1) : [])
+				for (const [x, xe] of x1 - x0 >= 1 ? cuts(x0, x1) : []) {
+					const bw = (xe as number) - (x as number);
+					const bh = (ye as number) - (y as number);
+					if (bw < 1 || bh < 1) continue;
 					if (
 						masks.some(
 							([mx, my, mw, mh]) => x < mx + mw && x + bw > mx && y < my + mh && y + bh > my,
@@ -400,7 +426,8 @@ for (const id of renderOrder) {
 		[
 			readFileSync(shot).toString("base64"),
 			readFileSync(replayShot).toString("base64"),
-			[lx - cx, ly - cy, lw, lh],
+			// The target box padded like the screenshot (8 px), inside the screenshot.
+			[lx - cx - 8, ly - cy - 8, lw + 16, lh + 16],
 			(got.masks ?? []).map(([x = 0, y = 0, w = 0, h = 0]) => [x - cx, y - cy, w, h]),
 		] as const,
 	)) as { blocks: number; bad: number; where: string[] };

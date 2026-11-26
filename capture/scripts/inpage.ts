@@ -411,6 +411,17 @@ export const INPAGE = String.raw`
 	 * theme selectors there (real siblings and ancestors, marks for states, seen elements only) and
 	 * returns the fixture: the target with its ancestor wrappers and the html/body attributes.
 	 */
+	/**
+	 * Border-box size in CSS px, unrounded (a 0.1 px spacer must not become 0: an empty 0 px block
+	 * lets margins collapse through it). Transformed boxes use their untransformed size.
+	 */
+	function layoutSize(win, o) {
+		const r = o.getBoundingClientRect();
+		const plain = win.getComputedStyle(o).transform === "none";
+		const w = plain || o.offsetWidth === undefined ? r.width : o.offsetWidth;
+		const h = plain || o.offsetHeight === undefined ? r.height : o.offsetHeight;
+		return Math.round(w * 1000) / 1000 + " " + Math.round(h * 1000) / 1000;
+	}
 	/** The margin on one side of e after margins of its first / last children collapse through it. */
 	function escMargin(win, e, side) {
 		const cs = win.getComputedStyle(e);
@@ -445,7 +456,7 @@ export const INPAGE = String.raw`
 			// Scroll offsets are not part of the markup; a viewer restores them from this mark.
 			if (o.scrollTop || o.scrollLeft) c.setAttribute("data-capture-scroll", o.scrollTop + " " + o.scrollLeft);
 			// Media and frames get their size from content that does not load offline.
-			if (/^(video|audio|iframe|object|embed)$/.test(o.localName) && o.getClientRects().length) c.setAttribute("data-capture-size", o.offsetWidth + " " + o.offsetHeight);
+			if (/^(video|audio|iframe|object|embed|webview)$/.test(o.localName) && o.getClientRects().length) c.setAttribute("data-capture-size", layoutSize(doc.defaultView, o));
 			if (st.seen.has(o)) c.setAttribute("data-capture-seen", "");
 		}
 		const t = twin.get(el);
@@ -500,6 +511,15 @@ export const INPAGE = String.raw`
 			for (const [e, set] of cdpSets) if (set.has(s.norm) && inScope(e)) hits.add(e);
 			if (!hits.size) continue;
 			if ([...hits].some((e) => st.seen.has(e))) live.push(s.id); else domOnly.push(s.id);
+		}
+		// Live boxes of the target, its ancestors and their direct children (the parts the layout
+		// around the target is made of), so a replay can name the first part that moved.
+		const boxOf = (o) => { const r = o.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map((v) => Math.round(v * 10) / 10).join(" "); };
+		for (let a = el; a && a !== doc.documentElement; a = a.parentElement) {
+			for (const o of a.parentElement && a !== doc.body ? a.parentElement.children : [a]) {
+				const c = twin.get(o);
+				if (c && !c.hasAttribute("data-capture-box")) c.setAttribute("data-capture-box", boxOf(o));
+			}
 		}
 		const trimmed = applyTrim(t, opts.trim);
 		const back = new Map();
@@ -565,7 +585,7 @@ export const INPAGE = String.raw`
 			if (!io || !/^(app|https?|file):/i.test(src) || !(io.naturalWidth > 0 && io.naturalHeight > 0)) continue;
 			ic.setAttribute("data-capture-img", String(sizes.length));
 			// Its shown size too: a broken stand-in does not lay out like the loaded image.
-			if (io.getClientRects().length) ic.setAttribute("data-capture-size", io.offsetWidth + " " + io.offsetHeight);
+			if (io.getClientRects().length) ic.setAttribute("data-capture-size", layoutSize(doc.defaultView, io));
 			sizes.push([io.naturalWidth, io.naturalHeight]);
 		}
 		// Build the fixture as a DOM tree: the target with its ancestors. The parent keeps all its
@@ -587,7 +607,12 @@ export const INPAGE = String.raw`
 		const viewport = [win.innerWidth, win.innerHeight];
 		out.documentElement.setAttribute("data-capture-viewport", viewport.join(" "));
 		out.documentElement.setAttribute("data-capture-styles", styles.join(" "));
-		if (el === doc.body || el === doc.documentElement || opts.context === "document") {
+		// A see-through overlay (positioned, no solid background: a modal's backdrop, a PDF
+		// highlight, a canvas resize handle) shows the page under it: keep the whole window.
+		const tcs = win.getComputedStyle(el);
+		const seeThrough = /^(absolute|fixed)$/.test(tcs.position) && alphaOf(tcs.backgroundColor) < 0.99 && tcs.backgroundImage === "none";
+		const whole = opts.context === "document" || seeThrough;
+		if (el === doc.body || el === doc.documentElement || whole) {
 			for (const c of copy.body.childNodes) out.body.appendChild(out.importNode(c, true));
 		} else {
 			let node = out.importNode(t, true);
@@ -600,18 +625,22 @@ export const INPAGE = String.raw`
 				const box = a === copy.body ? out.body : out.importNode(a, false);
 				for (const c of a.childNodes) {
 					if (c === child) box.appendChild(node);
-					else if (c.nodeType === 3) { if (deep) box.appendChild(out.createTextNode(c.data)); }
+					// Text is kept at every level: it makes the line boxes the branch sits after.
+					else if (c.nodeType === 3) box.appendChild(out.createTextNode(c.data));
 					else if (c.nodeType === 1) {
 						if (deep) box.appendChild(out.importNode(c, true));
 						else {
-							const ph = out.importNode(c, false);
-							ph.setAttribute("data-capture-placeholder", "");
-							// The stand-in is empty, so keep its live border-box size for the layout around it.
 							const o = back.get(c);
 							const disp = o ? win.getComputedStyle(o).display : "none";
+							// An inline-level box sits on a text line by its baseline, which comes from its
+							// content: a small one keeps its content (hidden, and not counted as painted).
+							const keep = /^inline-/.test(disp) && c.querySelectorAll("*").length <= 60;
+							const ph = out.importNode(c, keep);
+							if (keep) for (const d of ph.querySelectorAll("*")) { d.removeAttribute("data-capture-seen"); d.removeAttribute("data-capture-state"); }
+							ph.setAttribute("data-capture-placeholder", "");
+							// The stand-in is empty, so keep its live border-box size for the layout around it.
 							if (o && disp !== "inline" && disp !== "contents" && disp !== "none") {
-								const r = o.getBoundingClientRect();
-								ph.setAttribute("data-capture-size", (o.offsetWidth ?? r.width) + " " + (o.offsetHeight ?? r.height));
+								ph.setAttribute("data-capture-size", layoutSize(win, o));
 								// Rules like :empty would change an empty stand-in's display.
 								ph.setAttribute("data-capture-display", disp);
 								// Children's margins that collapsed through it into the flow are gone with them.
@@ -654,7 +683,7 @@ export const INPAGE = String.raw`
 		const fixture = same
 			? "<!doctype html>\n<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8"></head>\n<body' + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
 			: '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(out) + "\n";
-		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles };
+		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, whole: whole && opts.context !== "document" ? "see-through" : null };
 	}
 	/** Painted style of the target and pseudo subtrees (colors, borders, shadows, decorations, ::before/::after), for a before/after state diff. */
 	const PAINT = ["color", "background-color", "background-image", "border-top-color", "border-right-color", "border-bottom-color", "border-left-color", "outline-color", "outline-style", "outline-width", "box-shadow", "text-decoration-line", "text-decoration-color", "opacity", "filter", "transform", "visibility", "fill", "stroke"];

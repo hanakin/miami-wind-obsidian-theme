@@ -22,9 +22,19 @@ for (const file of sources) {
 	mkdirSync(dirname(dest), { recursive: true });
 	writeFileSync(dest, extractFile(asar, file));
 }
+// Fonts and images app.css and the runtime styles load (Inter, Source Code Pro, MathJax), so a
+// replay of a fixture draws text like the app. Same rule: local only, never committed.
+const assets = listPackage(asar, { isPack: false })
+	.map((p) => p.replace(/^\//, ""))
+	.filter((p) => /^(public\/|lib\/mathjax\/).*\.(woff2?|ttf|otf|svg)$/.test(p));
+for (const file of assets) {
+	const dest = `${outDir}assets/${file}`;
+	mkdirSync(dirname(dest), { recursive: true });
+	writeFileSync(dest, extractFile(asar, file));
+}
 const { version } = JSON.parse(await Bun.file(`${outDir}package.json`).text()) as {
 	version: string;
 };
 console.log(
-	`Extracted app.css and ${sources.length} JS/HTML files from Obsidian ${version} (${asar}) to ${outDir}`,
+	`Extracted app.css, ${sources.length} JS/HTML files and ${assets.length} fonts/images from Obsidian ${version} (${asar}) to ${outDir}`,
 );

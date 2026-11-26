@@ -331,6 +331,7 @@ interface Snap {
 	canvasPixels: { index: number; url: string | null; rect: number[] }[];
 	viewport: [number, number];
 	styles: string[];
+	whole: "see-through" | null;
 }
 
 /** Captures one item in the current UI state. Fails unless the target is visibly shown in its state. */
@@ -448,8 +449,8 @@ export async function captureItem(
 		if (!probe.expectOk)
 			return { id: item.id, error: `state not shown: target does not match ${item.expect}` };
 		const vp = (await page.evaluate(
-			"({ width: innerWidth, height: innerHeight, hover: matchMedia('(hover: hover)').matches, finePointer: matchMedia('(pointer: fine)').matches })",
-		)) as { width: number; height: number; hover: boolean; finePointer: boolean };
+			"({ width: innerWidth, height: innerHeight, hover: matchMedia('(hover: hover)').matches, finePointer: matchMedia('(pointer: fine)').matches, dark: matchMedia('(prefers-color-scheme: dark)').matches })",
+		)) as { width: number; height: number; hover: boolean; finePointer: boolean; dark: boolean };
 		const [x = 0, y = 0, w = 0, h = 0] = vis.inView ?? [];
 		const pad = 8;
 		const x0 = Math.max(0, x - pad);
@@ -565,7 +566,11 @@ export async function captureItem(
 			...(canvasPixels.length ? { canvasPixels } : {}),
 			viewport: snap.viewport,
 			styles: snap.styles,
-			...(item.context ? { context: item.context } : {}),
+			...(item.context
+				? { context: item.context }
+				: snap.whole
+					? { context: "document" as const }
+					: {}),
 			...(item.note ? { note: item.note } : {}),
 			...(item.synthetic ? { synthetic: item.synthetic } : {}),
 			...(snap.trimmed
@@ -596,7 +601,7 @@ export async function captureItem(
 				clip: [clip.x, clip.y, clip.width, clip.height].map((v) => Math.round(v)),
 				...(scroll ? { scroll } : {}),
 				...(item.media ? { media: JSON.stringify(item.media) } : {}),
-				inputMedia: { hover: vp.hover, finePointer: vp.finePointer },
+				inputMedia: { hover: vp.hover, finePointer: vp.finePointer, dark: vp.dark },
 				screenshot: { sha256, ...stats },
 				...(record ? { record } : {}),
 			},
@@ -673,7 +678,10 @@ export async function saveRuntimeStyles(page: Page): Promise<void> {
 		const parts = [];
 		for (const s of document.head.querySelectorAll("style")) {
 			if (s === app.customCss.styleEl) continue;
-			parts.push("/* <style" + (s.id ? " id=" + s.id : "") + "> */\\n" + s.textContent);
+			// Rules added through the CSSOM (MathJax adds one per character) are not in textContent.
+			let text = s.textContent;
+			try { text = [...s.sheet.cssRules].map((r) => r.cssText).join("\\n"); } catch {}
+			parts.push("/* <style" + (s.id ? " id=" + s.id : "") + "> */\\n" + text);
 		}
 		for (const sheet of document.adoptedStyleSheets) parts.push("/* adopted */\\n" + [...sheet.cssRules].map((r) => r.cssText).join("\\n"));
 		return parts.join("\\n\\n");

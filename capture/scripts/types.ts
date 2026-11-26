@@ -113,11 +113,14 @@ export interface ChecklistItem {
  * - data-capture-placeholder: an empty stand-in for a sibling of an ancestor. It keeps element
  *   order and, with data-capture-size="W H" (border-box CSS px), data-capture-display and
  *   data-capture-margin="TOP BOTTOM" (margins of its children that collapsed through it), the
- *   layout around the target. Viewers give it that size, display and margins, and hide it with
- *   visibility: hidden (not display: none).
+ *   layout around the target. Viewers give it that size, display and margins, and hide it and
+ *   its content with visibility: hidden (not display: none). Small inline-level stand-ins keep
+ *   their content (for their text baseline), without painted or state marks.
  * - data-capture-size on img (shown size of an image that does not load offline), video, audio,
- *   iframe, object and embed: their live border-box size.
+ *   iframe, object, embed and webview: their live border-box size.
  * - data-capture-scroll="TOP LEFT": scroll offsets to restore after layout.
+ * - data-capture-box="X Y W H": live box (CSS px, window coordinates) of the target, each
+ *   ancestor and their direct children, to check a replay part by part.
  * - data-capture-sel-anchor / data-capture-sel-focus="CHILD OFFSET": the native text selection,
  *   on the nearest element (CHILD -1: OFFSET counts that element's children).
  * - data-capture-cm-selection: CodeMirror's own selection ranges (reference only; the editor
@@ -168,7 +171,10 @@ export interface FixtureEntry {
 	 * as capture/.app/runtime-styles.css), "theme" (theme.css). A starter window has no theme.
 	 */
 	styles?: string[];
-	/** "document": the whole window was kept, not just the target's branch (overlays that show the page under them). */
+	/**
+	 * "document": the whole window was kept, not just the target's branch: overlays that show the
+	 * page under them (set on the item, or found: a positioned target without a solid background).
+	 */
 	context?: "document";
 }
 
@@ -216,6 +222,6 @@ export interface Evidence {
 	scroll?: { positions: number[]; scrollHeight: number; clientHeight: number };
 	media?: string;
 	/** The window's input media at capture: (hover: hover) and (pointer: fine). */
-	inputMedia?: { hover: boolean; finePointer: boolean };
+	inputMedia?: { hover: boolean; finePointer: boolean; dark?: boolean };
 	screenshot?: { sha256: string; width: number; height: number; colors: number };
 }

@@ -7,6 +7,8 @@ export interface Replayed {
 	why: string;
 	inView?: number[] | null;
 	masks?: number[][];
+	/** The first part around the target (outermost first) that is not where it was live. */
+	moved?: string | null;
 }
 
 export async function replayFixture(
@@ -37,6 +39,9 @@ export async function replayFixture(
 				if (im) {
 					im.width = width;
 					im.height = height;
+					// A broken image ignores its size; a transparent stand-in of that size does not.
+					im.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+					im.setAttribute("data-replay-standin", "");
 				}
 			}
 			// Recorded canvas pixels, then recorded scroll offsets (after layout).
@@ -74,13 +79,6 @@ export async function replayFixture(
 				])
 					e.style.setProperty(k as string, v as string, "important");
 			}
-			for (const e of document.querySelectorAll("[data-capture-scroll]")) {
-				const [top = 0, left = 0] = (e.getAttribute("data-capture-scroll") ?? "")
-					.split(" ")
-					.map(Number);
-				e.scrollTop = top;
-				e.scrollLeft = left;
-			}
 			// The recorded native text selection.
 			const end = (name: string): [Node, number] | null => {
 				const e = document.querySelector(`[data-capture-sel-${name}]`);
@@ -96,6 +94,16 @@ export async function replayFixture(
 				try {
 					getSelection()?.setBaseAndExtent(a[0], a[1], z[0], z[1]);
 				} catch {}
+			// Scroll offsets once fonts have loaded (the content has its final height).
+			await document.fonts.ready;
+			await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+			for (const e of document.querySelectorAll("[data-capture-scroll]")) {
+				const [top = 0, left = 0] = (e.getAttribute("data-capture-scroll") ?? "")
+					.split(" ")
+					.map(Number);
+				e.scrollTop = top;
+				e.scrollLeft = left;
+			}
 			await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 			const t = document.querySelector("[data-capture-target]");
 			if (!t) return { why: "no target" };
@@ -120,9 +128,20 @@ export async function replayFixture(
 			// kept), canvases without recorded pixels.
 			const masks: number[][] = [];
 			for (const e of document.querySelectorAll(
-				"img, video, audio, iframe, object, embed, canvas:not([data-replay-pixels])",
+				"img, video, audio, iframe, object, embed, webview, canvas:not([data-replay-pixels])",
 			)) {
-				if (e.localName === "img" && (e.getAttribute("src") ?? "").startsWith("data:")) continue;
+				if (
+					e.localName === "img" &&
+					(e.getAttribute("src") ?? "").startsWith("data:") &&
+					!e.hasAttribute("data-replay-standin")
+				)
+					continue;
+				for (const r of e.getClientRects()) masks.push([r.x, r.y, r.width, r.height]);
+			}
+			// Positioned stand-ins (the status bar, other floating parts) painted over the target
+			// live; replayed, they are hidden.
+			for (const e of document.querySelectorAll("[data-capture-placeholder]")) {
+				if (!/^(absolute|fixed|sticky)$/.test(getComputedStyle(e).position)) continue;
 				for (const r of e.getClientRects()) masks.push([r.x, r.y, r.width, r.height]);
 			}
 			// Background images from app: / https: files do not load offline either.
@@ -131,7 +150,27 @@ export async function replayFixture(
 				for (const r of e.getClientRects()) masks.push([r.x, r.y, r.width, r.height]);
 			}
 			const cap = (window as unknown as { cap: { visibleRect(e: Element): number[] | null } }).cap;
-			return { why: "", inView: cap.visibleRect(t), masks };
+			// The first recorded part (outermost first) that is not where it was live.
+			let moved: string | null = null;
+			const chain: Element[] = [];
+			for (let a: Element | null = t; a && a !== document.documentElement; a = a.parentElement)
+				chain.unshift(a);
+			for (const a of chain) {
+				// Parts before the branch (and the branch itself); later ones move with its content.
+				const kids = a.parentElement ? [...a.parentElement.children] : [a];
+				for (const e of kids.slice(0, kids.indexOf(a) + 1)) {
+					const want = e.getAttribute("data-capture-box")?.split(" ").map(Number);
+					if (!want || moved) continue;
+					const r = e.getBoundingClientRect();
+					const got = [r.x, r.y, r.width, r.height];
+					// Ancestors by position (their size follows their content); other parts by box.
+					const n = chain.includes(e) ? 2 : 4;
+					if (want.slice(0, n).some((v, k) => Math.abs(v - (got[k] ?? 0)) > 2))
+						moved = `${e.localName}.${[...e.classList].slice(0, 2).join(".")}${e.hasAttribute("data-capture-placeholder") ? " (stand-in)" : ""} at ${got.map(Math.round).join(",")}, live ${want.map(Math.round).join(",")}`;
+				}
+				if (moved) break;
+			}
+			return { why: "", inView: cap.visibleRect(t), masks, moved };
 		},
 		[html, sizes, canvases] as const,
 	)) as Replayed;
