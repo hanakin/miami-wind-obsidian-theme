@@ -212,3 +212,26 @@ it("preserves XFA select color and fill through focus", async () => {
 		`select { color: var(--black) !important; background-color: var(--magenta) !important; }`,
 	);
 });
+
+it("keeps the approved inline PDF select appearance at rest and focus", async () => {
+	const page = await browser.newPage();
+	try {
+		for (const mode of ["theme-dark", "theme-light"]) {
+			await page.setContent(
+				`<body class="${mode}"><div class="annotationLayer"><div class="choiceWidgetAnnotation"><select style="color: rgb(0, 0, 0); background-color: transparent"><option>PDF choice</option></select></div></div></body>`,
+			);
+			await page.addStyleTag({ content: rivals + theme });
+			for (const focused of [false, true]) {
+				if (focused) await page.locator("select").focus();
+				expect(
+					await page.locator("select").evaluate((select) => {
+						const style = getComputedStyle(select);
+						return { color: style.color, background: style.backgroundColor };
+					}),
+				).toEqual({ color: "rgb(0, 0, 0)", background: "rgba(0, 0, 0, 0)" });
+			}
+		}
+	} finally {
+		await page.close();
+	}
+});
