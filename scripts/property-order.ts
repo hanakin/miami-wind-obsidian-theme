@@ -37,7 +37,7 @@ function leaves(name: string): string[] {
 	return Array.isArray(initial) ? initial.flatMap(leaves) : [name];
 }
 
-export function orderRisk(declarations: Declaration[]): string | undefined {
+function orderRisk(declarations: Declaration[]): string | undefined {
 	const names = declarations
 		.map((decl) => aliases[plain(decl.prop)] ?? plain(decl.prop))
 		.filter((name) => !name.startsWith("--"));

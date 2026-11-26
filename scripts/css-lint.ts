@@ -93,7 +93,7 @@ function context(
 	return found;
 }
 
-export async function inspectCss() {
+async function inspectCss() {
 	const files = [
 		"theme.css",
 		...Array.from(new Bun.Glob("src/**/*.css").scanSync(".")).sort(),
