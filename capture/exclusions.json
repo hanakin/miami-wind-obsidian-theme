@@ -41,7 +41,6 @@
 		"mobile-onboarding-radio-option-title": "mobile app onboarding: no code in the desktop build creates it (only app.css styles it), so Obsidian's mobile emulation cannot show it",
 		"mobile-onboarding-screen": "mobile app onboarding: no code in the desktop build creates it (only app.css styles it), so Obsidian's mobile emulation cannot show it",
 		"mobile-tab-preview-embed": "tab card preview image: the mobile app renders it from an on-device page screenshot (is-screenshotting runs only in the mobile app)",
-		"mobile-tap": "set on an element while a touch tap is held; desktop mobile emulation has no touch input",
 		"mobile-toolbar-floating-options": "opens on a long press of a mobile toolbar button (touch only)",
 		"mobile-toolbar-spacer": "zero-height spacer below the mobile toolbar; it never paints",
 		"mod-add-item": "mobile only: app.js adds it inside if (Platform.isMobile) for list settings",
@@ -59,7 +58,6 @@
 		"pull-down-action": "touch gesture state, set only while a touch swipe or pull is in progress; desktop mobile emulation has no touch input",
 		"radio": "no shipped Obsidian 1.15.1 code (app.js, starter.js, pdf.js viewer, libs) creates this class; only Obsidian's bundled pdf.js viewer CSS styles it (pdf.js sets type=radio on inputs, never the class)",
 		"search-input-suggest-button": "mobile only: built inside if (Platform.isMobile) in search",
-		"suggestion-bg": "phone sheets only: the backdrop is shown only when a suggestion opens as a sheet (isShownAsSheet = Platform.isPhone)",
 		"tree-list": "Publish navigation editor; needs a Publish site",
 		"tree-list-action": "Publish navigation editor; needs a Publish site",
 		"tree-list-header": "Publish navigation editor; needs a Publish site",
@@ -73,7 +71,6 @@
 	},
 	"themeSelectors": {
 		".model .setting-item-description": "typo in theme.css (.model instead of .modal); matches nothing in Obsidian",
-		".suggestion-item.mobile-tap": "mobile-tap is only set by the mobile app on touch",
 		".metadata-container .metadata-show-source-button:hover .svg-icon": "the Show source button is text-only in Obsidian 1.15.1 (app.js builds it with just a .text-button-label span; see fixture extra.properties-show-source.hover), so it has no .svg-icon",
 		".bases-toolbar-menu-item.selected": "Obsidian sets .selected only on .menu-item rows during Menu keyboard navigation (app.js Menu.select); Bases toolbar menu rows use .is-selected instead",
 		"body:not(.is-phone) .horizontal-tab-nav-item.is-active": "no horizontal tab nav exists in Obsidian 1.15.1: .horizontal-tab-nav-item never appeared in the runtime class census and no string in the shipped code can build it"
@@ -94,25 +91,15 @@
 		".is-hidden-frameless:not(.starter,.is-popout-modal).mod-windows .titlebar-button.mod-forward": "Windows draws back/forward buttons in its titlebar; the Linux window has no .titlebar-button.mod-back/.mod-forward (see fixture chrome.titlebar), and swapping the body class cannot add them"
 	},
 	"appClassesOutOfScope": {
-		"bases-group-row": "rows of the Group menu's group list; the list stays empty for both grouped views in the sample base (kanban by folder, table by tags)",
 		"card": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it (the only matches are <style> tags and the canvas 'card' option name)",
 		"cm-completionInfo": "CodeMirror's completion info pane; the only completions in the app (Bases formula editor) carry no info, so it never opens",
-		"cm-dropCursor": "CodeMirror's drop cursor; dragging a file from the file explorer over the note editor showed none (Obsidian handles editor drops itself)",
 		"cm-hmd-orgmode-markup": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
 		"cm-invalidchar": "only the bundled CodeMirror 5 library (lib/codemirror/codemirror.js) creates it; Obsidian's desktop editor is CodeMirror 6",
 		"cm-positive": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
 		"cm-selection": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
 		"cm-selectionLayer": "always empty on desktop: Obsidian keeps the browser's native selection (plain and vim visual selections checked), so the layer has no box to paint",
-		"color-circle": "graph probe read by the renderer (color recorded in qc.graph.all-node-kinds evidence); the circle is drawn only around a hovered node, which the capture does not hover",
-		"color-fill-focused": "graph probe read by the renderer (color recorded); used only for the focused node while the pointer is on it",
-		"color-fill-unresolved": "graph probe read by the renderer (color recorded); drawn at 50% alpha, so no screenshot pixel has the exact color",
-		"community-modal-search-results-status-content": "the community browser's load-error message; it needs the plugin list download to fail, and those requests go through Electron's net module, outside the page",
-		"community-plugins-debug-list": "the enabled-plugins debug dialog lists enabled community plugins; the capture vault runs in restricted mode with none enabled",
-		"form-field": "form fields appear in the account sign-in dialog (needs an account) and the 'add excluded filter' dialog, which the Files and links tab did not expose in 1.15.1",
-		"form-field-error": "validation message of the same forms (account sign-in, add excluded filter); not reached",
+		"form-field-error": "only the account sign-in form shows it (needs an Obsidian account); the Vim and excluded-filter forms report problems another way",
 		"frontmatter": "pre.frontmatter is rendered in Reading view only when properties are shown as source, and app.css keeps it hidden there (checked: present but display: none)",
-		"is-highlighted": "set on a tab or view header while a file is dragged over it with Shift/Alt held, or over an empty tab's action list; the headless pointer drag did not produce it",
-		"is-in-sidebar": "part of the tab-drag fake target, shown only while a tab is dragged toward a sidebar edge zone; the headless pointer drag showed only the drop overlay",
 		"is-label": "menu section labels (Menu.setIsLabel) are used only by mobile menus in 1.15.1",
 		"list-heading": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
 		"mod-back": "Windows titlebar back button; real platform rendering is out of scope (synthetic class-swapped variants only)",
@@ -120,25 +107,30 @@
 		"mod-deleted": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
 		"mod-external-link": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
 		"mod-forward": "Windows titlebar forward button; real platform rendering is out of scope (synthetic class-swapped variants only)",
-		"mod-loading": "set on a button only while its async click handler runs (a fraction of a second, or a native save dialog that cannot be shown here)",
 		"mod-macos": "real macOS rendering is out of scope; covered only by synthetic class-swapped variants (labeled)",
 		"mod-new": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
-		"mod-page-loading": "set on a PDF page only while pdf.js renders it; a local PDF renders before the page can be captured",
 		"mod-scrollable": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
 		"mod-to-delete": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
-		"mod-webviewer": "the Web viewer's reader-mode button state; needs a loaded web page (network)",
 		"mod-windows": "real Windows rendering is out of scope; covered only by synthetic class-swapped variants (labeled)",
 		"nav-file-icon": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
 		"recent-changes-container": "Obsidian Sync's recent-changes view; needs a signed-in Sync vault",
 		"setting-item-status": "the status chip of a navigable setting; no setting has a status in this vault (Sync and account settings set it)",
 		"setting-progress-bar": "the Sync vault-size bar (Setting.addProgressBar is used only by Sync); needs a signed-in Sync vault",
 		"style": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it (the only matches are <style> elements, not a class)",
-		"vertical-tab-nav-item-chevron": "present in Settings on desktop but hidden by app.css; shown only on phones",
-		"workspace-fake-target-overlay": "the tab-drag fake target overlay; the headless pointer drag showed only the workspace drop overlay"
+		"vertical-tab-nav-item-chevron": "present in Settings on desktop but hidden by app.css; shown only on phones"
 	},
 	"themeSelectorsScripted": {
 		".modal .dropdown option:hover": "scripted, native popup not capturable: the dropdown list is drawn by the OS outside the page; a size=6 list box shows the options in the page instead",
 		".dropdown option:hover": "scripted, native popup not capturable: the dropdown list is drawn by the OS outside the page; a size=6 list box shows the options in the page instead",
 		"select option:hover": "scripted, native popup not capturable: the dropdown list is drawn by the OS outside the page; a size=6 list box shows the options in the page instead"
+	},
+	"appClassGaps": {
+		"cm-dropCursor": "capture limit: dragging selected text (and a file) over the note editor showed no drop cursor in this build; reachable per the theming notes but not reproduced",
+		"community-modal-search-results-status-content": "capture limit: the community browser's load-error message needs the plugin list download to fail; those requests go through Electron's net module, which DevTools cannot block",
+		"community-plugins-debug-list": "capture limit: the list is built empty and has no box until a community plugin is enabled; the capture vault has none enabled",
+		"workspace-fake-target-overlay": "present during a tab drag, but Obsidian draws it inside an off-screen, visibility: hidden copy of the app (its own background equals the app background); the visible docking hint is .workspace-drop-overlay, which is captured. No painted witness or pixel proof was possible",
+		"is-in-sidebar": "present during a tab drag, but Obsidian draws it inside an off-screen, visibility: hidden copy of the app (its own background equals the app background); the visible docking hint is .workspace-drop-overlay, which is captured. No painted witness or pixel proof was possible",
+		"color-fill-focused": "the graph renderer read this color (recorded in qc.graph.all-node-kinds and qc.graph.node-hover); hovering a node did not paint a measurable area in exactly this color (1 pixel), so there is no pixel proof",
+		"color-circle": "the graph renderer read this color (recorded in qc.graph.all-node-kinds and qc.graph.node-hover); hovering a node did not paint a measurable area in exactly this color (1 pixel), so there is no pixel proof"
 	}
 }

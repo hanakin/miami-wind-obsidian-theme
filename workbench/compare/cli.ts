@@ -167,15 +167,17 @@ try {
 					);
 				}
 				const differences = styleDiff(a.styles, b.styles);
-				const comparison = outcome({
-					differences: differences.length,
-					pixels: pixel.count,
-					noise: !!(styleNoise || pixel.noise.pixels),
-					invisible: b.invisibleTarget,
-					unsupported: b.unsupported,
-					replayIssues: b.replayIssues,
-				});
-				const verdict = acceptedOutcome(f.id, comparison);
+				const verdict = acceptedOutcome(
+					f.id,
+					outcome({
+						differences: differences.length,
+						pixels: pixel.count,
+						noise: !!(styleNoise || pixel.noise.pixels),
+						invisible: b.invisibleTarget,
+						unsupported: b.unsupported,
+						replayIssues: b.replayIssues,
+					}),
+				);
 				const result: Result = {
 					id: f.id,
 					component: f.component,
@@ -233,11 +235,10 @@ try {
 }
 results.sort((a, b) => a.id.localeCompare(b.id));
 const changed = results.filter((r) => r.status === "different").length;
-const acceptedResults = results.filter((r) => r.status === "accepted");
-const accepted = acceptedResults.map((r) => ({
-	id: r.id,
-	reason: r.acceptanceReason,
-}));
+const accepted = results
+	.filter((r) => r.status === "accepted")
+	.map((r) => ({ id: r.id, reason: r.acceptanceReason }));
+const exitCode = comparisonExitCode(results);
 const notProven = results
 	.filter((r) => r.status === "not-proven" || r.notProvenReasons.length)
 	.map((r) => ({ id: r.id, reasons: r.notProvenReasons }));
@@ -286,13 +287,14 @@ await Bun.write(
 				flags: BROWSER_OPTIONS.args,
 				capture: "Page.captureScreenshot",
 			},
-			status: changed
-				? "different"
-				: summary.notProvenOnly
-					? "not-proven"
-					: accepted.length
-						? "accepted"
-						: "same",
+			status:
+				exitCode === 1
+					? "different"
+					: exitCode === 2
+						? "not-proven"
+						: accepted.length
+							? "accepted"
+							: "same",
 			accepted,
 			notProven,
 			noise,
@@ -316,7 +318,7 @@ await Bun.write(
 		2,
 	),
 );
-const text = `${summary.checked} fixtures checked; ${changed} with differences; ${summary.unchanged} same; ${summary.notProvenOnly} not proven; ${summary.accepted} accepted; ${seconds}s.\nEngine: Playwright Chromium ${browser.version()}. Independent before/after repeats (2 each): ${summary.sanity}.\nInvisible targets: ${summary.invisibleTargets}. Coverage limits: ${summary.notProven} fixtures (can overlap accepted or different).\n\nNot proven:\n${notProven.map((r) => `- ${r.id}: ${r.reasons.join("; ")}`).join("\n")}\n\nAccepted differences:\n${acceptedResults.map((r) => `- ${r.id}: accepted: ${r.acceptanceReason} (${r.differences.length} style changes, ${r.pixelDiff} stable pixel changes). Evidence: [before](${r.images?.before}), [after](${r.images?.after}), [diff](${r.images?.diff}).`).join("\n")}\n\nTop element/property differences:\n${topDifferences.map((d) => `- ${d.count}: ${d.elementProperty}`).join("\n")}\n\nLimits:\n${limitations.map((l) => `- ${l}`).join("\n")}\n`;
+const text = `${summary.checked} fixtures checked; ${changed} with differences; ${summary.unchanged} same; ${summary.notProvenOnly} not proven; ${summary.accepted} accepted (intentional); ${seconds}s.\nCoverage limits: ${summary.notProven} fixtures (can overlap differences or accepted results).\nEngine: Playwright Chromium ${browser.version()}. Independent before/after repeats (2 each): ${summary.sanity}.\nInvisible targets: ${summary.invisibleTargets}.\n\nAccepted (intentional):\n${accepted.map((r) => `- ${r.id}: accepted: ${r.reason}`).join("\n")}\n\nNot proven:\n${notProven.map((r) => `- ${r.id}: ${r.reasons.join("; ")}`).join("\n")}\n\nTop element/property differences:\n${topDifferences.map((d) => `- ${d.count}: ${d.elementProperty}`).join("\n")}\n\nLimits:\n${limitations.map((l) => `- ${l}`).join("\n")}\n`;
 await Bun.write(`${out}/compare.md`, text);
 console.log(text);
-process.exitCode = comparisonExitCode(results);
+process.exitCode = exitCode;

@@ -3,6 +3,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
+		"capture:extract-runtime-css": "bun capture/scripts/runtime-css.ts",
 		"capture:extract-app-css": "bun capture/scripts/extract-app-css.ts",
 		"capture:checklist": "bun capture/scripts/build-checklist.ts",
 		"capture:run": "bun capture/scripts/capture.ts",
@@ -25,7 +26,6 @@
 		"@types/bun": "^1.4.5",
 		"@types/pngjs": "^6.0.5",
 		"@types/postcss-import": "^14.0.3",
-		"pixelmatch": "^8.0.0",
 		"playwright": "^1.65.1",
 		"pngjs": "^7.0.0",
 		"postcss": "^8.5.33",

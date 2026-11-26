@@ -5,7 +5,7 @@ import { click } from "./scenes.ts";
 import type { Ctx, ItemDef, Scene } from "./types.ts";
 
 const EMULATED =
-	"Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.";
+	"Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.";
 
 async function closeAll(ctx: Ctx): Promise<void> {
 	for (let i = 0; i < 6; i++) {
@@ -166,6 +166,44 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 			),
 		},
 		{
+			id: id("menu-backdrop"),
+			component: "menu",
+			surface,
+			target: ".suggestion-bg",
+			expect: ".suggestion-bg",
+			full: true,
+			minUnobscured: 0.2,
+			note: note("The dimmed backdrop behind a menu sheet (.suggestion-bg)."),
+		},
+		{
+			id: id("menu-disabled"),
+			component: "menu-item",
+			surface,
+			target: ".menu .menu-item.is-disabled",
+			expect: ".is-disabled",
+			before: async (ctx) => {
+				await ctx.js(
+					"const d = [...document.querySelectorAll('.menu .menu-item.is-disabled')][0]; d?.scrollIntoView({ block: 'center' }); await sleep(400);",
+				);
+			},
+			note: note("A disabled row of the menu, scrolled into view inside the sheet."),
+		},
+		{
+			id: id("menu-selected"),
+			component: "menu-item",
+			surface,
+			target: ".menu .menu-item.selected",
+			expect: ".selected",
+			before: async (ctx) => {
+				await ctx.page.keyboard.press("ArrowDown");
+				await ctx.sleep(300);
+				await ctx.js(
+					"document.querySelector('.menu .menu-item.selected')?.scrollIntoView({ block: 'center' }); await sleep(300);",
+				);
+			},
+			note: note("A menu row selected with the keyboard (.menu-item.selected)."),
+		},
+		{
 			id: id("file-menu"),
 			component: "menu",
 			surface,
@@ -218,6 +256,45 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 				await ctx.sleep(600);
 			},
 			note: note(),
+		},
+		{
+			id: id("suggestion-tap"),
+			component: "suggestion",
+			surface,
+			target: ".prompt .suggestion-item.mobile-tap",
+			expect: ".mobile-tap",
+			before: async (ctx) => {
+				const at = await ctx.js<[number, number] | null>(
+					"const e = [...document.querySelectorAll('.prompt .suggestion-item')].find((x) => x.getClientRects().length && !x.classList.contains('is-selected')) ?? document.querySelector('.prompt .suggestion-item'); if (!e) return null; const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2];",
+				);
+				if (!at) throw new Error("no suggestion");
+				await ctx.page.mouse.move(at[0], at[1]);
+				await ctx.page.mouse.down();
+				await ctx.sleep(300);
+			},
+			note: note(
+				"A suggestion row while it is pressed (.mobile-tap, set by Obsidian's pointer handlers in the mobile layout).",
+			),
+		},
+		{
+			id: id("properties-invalid-tag"),
+			component: "property",
+			surface,
+			target: ".metadata-property[data-property-key='tags']",
+			expect: ":has(.multi-select-pill.is-invalid)",
+			before: async (ctx) => {
+				await closeAll(ctx);
+				const mid = await ctx.js<number>("return Math.round(innerWidth / 2);");
+				await ctx.page.mouse.move(mid, 1);
+				await ctx.page.mouse.up();
+				await openNote("Markdown/Gaps.md", "live")(ctx);
+				await ctx.js(
+					"document.querySelector('.workspace-leaf.mod-active .metadata-property[data-property-key=\"tags\"]')?.scrollIntoView({ block: 'center' }); await sleep(300);",
+				);
+			},
+			note: note(
+				"Gaps.md has a tag with a space, which Obsidian marks invalid (.multi-select-pill.is-invalid).",
+			),
 		},
 		{
 			id: id("link-suggest"),
@@ -349,7 +426,7 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 }
 
 /** Phone-only surfaces: the bottom navigation bar and the Bases settings sheet (tablets show the full toolbar). */
-const PHONE_ONLY = new Set(["navbar", "bases-settings-menu"]);
+const PHONE_ONLY = new Set(["navbar", "bases-settings-menu", "menu-backdrop"]);
 
 function scene(size: "phone" | "tablet"): Scene {
 	return {

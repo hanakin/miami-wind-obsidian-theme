@@ -215,19 +215,35 @@ function magick(args: string[]): string {
 	return r.stdout.toString();
 }
 
-/** Pixels of the screenshot that have exactly each 0xrrggbb color (ImageMagick histogram). */
-export function pixelCounts(png: string, colors: Record<string, number>): Record<string, number> {
+/**
+ * Screenshot pixels showing each 0xrrggbb color. Opaque colors count exact matches; a color drawn
+ * with alpha < 1 counts pixels within 3 per channel of that color blended over the background (the
+ * screenshot's most common color).
+ */
+export function pixelCounts(
+	png: string,
+	colors: Record<string, number>,
+	alphas: Record<string, number> = {},
+): Record<string, number> {
 	const hist = magick([png, "-alpha", "off", "-format", "%c", "histogram:info:-"]);
 	if (!hist.trim()) throw new Error(`empty ImageMagick histogram for ${png}`);
-	const byHex = new Map<string, number>();
-	for (const m of hist.matchAll(/^\s*(\d+):.*?#([0-9A-Fa-f]{6})/gm))
-		byHex.set((m[2] ?? "").toLowerCase(), Number(m[1]));
-	return Object.fromEntries(
-		Object.entries(colors).map(([k, rgb]) => [
-			k,
-			byHex.get(rgb.toString(16).padStart(6, "0")) ?? 0,
-		]),
-	);
+	const entries: [number, number, number, number][] = [];
+	for (const m of hist.matchAll(/^\s*(\d+):.*?#([0-9A-Fa-f]{6})/gm)) {
+		const v = Number.parseInt(m[2] ?? "0", 16);
+		entries.push([Number(m[1]), (v >> 16) & 255, (v >> 8) & 255, v & 255]);
+	}
+	const bg = entries.reduce((a, e) => (e[0] > a[0] ? e : a), [0, 0, 0, 0]);
+	const out: Record<string, number> = {};
+	for (const [k, rgb] of Object.entries(colors)) {
+		const a = alphas[k] ?? 1;
+		const c = [(rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255];
+		const want = c.map((v, i) => Math.round(a * v + (1 - a) * (bg[i + 1] ?? 0)));
+		const tol = a < 1 ? 3 : 0;
+		out[k] = entries
+			.filter((e) => want.every((w, i) => Math.abs((e[i + 1] ?? 0) - w) <= tol))
+			.reduce((n, e) => n + e[0], 0);
+	}
+	return out;
 }
 
 /** A theme.css selector in fixture form (states as data-capture-state marks). */
@@ -272,6 +288,7 @@ interface Vis {
 interface Snap {
 	lost?: boolean;
 	html: string;
+	format: "html" | "xhtml";
 	live: string[];
 	domOnly: string[];
 	trimmed: { selector: string; kept: number; of: number } | null;
@@ -300,8 +317,11 @@ export async function captureItem(
 	);
 	// Park the real pointer on the empty middle of the top edge, so whatever the last item hovered
 	// does not stay hovered; items that click or hover move it from there.
-	const mid = (await page.evaluate("Math.round(innerWidth / 2)")) as number;
-	await page.mouse.move(mid, 1);
+	// Items without a before() keep the previous item's pointer (they capture what it opened).
+	if (item.before) {
+		const mid = (await page.evaluate("Math.round(innerWidth / 2)")) as number;
+		await page.mouse.move(mid, 1);
+	}
 	if (item.before) await item.before(ctx);
 	const target: Target = item.target;
 	const found = (await page.evaluate(
@@ -391,10 +411,9 @@ export async function captureItem(
 		}
 		if (!probe.expectOk)
 			return { id: item.id, error: `state not shown: target does not match ${item.expect}` };
-		const vp = (await page.evaluate("({ width: innerWidth, height: innerHeight })")) as {
-			width: number;
-			height: number;
-		};
+		const vp = (await page.evaluate(
+			"({ width: innerWidth, height: innerHeight, hover: matchMedia('(hover: hover)').matches, finePointer: matchMedia('(pointer: fine)').matches })",
+		)) as { width: number; height: number; hover: boolean; finePointer: boolean };
 		const [x = 0, y = 0, w = 0, h = 0] = vis.inView ?? [];
 		const pad = 8;
 		const x0 = Math.max(0, x - pad);
@@ -444,7 +463,12 @@ export async function captureItem(
 		let record: Evidence["record"];
 		if (item.record) {
 			record = (await page.evaluate(`(async () => { ${item.record} })()`)) as typeof record;
-			if (record?.graphColors) record.graphPixels = pixelCounts(shot, record.graphColors);
+			if (record?.graphColors)
+				record.graphPixels = pixelCounts(
+					shot,
+					record.graphColors,
+					(record.graphAlpha as Record<string, number> | undefined) ?? {},
+				);
 		}
 		const stats = pngStats(shot);
 		if (stats.colors < 2) return { id: item.id, error: "screenshot is blank (one color)" };
@@ -466,11 +490,12 @@ export async function captureItem(
 		const unseen = snap.seen
 			? null
 			: ((await page.evaluate("cap.stackAt(window.__cap.target)")) as string[]);
-		const file = `${item.id}.html`;
+		const file = `${item.id}.${snap.format}`;
 		writeFileSync(join(out.fixturesDir, file), snap.html);
 		const entry: FixtureEntry = {
 			id: item.id,
 			file,
+			...(snap.format === "xhtml" ? { format: "xhtml" as const } : {}),
 			screenshot: `screenshots/${item.id}.png`,
 			component: item.component,
 			surface: item.surface ?? scene.surface,
@@ -509,6 +534,7 @@ export async function captureItem(
 				clip: [clip.x, clip.y, clip.width, clip.height].map((v) => Math.round(v)),
 				...(scroll ? { scroll } : {}),
 				...(item.media ? { media: JSON.stringify(item.media) } : {}),
+				inputMedia: { hover: vp.hover, finePointer: vp.finePointer },
 				screenshot: { sha256, ...stats },
 				...(record ? { record } : {}),
 			},
@@ -577,4 +603,21 @@ export async function runScene(
 export function ensureDirs(out: CaptureOut): void {
 	mkdirSync(out.fixturesDir, { recursive: true });
 	mkdirSync(out.screenshotsDir, { recursive: true });
+}
+
+/** Obsidian's runtime <style> and adopted stylesheets, for rendering fixtures locally (gitignored). */
+export async function saveRuntimeStyles(page: Page): Promise<void> {
+	const css = (await page.evaluate(`(() => {
+		const parts = [];
+		for (const s of document.head.querySelectorAll("style")) {
+			if (s === app.customCss.styleEl) continue;
+			parts.push("/* <style" + (s.id ? " id=" + s.id : "") + "> */\\n" + s.textContent);
+		}
+		for (const sheet of document.adoptedStyleSheets) parts.push("/* adopted */\\n" + [...sheet.cssRules].map((r) => r.cssText).join("\\n"));
+		return parts.join("\\n\\n");
+	})()`)) as string;
+	if (!css.trim()) throw new Error("no runtime styles found (open an editor first)");
+	const dir = new URL("../.app/", import.meta.url).pathname;
+	mkdirSync(dir, { recursive: true });
+	writeFileSync(`${dir}runtime-styles.css`, css);
 }
