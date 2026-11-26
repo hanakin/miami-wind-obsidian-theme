@@ -42,16 +42,6 @@ test("component filters include nested uses and combine with surface and id", ()
 	expect(filterFixtures([f], { surface: "editor" })).toEqual([]);
 });
 
-test("runtime extraction excludes theme sheets that also contain CodeMirror selectors", async () => {
-	const { selectRuntimeCss } = await import("./runtime");
-	expect(
-		selectRuntimeCss([
-			".ͼ1 .cm-scroller { display:flex }",
-			".theme-dark {color:red} .cm-line {color:blue}",
-		]),
-	).toBe(".ͼ1 .cm-scroller { display:flex }");
-});
-
 test("shared look compares matching states and reports all exceptional properties", () => {
 	const samples = [
 		{

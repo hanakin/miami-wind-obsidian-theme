@@ -73,17 +73,14 @@ test
 		const cdp = await page.context().newCDPSession(page);
 		await cdp.send("DOM.enable");
 		await cdp.send("CSS.enable");
-		let html = await readFile(`capture/fixtures/${fixtureId}.html`, "utf8");
-		if (fixtureId.includes("plugin-browser")) {
-			await page.setContent(html);
-			await page
-				.locator(".community-item")
-				.evaluateAll((els) => els.slice(31).forEach((el) => el.remove()));
-			html = await page.content();
-		}
+		const registry = JSON.parse(
+			await readFile("capture/fixtures.json", "utf8"),
+		) as { fixtures: import("../../capture/scripts/types").FixtureEntry[] };
+		const f = registry.fixtures.find((f) => f.id === fixtureId);
+		if (!f) throw new Error(`Missing test fixture ${fixtureId}`);
+		const html = await readFile(`capture/fixtures/${f.file}`, "utf8");
 		const app = await readFile("capture/.app/app.css", "utf8");
 		const theme = await readFile("theme.css", "utf8");
-		const f = { component: "modal", surface: "test", state: "default" };
 		const first = await render(page, cdp, html, { cm: "", app, theme }, f);
 		for (let i = 0; i < 5; i++) {
 			const repeat = await render(
