@@ -1,1 +1,10 @@
-[{"id":"qc.pdf.forms","reason":"intentional 2.0 change, Mike decision 2026-11-25, inline pdf.js styles beat non-!important rules"}]
+[
+	{
+		"selector": ".annotationLayer .choiceWidgetAnnotation select",
+		"inlineStyles": {
+			"color": "rgb(0, 0, 0)",
+			"background-color": "transparent"
+		},
+		"reason": "intentional 2.0 change, Mike decision 2026-11-25, inline pdf.js styles beat non-!important rules"
+	}
+]

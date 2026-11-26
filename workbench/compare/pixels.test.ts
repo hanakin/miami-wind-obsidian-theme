@@ -64,3 +64,33 @@ test("requires equal screenshot dimensions across every repeat", () => {
 		repeatedPixels([shot(1), shot(1, 2)], [shot(1), shot(1)]),
 	).toThrow("Screenshot size changed");
 });
+
+test("counts every stable changed pixel and separately attributes pixels outside select rectangles", () => {
+	const a = shot(10, 10, 10),
+		b = shot(20, 20, 20);
+	const r = repeatedPixels(
+		[a, a],
+		[b, b],
+		[
+			{ x: 0, y: 0, width: 1, height: 1 },
+			{ x: 1, y: 0, width: 1, height: 1 },
+		],
+	);
+	expect(r.count).toBe(3);
+	expect(r.rawCount).toBe(3);
+	expect(r.outsideAcceptance).toBe(1);
+	expect([...PNG.sync.read(r.png!).data]).toEqual(
+		Array(3).fill([255, 0, 0, 255]).flat(),
+	);
+	expect(repeatedPixels([a, a], [b, b]).outsideAcceptance).toBe(3);
+});
+test("only stable changed pixels count outside the rectangle union", () => {
+	const r = repeatedPixels(
+		[shot(10, 10), shot(10, 11)],
+		[shot(20, 20), shot(20, 20)],
+		[{ x: 0, y: 0, width: 1, height: 1 }],
+	);
+	expect(r.count).toBe(1);
+	expect(r.outsideAcceptance).toBe(0);
+	expect(r.noise.pixels).toBe(1);
+});
