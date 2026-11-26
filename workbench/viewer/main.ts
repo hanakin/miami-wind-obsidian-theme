@@ -1,6 +1,12 @@
-import { type Change, captureState, pageSummary, rowState } from "./compare-states.ts";
+import {
+	type Change,
+	captureState,
+	type PlaceVerdict,
+	pageSummary,
+	rowState,
+} from "./compare-states.ts";
 import type { CompareState, Fixture, Theme, ViewerData } from "./types.ts";
-import { bySurface, kinds, plainProperty, plainReason, surfaceName } from "./words.ts";
+import { bySurface, kinds, plainReason, surfaceName } from "./words.ts";
 
 type Mode = Theme | "both";
 type Status = CompareState["status"];
@@ -96,6 +102,7 @@ function legend(): HTMLElement {
 	return h(
 		"ul",
 		{ class: "legend", "aria-label": "1.x vs 2.0, by component" },
+		h("li", { class: "legend-title" }, `${names.length} components:`),
 		...STATES.toReversed().map(([status, label]) =>
 			h(
 				"li",
@@ -196,6 +203,10 @@ function shot(f: Fixture, theme: Theme, label: boolean, focus?: string): HTMLEle
 
 /** Per crop: the box the frame reported. Per figure: what to do when its component is not found. */
 const rects = new WeakMap<Element, Rect>();
+/** Per crop: the left edge and width of the line or block around a small element. */
+const arounds = new WeakMap<Element, [number, number]>();
+// A surrounding line is shown whole when it is no wider than this; wider ones are cut around the item.
+const MAX_AROUND = 760;
 const onMissing = new WeakMap<Element, () => void>();
 
 /** A span of at least `min` around [start, start + size], kept inside [0, limit]. */
@@ -212,7 +223,12 @@ function layout(figure: Element): void {
 		const r = rects.get(crop);
 		const frame = crop.querySelector("iframe");
 		if (!r || !frame) return [];
-		const [left, width] = span(r[0], r[2], MIN_W, Number(frame.width));
+		// A small item is shown with the whole line around it, so no word is cut in half.
+		const a = arounds.get(crop);
+		const whole = a && a[1] <= MAX_AROUND && a[0] <= r[0] && a[0] + a[1] >= r[0] + r[2];
+		const [left, width] = whole
+			? span(a[0], a[1], MIN_W, Number(frame.width))
+			: span(r[0], r[2], MIN_W, Number(frame.width));
 		const [top, height] = span(r[1], r[3], MIN_H, Number(frame.height));
 		return [{ crop: crop as HTMLElement, frame, left, top, width, height }];
 	});
@@ -228,7 +244,7 @@ function layout(figure: Element): void {
 	}
 }
 
-addEventListener("message", (e: MessageEvent<{ mwRect?: unknown }>) => {
+addEventListener("message", (e: MessageEvent<{ mwRect?: unknown; mwAround?: unknown }>) => {
 	if (typeof e.data !== "object" || e.data === null || !("mwRect" in e.data)) return;
 	const frame = [...document.querySelectorAll("iframe")].find((f) => f.contentWindow === e.source);
 	const crop = frame?.parentElement;
@@ -237,6 +253,10 @@ addEventListener("message", (e: MessageEvent<{ mwRect?: unknown }>) => {
 	const r = e.data.mwRect;
 	if (Array.isArray(r) && r.length === 4 && r.every((n) => Number.isFinite(n) && n >= 0)) {
 		rects.set(crop, r as Rect);
+		const a = e.data.mwAround;
+		if (Array.isArray(a) && a.length === 2 && a.every((n) => Number.isFinite(n))) {
+			arounds.set(crop, [Math.max(0, a[0]), a[1]]);
+		}
 		layout(figure);
 		return;
 	}
@@ -248,37 +268,41 @@ addEventListener("message", (e: MessageEvent<{ mwRect?: unknown }>) => {
 	if (!figure.querySelector(".shot") && !figure.querySelector(".unseen")) {
 		figure
 			.querySelector("figcaption")
-			?.append(h("span", { class: "aside unseen" }, "not visible in this capture"));
+			?.append(
+				h(
+					"span",
+					{ class: "aside unseen" },
+					"No picture: the item is hidden when this capture is replayed.",
+				),
+			);
 	}
 });
 
-/** A CSS value, with a swatch when it is a color. */
+// Crops are sized for the room they have; a resized window gives them a different room.
+addEventListener("resize", () => {
+	for (const figure of document.querySelectorAll("figure")) layout(figure);
+});
+
+/** A CSS value: a swatch for a color (the value itself on hover), the plain value otherwise. */
 function value(v: string | null): HTMLElement {
-	const out = h("code", {}, v ?? "none");
 	if (v && CSS.supports("color", v)) {
-		const swatch = h("span", { class: "swatch" });
+		const swatch = h("span", { class: "swatch", title: v, role: "img", "aria-label": v });
 		swatch.style.background = v;
-		out.prepend(swatch);
+		return swatch;
 	}
-	return out;
+	return h("code", {}, v ?? "none");
 }
 
-// Property names listed per change before they are summed up by kind.
-const MAX_NAMES = 3;
-
+/** One change in plain words: what changed, from what to what, and on which item. */
 function changeLine(c: Change): HTMLElement {
-	// A few properties are named; a long list is summed up by the kinds of thing it changes.
-	const what =
-		c.properties.length > MAX_NAMES
-			? `${kinds(c.properties)} (${c.properties.length} properties)`
-			: c.properties.map(plainProperty).join(", ");
 	return h(
 		"li",
-		{ title: c.properties.join("\n") },
-		`${what}: `,
+		{ title: `${c.properties.join(", ")}\n${c.before} → ${c.after}` },
+		`${c.what}: `,
 		value(c.before),
 		" → ",
 		value(c.after),
+		` on ${c.where}`,
 		c.accepted && h("span", { class: "verdict accepted" }, " accepted (intentional)"),
 	);
 }
@@ -392,15 +416,36 @@ function fold(summary: string, ...content: Child[]): HTMLElement {
 /** How this place departs from the component's shared look (component-diffs.json), in one line. */
 function sharedLookLine(component: string, surface: string): HTMLElement | false {
 	const d = data.diffs?.[component]?.[surface];
-	if (!d) return false;
-	if (d.same) return h("p", { class: "look" }, "Shared look: matches");
+	// Nothing to say when it matches. This is about the component across places, not 1.x vs 2.0.
+	if (!d || d.same) return false;
 	return h(
 		"div",
 		{ class: "look" },
-		h("p", {}, `Shared look: differs here (${kinds(d.props)})`),
 		fold(
-			`All ${d.props.length} properties`,
+			`Styled differently here than the standard ${component}`,
+			h("p", {}, `In: ${kinds(d.props)}.`),
 			h("ul", { class: "props" }, ...d.props.map((p) => h("li", {}, p))),
+		),
+	);
+}
+
+/** Each not-proven reason on its own line, with how many of the place's captures it applies to. */
+function reasonLines(place: PlaceVerdict): HTMLElement | false {
+	if (place.state.status === "accepted") {
+		return h("p", { class: "reason" }, `Intentional: ${place.state.reason}`);
+	}
+	if (place.state.status !== "not-proven") return false;
+	return h(
+		"ul",
+		{ class: "reason" },
+		...place.reasons.map(([reason, n]) =>
+			h(
+				"li",
+				{},
+				place.captures === 1
+					? plainReason(reason)
+					: `${n} of ${place.captures} captures: ${plainReason(reason)}`,
+			),
 		),
 	);
 }
@@ -409,9 +454,9 @@ function sharedLookLine(component: string, surface: string): HTMLElement | false
 function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLElement {
 	const here = all.filter((f) => f.surface === surface);
 	const place = rowState(component, surface, all, data.compare, data.touched);
-	const reason = place && reasonOf(place.state);
 	const status = place?.state.status ?? "not-proven";
-	return h(
+	const captures = h("div", { class: "captures" });
+	const row = h(
 		"section",
 		{ class: "surface" },
 		h(
@@ -425,22 +470,24 @@ function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLEle
 					{ class: "reason" },
 					`Seen inside ${here.length === 1 ? "a larger capture" : `${here.length} larger captures`}.`,
 				),
-			reason && h("p", { class: "reason" }, reason),
+			place && reasonLines(place),
 			sharedLookLine(component, surface),
 		),
-		h(
-			"div",
-			{ class: "captures" },
-			// The component's own captures; failing that, one close-up from a larger capture.
-			...(place?.inside
-				? [
-						firstShowing(here.toSorted(bySize).slice(0, MAX_TRIES), component, () =>
-							h("p", { class: "also" }, "No close-up to show."),
-						),
-					]
-				: here.filter((f) => f.component === component).map((f) => capture(f))),
-		),
+		captures,
 	);
+	// The component's own captures; failing that, one close-up from a larger capture. With no
+	// close-up to show, the row shrinks to a single line.
+	captures.append(
+		...(place?.inside
+			? [
+					firstShowing(here.toSorted(bySize).slice(0, MAX_TRIES), component, () => {
+						row.classList.add("bare");
+						return h("p", { class: "reason" }, "No close-up to show.");
+					}),
+				]
+			: here.filter((f) => f.component === component).map((f) => capture(f))),
+	);
+	return row;
 }
 
 /** One capture per state: the smallest capture of the component itself, default first. */
@@ -525,7 +572,7 @@ function modeSwitch(): HTMLElement {
 /** "21 places: 14 same, 0 differ, 4 not proven, 3 no capture". */
 function counts(name: string, places: number): string {
 	const s = summaries.get(name);
-	if (!s) return "Build component with no captures";
+	if (!s) return "Used by the build only. There are no captures of it yet.";
 	const parts = [
 		`${s.same} same`,
 		`${s.different} differ`,
@@ -534,6 +581,37 @@ function counts(name: string, places: number): string {
 		s.noCapture > 0 && `${s.noCapture} no capture`,
 	];
 	return `${places} ${places === 1 ? "place" : "places"}: ${parts.filter(Boolean).join(", ")}`;
+}
+
+/** "Compared 1.x with 2.0 build 3f9c2ab, Nov 25, 2026." Which build the results describe. */
+function reportLine(): string | false {
+	const r = data.report;
+	if (!r) return false;
+	const date = new Date(r.generated).toLocaleDateString("en-US", {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+	});
+	return r.after
+		? `Compared 1.x with 2.0 build ${r.after.sha256.slice(0, 7)}, ${date}.`
+		: `Compared 1.x with a 2.0 build on ${date}. The report does not record which build.`;
+}
+
+/** A warning when the pictures may not show the build the results describe. */
+function reportNotice(): HTMLElement | false {
+	const r = data.report;
+	// Nothing to warn about: the report is of the current build, or says nothing but saved its themes.
+	if (!r || r.stale === false || (r.stale === null && r.exact)) return false;
+	return h(
+		"p",
+		{ class: "message warn" },
+		r.stale
+			? "This report is older than the current build. "
+			: "This report may be older than the current build. ",
+		r.exact
+			? "The pictures show the build it compared."
+			: "The pictures show the current build, so they can differ from what the results say.",
+	);
 }
 
 function renderPage(): void {
@@ -559,9 +637,16 @@ function renderPage(): void {
 		h(
 			"header",
 			{ class: "top" },
-			h("div", {}, h("h1", {}, name), h("p", {}, counts(name, places.length))),
+			h(
+				"div",
+				{},
+				h("h1", {}, name),
+				h("p", {}, counts(name, places.length)),
+				h("p", { class: "report" }, reportLine()),
+			),
 			modeSwitch(),
 		),
+		reportNotice(),
 		!data.appCss &&
 			h(
 				"p",

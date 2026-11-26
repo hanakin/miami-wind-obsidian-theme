@@ -1,7 +1,7 @@
 // The viewer's local asset handling, as a Vite plugin: the data for the page, the fixtures wrapped
 // with Obsidian's CSS plus one theme, and a reload when the built theme or the compare result changes.
 import { execFileSync } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, readFileSync, statSync, watchFile } from "node:fs";
 import type { ServerResponse } from "node:http";
 import Specificity from "@bramus/specificity";
@@ -49,6 +49,38 @@ function moreSpecific(component: string): string[] {
 const json = (path: string): unknown =>
 	existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
 
+interface ReportTheme {
+	sha256?: string;
+	source?: string;
+	/** The theme text the report compared, saved beside it (relative to workbench/out). */
+	file?: string;
+}
+
+/** What a compare.json says about itself. Older reports record none of this. */
+interface ReportMeta {
+	generated?: string;
+	themes?: { before?: ReportTheme; after?: ReportTheme };
+	fixtures?: ReportFixture[];
+}
+
+/** The saved theme file a report points at, when it is a plain name under workbench/out/themes. */
+function savedTheme(theme: ReportTheme | undefined): string | null {
+	if (!theme?.file || !/^themes\/[\w.-]+\.css$/.test(theme.file)) return null;
+	const path = `${ROOT}workbench/out/${theme.file}`;
+	return existsSync(path) ? path : null;
+}
+
+function reportInfo(report: ReportMeta): ViewerData["report"] {
+	const current = createHash("sha256").update(readFileSync(paths.new)).digest("hex");
+	const after = report.themes?.after;
+	return {
+		generated: report.generated ?? statSync(paths.compare).mtime.toISOString(),
+		after: after?.sha256 ? { sha256: after.sha256, source: after.source } : undefined,
+		stale: after?.sha256 ? after.sha256 !== current : null,
+		exact: Boolean(savedTheme(report.themes?.before) && savedTheme(after)),
+	};
+}
+
 /** The parts of a compare.json fixture the viewer shows beyond its verdict. */
 interface ReportFixture {
 	id: string;
@@ -81,7 +113,8 @@ const VIEWPORTS: Record<string, [number, number]> = {
 };
 
 function data(index: FixtureIndex): ViewerData {
-	const report = json(paths.compare) as { fixtures?: ReportFixture[] } | null;
+	const report = json(paths.compare) as ReportMeta | null;
+	const byId = new Map(index.fixtures.map((f) => [f.id, f]));
 	const compare = report === null ? null : compareStates(report);
 	const differing = typeof compare === "string" ? [] : (report?.fixtures ?? []);
 	const contains = new Map(index.fixtures.map((f) => [f.id, [f.component, ...f.contains]]));
@@ -101,6 +134,7 @@ function data(index: FixtureIndex): ViewerData {
 		usage: (json(paths.usage) as ViewerData["usage"] | null) ?? [],
 		diffs: json(paths.diffs) as ViewerData["diffs"],
 		compare: typeof compare === "string" ? null : compare,
+		report: report && typeof compare !== "string" ? reportInfo(report) : null,
 		touched: Object.fromEntries(
 			differing
 				.filter((f) => f.differences?.length)
@@ -115,7 +149,10 @@ function data(index: FixtureIndex): ViewerData {
 				.map((f) => [
 					f.id,
 					{
-						...changes(f.differences ?? [], f.acceptanceScope?.elements),
+						...changes(f.differences ?? [], f.acceptanceScope?.elements, {
+							name: byId.get(f.id)?.component ?? "",
+							selector: COMPONENTS[byId.get(f.id)?.component ?? ""],
+						}),
 						diffImage: Boolean(f.images?.diff),
 					},
 				]),
@@ -126,15 +163,26 @@ function data(index: FixtureIndex): ViewerData {
 
 // Stylesheets with forced states, kept until the file changes.
 const cssCache = new Map<string, { mtime: number; css: string }>();
-function css(name: "app" | "cm" | "new"): string | null {
-	const path = paths[name];
+function sheet(path: string): string | null {
 	if (!existsSync(path)) return null;
 	const mtime = statSync(path).mtimeMs;
-	const hit = cssCache.get(name);
+	const hit = cssCache.get(path);
 	if (hit?.mtime === mtime) return hit.css;
 	const out = forceStates(readFileSync(path, "utf8"));
-	cssCache.set(name, { mtime, css: out });
+	cssCache.set(path, { mtime, css: out });
 	return out;
+}
+
+// The theme files the last report compared, when it saved them; kept until the report changes.
+let saved: { mtime: number; before: string | null; after: string | null } | undefined;
+function savedThemes(): { before: string | null; after: string | null } {
+	if (!existsSync(paths.compare)) return { before: null, after: null };
+	const mtime = statSync(paths.compare).mtimeMs;
+	if (saved?.mtime !== mtime) {
+		const themes = (json(paths.compare) as ReportMeta | null)?.themes;
+		saved = { mtime, before: savedTheme(themes?.before), after: savedTheme(themes?.after) };
+	}
+	return saved;
 }
 
 function send(res: ServerResponse, status: number, type: string, body: string | Uint8Array): void {
@@ -206,12 +254,19 @@ export function viewer(): Plugin {
 				}
 				if (area === "css" && a && !b) {
 					const name = a.replace(/\.css$/, "");
+					// Each side is drawn with the theme file the report compared, when it saved one, so
+					// the pictures and the results describe the same CSS.
+					const themes = savedThemes();
 					const body =
 						name === "current"
-							? currentCss
-							: name === "app" || name === "cm" || name === "new"
-								? css(name)
-								: null;
+							? themes.before
+								? sheet(themes.before)
+								: currentCss
+							: name === "new"
+								? sheet(themes.after ?? paths.new)
+								: name === "app" || name === "cm"
+									? sheet(paths[name])
+									: null;
 					if (body === null) return send(res, 404, "text/plain", "Not found");
 					res.setHeader("Cache-Control", "max-age=31536000, immutable");
 					return send(res, 200, "text/css; charset=utf-8", body);

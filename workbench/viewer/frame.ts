@@ -52,7 +52,11 @@ addEventListener("load", async () => {
 		r = el.getBoundingClientRect();
 	}
 	const shown = r.width > 0 && r.height > 0 && r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth;
-	parent.postMessage({ mwRect: shown ? [r.x, r.y, r.width, r.height] : null }, "*");
+	// The line or block around a small element, so the crop can show whole words beside it.
+	let around = el;
+	while (around.parentElement && around.getBoundingClientRect().width < 240) around = around.parentElement;
+	const c = around.getBoundingClientRect();
+	parent.postMessage({ mwRect: shown ? [r.x, r.y, r.width, r.height] : null, mwAround: [c.x, c.width] }, "*");
 });`;
 
 const decode = (attr: string) =>

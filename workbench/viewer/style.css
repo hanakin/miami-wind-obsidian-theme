@@ -109,6 +109,11 @@ nav input::-webkit-search-cancel-button {
 	font-size: 12px;
 }
 
+.legend-title {
+	width: 100%;
+	color: var(--grey-400);
+}
+
 .legend li {
 	display: flex;
 	gap: 6px;
@@ -336,17 +341,64 @@ main h2 {
 	color: var(--yellow);
 }
 
-/* Why a place is not proven or accepted, and how it sits against the shared look. */
-.reason,
-.look,
-.look p {
+/* Why a place is not proven or accepted: one reason per line. */
+.reason {
 	margin: 8px 0 0;
+	padding: 0;
+	list-style: none;
 	color: var(--subtext);
 	font-size: 13px;
 }
 
+.reason li + li {
+	margin-top: 4px;
+}
+
+/* How the component is styled here against its standard look: a quiet aside, not a verdict. */
+.look {
+	margin-top: 8px;
+	color: var(--grey-400);
+	font-size: 12px;
+}
+
 .look p {
+	margin: 4px 0 0;
+}
+
+/* A place with no close-up to show: one line. */
+.surface.bare {
+	display: block;
+	padding-block: 10px;
+}
+
+.surface.bare header,
+.surface.bare .captures {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	align-items: baseline;
+	vertical-align: baseline;
+}
+
+.surface.bare header {
+	margin-right: 12px;
+}
+
+.surface.bare h3,
+.surface.bare .reason,
+.surface.bare .look,
+.surface.bare summary {
 	margin: 0;
+}
+
+/* Which build the results describe. */
+.top .report {
+	color: var(--grey-500);
+	font-size: 12px;
+}
+
+.message.warn {
+	color: var(--yellow);
 }
 
 .props {
@@ -506,9 +558,10 @@ figcaption[title] {
 
 .swatch {
 	display: inline-block;
-	width: 10px;
-	height: 10px;
-	margin-right: 5px;
+	width: 11px;
+	height: 11px;
+	vertical-align: -1px;
+	cursor: help;
 	border: 1px solid var(--border);
 	border-radius: 2px;
 }
@@ -554,4 +607,10 @@ td {
 /* The summary row stays short: a tall capture (a stacked tab strip) is cut off, not shrunk. */
 .shared .crop {
 	max-height: 320px;
+}
+
+/* Capture ids are for looking a capture up, not for reading. */
+figcaption > code {
+	color: var(--grey-500);
+	font-size: 11px;
 }

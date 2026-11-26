@@ -83,6 +83,8 @@ it("judges a row from the data alone, whatever order the captures come in", () =
 		expect(rowState("button", "settings", list, compare)).toEqual({
 			state: different,
 			inside: false,
+			captures: 2,
+			reasons: [],
 		});
 		// No capture there contains the component at all.
 		expect(rowState("button", "canvas", list, compare)).toBeUndefined();
@@ -97,7 +99,12 @@ it("judges a place seen only inside larger captures by every one of them", () =>
 	const elsewhere = { status: "not-proven", reasons: [CHANGED_ELSEWHERE] };
 	for (const list of [fixtures, fixtures.toReversed()]) {
 		// A larger capture differs, but not on the button itself: cannot be ruled out.
-		expect(rowState("button", "modal", list, compare)).toEqual({ state: elsewhere, inside: true });
+		expect(rowState("button", "modal", list, compare)).toEqual({
+			state: elsewhere,
+			inside: true,
+			captures: 2,
+			reasons: [[CHANGED_ELSEWHERE, 1]],
+		});
 		// The difference lands on the button's own elements.
 		expect(rowState("button", "modal", list, compare, { "around-2": ["button"] })?.state).toEqual(
 			different,
@@ -144,35 +151,50 @@ it("boils a capture's differences down to distinct changes, most common first", 
 		before,
 		after,
 	});
-	expect(
-		changes(
-			[
-				d("1:a", "color", "red", "blue"),
-				d("2:p", "border-top-color", "grey", "black"),
-				d("3:p", "border-top-color", "grey", "black"),
-				d("3:p", "border-bottom-color", "grey", "black"),
-				// A logical twin of border-top-color says nothing new.
-				d("3:p", "border-block-start-color", "grey", "black"),
-				// The accepted element and its pseudo-element, apart from the same change elsewhere.
-				d("9:select", "color", "red", "blue"),
-				d("9:select::before", "color", "red", "blue"),
-			],
-			["9:select"],
-		),
-	).toEqual({
-		total: 3,
-		list: [
-			{
-				properties: ["border-top-color", "border-bottom-color"],
-				before: "grey",
-				after: "black",
-				count: 3,
-				accepted: false,
-			},
-			{ properties: ["color"], before: "red", after: "blue", count: 2, accepted: true },
-			{ properties: ["color"], before: "red", after: "blue", count: 1, accepted: false },
+	const found = changes(
+		[
+			// One text color change on something next to the tag: borders and outline follow it.
+			d("86:span.cm-underline", "color", "blue", "green"),
+			d("86:span.cm-underline", "border-top-color", "blue", "green"),
+			d("86:span.cm-underline", "outline-color", "blue", "green"),
+			d("86:span.cm-underline::before", "color", "blue", "green"),
+			// A logical twin of border-top-color says nothing new.
+			d("86:span.cm-underline", "border-block-start-color", "blue", "green"),
+			d("4:a.tag", "padding-left", "4px", "6px"),
+			d("5:a.tag", "padding-left", "4px", "6px"),
+			// The accepted element, apart from the same change elsewhere.
+			d("9:select", "color", "red", "black"),
+			d("7:p", "color", "red", "black"),
 		],
-	});
+		["9:select"],
+		{ name: "tag", selector: "a.tag, .cm-hashtag" },
+	);
+	expect(found.total).toBe(4);
+	expect(found.list.map((c) => [c.what, c.where, c.count, c.accepted])).toEqual([
+		["Text color", "another item, not the tag (span.cm-underline)", 4, false],
+		["Padding left", "the tag", 2, false],
+		["Text color", "another item, not the tag (select)", 1, true],
+		["Text color", "another item, not the tag (p)", 1, false],
+	]);
+	expect(found.list[0]?.properties).toEqual(["color", "border-top-color", "outline-color"]);
+	// Without a known component the items are just named.
+	expect(changes([d("1:div.a.b.c.d", "width", "1px", "2px")]).list[0]?.where).toBe("div.a.b");
+});
+
+it("counts each not-proven reason over the captures a place rests on", () => {
+	const video: CompareState = { status: "not-proven", reasons: ["video", "audio"] };
+	const audio: CompareState = { status: "not-proven", reasons: ["audio"] };
+	const place = rowState(
+		"embed",
+		"canvas",
+		["a", "b", "c"].map((id) => ({ id, component: "embed", surface: "canvas" })),
+		{ a: video, b: audio, c: same },
+	);
+	expect(place?.captures).toBe(3);
+	expect(place?.reasons).toEqual([
+		["audio", 2],
+		["video", 1],
+	]);
 });
 
 it("never reads accepted or same when reasons are unresolved or the status is unknown", () => {
