@@ -276,3 +276,15 @@ it("keeps user comments that mention generated header words and repeated selecto
 			?.toString(),
 	).toContain(".x,\n.x");
 });
+
+it("keeps consecutive source notes as paragraphs directly above their rule", async () => {
+	const result = await postcss([formatCss()]).process(
+		"/* Background note. */\n/* Callouts */\n.x { color: red; }",
+		{ from: undefined },
+	);
+	expect(result.css).toContain(" * Background note.\n *\n * Callouts\n */\n.x");
+	const twice = await postcss([formatCss()]).process(result.css, {
+		from: undefined,
+	});
+	expect(twice.css).toBe(result.css);
+});

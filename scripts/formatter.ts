@@ -211,8 +211,19 @@ function render(
 				});
 				continue;
 			}
+			const description = comment(node.text, depth);
+			if (
+				previous?.comment &&
+				!previous.title &&
+				!heading(node.text, depth) &&
+				previous.text.startsWith(`${indent}/*\n`)
+			) {
+				// Consecutive source notes become paragraphs in one description, directly above its rule.
+				previous.text = `${previous.text.slice(0, -`${indent} */`.length)}${indent} *\n${description.split("\n").slice(1).join("\n")}`;
+				continue;
+			}
 			output.push({
-				text: comment(node.text, depth),
+				text: description,
 				major: false,
 				comment: true,
 				title: !!heading(node.text, depth),
