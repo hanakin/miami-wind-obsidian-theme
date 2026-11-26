@@ -13,6 +13,7 @@ export interface RenderFixture {
 	surface: string;
 	state: string;
 	imageSizes?: ImageSize[];
+	format?: "xhtml";
 }
 export interface Rendered {
 	styles: ElementStyle[];
@@ -24,7 +25,14 @@ export interface Rendered {
 }
 const documents = new WeakMap<
 	Page,
-	{ html: string; cm: string; app: string; theme: string; images: string }
+	{
+		html: string;
+		cm: string;
+		app: string;
+		theme: string;
+		images: string;
+		format?: "xhtml";
+	}
 >();
 export async function render(
 	page: Page,
@@ -53,9 +61,29 @@ export async function render(
 		previous.html !== html ||
 		previous.cm !== css.cm ||
 		previous.app !== css.app ||
+		previous.format !== fixture.format ||
 		previous.images !== images
 	) {
-		await page.setContent(html, { waitUntil: "domcontentloaded" });
+		if (fixture.format === "xhtml") {
+			await page.goto(
+				`data:application/xhtml+xml;charset=utf-8,${encodeURIComponent(html)}`,
+				{ waitUntil: "domcontentloaded" },
+			);
+			if (
+				await page.evaluate(
+					() =>
+						!!document.querySelector("parsererror") ||
+						!document.body ||
+						!document.head,
+				)
+			)
+				throw new Error(
+					"Invalid XHTML fixture: parser error or missing head/body",
+				);
+		} else {
+			if (previous?.format === "xhtml") await page.goto("about:blank");
+			await page.setContent(html, { waitUntil: "domcontentloaded" });
+		}
 		await page.evaluate(async (sizes) => {
 			const images = Array.from(document.images);
 			for (const { index, width, height } of sizes) {
@@ -65,6 +93,7 @@ export async function render(
 						`imageSizes index ${index} does not identify an image`,
 					);
 				if (
+					image.closest("[data-capture-placeholder]") ||
 					image.matches(".cm-widgetBuffer") ||
 					!image.getAttribute("src")?.trim() ||
 					(image.complete && image.naturalWidth > 0)
@@ -80,11 +109,25 @@ export async function render(
 					.map((image) => image.decode().catch(() => undefined)),
 			);
 		}, fixture.imageSizes ?? []);
-		for (const content of [css.cm, css.app])
-			if (content) await page.addStyleTag({ content });
-		await page.evaluate(() => {
+		await page.evaluate(({ cm, app }) => {
+			// Empty capture stand-ins keep selector structure only; theme specificity must not make them paint.
+			for (const el of document.querySelectorAll("[data-capture-placeholder]"))
+				if (el instanceof HTMLElement || el instanceof SVGElement)
+					el.style.setProperty("display", "none", "important");
+			// XHTML requires namespaced style/probe elements; createElement alone has no XHTML namespace.
+			for (const content of [app, cm]) {
+				const style = document.createElementNS(
+					"http://www.w3.org/1999/xhtml",
+					"style",
+				);
+				style.textContent = content;
+				document.head.append(style);
+			}
 			for (const name of ["theme", "suppression"]) {
-				const style = document.createElement("style");
+				const style = document.createElementNS(
+					"http://www.w3.org/1999/xhtml",
+					"style",
+				);
 				style.dataset[
 					name === "theme" ? "compareTheme" : "compareSuppression"
 				] = "";
@@ -96,12 +139,15 @@ export async function render(
 			if (suppression)
 				suppression.textContent =
 					"*,*::before,*::after,*::-webkit-slider-thumb,*::-webkit-slider-runnable-track,*::-webkit-progress-bar,*::-webkit-progress-value,*::-webkit-scrollbar-thumb { animation: none !important; transition: none !important; caret-color: transparent !important; }";
-			const media = document.createElement("style");
+			const media = document.createElementNS(
+				"http://www.w3.org/1999/xhtml",
+				"style",
+			);
 			media.textContent =
-				"video::-webkit-media-controls,audio::-webkit-media-controls { visibility:hidden !important }";
+				"video::-webkit-media-controls,audio::-webkit-media-controls { visibility:hidden !important } [data-capture-placeholder] { display:none !important }";
 			document.head.append(media);
-		});
-		documents.set(page, { html, ...css, images });
+		}, css);
+		documents.set(page, { html, ...css, images, format: fixture.format });
 	}
 	// Every capture exercises an actual stylesheet swap through the same empty-theme state.
 	await page.locator("style[data-compare-theme]").evaluate((style, theme) => {
@@ -125,6 +171,7 @@ export async function render(
 			marks.set(el, states);
 		};
 		for (const el of document.querySelectorAll("[data-capture-pseudo]")) {
+			if (el.closest("[data-capture-placeholder]")) continue;
 			const states = (el.getAttribute("data-capture-state") ?? "")
 				.split(/\s+/)
 				.filter(Boolean);
@@ -165,7 +212,7 @@ export async function render(
 	if (fixture.state === "selection") {
 		const selected = await page.evaluate(() => {
 			const target = document.querySelector("[data-capture-target]");
-			if (!target) return false;
+			if (!target || target.closest("[data-capture-placeholder]")) return false;
 			if (
 				target instanceof HTMLInputElement ||
 				target instanceof HTMLTextAreaElement
@@ -195,6 +242,7 @@ export async function render(
 				: [];
 			const scroller = candidates.find(
 				(el) =>
+					!el.closest("[data-capture-placeholder]") &&
 					el.scrollHeight > el.clientHeight &&
 					/(auto|scroll)/.test(getComputedStyle(el).overflowY),
 			);
@@ -235,7 +283,7 @@ export async function render(
 			};
 			const elements = Array.from(
 				document.querySelectorAll("html, body, body *"),
-			);
+			).filter((el) => !el.closest("[data-capture-placeholder]"));
 			for (const [i, el] of elements.entries()) {
 				const element = `${i}:${el.localName}${el.getAttribute("class") ? `.${el.getAttribute("class")?.trim().replace(/\s+/g, ".")}` : ""}`;
 				const props = read(el);
@@ -280,7 +328,10 @@ export async function render(
 				)
 					samples.push({ ...fixture, props });
 			}
-			const probe = document.createElement("span");
+			const probe = document.createElementNS(
+				"http://www.w3.org/1999/xhtml",
+				"span",
+			);
 			probe.style.cssText =
 				"position:fixed;left:-10000px;top:0;visibility:hidden";
 			document.body.append(probe);
@@ -328,7 +379,9 @@ export async function render(
 				});
 			}
 			probe.remove();
-			const target = document.querySelector("[data-capture-target]");
+			const target = elements.find((el) =>
+				el.hasAttribute("data-capture-target"),
+			);
 			const r = target?.getBoundingClientRect();
 			const table: Record<string, string>[] = [];
 			const ids = new Map<Record<string, string>, number>();
@@ -369,6 +422,7 @@ export async function render(
 					),
 				)
 					.filter((e) => {
+						if (e.closest("[data-capture-placeholder]")) return false;
 						if (e instanceof HTMLImageElement)
 							return (
 								!e.matches(".cm-widgetBuffer") &&
@@ -387,7 +441,10 @@ export async function render(
 					.map((e) => e.localName),
 			};
 		},
-		{ fixture, components: COMPONENTS },
+		{
+			fixture,
+			components: { ...COMPONENTS, tooltip: ".tooltip, .cm-tooltip" },
+		},
 	);
 	await page.locator("style[data-compare-suppression]").evaluate((el) => {
 		(el as HTMLStyleElement).disabled = false;
