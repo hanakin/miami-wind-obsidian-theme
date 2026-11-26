@@ -70,6 +70,57 @@ test("loads XHTML without HTML parser repairs and injects working styles", async
 	await page.close();
 });
 
+test.each([
+	[
+		"C typography and border",
+		"font-size:30px;border:6px dashed red;font-weight:900",
+	],
+	["D positioning", "position:relative;z-index:99999;transform:translate(0,0)"],
+	["E painting over a popup", "position:relative;z-index:2"],
+])(
+	"rejects %s on an otherwise approved inline select",
+	async (_name, declarations) => {
+		const { page, cdp } = await setup();
+		const html =
+			'<body><div class="annotationLayer"><div class="choiceWidgetAnnotation"><select data-capture-target style="color:rgb(0,0,0);background-color:transparent"><option>PDF</option></select><div class="popup">Popup</div></div></div></body>';
+		const css = {
+			cm: "",
+			app: ".annotationLayer {position:relative} select {width:140px;height:30px;border-color:transparent;caret-color:black} option {color:black;background:white} .popup {position:absolute;left:0;top:0;width:140px;height:30px;background:cyan;z-index:1}",
+			theme: "select {color:magenta!important;background:magenta!important}",
+		};
+		const a = await render(page, cdp, html, css, fixture);
+		const b = await render(
+			page,
+			cdp,
+			html,
+			{ ...css, theme: `select {${declarations}}` },
+			fixture,
+		);
+		const scope = acceptanceScope([
+			a.acceptanceMatches,
+			a.acceptanceMatches,
+			b.acceptanceMatches,
+			b.acceptanceMatches,
+		]);
+		const differences = styleDiff(a.styles, b.styles);
+		expect(differences.length).toBeGreaterThan(0);
+		if (_name.startsWith("E")) {
+			const pixel = repeatedPixels([a.png, a.png], [b.png, b.png], scope.rects);
+			expect(pixel.count).toBeGreaterThan(0);
+			expect(pixel.outsideAcceptance).toBe(0);
+		}
+		expect(
+			acceptedOutcome(changed(differences.length), {
+				scope,
+				differences,
+				outsidePixels: 0,
+				noise: false,
+			}).status,
+		).toBe("different");
+		await page.close();
+	},
+);
+
 test("rejects malformed XHTML rather than proving a parser error page", async () => {
 	const { page, cdp } = await setup();
 	await expect(
@@ -159,14 +210,14 @@ test("CodeMirror tooltip contributes to the shared tooltip component", async () 
 test("attributes the inline PDF select decision without accepting a sibling popup", async () => {
 	const { page, cdp } = await setup();
 	const html = `<body><div class="annotationLayer"><div class="choiceWidgetAnnotation">
-		<select style="color:rgb(0,0,0);background-color:transparent" data-capture-target><option>PDF</option></select>
+		<select style="border-color:transparent;color:rgb(0,0,0);background-color:transparent" data-capture-target><option>PDF</option></select>
 		<select style="color:rgb(0,0,0);background-color:magenta"></select>
 		<div style="color:rgb(0,0,0);background-color:transparent"></div>
 	</div><div class="popup">Annotation popup</div></div>
 	<select style="color:rgb(0,0,0);background-color:transparent"></select></body>`;
 	const css = {
 		cm: "",
-		app: "option {color:black;background:white}",
+		app: "select {caret-color:black} option {color:black;background:white}",
 		theme:
 			"select[data-capture-target] {color:magenta!important;background:magenta!important}",
 	};
@@ -193,6 +244,26 @@ test("attributes the inline PDF select decision without accepting a sibling popu
 			noise: false,
 		}).status,
 	).toBe("accepted");
+	for (const declaration of [
+		"color:red!important",
+		"background:red!important",
+	]) {
+		const overridden = await render(
+			page,
+			cdp,
+			html,
+			{ ...css, theme: `select[data-capture-target] {${declaration}}` },
+			fixture,
+		);
+		expect(
+			acceptanceScope([
+				a.acceptanceMatches,
+				a.acceptanceMatches,
+				overridden.acceptanceMatches,
+				overridden.acceptanceMatches,
+			]).elements,
+		).toEqual([]);
+	}
 	const sibling = await render(
 		page,
 		cdp,

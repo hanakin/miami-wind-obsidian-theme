@@ -32,9 +32,9 @@ Both same-CSS pairs must have zero style and pixel changes. A noisy fixture rece
 
 Exit codes:
 
-- `0`: every selected fixture has `same` or `accepted` status.
+- `0`: every selected fixture is same or accepted, with no coverage limits on accepted results.
 - `1`: at least one fixture has proven `different` status, or setup fails.
-- `2`: no proven differences, but at least one fixture is not proven.
+- `2`: no unaccepted differences, but at least one fixture is not proven or an accepted result has coverage limits.
 
 Outputs are local and gitignored. Each run removes old reports and diff images before validation.
 
@@ -61,6 +61,6 @@ If `/tmp` is full, set `TMPDIR` to a directory under `~/Work` before running che
 
 Diff images use red for stable changes and orange for unstable pixels. All unstable pixels remain visible in the evidence. Noisy fixtures also save all four screenshots for inspection.
 
-The accepted-difference list is `workbench/compare/accepted-differences.json`. It contains one intentional PDF form-dropdown decision. The DOM must match its select selector and inline black/transparent style guard in all four captures. A fixture becomes `accepted` only when every computed-style difference belongs to that select or its own pseudo-elements and every stable changed pixel intersects the union of its measured before/after rectangles. A sibling or descendant style difference, stable pixel change outside those rectangles, repeat noise, or a pixel-only result prevents acceptance. This attribution never masks pixels or changes the measured counts or evidence. `acceptanceScope` records matched element keys and rectangles. `pixelsOutsideAcceptance` records stable changes outside them.
+The accepted-difference list is `workbench/compare/accepted-differences.json`. It contains one intentional PDF form-dropdown decision. The DOM must match its select selector and inline black/transparent style guard in all four captures. Both after captures must resolve the select to black text and a transparent background. The pinned property list allows only those colors and their currentColor consequences. Border-color changes are allowed only on the select’s own pseudos. Typography, geometry, stacking, visibility, and other properties remain differences. A fixture becomes `accepted` only when every computed-style difference belongs to that select or its own pseudo-elements and every stable changed pixel intersects the union of its measured before/after rectangles. A sibling or descendant style difference, stable pixel change outside those rectangles, repeat noise, or a pixel-only result prevents acceptance. This attribution never masks pixels or changes the measured counts or evidence. `acceptanceScope` records matched element keys and rectangles. `pixelsOutsideAcceptance` records stable changes outside them.
 
-Matching and not-proven observations retain their measured status. Accepted results retain `same: false`, `comparisonStatus: different`, all measurements, coverage reasons, and evidence images. `acceptanceReason` records the decision. The top-level `accepted` list contains `{ id, reason }` records for accepted fixtures. `summary.accepted` counts them. Unaccepted differences and not-proven results still fail the run. The JSON keeps schema version 1. CodeMirror `.cm-tooltip` uses belong to the shared `tooltip` component.
+Matching and not-proven observations retain their measured status. Accepted results retain `same: false`, `comparisonStatus: different`, all measurements, coverage reasons, and evidence images. `acceptanceReason` records the decision. The top-level `accepted` list contains `{ id, reason }` records for accepted fixtures. `summary.accepted` counts them. Unaccepted differences fail with exit 1. Not-proven results, including accepted results with coverage limits, fail with exit 2 and give the report not-proven status when no unaccepted differences remain. The JSON keeps schema version 1. CodeMirror `.cm-tooltip` uses belong to the shared `tooltip` component.
