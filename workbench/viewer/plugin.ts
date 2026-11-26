@@ -9,8 +9,7 @@ import { extractFile } from "@electron/asar";
 import type { Plugin } from "vite";
 import { COMPONENTS } from "../../capture/scripts/engine.ts";
 import { appAsar } from "../../capture/scripts/obsidian.ts";
-import { runtimeCss } from "../compare/runtime.ts";
-import { compareStates } from "./compare-states.ts";
+import { changes, compareStates } from "./compare-states.ts";
 import { forceStates } from "./force-states.ts";
 import { frameCsp, frameDocument, type ImageSize } from "./frame.ts";
 import type { ViewerData } from "./types.ts";
@@ -20,8 +19,9 @@ const CURRENT_REF = "b478dc8";
 
 const paths = {
 	app: `${ROOT}capture/.app/app.css`,
-	// Obsidian's real CodeMirror runtime rules, extracted and cached by the compare tool.
-	cm: `${ROOT}workbench/out/runtime-cm.css`,
+	// Obsidian's runtime stylesheets (CodeMirror's rules among them), which the compare tool also
+	// loads first. Extracted locally by `bun run capture:extract-runtime-css`; never committed.
+	cm: `${ROOT}capture/.app/runtime-styles.css`,
 	new: `${ROOT}theme.css`,
 	diffs: `${ROOT}workbench/out/component-diffs.json`,
 	compare: `${ROOT}workbench/out/compare.json`,
@@ -48,6 +48,20 @@ function moreSpecific(component: string): string[] {
 const json = (path: string): unknown =>
 	existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
 
+/** The parts of a compare.json fixture the viewer shows beyond its verdict. */
+interface ReportFixture {
+	id: string;
+	differences?: {
+		element: string;
+		property: string;
+		before: string | null;
+		after: string | null;
+	}[];
+	images?: { diff?: string };
+	/** Elements whose change was accepted as intentional. */
+	acceptanceScope?: { elements?: string[] };
+}
+
 type FixtureIndex = Pick<ViewerData, "components"> & {
 	fixtures: (ViewerData["fixtures"][number] & {
 		/** File name under capture/fixtures; ".xhtml" for trees HTML text cannot hold. */
@@ -64,8 +78,9 @@ const VIEWPORTS: Record<string, [number, number]> = {
 };
 
 function data(index: FixtureIndex): ViewerData {
-	const report = json(paths.compare);
+	const report = json(paths.compare) as { fixtures?: ReportFixture[] } | null;
 	const compare = report === null ? null : compareStates(report);
+	const differing = typeof compare === "string" ? [] : (report?.fixtures ?? []);
 	return {
 		appCss: existsSync(paths.app),
 		cmCss: existsSync(paths.cm),
@@ -82,6 +97,17 @@ function data(index: FixtureIndex): ViewerData {
 		usage: (json(paths.usage) as ViewerData["usage"] | null) ?? [],
 		diffs: json(paths.diffs) as ViewerData["diffs"],
 		compare: typeof compare === "string" ? null : compare,
+		changes: Object.fromEntries(
+			differing
+				.filter((f) => f.differences?.length)
+				.map((f) => [
+					f.id,
+					{
+						...changes(f.differences ?? [], f.acceptanceScope?.elements),
+						diffImage: Boolean(f.images?.diff),
+					},
+				]),
+		),
 		compareError: typeof compare === "string" ? compare : undefined,
 	};
 }
@@ -109,18 +135,12 @@ function send(res: ServerResponse, status: number, type: string, body: string | 
 export function viewer(): Plugin {
 	return {
 		name: "miami-wind-viewer",
-		async configureServer(server) {
+		configureServer(server) {
 			const index = json(paths.fixtures) as FixtureIndex;
 			const byId = new Map(index.fixtures.map((f) => [f.id, f]));
 			const currentCss = forceStates(
 				execFileSync("git", ["show", `${CURRENT_REF}:theme.css`], { cwd: ROOT, encoding: "utf8" }),
 			);
-			if (existsSync(paths.app) && !existsSync(paths.cm)) {
-				// The compare tool's extractor: reads the rules from an isolated Obsidian, once.
-				process.chdir(ROOT);
-				await runtimeCss().catch((e) => console.warn(`CodeMirror rules not extracted: ${e}`));
-			}
-
 			// Bumped on every change so frames fetch fresh CSS while unchanged CSS stays cached.
 			let version = Date.now();
 			for (const path of [paths.new, paths.diffs, paths.compare, paths.app, paths.cm]) {
@@ -184,7 +204,16 @@ export function viewer(): Plugin {
 					res.setHeader("Cache-Control", "max-age=31536000, immutable");
 					return send(res, 200, "text/css; charset=utf-8", body);
 				}
-				if (area === "frame" || area === "css") return send(res, 404, "text/plain", "Not found");
+				if (area === "diff" && a && !b && byId.has(a)) {
+					// The compare tool's diff picture for one fixture; the id is a known fixture's.
+					const file = `${ROOT}workbench/out/diffs/${a}.diff.png`;
+					if (!existsSync(file)) return send(res, 404, "text/plain", "Not found");
+					res.setHeader("Cache-Control", "no-store");
+					return send(res, 200, "image/png", readFileSync(file));
+				}
+				if (["frame", "css", "diff"].includes(area ?? "")) {
+					return send(res, 404, "text/plain", "Not found");
+				}
 				next();
 			});
 		},

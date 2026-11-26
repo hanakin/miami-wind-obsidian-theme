@@ -1,3 +1,4 @@
+import type { Change } from "./compare-states.ts";
 // Shapes shared by the viewer server and page.
 export interface Fixture {
 	id: string;
@@ -37,7 +38,7 @@ export type CompareState =
 export interface ViewerData {
 	/** False until `bun run capture:extract-app-css` has run. */
 	appCss: boolean;
-	/** False until the compare tool has extracted Obsidian's CodeMirror runtime rules. */
+	/** False until `bun run capture:extract-runtime-css` has run. */
 	cmCss: boolean;
 	fixtures: Fixture[];
 	components: Record<string, ComponentEntry>;
@@ -46,6 +47,8 @@ export interface ViewerData {
 	diffs: Diffs | null;
 	/** Per-fixture verdicts by id; null until the compare tool has run. */
 	compare: Record<string, CompareState> | null;
+	/** What differs in each capture that is not the same, by fixture id. */
+	changes: Record<string, { total: number; list: Change[]; diffImage: boolean }>;
 	/** Why compare.json could not be used, when it exists but is not a schemaVersion 1 report. */
 	compareError?: string;
 }

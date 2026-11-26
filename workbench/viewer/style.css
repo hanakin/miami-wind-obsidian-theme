@@ -17,6 +17,7 @@
 	--cyan: #22d3ee;
 	--green: #34d399;
 	--orange: #fdba74;
+	--red: #f87171;
 	--yellow: #fef08a;
 	--purple: #c084fc;
 	--border: color-mix(in srgb, #ffffff 7%, transparent);
@@ -97,6 +98,23 @@ nav input::-webkit-search-cancel-button {
 	cursor: pointer;
 }
 
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	margin: 10px 4px 0;
+	padding: 0;
+	list-style: none;
+	color: var(--grey-300);
+	font-size: 12px;
+}
+
+.legend li {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+}
+
 /* A filtered-out link, and any group the filter leaves empty. */
 nav a[hidden],
 .group:not(:has(a:not([hidden]))) {
@@ -172,7 +190,7 @@ nav a[aria-current="page"] {
 }
 
 .dot.different {
-	background: var(--orange);
+	background: var(--red);
 }
 
 .dot.accepted {
@@ -303,9 +321,9 @@ main h2 {
 	color: var(--green);
 }
 
-.badge.differs {
-	background: color-mix(in srgb, var(--orange) 14%, transparent);
-	color: var(--orange);
+.badge.different {
+	background: color-mix(in srgb, var(--red) 16%, transparent);
+	color: var(--red);
 }
 
 .badge.accepted {
@@ -313,25 +331,51 @@ main h2 {
 	color: var(--purple);
 }
 
-.badge.unproven {
+.badge.not-proven {
 	background: color-mix(in srgb, var(--yellow) 12%, transparent);
 	color: var(--yellow);
 }
 
-.props-title {
-	color: var(--grey-400);
-	font-family: system-ui, sans-serif;
+/* Why a place is not proven or accepted, and how it sits against the shared look. */
+.reason,
+.look,
+.look p {
+	margin: 8px 0 0;
+	color: var(--subtext);
+	font-size: 13px;
+}
+
+.look p {
+	margin: 0;
 }
 
 .props {
-	margin: 12px 0 0;
+	margin: 6px 0 0;
 	padding: 0;
 	list-style: none;
-	color: var(--subtext);
+	color: var(--grey-300);
 	font-family: var(--mono);
 	font-size: 12px;
 	line-height: 1.7;
 	overflow-wrap: anywhere;
+}
+
+/* Folded lists: the summary is the clickable part. */
+summary {
+	width: fit-content;
+	margin-top: 4px;
+	padding: 2px 8px;
+	margin-left: -8px;
+	border-radius: 4px;
+	color: var(--grey-300);
+	font-size: 12px;
+	cursor: pointer;
+}
+
+summary:hover,
+summary:focus-visible {
+	background: var(--grey-900);
+	color: var(--text);
 }
 
 .captures {
@@ -356,12 +400,6 @@ main h2 {
 .shots.stacked {
 	flex-direction: column;
 	gap: 12px;
-}
-
-.none {
-	margin: 0;
-	color: var(--grey-400);
-	font-size: 13px;
 }
 
 .shot-label {
@@ -398,13 +436,6 @@ main h2 {
 	visibility: visible;
 }
 
-.crop.hidden {
-	display: grid;
-	place-items: center;
-	color: var(--grey-500);
-	font-size: 12px;
-}
-
 figcaption {
 	display: flex;
 	flex-wrap: wrap;
@@ -431,21 +462,67 @@ figcaption[title] {
 	color: var(--grey-500);
 }
 
-.changed {
-	color: var(--orange);
+/* A capture's verdict when it is not simply the same. */
+.verdict.different {
+	color: var(--red);
 }
 
-.unproven {
+.verdict.not-proven {
 	color: var(--yellow);
 }
 
-.accepted {
+.verdict.accepted {
 	color: var(--purple);
 }
 
-/* Build usage */
+/* What differs in a capture: a few plain lines, the rest folded. */
+.differs {
+	max-width: 100%;
+	margin-top: 4px;
+	color: var(--subtext);
+	font-size: 12px;
+}
+
+.differs ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	line-height: 1.8;
+}
+
+.differs p {
+	margin: 4px 0;
+	color: var(--grey-400);
+}
+
+.differs img {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	margin-top: 8px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+}
+
+.swatch {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	margin-right: 5px;
+	border: 1px solid var(--border);
+	border-radius: 2px;
+}
+
+/* Places with no capture of the component itself. */
+.also {
+	margin: 16px 0 0;
+	color: var(--grey-400);
+	font-size: 13px;
+}
+
 table {
 	width: 100%;
+	margin-top: 8px;
 	background: var(--base);
 	border-radius: var(--radius);
 	border-collapse: collapse;

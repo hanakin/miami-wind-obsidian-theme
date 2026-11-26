@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { combine, compareStates, rowState } from "./compare-states.ts";
+import { changes, combine, compareStates, pageSummary, rowState } from "./compare-states.ts";
 import type { CompareState } from "./types.ts";
 
 it("reads the three statuses and keeps not-proven reasons", () => {
@@ -41,38 +41,97 @@ it("rejects other schemas, error reports and reports without statuses", () => {
 	);
 });
 
+const same: CompareState = { status: "same" };
+const different: CompareState = { status: "different" };
+const unproven: CompareState = { status: "not-proven", reasons: ["hidden target"] };
+const accepted: CompareState = { status: "accepted", reason: "intentional" };
+
 it("never calls a group the same unless every capture is proven the same", () => {
-	const same: CompareState = { status: "same" };
-	const unproven: CompareState = { status: "not-proven", reasons: ["hidden target"] };
 	expect(combine([same, same])).toEqual(same);
 	expect(combine([same, unproven])).toEqual(unproven);
-	expect(combine([same, undefined])).toEqual({ status: "not-proven", reasons: ["not compared"] });
-	expect(combine([same, unproven, { status: "different" }])).toEqual({ status: "different" });
-	expect(combine([undefined])).toBeUndefined();
-	const accepted: CompareState = { status: "accepted", reason: "intentional" };
+	expect(combine([same, unproven, different])).toEqual(different);
 	expect(combine([same, accepted])).toEqual(accepted);
 	expect(combine([accepted, unproven])).toEqual(unproven);
+	expect(combine([])).toEqual({ status: "not-proven", reasons: ["not compared yet"] });
 });
 
-it("judges a row with no capture of its own by every capture that contains the component", () => {
-	const fixtures = [
-		{ id: "small", component: "menu", surface: "modal" },
-		{ id: "large", component: "window", surface: "modal" },
-		{ id: "own", component: "button", surface: "settings" },
-		{ id: "around", component: "window", surface: "settings" },
-	];
-	const compare: Record<string, CompareState> = {
-		small: { status: "same" },
-		large: { status: "different" },
-		own: { status: "same" },
-		around: { status: "different" },
-	};
-	// Two fallback captures, one same and one different: never "same", whichever is previewed.
-	expect(rowState("button", "modal", fixtures, compare)).toEqual({ status: "different" });
-	expect(rowState("button", "modal", fixtures.toReversed(), compare)).toEqual({
-		status: "different",
+const fixtures = [
+	{ id: "own-a", component: "button", surface: "settings" },
+	{ id: "own-b", component: "button", surface: "settings" },
+	{ id: "around-1", component: "menu", surface: "modal" },
+	{ id: "around-2", component: "window", surface: "modal" },
+	{ id: "phone", component: "button", surface: "mobile-phone" },
+];
+const compare: Record<string, CompareState> = {
+	"own-a": same,
+	"own-b": different,
+	"around-1": same,
+	"around-2": different,
+};
+
+it("judges a row from the data alone, whatever order the captures come in", () => {
+	// One same and one different capture: never "same".
+	expect(rowState("button", "settings", fixtures, compare)).toEqual(different);
+	expect(rowState("button", "settings", fixtures.toReversed(), compare)).toEqual(different);
+	// Only larger captures around the component: no verdict to pick from, in any order.
+	expect(rowState("button", "modal", fixtures, compare)).toBeUndefined();
+	expect(rowState("button", "modal", fixtures.toReversed(), compare)).toBeUndefined();
+	// No result for a capture is not proven, with or without a compare run.
+	const notCompared = { status: "not-proven", reasons: ["not compared yet"] };
+	expect(rowState("button", "mobile-phone", fixtures, compare)).toEqual(notCompared);
+	expect(rowState("button", "settings", fixtures, null)).toEqual(notCompared);
+});
+
+it("counts a page's places, and its dot is the worst of them", () => {
+	const surfaces = ["settings", "modal", "mobile-phone"];
+	expect(pageSummary("button", surfaces, fixtures, compare)).toEqual({
+		same: 0,
+		different: 1,
+		"not-proven": 1,
+		accepted: 0,
+		noCapture: 1,
+		worst: "different",
 	});
-	// A capture of the component itself decides its own row.
-	expect(rowState("button", "settings", fixtures, compare)).toEqual({ status: "same" });
-	expect(rowState("button", "modal", fixtures, null)).toBeUndefined();
+	expect(pageSummary("button", ["mobile-phone"], fixtures, { phone: accepted }).worst).toBe(
+		"accepted",
+	);
+	expect(pageSummary("button", ["modal"], fixtures, compare).worst).toBeUndefined();
+});
+
+it("boils a capture's differences down to distinct changes, most common first", () => {
+	const d = (element: string, property: string, before: string, after: string) => ({
+		element,
+		property,
+		before,
+		after,
+	});
+	expect(
+		changes(
+			[
+				d("1:a", "color", "red", "blue"),
+				d("2:p", "border-top-color", "grey", "black"),
+				d("3:p", "border-top-color", "grey", "black"),
+				d("3:p", "border-bottom-color", "grey", "black"),
+				// A logical twin of border-top-color says nothing new.
+				d("3:p", "border-block-start-color", "grey", "black"),
+				// The accepted element and its pseudo-element, apart from the same change elsewhere.
+				d("9:select", "color", "red", "blue"),
+				d("9:select::before", "color", "red", "blue"),
+			],
+			["9:select"],
+		),
+	).toEqual({
+		total: 3,
+		list: [
+			{
+				properties: ["border-top-color", "border-bottom-color"],
+				before: "grey",
+				after: "black",
+				count: 3,
+				accepted: false,
+			},
+			{ properties: ["color"], before: "red", after: "blue", count: 2, accepted: true },
+			{ properties: ["color"], before: "red", after: "blue", count: 1, accepted: false },
+		],
+	});
 });
