@@ -21,13 +21,15 @@ const verdict = (differences = 1, pixels = 0) =>
 const match = {
 	element: "4:select",
 	rect: { x: 10, y: 20, width: 30, height: 40 },
+	color: "rgb(0, 0, 0)",
+	backgroundColor: "rgba(0, 0, 0, 0)",
 };
 const scope = acceptanceScope([[match], [match], [match], [match]]);
 const difference = (element = match.element): Difference => ({
 	element,
 	property: "color",
 	before: "magenta",
-	after: "black",
+	after: "rgb(0, 0, 0)",
 });
 const evidence = {
 	scope,
@@ -44,10 +46,107 @@ test("pins exactly one element-scoped intentional PDF form decision", () => {
 				color: "rgb(0, 0, 0)",
 				"background-color": "transparent",
 			},
+			properties: [
+				"color",
+				"background-color",
+				"-webkit-text-fill-color",
+				"-webkit-text-stroke-color",
+				"text-decoration-color",
+				"text-emphasis-color",
+				"column-rule-color",
+				"row-rule-color",
+				"outline-color",
+				"border-block-end-color",
+				"border-block-start-color",
+				"border-bottom-color",
+				"border-inline-end-color",
+				"border-inline-start-color",
+				"border-left-color",
+				"border-right-color",
+				"border-top-color",
+			],
 			reason:
 				"intentional 2.0 change, Mike decision 2026-11-25, inline pdf.js styles beat non-!important rules",
 		},
 	]);
+});
+test.each([
+	"font-size",
+	"border-top-width",
+	"font-weight",
+	"position",
+	"z-index",
+	"transform",
+	"display",
+	"border-top-color",
+])(
+	"rejects unapproved select property %s even with zero outside pixels",
+	(property) => {
+		expect(
+			acceptedOutcome(verdict(), {
+				...evidence,
+				differences: [{ ...difference(), property }],
+			}).status,
+		).toBe("different");
+	},
+);
+test("requires approved after colors and allows border currentColor only on own pseudos", () => {
+	for (const after of ["rgb(255, 0, 0)", "rgba(0, 0, 0, 0)"])
+		expect(
+			acceptedOutcome(verdict(), {
+				...evidence,
+				differences: [{ ...difference(), after }],
+			}).status,
+		).toBe("different");
+	expect(
+		acceptedOutcome(verdict(), {
+			...evidence,
+			differences: [
+				{
+					...difference(),
+					property: "background-color",
+					after: "rgba(0, 0, 0, 0)",
+				},
+			],
+		}).status,
+	).toBe("accepted");
+	expect(
+		acceptedOutcome(verdict(), {
+			...evidence,
+			differences: [
+				{ ...difference("4:select::before"), property: "border-top-color" },
+			],
+		}).status,
+	).toBe("accepted");
+});
+test("requires both inline colors to win in both after captures, including unchanged colors", () => {
+	for (const wrong of [
+		{ ...match, color: "red" },
+		{ ...match, backgroundColor: "magenta" },
+	]) {
+		for (const captures of [
+			[[match], [match], [wrong], [match]],
+			[[match], [match], [match], [wrong]],
+		])
+			expect(acceptanceScope(captures).elements).toEqual([]);
+	}
+	const before = { ...match, color: "magenta", backgroundColor: "magenta" };
+	expect(
+		acceptanceScope([[before], [before], [match], [match]]).elements,
+	).toEqual([match.element]);
+});
+test("accepted differences with coverage limits still fail as not-proven", () => {
+	expect(
+		comparisonExitCode([
+			{
+				status: "accepted",
+				notProvenReasons: ["canvas content is not reconstructed"],
+			},
+		]),
+	).toBe(2);
+	expect(
+		comparisonExitCode([{ status: "accepted", notProvenReasons: [] }]),
+	).toBe(0);
 });
 test("accepts matched selects and their own pseudos in any fixture, retaining the raw verdict", () => {
 	const result = acceptedOutcome(verdict(), {
@@ -140,9 +239,7 @@ test("rejects stable sibling pixels even when its computed styles have no differ
 	const a = PNG.sync.write(before),
 		b = PNG.sync.write(after);
 	const rect = { x: 0, y: 0, width: 1, height: 1 };
-	const scope = acceptanceScope(
-		Array(4).fill([{ element: match.element, rect }]),
-	);
+	const scope = acceptanceScope(Array(4).fill([{ ...match, rect }]));
 	const pixel = repeatedPixels([a, a], [b, b], scope.rects);
 	expect(pixel.count).toBe(2);
 	expect(pixel.outsideAcceptance).toBe(1);
