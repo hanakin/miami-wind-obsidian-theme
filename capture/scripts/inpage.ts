@@ -525,6 +525,11 @@ export const INPAGE = String.raw`
 				if (c && !c.hasAttribute("data-capture-box")) c.setAttribute("data-capture-box", boxOf(o));
 			}
 		}
+		// And inside the target (the first 300 elements), to find a part that grew or shrank.
+		for (const o of [...el.querySelectorAll("*")].slice(0, 300)) {
+			const c = twin.get(o);
+			if (c && !c.hasAttribute("data-capture-box")) c.setAttribute("data-capture-box", boxOf(o));
+		}
 		const trimmed = applyTrim(t, opts.trim);
 		const back = new Map();
 		for (const [o, c] of twin) back.set(c, o);
@@ -623,10 +628,15 @@ export const INPAGE = String.raw`
 		const viewport = [win.innerWidth, win.innerHeight];
 		out.documentElement.setAttribute("data-capture-viewport", viewport.join(" "));
 		out.documentElement.setAttribute("data-capture-styles", styles.join(" "));
-		// A see-through overlay (positioned, no solid background: a modal's backdrop, a PDF
-		// highlight, a canvas resize handle) shows the page under it: keep the whole window.
-		const tcs = win.getComputedStyle(el);
-		const seeThrough = /^(absolute|fixed)$/.test(tcs.position) && alphaOf(tcs.backgroundColor) < 0.99 && tcs.backgroundImage === "none";
+		// A see-through overlay shows the page under it: keep the whole window. That is a target in
+		// a positioned layer (a modal backdrop, a PDF highlight, a canvas handle, a code block's
+		// edit button) with no solid background between it and that layer.
+		let seeThrough = false;
+		for (let a = el; a && a !== doc.body; a = a.parentElement) {
+			const cs = win.getComputedStyle(a);
+			if (alphaOf(cs.backgroundColor) >= 0.99 || cs.backgroundImage !== "none") break;
+			if (/^(absolute|fixed)$/.test(cs.position)) { seeThrough = true; break; }
+		}
 		const whole = opts.context === "document" || seeThrough;
 		if (el === doc.body || el === doc.documentElement || whole) {
 			for (const c of copy.body.childNodes) out.body.appendChild(out.importNode(c, true));

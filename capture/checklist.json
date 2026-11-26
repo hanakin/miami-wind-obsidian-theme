@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-26T01:53:54.339Z",
+	"generated": "2026-11-26T03:27:22.192Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
 		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/config/obsidian"
@@ -14498,6 +14498,19 @@
 				"in": "leaf"
 			},
 			"note": "Tags, attachments, orphans, unresolved links and a color group are on; Pixi draws them on a canvas with the colors Obsidian reads from .graph-view.color-* probes. evidence.record holds the colors the renderer read from each probe class and how many screenshot pixels have exactly that color."
+		},
+		{
+			"id": "qc.graph.arrows",
+			"scene": "qc.graph",
+			"surface": "graph",
+			"component": "graph",
+			"state": "default",
+			"source": "catalog:graph-qc",
+			"target": {
+				"sel": ".workspace-leaf-content",
+				"in": "leaf"
+			},
+			"note": "Display > Arrows on and Text fade threshold at its highest (labels faded out): the arrow heads are the only marks in the arrow color."
 		},
 		{
 			"id": "qc.graph.node-hover",

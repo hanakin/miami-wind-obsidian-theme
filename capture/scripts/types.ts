@@ -120,7 +120,8 @@ export interface ChecklistItem {
  *   iframe, object, embed and webview: their live border-box size.
  * - data-capture-scroll="TOP LEFT": scroll offsets to restore after layout.
  * - data-capture-box="X Y W H": live box (CSS px, window coordinates) of the target, each
- *   ancestor and their direct children, to check a replay part by part.
+ *   ancestor and their direct children, and the first 300 elements inside the target, to check
+ *   a replay part by part.
  * - data-capture-sel-anchor / data-capture-sel-focus="CHILD OFFSET": the native text selection,
  *   on the nearest element (CHILD -1: OFFSET counts that element's children).
  * - data-capture-input-selection="START END DIRECTION" on the focused field: its selected text.

@@ -158,8 +158,19 @@ export async function replayFixture(
 			}
 			// Positioned stand-ins (the status bar, other floating parts) painted over the target
 			// live; replayed, they are hidden.
+			// Only those with a solid background of their own: a transparent bar (the titlebar's
+			// drag area) painted nothing over the target.
+			const solid = (c: string) => {
+				const ctx = document.createElement("canvas").getContext("2d");
+				if (!ctx) return true;
+				ctx.fillStyle = c;
+				ctx.fillRect(0, 0, 1, 1);
+				return (ctx.getImageData(0, 0, 1, 1).data[3] ?? 0) >= 128;
+			};
 			for (const e of document.querySelectorAll("[data-capture-placeholder]")) {
-				if (!/^(absolute|fixed|sticky)$/.test(getComputedStyle(e).position)) continue;
+				const cs = getComputedStyle(e);
+				if (!/^(absolute|fixed|sticky)$/.test(cs.position)) continue;
+				if (!solid(cs.backgroundColor) && cs.backgroundImage === "none") continue;
 				for (const r of e.getClientRects()) masks.push([r.x, r.y, r.width, r.height]);
 			}
 			// Background images from app: / https: files do not load offline either.
@@ -187,6 +198,20 @@ export async function replayFixture(
 						moved = `${e.localName}.${[...e.classList].slice(0, 2).join(".")}${e.hasAttribute("data-capture-placeholder") ? " (stand-in)" : ""} at ${got.map(Math.round).join(",")}, live ${want.map(Math.round).join(",")}`;
 				}
 				if (moved) break;
+			}
+			// Else the first part inside the target that is not where it was.
+			// (Position first: a container grows because a part inside it moved or grew.)
+			for (const n of [2, 4]) {
+				if (moved) break;
+				for (const e of t.querySelectorAll("[data-capture-box]")) {
+					const want = (e.getAttribute("data-capture-box") ?? "").split(" ").map(Number);
+					const r = e.getBoundingClientRect();
+					const got = [r.x, r.y, r.width, r.height];
+					if (want.slice(0, n).some((v, k) => Math.abs(v - (got[k] ?? 0)) > 2)) {
+						moved = `${e.localName}.${[...e.classList].slice(0, 2).join(".")} inside the target at ${got.map(Math.round).join(",")}, live ${want.map(Math.round).join(",")}`;
+						break;
+					}
+				}
 			}
 			return { why: "", inView: cap.visibleRect(t), masks, moved };
 		},

@@ -998,9 +998,13 @@ const spellQc: Scene = {
 	],
 };
 
+/** Pans the visible graph so a node (by id, or the focused one) sits in the middle of its canvas. */
+const centerNode = (which: string) =>
+	`const v = app.workspace.getLeavesOfType('graph').find((x) => x.view.contentEl.getClientRects().length).view; const rd = v.renderer; const res = rd.px?.renderer?.resolution ?? 1; for (let i = 0; i < 4; i++) { const n = ${which === "focused" ? "rd.nodes.find((x) => x.type === 'focused')" : `rd.nodes.find((x) => x.id === ${JSON.stringify(which)})`}; if (!n) break; const g = n.circle.getGlobalPosition(); rd.setPan(rd.panX + (rd.width * res) / 2 - g.x, rd.panY + (rd.height * res) / 2 - g.y); rd.changed(); await sleep(700); }`;
+
 /** Graph evidence: the colors the renderer read, where to count them, and what it really draws. */
 const GRAPH_RECORD =
-	"const l = app.workspace.getLeavesOfType('graph').find((x) => x.view.contentEl.getClientRects().length) ?? app.workspace.getLeavesOfType('graph')[0]; const v = l.view; const rd = v.renderer; const opts = v.dataEngine.getOptions(); const cv = v.contentEl.querySelector('canvas').getBoundingClientRect(); const res = rd.px?.renderer?.resolution ?? 1; const box = (n) => { const g = n.circle.getBounds(); return [cv.x + g.x / res, cv.y + g.y / res, g.width / res, g.height / res]; }; const ctrl = v.contentEl.querySelector('.graph-controls'); const cr = ctrl && !ctrl.classList.contains('is-close') ? ctrl.getBoundingClientRect() : null; const c = rd.colors ?? {}; const map = { fill: 'color-fill', fillFocused: 'color-fill-focused', fillTag: 'color-fill-tag', fillUnresolved: 'color-fill-unresolved', fillAttachment: 'color-fill-attachment', arrow: 'color-arrow', circle: 'color-circle', line: 'color-line', text: 'color-text', fillHighlight: 'color-fill-highlight', lineHighlight: 'color-line-highlight' }; const graphColors = {}; const graphAlpha = {}; for (const [k, cls] of Object.entries(map)) if (c[k]) { graphColors[cls] = c[k].rgb; graphAlpha[cls] = c[k].a; } const count = (t) => rd.nodes.filter((n) => (n.type || '') === t).length; const hovered = rd.getHighlightNode?.() ?? rd.highlightNode ?? null; const focused = rd.nodes.find((n) => n.type === 'focused') ?? null; const links = rd.links?.length ?? 0; const requires = { 'color-fill': count('') > 0, 'color-fill-tag': !!opts.showTags && count('tag') > 0, 'color-fill-attachment': !!opts.showAttachments && count('attachment') > 0, 'color-fill-unresolved': !opts.hideUnresolved && count('unresolved') > 0, 'color-fill-focused': !!focused, 'color-arrow': !!opts.showArrow && links > 0, 'color-line': links > 0, 'color-text': rd.nodes.length > 0, 'color-fill-highlight': !!hovered, 'color-line-highlight': !!hovered && links > 0, 'color-circle': !!hovered }; const classRegions = {}; if (hovered) { const b = box(hovered); classRegions['color-fill-highlight'] = b; classRegions['color-circle'] = [b[0] - 8, b[1] - 8, b[2] + 16, b[3] + 16]; } if (focused) classRegions['color-fill-focused'] = box(focused); return { graphColors, graphAlpha, requires, graphRegion: [cv.x, cv.y, cv.width, cv.height], graphExclude: cr ? [[cr.x, cr.y, cr.width, cr.height]] : [], classRegions, hovered: hovered?.id ?? null, focused: focused?.id ?? null, options: { showArrow: !!opts.showArrow, showTags: !!opts.showTags, showAttachments: !!opts.showAttachments, hideUnresolved: !!opts.hideUnresolved } };";
+	"const l = app.workspace.getLeavesOfType('graph').find((x) => x.view.contentEl.getClientRects().length) ?? app.workspace.getLeavesOfType('graph')[0]; const v = l.view; const rd = v.renderer; const opts = v.dataEngine.getOptions(); const cv = v.contentEl.querySelector('canvas').getBoundingClientRect(); const res = rd.px?.renderer?.resolution ?? 1; const box = (n) => { const g = n.circle.getBounds(); return [cv.x + g.x / res, cv.y + g.y / res, g.width / res, g.height / res]; }; const ctrl = v.contentEl.querySelector('.graph-controls'); const cr = ctrl && !ctrl.classList.contains('is-close') ? ctrl.getBoundingClientRect() : null; const c = rd.colors ?? {}; const map = { fill: 'color-fill', fillFocused: 'color-fill-focused', fillTag: 'color-fill-tag', fillUnresolved: 'color-fill-unresolved', fillAttachment: 'color-fill-attachment', arrow: 'color-arrow', circle: 'color-circle', line: 'color-line', text: 'color-text', fillHighlight: 'color-fill-highlight', lineHighlight: 'color-line-highlight' }; const graphColors = {}; const graphAlpha = {}; for (const [k, cls] of Object.entries(map)) if (c[k]) { graphColors[cls] = c[k].rgb; graphAlpha[cls] = c[k].a; } const count = (t) => rd.nodes.filter((n) => (n.type || '') === t).length; const hovered = rd.getHighlightNode?.() ?? rd.highlightNode ?? null; const focused = rd.nodes.find((n) => n.type === 'focused') ?? null; const links = rd.links?.length ?? 0; const requires = { 'color-fill': count('') > 0, 'color-fill-tag': !!opts.showTags && count('tag') > 0, 'color-fill-attachment': !!opts.showAttachments && count('attachment') > 0, 'color-fill-unresolved': !opts.hideUnresolved && count('unresolved') > 0, 'color-fill-focused': !!focused, 'color-arrow': !!opts.showArrow && links > 0, 'color-line': links > 0, 'color-text': rd.nodes.length > 0 && (rd.textAlpha ?? 1) > 0, 'color-fill-highlight': !!hovered, 'color-line-highlight': !!hovered && links > 0, 'color-circle': !!hovered }; const classRegions = {}; if (hovered) { const b = box(hovered); classRegions['color-fill-highlight'] = b; classRegions['color-circle'] = [b[0] - 8, b[1] - 8, b[2] + 16, b[3] + 16]; } if (focused) classRegions['color-fill-focused'] = box(focused); return { graphColors, graphAlpha, requires, graphRegion: [cv.x, cv.y, cv.width, cv.height], graphExclude: cr ? [[cr.x, cr.y, cr.width, cr.height]] : [], classRegions, hovered: hovered?.id ?? null, focused: focused?.id ?? null, options: { showArrow: !!opts.showArrow, showTags: !!opts.showTags, showAttachments: !!opts.showAttachments, hideUnresolved: !!opts.hideUnresolved } };";
 
 const graphQc: Scene = {
 	id: "qc.graph",
@@ -1031,6 +1035,23 @@ const graphQc: Scene = {
 			record: GRAPH_RECORD,
 		},
 		{
+			// Arrows share the text color (at half alpha), so the labels are faded out with the
+			// graph's own text fade setting: only arrows can carry that color here.
+			id: "qc.graph.arrows",
+			component: "graph",
+			target: leaf(".workspace-leaf-content"),
+			full: true,
+			state: "default",
+			before: async (ctx) => {
+				await ctx.page.mouse.move(2, 998);
+				await ctx.js(
+					"const v = app.workspace.getLeavesOfType('graph')[0].view; const o = v.dataEngine.getOptions(); v.dataEngine.setOptions({ ...o, showArrow: true, textFadeMultiplier: 3 }); await sleep(2500);",
+				);
+			},
+			record: GRAPH_RECORD,
+			note: "Display > Arrows on and Text fade threshold at its highest (labels faded out): the arrow heads are the only marks in the arrow color.",
+		},
+		{
 			id: "qc.graph.node-hover",
 			component: "graph",
 			target: leaf(".workspace-leaf-content"),
@@ -1043,6 +1064,11 @@ const graphQc: Scene = {
 					ctx.js<[number, number]>(
 						"const v = app.workspace.getLeavesOfType('graph')[0].view; const rd = v.renderer; const n = rd.nodes.find((x) => x.id === 'Markdown/Kitchen sink.md') ?? rd.nodes[0]; const g = n.circle.getGlobalPosition(); const c = v.contentEl.querySelector('canvas').getBoundingClientRect(); const res = rd.px?.renderer?.resolution ?? 1; return [c.x + g.x / res, c.y + g.y / res];",
 					);
+				await ctx.js(
+					"const v = app.workspace.getLeavesOfType('graph')[0].view; const o = v.dataEngine.getOptions(); v.dataEngine.setOptions({ ...o, showArrow: false, textFadeMultiplier: 0 }); await sleep(1500);",
+				);
+				// In the middle of the canvas first: clear of the graph settings panel.
+				await ctx.js(centerNode("Markdown/Kitchen sink.md"));
 				let p = await at();
 				await ctx.page.mouse.move(p[0], p[1], { steps: 4 });
 				for (let i = 0; i < 12; i++) {
@@ -1050,6 +1076,7 @@ const graphQc: Scene = {
 					await ctx.sleep(80);
 				}
 				await ctx.sleep(2500);
+				await ctx.js(centerNode("Markdown/Kitchen sink.md"));
 				p = await at();
 				await ctx.page.mouse.move(p[0] + 1, p[1] + 1, { steps: 4 });
 				await ctx.sleep(1500);
@@ -1065,8 +1092,10 @@ const graphQc: Scene = {
 			state: "default",
 			before: async (ctx) => {
 				await ctx.js(
-					"const ws = app.workspace; const r = ws.getRightLeaf(false); await r.openFile(app.vault.getAbstractFileByPath('Markdown/Kitchen sink.md'), { active: true }); await sleep(3000); const v = ws.getLeavesOfType('graph').find((x) => x.view.contentEl.getClientRects().length).view; const rd = v.renderer; const res = rd.px?.renderer?.resolution ?? 1; for (let i = 0; i < 3; i++) { const n = rd.nodes.find((x) => x.type === 'focused'); if (!n) break; const g = n.circle.getGlobalPosition(); rd.setPan(rd.panX + (rd.width * res) / 2 - g.x, rd.panY + (rd.height * res) / 2 - g.y); rd.changed(); await sleep(800); }",
+					"const ws = app.workspace; const r = ws.getRightLeaf(false); await r.openFile(app.vault.getAbstractFileByPath('Markdown/Kitchen sink.md'), { active: true }); await sleep(3000); const g0 = ws.getLeavesOfType('graph').find((x) => x.view.contentEl.getClientRects().length).view.renderer; g0.zoomTo(1); await sleep(1500);",
 				);
+				await ctx.js(centerNode("focused"));
+				await ctx.js("await sleep(300);");
 			},
 			record: GRAPH_RECORD,
 			note: "A note opened (in the right sidebar) while the graph shows: the graph marks that file's node as focused (its own fill color). The view is panned so that node sits in the middle; the pointer stays off the graph.",

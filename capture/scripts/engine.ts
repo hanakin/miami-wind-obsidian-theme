@@ -464,6 +464,11 @@ export async function captureItem(
 		}
 		if (!probe.expectOk)
 			return { id: item.id, error: `state not shown: target does not match ${item.expect}` };
+		// Let finite running animations (a menu row's fade, a sheet sliding in) end, so the shot
+		// shows the state the snapshot holds. Held or endless ones are left alone.
+		await page.evaluate(
+			"(async () => { const d = window.__cap.target?.ownerDocument ?? document; for (let i = 0; i < 40; i++) { const r = d.getAnimations().filter((a) => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming?.().endTime ?? Infinity)); if (!r.length) break; await new Promise((ok) => setTimeout(ok, 25)); } })()",
+		);
 		const vp = (await page.evaluate(
 			"({ width: innerWidth, height: innerHeight, hover: matchMedia('(hover: hover)').matches, finePointer: matchMedia('(pointer: fine)').matches, dark: matchMedia('(prefers-color-scheme: dark)').matches, canvas: (() => { const d = document.createElement('div'); d.style.backgroundColor = 'Canvas'; document.body.append(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return c; })() })",
 		)) as {
