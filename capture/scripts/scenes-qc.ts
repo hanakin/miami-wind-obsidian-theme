@@ -2335,6 +2335,55 @@ const rtlLanguage: Scene = {
 	],
 };
 
+/** CPU throttle held while the startup snapshot shows (released in the scene teardown). */
+let startupCdp: import("playwright").CDPSession | null = null;
+
+/**
+ * Obsidian 1.15's startup screen: on launch it shows a saved picture of the workspace (an iframe,
+ * #startup-snapshot) on a body colored by 7 saved theme variables, until the app is ready. A
+ * reload is a real launch of the window; the CPU is slowed so the screen stays long enough.
+ */
+const startupSnapshot: Scene = {
+	id: "qc.startup-snapshot",
+	surface: "workspace",
+	source: "catalog:startup-snapshot",
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+		await ctx.open("Markdown/Kitchen sink.md", "live");
+		await ctx.sleep(500);
+	},
+	teardown: async (main) => {
+		await startupCdp?.send("Emulation.setCPUThrottlingRate", { rate: 1 }).catch(() => undefined);
+		await startupCdp?.detach().catch(() => undefined);
+		startupCdp = null;
+		await main.page.waitForFunction("window.app?.workspace?.layoutReady === true", null, {
+			timeout: 60000,
+		});
+		await main.page.evaluate(INPAGE);
+	},
+	items: [
+		{
+			id: "qc.startup-snapshot.loading",
+			component: "workspace",
+			target: "#startup-snapshot",
+			expect: "#startup-snapshot[data-loaded]",
+			full: true,
+			before: async (ctx) => {
+				startupCdp = await ctx.page.context().newCDPSession(ctx.page);
+				await startupCdp.send("Emulation.setCPUThrottlingRate", { rate: 30 });
+				// Leaving the page saves the snapshot; the reloaded page shows it.
+				await ctx.page.evaluate("setTimeout(() => location.reload(), 50)");
+				await ctx.page.waitForSelector("#startup-snapshot[data-loaded]", {
+					state: "attached",
+					timeout: 60000,
+				});
+				await ctx.page.evaluate(INPAGE);
+			},
+			note: "The window reloaded (a real start of it, CPU slowed 30x): the saved workspace picture with 'Loading Obsidian…', on a body colored by the saved theme variables (body style). The frame's copied stylesheets are not kept in the fixture.",
+		},
+	],
+};
+
 /** The code-block edit button only shows while its block is hovered: real pointer, real window. */
 const editButtonWindowed: Scene = {
 	id: "qc.edit-block-windowed",
@@ -2399,6 +2448,7 @@ export function qcScenes(): Scene[] {
 		dialogsQc,
 		settingsDialogs,
 		rtlLanguage,
+		startupSnapshot,
 		editButtonWindowed,
 		settingsInWindow,
 	];

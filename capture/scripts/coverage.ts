@@ -257,6 +257,8 @@ const replayMatch = new Map<string, number>();
 const replayDir = `${WORK}/replay`;
 mkdirSync(replayDir, { recursive: true });
 let cssKey = "";
+const renderCdp = await render.context().newCDPSession(render);
+let mediaNow = "";
 const renderOrder = [...valid.keys()].filter((id) => !byId.get(id)?.variantOf).sort();
 for (const id of renderOrder) {
 	const f = byId.get(id) as FixtureEntry;
@@ -280,6 +282,19 @@ for (const id of renderOrder) {
 		cssKey = key;
 	}
 	await render.setViewportSize({ width: size[0] ?? 1600, height: size[1] ?? 1000 });
+	// The media the item was captured under (print, forced colors), or none.
+	const media = f.evidence?.media ?? "";
+	if (media !== mediaNow) {
+		const m = (media ? JSON.parse(media) : {}) as {
+			media?: string;
+			features?: { name: string; value: string }[];
+		};
+		await renderCdp.send("Emulation.setEmulatedMedia", {
+			media: m.media ?? "",
+			features: m.features ?? [],
+		});
+		mediaNow = media;
+	}
 	const pixels = (f.canvasPixels ?? []).map((c) => ({
 		index: c.index,
 		b64: readFileSync(`${CAPTURE}fixtures/${c.file}`).toString("base64"),

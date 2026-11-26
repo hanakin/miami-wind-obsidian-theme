@@ -1,8 +1,0 @@
-{
-	"id": "obsidian-excalidraw-plugin",
-	"name": "Excalidraw",
-	"version": "0.0.1",
-	"minAppVersion": "0.15.0",
-	"description": "Manifest only (no plugin code): makes the community browser show an installed plugin with an update available.",
-	"author": "capture sample"
-}

@@ -70,8 +70,41 @@ const WAYLAND_SOCKET = join(
 /** Hyprland workspace the windowed capture opens on, so it does not cover Mike's current one. */
 export const CAPTURE_WORKSPACE = "name:mwcapture";
 
+/**
+ * Style Settings, which Mike runs in all his vaults: the release Obsidian's community plugin list
+ * points at (obsidian-community/obsidian-style-settings), downloaded once into the work dir and
+ * checked by hash. Never copied from Mike's vaults, never committed.
+ */
+const STYLE_SETTINGS = {
+	id: "obsidian-style-settings",
+	url: "https://github.com/obsidian-community/obsidian-style-settings/releases/download/1.0.9/",
+	files: {
+		"main.js": "1828abaacdab4c5578b705a625c585b30512f8efad4c7cfc5a18e70cc3557468",
+		"manifest.json": "9cffdc20cf2aa1354820e0050b694b0f9b576446e3d5d44a36ae8b0187e5bfb8",
+		"styles.css": "ee7937d2be50653a89ccb30ae5f0572b23507d5b7f1328d005271a363075bfd8",
+	} as Record<string, string>,
+};
+
+async function styleSettingsDir(): Promise<string> {
+	const dir = join(WORK, "cache/style-settings-1.0.9");
+	mkdirSync(dir, { recursive: true });
+	const sha = (b: ArrayBuffer | Uint8Array) =>
+		new Bun.CryptoHasher("sha256").update(b).digest("hex");
+	for (const [name, hash] of Object.entries(STYLE_SETTINGS.files)) {
+		const path = join(dir, name);
+		if (existsSync(path) && sha(readFileSync(path)) === hash) continue;
+		const res = await fetch(STYLE_SETTINGS.url + name);
+		if (!res.ok) throw new Error(`Style Settings download failed: ${name} ${res.status}`);
+		const body = await res.arrayBuffer();
+		if (sha(body) !== hash)
+			throw new Error(`Style Settings ${name} does not match its pinned hash`);
+		writeFileSync(path, new Uint8Array(body));
+	}
+	return dir;
+}
+
 /** Copies the sample vault and theme into the throwaway work dir. Fresh every run. */
-function prepareVault(): void {
+async function prepareVault(): Promise<void> {
 	if (!WORK.startsWith(join(homedir(), "Work/"))) throw new Error(`Refusing work dir ${WORK}`);
 	rmSync(VAULT, { recursive: true, force: true });
 	rmSync(CONFIG_HOME, { recursive: true, force: true });
@@ -81,6 +114,9 @@ function prepareVault(): void {
 	mkdirSync(theme, { recursive: true });
 	cpSync(join(REPO, "theme.css"), join(theme, "theme.css"));
 	cpSync(join(REPO, "manifest.json"), join(theme, "manifest.json"));
+	cpSync(await styleSettingsDir(), join(VAULT, ".obsidian/plugins", STYLE_SETTINGS.id), {
+		recursive: true,
+	});
 	mkdirSync(USER_DATA, { recursive: true });
 	mkdirSync(SCREENSHOTS, { recursive: true });
 	const asar = appAsar();
@@ -149,7 +185,7 @@ export async function launch(
 	opts: { windowed?: boolean; noPointer?: boolean; mobile?: "phone" | "tablet" } = {},
 ): Promise<Session> {
 	const windowed = opts.windowed === true;
-	prepareVault();
+	await prepareVault();
 	const env: Record<string, string> = {};
 	for (const [k, v] of Object.entries(process.env)) {
 		if (v !== undefined && !SESSION_VARS.includes(k)) env[k] = v;
@@ -263,6 +299,10 @@ export async function launch(
 					`mobile emulation is ${mobileNow ? "on" : "off"}, wanted ${size ? "on" : "off"}`,
 				);
 		}
+		// Community plugins on, as in Mike's vaults: Style Settings loads.
+		await page.evaluate(
+			`(async () => { if (!app.plugins.isEnabled()) await app.plugins.setEnable(true); for (let i = 0; i < 100 && !app.plugins.plugins[${JSON.stringify(STYLE_SETTINGS.id)}]; i++) await new Promise((r) => setTimeout(r, 100)); if (!app.plugins.plugins[${JSON.stringify(STYLE_SETTINGS.id)}]) throw new Error("Style Settings did not load"); })()`,
+		);
 		return { browser, page, pid, windowed, ...(proc ? { proc } : {}) };
 	} catch (e) {
 		await browser?.close().catch(() => undefined);

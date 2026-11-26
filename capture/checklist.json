@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-26T00:48:24.656Z",
+	"generated": "2026-11-26T01:03:25.827Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
 		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/config/obsidian"
@@ -13375,26 +13375,6 @@
 			"target": ".modal-container"
 		},
 		{
-			"id": "extra.community.restricted",
-			"scene": "extra.community",
-			"surface": "modal",
-			"component": "settings-page",
-			"state": "default",
-			"source": "catalog:community-browser",
-			"target": ".modal.mod-settings"
-		},
-		{
-			"id": "extra.community.debug-list",
-			"scene": "extra.community",
-			"surface": "modal",
-			"component": "modal",
-			"state": "default",
-			"source": "catalog:community-browser",
-			"target": ".modal:has(.community-plugins-debug-list)",
-			"note": "Restricted mode with one enabled plugin in the vault: the info button of 'Re-enable plugins' lists it.",
-			"expect": ":has(.community-plugins-debug-list li)"
-		},
-		{
 			"id": "extra.community.enabled",
 			"scene": "extra.community",
 			"surface": "modal",
@@ -13402,6 +13382,50 @@
 			"state": "default",
 			"source": "catalog:community-browser",
 			"target": ".modal.mod-settings"
+		},
+		{
+			"id": "extra.style-settings.tab",
+			"scene": "extra.community",
+			"surface": "modal",
+			"component": "settings-page",
+			"state": "default",
+			"source": "catalog:community-browser",
+			"target": ".modal.mod-settings .vertical-tab-content",
+			"note": "Style Settings' own settings tab. Miami Wind declares no @settings block, so it shows its empty state.",
+			"expect": ":has(.style-settings-empty)"
+		},
+		{
+			"id": "extra.style-settings.body-class",
+			"scene": "extra.community",
+			"surface": "modal",
+			"component": "workspace",
+			"state": "default",
+			"source": "catalog:community-browser",
+			"target": ".modal.mod-settings",
+			"note": "Style Settings marks the body with css-settings-manager while it runs (every window).",
+			"expect": "body.css-settings-manager .modal.mod-settings"
+		},
+		{
+			"id": "extra.community.restricted",
+			"scene": "extra.community-restricted",
+			"surface": "modal",
+			"component": "settings-page",
+			"state": "default",
+			"source": "catalog:community-browser",
+			"target": ".modal.mod-settings",
+			"note": "Restricted mode, turned on with the Community plugins tab's own button (the app reloads).",
+			"expect": ":has(.community-plugins-intro)"
+		},
+		{
+			"id": "extra.community.debug-list",
+			"scene": "extra.community-restricted",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:community-browser",
+			"target": ".modal:has(.community-plugins-debug-list)",
+			"note": "Restricted mode with Style Settings enabled in the vault: the info button of 'Re-enable plugins' lists it.",
+			"expect": ":has(.community-plugins-debug-list li)"
 		},
 		{
 			"id": "extra.search-suggest",
@@ -15379,6 +15403,17 @@
 			"state": "default",
 			"source": "catalog:rtl-interface-language",
 			"target": ".app-container"
+		},
+		{
+			"id": "qc.startup-snapshot.loading",
+			"scene": "qc.startup-snapshot",
+			"surface": "workspace",
+			"component": "workspace",
+			"state": "default",
+			"source": "catalog:startup-snapshot",
+			"target": "#startup-snapshot",
+			"note": "The window reloaded (a real start of it, CPU slowed 30x): the saved workspace picture with 'Loading Obsidian…', on a body colored by the saved theme variables (body style). The frame's copied stylesheets are not kept in the fixture.",
+			"expect": "#startup-snapshot[data-loaded]"
 		},
 		{
 			"id": "qc.edit-block-button.hover",

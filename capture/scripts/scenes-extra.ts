@@ -1,5 +1,7 @@
 // Scenes added after the first coverage run: states theme.css styles that the first catalog did
 // not reach, and app surfaces that only appear after a specific action.
+
+import { INPAGE } from "./inpage.ts";
 import { baseLayout, click, rightClick, settingsWindow } from "./scenes.ts";
 import type { Ctx, ItemDef, Pseudo, Scene, Target } from "./types.ts";
 
@@ -380,14 +382,80 @@ const community: Scene = {
 	},
 	items: [
 		{
-			id: "extra.community.restricted",
+			// Community plugins on, as in Mike's vaults, with Style Settings installed and enabled.
+			id: "extra.community.enabled",
 			component: "settings-page",
 			target: ".modal.mod-settings",
 			state: "default",
 		},
 		{
-			// The sample vault lists one enabled plugin (capture-sample, which does nothing), so
-			// restricted mode offers to re-enable it; its info button lists the installed plugins.
+			id: "extra.style-settings.tab",
+			component: "settings-page",
+			target: ".modal.mod-settings .vertical-tab-content",
+			state: "default",
+			expect: ":has(.style-settings-empty)",
+			before: async (ctx) => {
+				await ctx.js("app.setting.openTabById('obsidian-style-settings'); await sleep(600);");
+			},
+			note: "Style Settings' own settings tab. Miami Wind declares no @settings block, so it shows its empty state.",
+		},
+		{
+			id: "extra.style-settings.body-class",
+			component: "workspace",
+			target: ".modal.mod-settings",
+			state: "default",
+			expect: "body.css-settings-manager .modal.mod-settings",
+			before: async (ctx) => {
+				await ctx.js("app.setting.openTabById('community-plugins'); await sleep(600);");
+			},
+			note: "Style Settings marks the body with css-settings-manager while it runs (every window).",
+		},
+	],
+};
+
+/** Restricted mode turned on with the real button (it reloads the app), with Style Settings still listed. */
+const communityRestricted: Scene = {
+	id: "extra.community-restricted",
+	surface: "modal",
+	source: "catalog:community-browser",
+	window: "popout",
+	opener: async (main) => {
+		await main.js(
+			"app.setting.open(); app.setting.openTabById('community-plugins'); await sleep(600); const doc = app.setting.modalEl.ownerDocument; const row = [...doc.querySelectorAll('.modal.mod-settings .setting-item')].find((e) => /restricted mode/i.test(e.querySelector('.setting-item-name')?.textContent ?? '')); setTimeout(() => row?.querySelector('button')?.click(), 50);",
+		);
+		await main.sleep(1500);
+		await main.page.waitForFunction("window.app?.workspace?.layoutReady === true", null, {
+			timeout: 30000,
+		});
+		await main.page.evaluate(INPAGE);
+		if (await main.js<boolean>("return app.plugins.isEnabled();"))
+			throw new Error("restricted mode did not turn on");
+		await settingsWindow("community-plugins")(main);
+	},
+	setup: async (ctx) => {
+		await ctx.js(
+			"cap.clearSettingsSearch(); app.setting.openTabById('community-plugins'); await sleep(600);",
+		);
+	},
+	teardown: async (main) => {
+		// Leave restricted mode with its own button (it keeps the plugins to re-enable), then make
+		// sure Style Settings runs again for the scenes after this one.
+		await main.js(
+			"const doc = app.setting.modalEl?.ownerDocument ?? document; doc.querySelector('.modal:has(.community-plugins-debug-list) .modal-close-button')?.click(); await sleep(300); [...doc.querySelectorAll('.modal.mod-settings button')].find((e) => /turn on community|exit restricted/i.test(e.textContent ?? ''))?.click(); for (let i = 0; i < 50 && !app.plugins.plugins['obsidian-style-settings']; i++) await sleep(100); if (!app.plugins.isEnabled()) await app.plugins.setEnable(true); if (!app.plugins.plugins['obsidian-style-settings']) await app.plugins.enablePluginAndSave('obsidian-style-settings');",
+		);
+	},
+	items: [
+		{
+			id: "extra.community.restricted",
+			component: "settings-page",
+			target: ".modal.mod-settings",
+			state: "default",
+			expect: ":has(.community-plugins-intro)",
+			note: "Restricted mode, turned on with the Community plugins tab's own button (the app reloads).",
+		},
+		{
+			// Style Settings stays listed as enabled, so restricted mode offers to re-enable it; its
+			// info button lists the installed plugins.
 			id: "extra.community.debug-list",
 			component: "modal",
 			target: ".modal:has(.community-plugins-debug-list)",
@@ -397,18 +465,7 @@ const community: Scene = {
 					"const b = [...document.querySelectorAll('.modal.mod-settings .setting-item')].find((e) => e.querySelector('.extra-setting-button') && /re-?enable/i.test(e.textContent ?? ''))?.querySelector('.extra-setting-button'); b?.click(); await sleep(600);",
 				);
 			},
-			note: "Restricted mode with one enabled plugin in the vault: the info button of 'Re-enable plugins' lists it.",
-		},
-		{
-			id: "extra.community.enabled",
-			component: "settings-page",
-			target: ".modal.mod-settings",
-			state: "default",
-			before: async (ctx) => {
-				await ctx.js(
-					"document.querySelector('.modal:has(.community-plugins-debug-list) .modal-close-button')?.click(); await sleep(300); const b = [...document.querySelectorAll('.modal.mod-settings button')].find((e) => /turn on|restricted/i.test(e.textContent ?? '')); b?.click(); await sleep(1200);",
-				);
-			},
+			note: "Restricted mode with Style Settings enabled in the vault: the info button of 'Re-enable plugins' lists it.",
 		},
 	],
 };
@@ -703,6 +760,7 @@ export function extraScenes(): Scene[] {
 		recovery,
 		canvasExtras,
 		community,
+		communityRestricted,
 		more,
 		settingsPage,
 		pluginBrowser,

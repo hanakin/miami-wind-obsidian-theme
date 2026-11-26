@@ -507,10 +507,23 @@ export const INPAGE = String.raw`
 		// Same-origin iframes Obsidian fills by script (no src/srcdoc, e.g. a canvas card being
 		// edited): their live document goes into srcdoc. Stylesheets are not copied (Obsidian's CSS
 		// is proprietary); their origins are listed in data-capture-iframe-styles instead.
-		for (const fc of t.querySelectorAll("iframe")) {
+		for (const fc of [t, ...t.querySelectorAll("iframe")].filter((x) => x.localName === "iframe")) {
 			const fo = back.get(fc);
 			let idoc = null;
 			try { idoc = fo?.contentDocument; } catch {}
+			// A srcdoc of Obsidian's own making (the startup snapshot) carries copies of the window's
+			// stylesheets: keep its markup, drop the copied styles, note what was there.
+			if (fc.hasAttribute("srcdoc") && /<style|<link/i.test(fc.getAttribute("srcdoc"))) {
+				const sd = new DOMParser().parseFromString(fc.getAttribute("srcdoc"), "text/html");
+				const dropped = [];
+				for (const st of sd.querySelectorAll("style, link[rel=stylesheet]")) {
+					dropped.push(st.localName === "link" ? "link " + st.getAttribute("href") : "style (" + st.textContent.length + " chars)");
+					st.remove();
+				}
+				fc.setAttribute("srcdoc", "<!DOCTYPE html>" + sd.documentElement.outerHTML);
+				fc.setAttribute("data-capture-iframe-styles", dropped.join("; "));
+				continue;
+			}
 			if (!idoc?.documentElement || fc.hasAttribute("srcdoc") || (fc.getAttribute("src") && fc.getAttribute("src") !== "about:blank")) continue;
 			const ir = idoc.documentElement.cloneNode(true);
 			const styles = [];
