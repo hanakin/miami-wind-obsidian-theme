@@ -55,7 +55,7 @@ test("replays hover, compares pseudo elements and catches changed theme pixels",
 const hasAppCss = existsSync("capture/.app/app.css");
 if (!hasAppCss)
 	console.warn(
-		"SKIPPED: 7 app-CSS render tests require capture/.app/app.css; run bun run capture:extract-app-css to enable them.",
+		"SKIPPED: app-CSS render tests require capture/.app/app.css; run bun run capture:extract-app-css to enable them.",
 	);
 
 test
