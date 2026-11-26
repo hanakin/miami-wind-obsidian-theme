@@ -30,7 +30,9 @@ export type Diffs = Record<string, Record<string, { same: boolean; props: string
 export type CompareState =
 	| { status: "same" }
 	| { status: "different" }
-	| { status: "not-proven"; reasons: string[] };
+	| { status: "not-proven"; reasons: string[] }
+	/** A documented, intentional change: its own state, never "same". */
+	| { status: "accepted"; reason: string };
 
 export interface ViewerData {
 	/** False until `bun run capture:extract-app-css` has run. */

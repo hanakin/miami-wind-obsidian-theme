@@ -49,7 +49,12 @@ const json = (path: string): unknown =>
 	existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
 
 type FixtureIndex = Pick<ViewerData, "components"> & {
-	fixtures: (ViewerData["fixtures"][number] & { imageSizes?: ImageSize[] })[];
+	fixtures: (ViewerData["fixtures"][number] & {
+		/** File name under capture/fixtures; ".xhtml" for trees HTML text cannot hold. */
+		file: string;
+		format?: "xhtml";
+		imageSizes?: ImageSize[];
+	})[];
 };
 
 // The window sizes of the emulated mobile captures (capture/scripts/obsidian.ts).
@@ -64,13 +69,13 @@ function data(index: FixtureIndex): ViewerData {
 	return {
 		appCss: existsSync(paths.app),
 		cmCss: existsSync(paths.cm),
-		fixtures: index.fixtures.map(({ id, component, surface, state, note }) => ({
+		fixtures: index.fixtures.map(({ id, file, component, surface, state, note }) => ({
 			id,
 			component,
 			surface,
 			state,
 			note,
-			size: statSync(`${ROOT}capture/fixtures/${id}.html`).size,
+			size: statSync(`${ROOT}capture/fixtures/${file}`).size,
 			viewport: VIEWPORTS[surface],
 		})),
 		components: index.components,
@@ -140,14 +145,17 @@ export function viewer(): Plugin {
 					const selector = COMPONENTS[component];
 					const focus = selector ? { is: selector, not: moreSpecific(component) } : null;
 					const styles = ["cm", "app", a].map((n) => `${origin}/css/${n}.css?v=${version}`);
-					const html = readFileSync(`${ROOT}capture/fixtures/${b}.html`, "utf8");
+					const fixture = byId.get(b);
+					const html = readFileSync(`${ROOT}capture/fixtures/${fixture?.file}`, "utf8");
+					// The content decides: synthetic platform variants keep ".html" names for XHTML text.
+					const xhtml = fixture?.format === "xhtml" || html.startsWith("<?xml");
 					res.setHeader("Content-Security-Policy", frameCsp(origin, nonce));
 					res.setHeader("Cache-Control", "no-store");
 					return send(
 						res,
 						200,
-						"text/html; charset=utf-8",
-						frameDocument(html, styles, focus, nonce, byId.get(b)?.imageSizes),
+						xhtml ? "application/xhtml+xml; charset=utf-8" : "text/html; charset=utf-8",
+						frameDocument(html, styles, focus, nonce, fixture?.imageSizes, xhtml),
 					);
 				}
 				if (area === "css" && a === "public" && b && /^[\w.-]+$/.test(b)) {

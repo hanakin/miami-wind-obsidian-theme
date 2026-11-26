@@ -84,6 +84,8 @@ function innerFrames(html: string, links: string): string {
 	});
 }
 
+const HIDE_PLACEHOLDERS = "[data-capture-placeholder] { display: none !important; }";
+
 /**
  * The fixture with its stylesheets in the compare tool's order (CodeMirror runtime rules, app
  * CSS, theme) and the measuring script. `styles` are stylesheet URLs; `nonce` matches the CSP.
@@ -94,9 +96,19 @@ export function frameDocument(
 	focus: Focus | null,
 	nonce: string,
 	images: ImageSize[] = [],
+	xhtml = false,
 ): string {
 	const links = styles.map((href) => `<link rel="stylesheet" href="${href}">`).join("");
-	const head = `<head><meta charset="utf-8">${links}<script nonce="${nonce}">${measure(focus, images)}</script></head>`;
+	// An XHTML fixture is parsed as XML: void elements close themselves and the script is CDATA.
+	const end = xhtml ? "/>" : ">";
+	const script = xhtml ? `//<![CDATA[${measure(focus, images)}\n//]]>` : measure(focus, images);
+	const head = [
+		`<head><meta charset="utf-8"${end}`,
+		links.replaceAll(">", end),
+		// The capture's empty stand-ins only keep sibling order for the CSS; they never show.
+		`<style>${HIDE_PLACEHOLDERS}</style>`,
+		`<script nonce="${nonce}">${script}</script></head>`,
+	].join("");
 	return innerFrames(sanitize(html), links).replace(/<head>[\s\S]*?<\/head>/i, head);
 }
 

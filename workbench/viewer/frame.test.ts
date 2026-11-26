@@ -51,3 +51,18 @@ it("styles captured srcdoc iframes like the outer frame and locks them down", ()
 	expect(doc).toContain('"width":480,"height":270');
 	expect(frameCsp("http://127.0.0.1:5175", "N1")).toContain("frame-src about:");
 });
+
+it("builds XHTML fixtures as well-formed XML and hides the capture's stand-ins", () => {
+	const doc = frameDocument(
+		'<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title></title></head><body><p><div data-capture-target="">x</div></p><hr data-capture-placeholder=""/></body></html>',
+		["/css/app.css?v=1"],
+		{ is: "a", not: ["b"] },
+		"N1",
+		[],
+		true,
+	);
+	expect(doc).toContain('<meta charset="utf-8"/><link rel="stylesheet" href="/css/app.css?v=1"/>');
+	expect(doc).toContain("[data-capture-placeholder] { display: none !important; }");
+	expect(doc).toContain('<script nonce="N1">//<![CDATA[');
+	expect(doc).toContain("//]]></script></head>");
+});

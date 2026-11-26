@@ -69,6 +69,7 @@ const DOT_TITLES = {
 	same: "Same in the new build",
 	different: "Differs in the new build",
 	"not-proven": "Not proven the same",
+	accepted: "Accepted, intentional change",
 };
 
 function navLink(name: string, count?: number): HTMLElement {
@@ -238,6 +239,8 @@ function capture(f: Fixture, focus?: string): HTMLElement {
 			h("code", {}, f.id),
 			focus && f.component !== focus && h("span", { class: "aside" }, `in ${f.component}`),
 			verdict?.status === "different" && h("span", { class: "changed" }, "Differs"),
+			verdict?.status === "accepted" &&
+				h("span", { class: "accepted" }, `Accepted (intentional): ${verdict.reason}`),
 			verdict?.status === "not-proven" &&
 				h("span", { class: "unproven" }, `Not proven (${verdict.reasons.join("; ")})`),
 		),
@@ -278,6 +281,9 @@ function badge(verdict: CompareState | undefined): HTMLElement {
 	if (!verdict) return h("span", { class: "badge" }, "Not compared yet");
 	if (verdict.status === "different") return h("span", { class: "badge differs" }, "Differs");
 	if (verdict.status === "same") return h("span", { class: "badge same" }, "Same");
+	if (verdict.status === "accepted") {
+		return h("span", { class: "badge accepted", title: verdict.reason }, "Accepted (intentional)");
+	}
 	const [first, ...more] = verdict.reasons;
 	return h(
 		"span",

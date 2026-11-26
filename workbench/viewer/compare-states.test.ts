@@ -10,12 +10,16 @@ it("reads the three statuses and keeps not-proven reasons", () => {
 				{ id: "a", status: "different", same: false },
 				{ id: "b", status: "same", same: true },
 				{ id: "c", status: "not-proven", same: false, notProvenReasons: ["canvas content"] },
+				{ id: "d", status: "accepted", same: false, acceptedReason: "new form field look" },
+				{ id: "e", status: "something-new", same: true },
 			],
 		}),
 	).toEqual({
 		a: { status: "different" },
 		b: { status: "same" },
 		c: { status: "not-proven", reasons: ["canvas content"] },
+		d: { status: "accepted", reason: "new form field look" },
+		e: { status: "not-proven", reasons: ['unknown status "something-new"'] },
 	});
 });
 
@@ -39,4 +43,7 @@ it("never calls a group the same unless every capture is proven the same", () =>
 	expect(combine([same, undefined])).toEqual({ status: "not-proven", reasons: ["not compared"] });
 	expect(combine([same, unproven, { status: "different" }])).toEqual({ status: "different" });
 	expect(combine([undefined])).toBeUndefined();
+	const accepted: CompareState = { status: "accepted", reason: "intentional" };
+	expect(combine([same, accepted])).toEqual(accepted);
+	expect(combine([accepted, unproven])).toEqual(unproven);
 });
