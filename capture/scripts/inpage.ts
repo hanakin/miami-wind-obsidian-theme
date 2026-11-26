@@ -139,19 +139,33 @@ export const INPAGE = String.raw`
 	 * Outside CodeMirror the target subtree is made hit-testable while checking; inside CodeMirror
 	 * we never touch the DOM (CodeMirror would redraw), its text is hit-testable anyway.
 	 */
+	/**
+	 * Runs fn while every element of el's document takes hits (one injected stylesheet), so layers
+	 * that ignore the pointer but paint (pointer-events: none overlays) are seen by elementsFromPoint.
+	 * No element is touched, so CodeMirror does not redraw.
+	 */
 	function withHitTesting(el, fn) {
-		const touched = [];
-		if (!el.closest(".cm-content")) {
-			for (const e of [el, ...el.querySelectorAll("*")]) {
-				if (e.ownerDocument.defaultView.getComputedStyle(e).pointerEvents === "none") {
-					touched.push([e, e.style.getPropertyValue("pointer-events"), e.style.getPropertyPriority("pointer-events")]);
-					e.style.setProperty("pointer-events", "auto", "important");
-				}
-			}
-		}
-		try { return fn(); } finally {
-			for (const [e, v, p] of touched) { if (v) e.style.setProperty("pointer-events", v, p); else e.style.removeProperty("pointer-events"); }
-		}
+		const doc = el.ownerDocument;
+		const st = doc.createElement("style");
+		st.textContent = "*, *::before, *::after { pointer-events: auto !important; }";
+		(doc.head ?? doc.documentElement).appendChild(st);
+		try { return fn(); } finally { st.remove(); }
+	}
+	/** Alpha (0..1) of any CSS color (rgb, hsl, hwb, lab, lch, oklab, oklch, color()), read through a 1px canvas. */
+	const alphaCache = new Map();
+	function alphaOf(c) {
+		if (!c || c === "transparent") return 0;
+		if (alphaCache.has(c)) return alphaCache.get(c);
+		const cv = alphaOf.cv ?? (alphaOf.cv = document.createElement("canvas"));
+		cv.width = cv.height = 1;
+		const g = cv.getContext("2d", { willReadFrequently: true });
+		g.clearRect(0, 0, 1, 1);
+		g.fillStyle = "rgba(0,0,0,0)";
+		g.fillStyle = c;
+		g.fillRect(0, 0, 1, 1);
+		const a = g.getImageData(0, 0, 1, 1).data[3] / 255;
+		alphaCache.set(c, a);
+		return a;
 	}
 	/** Proof that el is drawn: nonzero box inside the window, not hidden, and topmost at most sample points. */
 	function visibility(el) {
@@ -161,7 +175,8 @@ export const INPAGE = String.raw`
 		for (let a = el; a && a.nodeType === 1; a = a.parentElement) {
 			const cs = win.getComputedStyle(a);
 			if (cs.display === "none") return { visible: false, reason: "display: none on " + describe(a), box: b };
-			if (cs.visibility === "hidden" || cs.visibility === "collapse") return { visible: false, reason: "visibility: hidden on " + describe(a), box: b };
+			// visibility is inherited but a child can set it back to visible: only el's own value counts.
+			if (a === el && (cs.visibility === "hidden" || cs.visibility === "collapse")) return { visible: false, reason: "visibility: hidden on " + describe(a), box: b };
 			if (parseFloat(cs.opacity) === 0) return { visible: false, reason: "opacity: 0 on " + describe(a), box: b };
 		}
 		const v = visibleRect(el);
@@ -197,30 +212,29 @@ export const INPAGE = String.raw`
 	/** A layer that paints nothing: no background, border, shadow, outline or own text. */
 	function clear(win, e) {
 		const cs = win.getComputedStyle(e);
-		const none = (c) => c === "transparent" || /rgba\([^)]*,\s*0\)$/.test(c);
+		// Fully transparent or hidden layers paint nothing (e.g. an opacity: 0 native <select> laid
+		// over a label to catch taps).
+		if (parseFloat(cs.opacity) === 0 || cs.visibility !== "visible") return true;
 		// A background under 50% alpha only tints what lies below (e.g. a canvas group's fill).
-		const tint = (c) => { const m = /rgba\(([^)]*)\)/.exec(c); return !!m && Number((m[1] ?? "").split(",")[3]) < 0.5; };
-		if ((!none(cs.backgroundColor) && !tint(cs.backgroundColor)) || cs.backgroundImage !== "none" || cs.boxShadow !== "none") return false;
-		if (["Top", "Right", "Bottom", "Left"].some((k) => parseFloat(cs["border" + k + "Width"]) > 0 && !none(cs["border" + k + "Color"]))) return false;
+		if (alphaOf(cs.backgroundColor) >= 0.5 || cs.backgroundImage !== "none" || cs.boxShadow !== "none") return false;
+		if (["Top", "Right", "Bottom", "Left"].some((k) => parseFloat(cs["border" + k + "Width"]) > 0 && alphaOf(cs["border" + k + "Color"]) > 0)) return false;
 		if (cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0) return false;
 		for (const pe of ["::before", "::after"]) { const p = win.getComputedStyle(e, pe); if (p.content !== "none" && p.content !== "normal") return false; }
-		return ![...e.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) && !["img", "svg", "canvas", "video", "iframe", "input", "textarea", "select"].includes(e.localName);
+		// <svg>/<g> paint nothing themselves (their shapes do, and are hit where they paint).
+		if (e.namespaceURI === "http://www.w3.org/2000/svg" && !["svg", "g", "defs", "symbol"].includes(e.localName)) return false;
+		return ![...e.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) && !["img", "canvas", "video", "iframe", "input", "textarea", "select"].includes(e.localName);
 	}
 	/** True when h paints a background (color with alpha, or an image) over its area. */
 	function paintsBackground(win, h) {
 		const cs = win.getComputedStyle(h);
-		const m = /rgba?\(([^)]*)\)/.exec(cs.backgroundColor);
-		const alpha = m ? Number((m[1] ?? "").split(",")[3] ?? 1) : 0;
-		return alpha > 0 || cs.backgroundImage !== "none";
+		return alphaOf(cs.backgroundColor) > 0 || cs.backgroundImage !== "none";
 	}
 	/** True when a positioned ::before/::after of h paints an opaque background over h's content. */
 	function overlayCovers(win, h) {
 		for (const pe of ["::before", "::after"]) {
 			const cs = win.getComputedStyle(h, pe);
 			if (cs.content === "none" || cs.content === "normal" || cs.position === "static") continue;
-			const m = /rgba?\(([^)]*)\)/.exec(cs.backgroundColor);
-			const alpha = m ? Number((m[1] ?? "").split(",")[3] ?? 1) : 0;
-			if (alpha >= 1 || cs.backgroundImage !== "none") return true;
+			if (alphaOf(cs.backgroundColor) >= 0.5 || cs.backgroundImage !== "none") return true;
 		}
 		return false;
 	}
@@ -249,9 +263,20 @@ export const INPAGE = String.raw`
 			}
 			// Anything else above e (an ancestor included: a child with a negative z-index paints
 			// under its parent) hides it unless it paints nothing.
-			if (!clear(win, h)) return false;
+			if (!clear(win, h) && !frameOnlyAt(win, h, x, y)) return false;
 		}
 		return false;
+	}
+	/** True when h paints only a border/outline (no fill, shadow, pseudo-element or text) and x,y lies inside that frame. */
+	function frameOnlyAt(win, h, x, y) {
+		if (h.namespaceURI === "http://www.w3.org/2000/svg") return false;
+		const cs = win.getComputedStyle(h);
+		if (alphaOf(cs.backgroundColor) >= 0.5 || cs.backgroundImage !== "none" || cs.boxShadow !== "none") return false;
+		for (const pe of ["::before", "::after"]) { const p = win.getComputedStyle(h, pe); if (p.content !== "none" && p.content !== "normal") return false; }
+		if ([...h.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) || ["img", "svg", "canvas", "video", "iframe", "input", "textarea", "select"].includes(h.localName)) return false;
+		const r = h.getBoundingClientRect();
+		const bw = (k) => parseFloat(cs["border" + k + "Width"]) || 0;
+		return x > r.left + bw("Left") && x < r.right - bw("Right") && y > r.top + bw("Top") && y < r.bottom - bw("Bottom");
 	}
 	/** Center and quadrant centers of e's own boxes (line fragments for inline elements) inside r: a partly covered element still shows where any of them is on top. */
 	function samplePoints(e, r) {
@@ -452,28 +477,60 @@ export const INPAGE = String.raw`
 		}
 		// Intrinsic sizes of images that will not load offline (app:, https:, file:), by index in
 		// the fixture's document.images order, so a viewer can stand in same-size placeholders.
-		const imageSizes = [];
-		const imgs = el === doc.body || el === doc.documentElement ? [...copy.body.querySelectorAll("img")] : [...(t.localName === "img" ? [t] : []), ...t.querySelectorAll("img")];
-		imgs.forEach((ic, index) => {
+		// Tag every image of the copy with its live size, so indexes can be taken on the final document.
+		const sizes = [];
+		for (const ic of copy.querySelectorAll("img")) {
 			const io = back.get(ic);
 			const src = ic.getAttribute("src") ?? "";
-			if (!io || !/^(app|https?|file):/i.test(src)) return;
-			const w = io.naturalWidth, h = io.naturalHeight;
-			if (w > 0 && h > 0) imageSizes.push({ index, width: w, height: h });
-		});
-		let html;
-		if (el === doc.body || el === doc.documentElement) html = copy.body.innerHTML;
-		else {
-			html = t.outerHTML;
-			for (let a = t.parentElement; a && a !== copy.body && a !== copy.documentElement; a = a.parentElement) {
-				const outer = a.cloneNode(false).outerHTML;
-				const close = "</" + a.localName + ">";
-				html = outer.slice(0, outer.length - close.length) + html + close;
+			if (!io || !/^(app|https?|file):/i.test(src) || !(io.naturalWidth > 0 && io.naturalHeight > 0)) continue;
+			ic.setAttribute("data-capture-img", String(sizes.length));
+			sizes.push([io.naturalWidth, io.naturalHeight]);
+		}
+		// Build the fixture as a DOM tree: the target with its ancestors. The parent keeps all its
+		// children (when small), so rules like :first-child/:last-child and neighbor layout still
+		// apply; higher levels keep empty stand-ins (data-capture-placeholder, to be hidden) so
+		// element order still counts.
+		const out = document.implementation.createHTMLDocument("");
+		for (const [from, to] of [[root, out.documentElement], [copy.body, out.body]]) for (const x of [...from.attributes]) to.setAttribute(x.name, x.value);
+		if (el === doc.body || el === doc.documentElement) {
+			for (const c of copy.body.childNodes) out.body.appendChild(out.importNode(c, true));
+		} else {
+			let node = out.importNode(t, true);
+			let child = t;
+			for (let a = t.parentElement; a && a !== copy.documentElement; a = a.parentElement) {
+				const deep = a === t.parentElement && a.querySelectorAll("*").length <= 800;
+				const box = a === copy.body ? out.body : out.importNode(a, false);
+				for (const c of a.childNodes) {
+					if (c === child) box.appendChild(node);
+					else if (c.nodeType === 3) { if (deep) box.appendChild(out.createTextNode(c.data)); }
+					else if (c.nodeType === 1) {
+						if (deep) box.appendChild(out.importNode(c, true));
+						else { const ph = out.importNode(c, false); ph.setAttribute("data-capture-placeholder", ""); box.appendChild(ph); }
+					}
+				}
+				if (a === copy.body) break;
+				node = box;
+				child = a;
 			}
 		}
+		// Intrinsic sizes of images that will not load offline, by index in document.images order.
+		const imageSizes = [];
+		[...out.images].forEach((im, index) => {
+			const k = im.getAttribute("data-capture-img");
+			if (k !== null) { imageSizes.push({ index, width: sizes[+k][0], height: sizes[+k][1] }); im.removeAttribute("data-capture-img"); }
+		});
+		// HTML text cannot hold every tree Obsidian builds (a <div> inside a <p>, as in reading-view
+		// embeds): the parser would close the <p> early. Save as HTML when it parses back to the same
+		// tree, else as XHTML, whose XML parser keeps the tree exactly.
+		const body = out.body.innerHTML;
+		const back2 = new DOMParser().parseFromString("<!doctype html><html><head></head><body>" + body + "</body></html>", "text/html");
+		const same = back2.body.querySelectorAll("*").length === out.body.querySelectorAll("*").length && back2.querySelector("[data-capture-target]")?.querySelectorAll("*").length === out.querySelector("[data-capture-target]")?.querySelectorAll("*").length;
+		const format = same ? "html" : "xhtml";
 		const contains = Object.entries(opts.components).filter(([, sel]) => t.matches?.(sel) || t.querySelector(sel)).map(([k]) => k);
-		const fixture = "<!doctype html>\n<html" + attrs(root) + '>\n<head><meta charset="utf-8"></head>\n<body' + attrs(copy.body) + ">\n" + html + "\n</body>\n</html>\n";
-		return { html: fixture, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes };
+		const fixture = same
+			? "<!doctype html>\n<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8"></head>\n<body' + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
+			: '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(out) + "\n";
+		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes };
 	}
 	/** Painted style of the target and pseudo subtrees (colors, borders, shadows, decorations, ::before/::after), for a before/after state diff. */
 	const PAINT = ["color", "background-color", "background-image", "border-top-color", "border-right-color", "border-bottom-color", "border-left-color", "outline-color", "outline-style", "outline-width", "box-shadow", "text-decoration-line", "text-decoration-color", "opacity", "filter", "transform", "visibility", "fill", "stroke"];

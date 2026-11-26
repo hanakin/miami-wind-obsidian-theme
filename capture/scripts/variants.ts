@@ -31,7 +31,10 @@ export async function platformVariants(fixtures: FixtureEntry[]): Promise<Fixtur
 			const html = swap(readFileSync(`${CAPTURE}fixtures/${f.file}`, "utf8"), os);
 			const hits = (await page.evaluate(
 				([html, sels]) => {
-					const doc = new DOMParser().parseFromString(html, "text/html");
+					const doc = new DOMParser().parseFromString(
+						html,
+						html.startsWith("<?xml") ? "application/xhtml+xml" : "text/html",
+					);
 					return sels.flatMap((s, i) => {
 						try {
 							return doc.querySelector(s) ? [i] : [];
