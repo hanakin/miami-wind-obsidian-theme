@@ -369,9 +369,6 @@ function whatDiffers(
 			),
 		);
 		if (more.length) details.append(h("ul", {}, ...more.map(line)));
-		if (found.total > found.list.length) {
-			details.append(h("p", {}, `…and ${found.total - found.list.length} rarer ones.`));
-		}
 		if (picture) {
 			details.append(picture);
 			// Fetched only when opened: these are full-window pictures.

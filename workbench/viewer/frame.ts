@@ -137,8 +137,8 @@ export function frameCsp(origin: string, nonce: string): string {
 		"sandbox allow-scripts",
 		"default-src 'none'",
 		`style-src ${origin}/css/ 'unsafe-inline'`,
-		// App fonts, and the MathJax fonts math captures ask for. Nothing wider.
-		`font-src ${origin}/css/public/ ${origin}/lib/mathjax/`,
+		// The app's own fonts, and fonts embedded in the stylesheets (MathJax's). No other source.
+		`font-src ${origin}/css/public/ data:`,
 		`img-src ${origin}/css/public/ data:`,
 		`script-src 'nonce-${nonce}'`,
 		// Captured srcdoc iframes only; they inherit this policy.

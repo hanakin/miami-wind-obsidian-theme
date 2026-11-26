@@ -9,6 +9,7 @@ import { extractFile } from "@electron/asar";
 import type { Plugin } from "vite";
 import { COMPONENTS } from "../../capture/scripts/engine.ts";
 import { appAsar } from "../../capture/scripts/obsidian.ts";
+import { embedMathjaxFonts } from "../compare/fonts.ts";
 import { changes, compareStates } from "./compare-states.ts";
 import { touchedComponents } from "./elements.ts";
 import { forceStates } from "./force-states.ts";
@@ -202,16 +203,40 @@ function sheet(path: string): string | null {
 	return out;
 }
 
-// The theme files the last report compared, when it saved them; kept until the report changes.
-let saved: { mtime: number; before: string | null; after: string | null } | undefined;
-function savedThemes(): { before: string | null; after: string | null } {
-	if (!existsSync(paths.compare)) return { before: null, after: null };
-	const mtime = statSync(paths.compare).mtimeMs;
-	if (saved?.mtime !== mtime) {
-		const drawn = sides(json(paths.compare) as ReportMeta | null);
-		saved = { mtime, before: drawn.before.path, after: drawn.after.path };
+// Each side's theme for the current report, with forced states: the verified text itself, kept
+// until the report changes. Never re-read from a remembered path.
+let drawn: { key: string; before: string; after: string } | undefined;
+function themes(): { before: string; after: string } {
+	const mtime = existsSync(paths.compare) ? statSync(paths.compare).mtimeMs : 0;
+	const key = `${mtime}:${statSync(paths.new).mtimeMs}`;
+	if (drawn?.key !== key) {
+		const now = sides(mtime ? (json(paths.compare) as ReportMeta | null) : null);
+		drawn = {
+			key,
+			before: forceStates(now.before.css),
+			after: forceStates(now.after.css),
+		};
 	}
-	return saved;
+	return drawn;
+}
+
+// Obsidian's runtime rules with MathJax's fonts embedded the way the compare tool embeds them, so
+// frames ask the server for no font but the app's own.
+let runtime: { mtime: number; css: string } | undefined;
+function runtimeSheet(): string | null {
+	if (!existsSync(paths.cm)) return null;
+	const mtime = statSync(paths.cm).mtimeMs;
+	if (runtime?.mtime !== mtime) {
+		const css = readFileSync(paths.cm, "utf8");
+		let embedded = css;
+		try {
+			embedded = embedMathjaxFonts(css);
+		} catch (e) {
+			console.warn(`MathJax fonts not embedded: ${e}`);
+		}
+		runtime = { mtime, css: forceStates(embedded) };
+	}
+	return runtime.css;
 }
 
 function send(res: ServerResponse, status: number, type: string, body: string | Uint8Array): void {
@@ -227,8 +252,8 @@ export function viewer(): Plugin {
 		configureServer(server) {
 			const index = json(paths.fixtures) as FixtureIndex;
 			const byId = new Map(index.fixtures.map((f) => [f.id, f]));
-			const currentCss = forceStates(currentTheme());
-
+			// The compare tool's font embedding reads paths relative to the repository root.
+			process.chdir(ROOT);
 			// Bumped on every change so frames fetch fresh CSS while unchanged CSS stays cached.
 			let version = Date.now();
 			for (const path of [paths.new, paths.diffs, paths.compare, paths.app, paths.cm]) {
@@ -266,18 +291,6 @@ export function viewer(): Plugin {
 						frameDocument(html, styles, focus, nonce, fixture?.imageSizes, xhtml),
 					);
 				}
-				if (/^\/lib\/mathjax\/[\w/-]+\.woff2$/.test(url.pathname)) {
-					// MathJax's fonts, which math captures ask for by this path. Fonts only.
-					try {
-						const asar = appAsar() ?? "/usr/lib/obsidian/obsidian.asar";
-						const file = extractFile(asar, url.pathname.slice(1));
-						res.setHeader("Access-Control-Allow-Origin", "null");
-						res.setHeader("Cache-Control", "max-age=31536000, immutable");
-						return send(res, 200, "font/woff2", file);
-					} catch {
-						return send(res, 404, "text/plain", "Not found");
-					}
-				}
 				if (area === "css" && a === "public" && b && /^[\w.-]+$/.test(b)) {
 					// Fonts and images app.css points at, read straight from the local Obsidian install.
 					try {
@@ -296,17 +309,16 @@ export function viewer(): Plugin {
 					const name = a.replace(/\.css$/, "");
 					// Each side is drawn with the theme file the report compared, when it saved one, so
 					// the pictures and the results describe the same CSS.
-					const themes = savedThemes();
 					const body =
 						name === "current"
-							? themes.before
-								? sheet(themes.before)
-								: currentCss
+							? themes().before
 							: name === "new"
-								? sheet(themes.after ?? paths.new)
-								: name === "app" || name === "cm"
-									? sheet(paths[name])
-									: null;
+								? themes().after
+								: name === "cm"
+									? runtimeSheet()
+									: name === "app"
+										? sheet(paths.app)
+										: null;
 					if (body === null) return send(res, 404, "text/plain", "Not found");
 					res.setHeader("Cache-Control", "max-age=31536000, immutable");
 					return send(res, 200, "text/css; charset=utf-8", body);

@@ -203,11 +203,25 @@ export interface Change {
 	accepted: boolean;
 }
 
-// Logical twins (border-block-end-color) repeat what the physical property already says.
-const LOGICAL = /-(block|inline)(-|$)/;
+// A logical property and the physical one it stands for in the captures' left-to-right pages.
+const PHYSICAL: [RegExp, string][] = [
+	[/block-start/, "top"],
+	[/block-end/, "bottom"],
+	[/inline-start/, "left"],
+	[/inline-end/, "right"],
+	[/block-size/, "height"],
+	[/inline-size/, "width"],
+];
 
-/** "86:span.cm-underline.cm-link.x" → "span.cm-underline.cm-link". */
-const describe = (key: string) => key.replace(/^\d+:/, "").split(".").slice(0, 3).join(".");
+/** "border-block-end-color" → "border-bottom-color"; undefined for a physical property. */
+function physicalOf(property: string): string | undefined {
+	const twin = PHYSICAL.find(([re]) => re.test(property));
+	return twin && property.replace(twin[0], twin[1]);
+}
+
+/** "86:span.cm-underline.cm-link.x" → "span.cm-underline.cm-link": an item's code name. */
+export const itemCode = (key: string) =>
+	(key.split("::")[0] ?? "").replace(/^\d+:/, "").split(".").slice(0, 3).join(".");
 
 /**
  * Names a group of properties that all go from one value to the same other value. A text color
@@ -225,33 +239,47 @@ function nameOf(properties: string[]): string {
 }
 
 /**
- * A capture's style differences boiled down to distinct changes, most common first. The compare
- * tool lists every element and property; most repeat the same change of value. `acceptedElements`
- * are the element keys the compare tool accepted (its acceptanceScope), pseudo-elements included.
- * `selectors` maps the components found in the capture to their selector lists, to say which
- * component each change is on.
+ * A capture's style differences boiled down to distinct changes, most common first: every one of
+ * them, however many. The compare tool lists every element and property; most repeat the same
+ * change of value. Differences are grouped only when they also sit on items with the same owners,
+ * so a change on an item no component owns is never folded into a component's change.
+ *
+ * `acceptedElements` are the element keys the compare tool accepted (its acceptanceScope),
+ * pseudo-elements included. `selectors` maps the components found in the capture to their
+ * selector lists, to say which component each change is on.
  */
 export function changes(
 	differences: Difference[],
 	acceptedElements: string[] = [],
 	selectors: Record<string, string> = {},
-	limit = 30,
 ): { total: number; list: Change[] } {
-	type Group = Pick<Change, "before" | "after" | "count" | "accepted"> & {
+	type Group = Pick<Change, "before" | "after" | "count" | "accepted" | "components" | "maybe"> & {
 		seen: Map<string, number>;
 		on: Set<string>;
 	};
+	const names = Object.keys(selectors);
+	// What was recorded for each item, to tell a logical property that only repeats a physical one.
+	const recorded = new Set(
+		differences.map((d) => `${d.element}\n${d.property}\n${d.before}\n${d.after}`),
+	);
 	const byChange = new Map<string, Group>();
 	for (const { element, property, before, after } of differences) {
-		if (LOGICAL.test(property)) continue;
+		const twin = physicalOf(property);
+		if (twin && recorded.has(`${element}\n${twin}\n${before}\n${after}`)) continue;
 		const item = element?.split("::")[0] ?? "";
 		const accepted = acceptedElements.includes(item);
-		const key = `${before}\n${after}\n${accepted}`;
+		const components = names.filter((c) => matchesElement(selectors[c] ?? "", item));
+		const maybe = names.filter(
+			(c) => !components.includes(c) && mayMatchElement(selectors[c] ?? "", item),
+		);
+		const key = [before, after, accepted, components, maybe].join("\n");
 		const change = byChange.get(key) ?? {
 			before,
 			after,
 			count: 0,
 			accepted,
+			components,
+			maybe,
 			seen: new Map(),
 			on: new Set(),
 		};
@@ -264,22 +292,16 @@ export function changes(
 		.sort((a, b) => b.count - a.count)
 		.map(({ seen, on, ...change }): Change => {
 			const properties = [...seen].sort((a, b) => b[1] - a[1]).map(([property]) => property);
-			const elements = [...on];
-			const code = [...new Set(elements.map(describe))];
-			const names = [...new Set(code.map(itemName))];
-			const sure = (c: string) => elements.some((e) => matchesElement(selectors[c] ?? "", e));
-			const components = Object.keys(selectors).filter(sure);
+			const code = [...new Set([...on].map(itemCode))];
+			const plain = [...new Set(code.map(itemName))];
+			const others = plain.length - 1;
 			return {
 				what: nameOf(properties),
-				items: `${names[0]}${names.length > 1 ? ` and ${names.length - 1} other ${names.length === 2 ? "item" : "items"}` : ""}`,
+				items: `${plain[0]}${others > 0 ? ` and ${others} other ${others === 1 ? "item" : "items"}` : ""}`,
 				code,
-				components,
-				maybe: Object.keys(selectors).filter(
-					(c) => !sure(c) && elements.some((e) => mayMatchElement(selectors[c] ?? "", e)),
-				),
 				...change,
 				properties,
 			};
 		});
-	return { total: list.length, list: list.slice(0, limit) };
+	return { total: list.length, list };
 }
