@@ -1,4 +1,4 @@
-import { type Change, pageSummary, rowState } from "./compare-states.ts";
+import { type Change, captureState, pageSummary, rowState } from "./compare-states.ts";
 import type { CompareState, Fixture, Theme, ViewerData } from "./types.ts";
 import { bySurface, kinds, plainProperty, plainReason, surfaceName } from "./words.ts";
 
@@ -60,7 +60,13 @@ const capturesOf = (name: string) =>
 	(data.components[name]?.fixtures ?? []).flatMap((id) => fixtures.get(id) ?? []);
 /** A component's places counted by verdict: the page header and the sidebar dot both use this. */
 const summaryOf = (name: string) =>
-	pageSummary(name, data.components[name]?.surfaces ?? [], capturesOf(name), data.compare);
+	pageSummary(
+		name,
+		data.components[name]?.surfaces ?? [],
+		capturesOf(name),
+		data.compare,
+		data.touched,
+	);
 const summaries = new Map(names.map((n) => [n, summaryOf(n)]));
 
 function stored(key: string): string | null {
@@ -330,7 +336,9 @@ function reasonOf(verdict: CompareState): string {
 /** `focus` names the component to crop to when the fixture captured something larger around it. */
 function capture(f: Fixture, focus?: string): HTMLElement {
 	const themes: Theme[] = mode === "both" ? ["current", "new"] : [mode];
-	const verdict = rowState(f.component, f.surface, [f], data.compare);
+	// A larger capture previewed for another component: its own verdict is not that component's.
+	const around = focus !== undefined && f.component !== focus;
+	const verdict = around ? undefined : captureState(data.compare, f.id);
 	const reason = verdict && reasonOf(verdict);
 	return h(
 		"figure",
@@ -341,6 +349,7 @@ function capture(f: Fixture, focus?: string): HTMLElement {
 			f.note ? { title: f.note } : {},
 			h("span", { class: f.state === "default" ? "state" : "state forced" }, f.state),
 			h("code", {}, f.id),
+			around && h("span", { class: "aside" }, `in ${f.component}`),
 			verdict &&
 				verdict.status !== "same" &&
 				h(
@@ -349,23 +358,24 @@ function capture(f: Fixture, focus?: string): HTMLElement {
 					`${LABEL[verdict.status]}${reason ? `: ${reason}` : ""}`,
 				),
 		),
-		verdict?.status !== "same" && whatDiffers(f),
+		verdict && verdict.status !== "same" && whatDiffers(f),
 	);
 }
 
 /**
  * The first of `candidates` in which the component is really found and visible, tried one at a
- * time as the frames report back. When none qualifies, the tile goes away.
+ * time as the frames report back. When none qualifies, `none()` takes its place. This picks a
+ * picture only; verdicts never depend on it.
  */
-function firstShowing(candidates: Fixture[], focus: string): Node {
+function firstShowing(candidates: Fixture[], focus: string, none?: () => Node): Node {
 	const [f, ...rest] = candidates;
-	if (!f) return document.createComment("no capture shows this state");
+	if (!f) return none?.() ?? document.createComment("no capture shows this state");
 	const figure = capture(f, focus);
 	onMissing.set(figure, () => {
 		const section = figure.closest("section");
-		figure.replaceWith(firstShowing(rest, focus));
+		figure.replaceWith(firstShowing(rest, focus, none));
 		// A "Shared look" left with nothing to show goes away.
-		if (section && !section.querySelector("figure")) section.remove();
+		if (section?.classList.contains("shared") && !section.querySelector("figure")) section.remove();
 	});
 	return figure;
 }
@@ -395,9 +405,12 @@ function sharedLookLine(component: string, surface: string): HTMLElement | false
 	);
 }
 
-function surfaceRow(component: string, surface: string, own: Fixture[]): HTMLElement {
-	const verdict = rowState(component, surface, own, data.compare);
-	const reason = verdict && reasonOf(verdict);
+/** One place: its verdict from the data, and the captures (or one close-up) that show it. */
+function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLElement {
+	const here = all.filter((f) => f.surface === surface);
+	const place = rowState(component, surface, all, data.compare, data.touched);
+	const reason = place && reasonOf(place.state);
+	const status = place?.state.status ?? "not-proven";
 	return h(
 		"section",
 		{ class: "surface" },
@@ -405,12 +418,28 @@ function surfaceRow(component: string, surface: string, own: Fixture[]): HTMLEle
 			"header",
 			{},
 			h("h3", {}, surfaceName(surface)),
-			verdict &&
-				h("span", { class: `badge ${verdict.status}` }, `1.x vs 2.0: ${LABEL[verdict.status]}`),
+			h("span", { class: `badge ${status}` }, `1.x vs 2.0: ${LABEL[status]}`),
+			place?.inside &&
+				h(
+					"p",
+					{ class: "reason" },
+					`Seen inside ${here.length === 1 ? "a larger capture" : `${here.length} larger captures`}.`,
+				),
 			reason && h("p", { class: "reason" }, reason),
 			sharedLookLine(component, surface),
 		),
-		h("div", { class: "captures" }, ...own.map((f) => capture(f))),
+		h(
+			"div",
+			{ class: "captures" },
+			// The component's own captures; failing that, one close-up from a larger capture.
+			...(place?.inside
+				? [
+						firstShowing(here.toSorted(bySize).slice(0, MAX_TRIES), component, () =>
+							h("p", { class: "also" }, "No close-up to show."),
+						),
+					]
+				: here.filter((f) => f.component === component).map((f) => capture(f))),
+		),
 	);
 }
 
@@ -514,15 +543,16 @@ function renderPage(): void {
 		else a.removeAttribute("aria-current");
 	}
 	const entry = data.components[name];
-	const own = capturesOf(name).filter((f) => f.component === name);
-	const ownOn = (surface: string) => own.filter((f) => f.surface === surface);
-	const status = (surface: string) => rowState(name, surface, own, data.compare)?.status;
+	const all = capturesOf(name);
+	const own = all.filter((f) => f.component === name);
+	const status = (surface: string) =>
+		rowState(name, surface, all, data.compare, data.touched)?.state.status;
 	const places = (entry?.surfaces ?? []).toSorted(bySurface);
 	// Places that differ come first; the sort is stable, so the rest keep their order.
 	const rows = places
-		.filter((s) => ownOn(s).length > 0)
+		.filter((s) => status(s) !== undefined)
 		.toSorted((a, b) => Number(status(b) === "different") - Number(status(a) === "different"));
-	const bare = places.filter((s) => ownOn(s).length === 0);
+	const bare = places.filter((s) => status(s) === undefined);
 	const ready = data.appCss && data.cmCss;
 
 	const parts: Child[] = [
@@ -564,13 +594,13 @@ function renderPage(): void {
 				"section",
 				{},
 				h("h2", {}, entry?.multiSurface ? "By place" : "Captures"),
-				...rows.map((s) => surfaceRow(name, s, ownOn(s))),
+				...rows.map((s) => surfaceRow(name, s, all)),
 			),
 		bare.length > 0 &&
 			h(
 				"p",
 				{ class: "also" },
-				`Also used in: ${bare.map(surfaceName).join(", ")}. No capture of its own there yet.`,
+				`Also used in: ${bare.map(surfaceName).join(", ")}. No capture there yet.`,
 			),
 		usageTable(name),
 	];

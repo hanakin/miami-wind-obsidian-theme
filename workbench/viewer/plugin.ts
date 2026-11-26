@@ -10,6 +10,7 @@ import type { Plugin } from "vite";
 import { COMPONENTS } from "../../capture/scripts/engine.ts";
 import { appAsar } from "../../capture/scripts/obsidian.ts";
 import { changes, compareStates } from "./compare-states.ts";
+import { touchedComponents } from "./elements.ts";
 import { forceStates } from "./force-states.ts";
 import { frameCsp, frameDocument, type ImageSize } from "./frame.ts";
 import type { ViewerData } from "./types.ts";
@@ -66,6 +67,8 @@ type FixtureIndex = Pick<ViewerData, "components"> & {
 	fixtures: (ViewerData["fixtures"][number] & {
 		/** File name under capture/fixtures; ".xhtml" for trees HTML text cannot hold. */
 		file: string;
+		/** Components found inside the capture. */
+		contains: string[];
 		format?: "xhtml";
 		imageSizes?: ImageSize[];
 	})[];
@@ -81,6 +84,7 @@ function data(index: FixtureIndex): ViewerData {
 	const report = json(paths.compare) as { fixtures?: ReportFixture[] } | null;
 	const compare = report === null ? null : compareStates(report);
 	const differing = typeof compare === "string" ? [] : (report?.fixtures ?? []);
+	const contains = new Map(index.fixtures.map((f) => [f.id, [f.component, ...f.contains]]));
 	return {
 		appCss: existsSync(paths.app),
 		cmCss: existsSync(paths.cm),
@@ -97,6 +101,14 @@ function data(index: FixtureIndex): ViewerData {
 		usage: (json(paths.usage) as ViewerData["usage"] | null) ?? [],
 		diffs: json(paths.diffs) as ViewerData["diffs"],
 		compare: typeof compare === "string" ? null : compare,
+		touched: Object.fromEntries(
+			differing
+				.filter((f) => f.differences?.length)
+				.map((f) => [
+					f.id,
+					touchedComponents(f.differences ?? [], contains.get(f.id) ?? [], COMPONENTS),
+				]),
+		),
 		changes: Object.fromEntries(
 			differing
 				.filter((f) => f.differences?.length)

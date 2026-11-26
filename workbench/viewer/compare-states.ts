@@ -40,23 +40,56 @@ export function compareStates(json: unknown): Record<string, CompareState> | str
 
 type Place = { id: string; component: string; surface: string };
 
+/** A place's verdict, and whether it rests on larger captures around the component. */
+export interface PlaceVerdict {
+	state: CompareState;
+	/** True when the place has no capture of the component itself. */
+	inside: boolean;
+}
+
+const NOT_COMPARED: CompareState = { status: "not-proven", reasons: ["not compared yet"] };
+/** Said when a larger capture differs, but not on an element that is surely the component's. */
+export const CHANGED_ELSEWHERE = "a larger capture changed, but not on this component itself";
+
+/** One capture's verdict. A capture the compare tool has no result for is not proven. */
+export const captureState = (compare: Record<string, CompareState> | null, id: string) =>
+	compare?.[id] ?? NOT_COMPARED;
+
 /**
- * The verdict for one component in one place, from the data alone: over its own captures there.
- * Undefined when the place has no capture of the component itself. A capture the compare tool has
- * no result for counts as not proven, never as same.
+ * The verdict for one component in one place, from the data alone. `fixtures` are the captures
+ * the component appears in; `touched` lists, per capture, the components with a recorded
+ * difference on their own elements.
+ *
+ * With captures of the component itself, those decide. Otherwise every larger capture that
+ * contains it does: same when all are proven same, differs when a difference lands on the
+ * component's own elements, and not proven when one is not proven or changed somewhere that
+ * cannot be ruled out for this component. Undefined only when no capture contains it there.
  */
 export function rowState(
 	component: string,
 	surface: string,
 	fixtures: Place[],
 	compare: Record<string, CompareState> | null,
-): CompareState | undefined {
-	const own = fixtures.filter((f) => f.surface === surface && f.component === component);
-	if (own.length === 0) return undefined;
-	return combine(own.map((f) => compare?.[f.id] ?? NOT_COMPARED));
+	touched: Record<string, string[]> = {},
+): PlaceVerdict | undefined {
+	const here = fixtures.filter((f) => f.surface === surface);
+	const own = here.filter((f) => f.component === component);
+	if (own.length) {
+		return { state: combine(own.map((f) => captureState(compare, f.id))), inside: false };
+	}
+	if (here.length === 0) return undefined;
+	const states = here.map((f): CompareState => {
+		const state = captureState(compare, f.id);
+		if (state.status === "same" || state.status === "not-proven") return state;
+		if (touched[f.id]?.includes(component)) return state;
+		// An accepted capture differs only on its accepted element; a differing one may differ anywhere.
+		return state.status === "accepted"
+			? { status: "same" }
+			: { status: "not-proven", reasons: [CHANGED_ELSEWHERE] };
+	});
+	return { state: combine(states), inside: true };
 }
 
-const NOT_COMPARED: CompareState = { status: "not-proven", reasons: ["not compared yet"] };
 // Worst first: what a page's dot and a group of captures report.
 const SEVERITY = ["different", "not-proven", "accepted", "same"] as const;
 
@@ -65,7 +98,7 @@ export interface PageSummary {
 	different: number;
 	"not-proven": number;
 	accepted: number;
-	/** Places the component is used in that have no capture of the component itself. */
+	/** Places no capture contains the component in. */
 	noCapture: number;
 	/** The worst verdict among the places that have one. */
 	worst: CompareState["status"] | undefined;
@@ -77,6 +110,7 @@ export function pageSummary(
 	surfaces: string[],
 	fixtures: Place[],
 	compare: Record<string, CompareState> | null,
+	touched: Record<string, string[]> = {},
 ): PageSummary {
 	const out: PageSummary = {
 		same: 0,
@@ -87,8 +121,8 @@ export function pageSummary(
 		worst: undefined,
 	};
 	for (const surface of surfaces) {
-		const state = rowState(component, surface, fixtures, compare);
-		if (state) out[state.status]++;
+		const place = rowState(component, surface, fixtures, compare, touched);
+		if (place) out[place.state.status]++;
 		else out.noCapture++;
 	}
 	out.worst = SEVERITY.find((s) => out[s] > 0);

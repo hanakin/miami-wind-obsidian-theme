@@ -1,5 +1,12 @@
 import { expect, it } from "vitest";
-import { changes, combine, compareStates, pageSummary, rowState } from "./compare-states.ts";
+import {
+	CHANGED_ELSEWHERE,
+	changes,
+	combine,
+	compareStates,
+	pageSummary,
+	rowState,
+} from "./compare-states.ts";
 import type { CompareState } from "./types.ts";
 
 it("reads the three statuses and keeps not-proven reasons", () => {
@@ -70,24 +77,51 @@ const compare: Record<string, CompareState> = {
 };
 
 it("judges a row from the data alone, whatever order the captures come in", () => {
-	// One same and one different capture: never "same".
-	expect(rowState("button", "settings", fixtures, compare)).toEqual(different);
-	expect(rowState("button", "settings", fixtures.toReversed(), compare)).toEqual(different);
-	// Only larger captures around the component: no verdict to pick from, in any order.
-	expect(rowState("button", "modal", fixtures, compare)).toBeUndefined();
-	expect(rowState("button", "modal", fixtures.toReversed(), compare)).toBeUndefined();
+	for (const list of [fixtures, fixtures.toReversed()]) {
+		// One same and one different capture of the component itself: never "same".
+		expect(rowState("button", "settings", list, compare)).toEqual({
+			state: different,
+			inside: false,
+		});
+		// No capture there contains the component at all.
+		expect(rowState("button", "canvas", list, compare)).toBeUndefined();
+	}
 	// No result for a capture is not proven, with or without a compare run.
 	const notCompared = { status: "not-proven", reasons: ["not compared yet"] };
-	expect(rowState("button", "mobile-phone", fixtures, compare)).toEqual(notCompared);
-	expect(rowState("button", "settings", fixtures, null)).toEqual(notCompared);
+	expect(rowState("button", "mobile-phone", fixtures, compare)?.state).toEqual(notCompared);
+	expect(rowState("button", "settings", fixtures, null)?.state).toEqual(notCompared);
+});
+
+it("judges a place seen only inside larger captures by every one of them", () => {
+	const elsewhere = { status: "not-proven", reasons: [CHANGED_ELSEWHERE] };
+	for (const list of [fixtures, fixtures.toReversed()]) {
+		// A larger capture differs, but not on the button itself: cannot be ruled out.
+		expect(rowState("button", "modal", list, compare)).toEqual({ state: elsewhere, inside: true });
+		// The difference lands on the button's own elements.
+		expect(rowState("button", "modal", list, compare, { "around-2": ["button"] })?.state).toEqual(
+			different,
+		);
+		// Every larger capture is proven the same.
+		const allSame = { ...compare, "around-2": same };
+		expect(rowState("button", "modal", list, allSame)?.state).toEqual(same);
+		// One of them is not proven.
+		const oneUnproven = { ...compare, "around-2": same, "around-1": unproven };
+		expect(rowState("button", "modal", list, oneUnproven)?.state).toEqual(unproven);
+		// An accepted change counts for the component only when it is on the component.
+		const oneAccepted = { ...compare, "around-2": accepted };
+		expect(rowState("button", "modal", list, oneAccepted)?.state).toEqual(same);
+		expect(
+			rowState("button", "modal", list, oneAccepted, { "around-2": ["button"] })?.state,
+		).toEqual(accepted);
+	}
 });
 
 it("counts a page's places, and its dot is the worst of them", () => {
-	const surfaces = ["settings", "modal", "mobile-phone"];
+	const surfaces = ["settings", "modal", "mobile-phone", "canvas"];
 	expect(pageSummary("button", surfaces, fixtures, compare)).toEqual({
 		same: 0,
 		different: 1,
-		"not-proven": 1,
+		"not-proven": 2,
 		accepted: 0,
 		noCapture: 1,
 		worst: "different",
@@ -95,7 +129,7 @@ it("counts a page's places, and its dot is the worst of them", () => {
 	expect(pageSummary("button", ["mobile-phone"], fixtures, { phone: accepted }).worst).toBe(
 		"accepted",
 	);
-	expect(pageSummary("button", ["modal"], fixtures, compare).worst).toBeUndefined();
+	expect(pageSummary("button", ["canvas"], fixtures, compare).worst).toBeUndefined();
 });
 
 it("boils a capture's differences down to distinct changes, most common first", () => {

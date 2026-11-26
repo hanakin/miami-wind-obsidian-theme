@@ -49,6 +49,8 @@ export interface ViewerData {
 	compare: Record<string, CompareState> | null;
 	/** What differs in each capture that is not the same, by fixture id. */
 	changes: Record<string, { total: number; list: Change[]; diffImage: boolean }>;
+	/** Per capture with differences: the components that have one on their own elements. */
+	touched: Record<string, string[]>;
 	/** Why compare.json could not be used, when it exists but is not a schemaVersion 1 report. */
 	compareError?: string;
 }
