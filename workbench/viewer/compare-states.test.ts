@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import {
-	CHANGED_ELSEWHERE,
+	changedElsewhere,
 	changes,
 	combine,
 	compareStates,
@@ -77,10 +77,12 @@ const compare: Record<string, CompareState> = {
 	"around-2": different,
 };
 
+const elsewhere = { status: "not-proven", reasons: [changedElsewhere("button")] };
+
 it("judges a row from the data alone, whatever order the captures come in", () => {
 	for (const list of [fixtures, fixtures.toReversed()]) {
-		// One same and one different capture of the component itself: never "same".
-		expect(rowState("button", "settings", list, compare)).toEqual({
+		// One same capture and one whose change is on the button itself: differs, never same.
+		expect(rowState("button", "settings", list, compare, { "own-b": ["button"] })).toEqual({
 			state: different,
 			inside: false,
 			captures: 2,
@@ -95,42 +97,47 @@ it("judges a row from the data alone, whatever order the captures come in", () =
 	expect(rowState("button", "settings", fixtures, null)?.state).toEqual(notCompared);
 });
 
-it("judges a place seen only inside larger captures by every one of them", () => {
-	const elsewhere = { status: "not-proven", reasons: [CHANGED_ELSEWHERE] };
+it("uses one rule for own and larger captures: a change counts only on the component itself", () => {
 	for (const list of [fixtures, fixtures.toReversed()]) {
-		// A larger capture differs, but not on the button itself: cannot be ruled out.
-		expect(rowState("button", "modal", list, compare)).toEqual({
-			state: elsewhere,
-			inside: true,
-			captures: 2,
-			reasons: [[CHANGED_ELSEWHERE, 1]],
-		});
-		// The difference lands on the button's own elements.
-		expect(rowState("button", "modal", list, compare, { "around-2": ["button"] })?.state).toEqual(
-			different,
-		);
-		// Every larger capture is proven the same.
-		const allSame = { ...compare, "around-2": same };
-		expect(rowState("button", "modal", list, allSame)?.state).toEqual(same);
-		// One of them is not proven.
-		const oneUnproven = { ...compare, "around-2": same, "around-1": unproven };
-		expect(rowState("button", "modal", list, oneUnproven)?.state).toEqual(unproven);
-		// An accepted change counts for the component only when it is surely on the component.
-		// Elsewhere (a sibling, or an element the key cannot identify) it proves nothing.
-		const oneAccepted = { ...compare, "around-2": accepted };
-		expect(rowState("button", "modal", list, oneAccepted)?.state).toEqual(elsewhere);
-		expect(rowState("button", "modal", list, oneAccepted, { "around-2": ["menu"] })?.state).toEqual(
-			elsewhere,
-		);
-		expect(
-			rowState("button", "modal", list, oneAccepted, { "around-2": ["button"] })?.state,
-		).toEqual(accepted);
+		for (const [place, id] of [
+			["settings", "own-b"],
+			["modal", "around-2"],
+		] as const) {
+			// The capture differs, but not on the button's own elements: not proven, with the reason.
+			expect(rowState("button", place, list, compare)?.state).toEqual(elsewhere);
+			expect(rowState("button", place, list, compare, { [id]: ["menu"] })?.state).toEqual(
+				elsewhere,
+			);
+			// The change lands on the button's own elements.
+			expect(rowState("button", place, list, compare, { [id]: ["button"] })?.state).toEqual(
+				different,
+			);
+			// An accepted change counts for the button only when it is surely on the button.
+			const oneAccepted = { ...compare, [id]: accepted };
+			expect(rowState("button", place, list, oneAccepted)?.state).toEqual(elsewhere);
+			expect(rowState("button", place, list, oneAccepted, { [id]: ["button"] })?.state).toEqual(
+				accepted,
+			);
+			// Every capture proven the same; then one of them not proven.
+			const allSame = { ...compare, [id]: same };
+			expect(rowState("button", place, list, allSame)?.state).toEqual(same);
+			const other = place === "settings" ? "own-a" : "around-1";
+			expect(rowState("button", place, list, { ...allSame, [other]: unproven })?.state).toEqual(
+				unproven,
+			);
+		}
 	}
+	expect(rowState("button", "modal", fixtures, compare)).toEqual({
+		state: elsewhere,
+		inside: true,
+		captures: 2,
+		reasons: [[changedElsewhere("button"), 1]],
+	});
 });
 
 it("counts a page's places, and its dot is the worst of them", () => {
 	const surfaces = ["settings", "modal", "mobile-phone", "canvas"];
-	expect(pageSummary("button", surfaces, fixtures, compare)).toEqual({
+	expect(pageSummary("button", surfaces, fixtures, compare, { "own-b": ["button"] })).toEqual({
 		same: 0,
 		different: 1,
 		"not-proven": 2,
@@ -138,9 +145,10 @@ it("counts a page's places, and its dot is the worst of them", () => {
 		noCapture: 1,
 		worst: "different",
 	});
-	expect(pageSummary("button", ["mobile-phone"], fixtures, { phone: accepted }).worst).toBe(
-		"accepted",
-	);
+	expect(
+		pageSummary("button", ["mobile-phone"], fixtures, { phone: accepted }, { phone: ["button"] })
+			.worst,
+	).toBe("accepted");
 	expect(pageSummary("button", ["canvas"], fixtures, compare).worst).toBeUndefined();
 });
 
@@ -164,28 +172,25 @@ it("boils a capture's differences down to distinct changes, most common first", 
 			d("5:a.tag", "padding-left", "4px", "6px"),
 			// The accepted element, apart from the same change elsewhere.
 			d("9:select", "color", "red", "black"),
-			d("7:p", "color", "red", "black"),
+			d("7:div.unknown-thing", "color", "red", "black"),
+			// An input the report cannot identify as the checkbox or not.
+			d("2:input.task-list-item-checkbox", "width", "1px", "2px"),
 		],
 		["9:select"],
-		{ name: "tag", selector: "a.tag, .cm-hashtag" },
+		{ tag: "a.tag, .cm-hashtag", dropdown: "select", checkbox: "input[type=checkbox]" },
 	);
-	expect(found.total).toBe(4);
-	expect(found.list.map((c) => [c.what, c.where, c.count, c.accepted])).toEqual([
-		["Text color", "another item, not the tag (span.cm-underline)", 4, false],
-		["Padding left", "the tag", 2, false],
-		["Text color", "another item, not the tag (select)", 1, true],
-		["Text color", "another item, not the tag (p)", 1, false],
+	expect(found.total).toBe(5);
+	expect(
+		found.list.map((c) => [c.what, c.items, c.components, c.maybe, c.count, c.accepted]),
+	).toEqual([
+		["Text color", "link", [], [], 4, false],
+		["Padding left", "tag", ["tag"], [], 2, false],
+		["Text color", "dropdown", ["dropdown"], [], 1, true],
+		["Text color", "div.unknown-thing", [], [], 1, false],
+		["Width", "input field", [], ["checkbox"], 1, false],
 	]);
 	expect(found.list[0]?.properties).toEqual(["color", "border-top-color", "outline-color"]);
-	// An input the key cannot identify is not called "not the checkbox".
-	expect(
-		changes([d("2:input.task-list-item-checkbox", "color", "red", "blue")], [], {
-			name: "checkbox",
-			selector: "input[type=checkbox]",
-		}).list[0]?.where,
-	).toBe("input.task-list-item-checkbox (can't tell if this is the checkbox)");
-	// Without a known component the items are just named.
-	expect(changes([d("1:div.a.b.c.d", "width", "1px", "2px")]).list[0]?.where).toBe("div.a.b");
+	expect(found.list[0]?.code).toEqual(["span.cm-underline"]);
 });
 
 it("counts each not-proven reason over the captures a place rests on", () => {
@@ -240,5 +245,5 @@ it("does not read a checkbox as same when an accepted change sits on an input th
 	expect(touched.around).toEqual([]);
 	expect(
 		rowState("checkbox", "editor-reading-view", captures, { around: accepted }, touched)?.state,
-	).toEqual({ status: "not-proven", reasons: [CHANGED_ELSEWHERE] });
+	).toEqual({ status: "not-proven", reasons: [changedElsewhere("checkbox")] });
 });

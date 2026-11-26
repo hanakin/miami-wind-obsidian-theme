@@ -126,6 +126,16 @@ function data(index: FixtureIndex): ViewerData {
 	const compare = report === null ? null : compareStates(report);
 	const differing = typeof compare === "string" ? [] : (report?.fixtures ?? []);
 	const contains = new Map(index.fixtures.map((f) => [f.id, [f.component, ...f.contains]]));
+	// A component with no selector of its own (a whole view, the gutter) is its capture: every
+	// change in that capture is a change to it.
+	const ownWhole = (id: string) => {
+		const component = byId.get(id)?.component;
+		return component && !COMPONENTS[component] ? [component] : [];
+	};
+	const tied = (found: ReturnType<typeof changes>, whole: string[]) => ({
+		...found,
+		list: found.list.map((c) => ({ ...c, components: [...c.components, ...whole] })),
+	});
 	return {
 		appCss: existsSync(paths.app),
 		cmCss: existsSync(paths.cm),
@@ -148,7 +158,10 @@ function data(index: FixtureIndex): ViewerData {
 				.filter((f) => f.differences?.length)
 				.map((f) => [
 					f.id,
-					touchedComponents(f.differences ?? [], contains.get(f.id) ?? [], COMPONENTS),
+					[
+						...touchedComponents(f.differences ?? [], contains.get(f.id) ?? [], COMPONENTS),
+						...ownWhole(f.id),
+					],
 				]),
 		),
 		changes: Object.fromEntries(
@@ -157,10 +170,18 @@ function data(index: FixtureIndex): ViewerData {
 				.map((f) => [
 					f.id,
 					{
-						...changes(f.differences ?? [], f.acceptanceScope?.elements, {
-							name: byId.get(f.id)?.component ?? "",
-							selector: COMPONENTS[byId.get(f.id)?.component ?? ""],
-						}),
+						...tied(
+							changes(
+								f.differences ?? [],
+								f.acceptanceScope?.elements,
+								Object.fromEntries(
+									(contains.get(f.id) ?? []).flatMap((c) =>
+										COMPONENTS[c] ? [[c, COMPONENTS[c]]] : [],
+									),
+								),
+							),
+							ownWhole(f.id),
+						),
 						diffImage: Boolean(f.images?.diff),
 					},
 				]),
@@ -245,6 +266,18 @@ export function viewer(): Plugin {
 						frameDocument(html, styles, focus, nonce, fixture?.imageSizes, xhtml),
 					);
 				}
+				if (/^\/lib\/mathjax\/[\w/-]+\.woff2$/.test(url.pathname)) {
+					// MathJax's fonts, which math captures ask for by this path. Fonts only.
+					try {
+						const asar = appAsar() ?? "/usr/lib/obsidian/obsidian.asar";
+						const file = extractFile(asar, url.pathname.slice(1));
+						res.setHeader("Access-Control-Allow-Origin", "null");
+						res.setHeader("Cache-Control", "max-age=31536000, immutable");
+						return send(res, 200, "font/woff2", file);
+					} catch {
+						return send(res, 404, "text/plain", "Not found");
+					}
+				}
 				if (area === "css" && a === "public" && b && /^[\w.-]+$/.test(b)) {
 					// Fonts and images app.css points at, read straight from the local Obsidian install.
 					try {
@@ -285,7 +318,7 @@ export function viewer(): Plugin {
 					res.setHeader("Cache-Control", "no-store");
 					return send(res, 200, "image/png", readFileSync(file));
 				}
-				if (["frame", "css", "diff"].includes(area ?? "")) {
+				if (["frame", "css", "diff", "lib"].includes(area ?? "")) {
 					return send(res, 404, "text/plain", "Not found");
 				}
 				next();

@@ -614,3 +614,37 @@ figcaption > code {
 	color: var(--grey-500);
 	font-size: 11px;
 }
+
+/* A capture's reasons, one per line. */
+.reasons {
+	margin: 2px 0 0;
+	padding: 0;
+	list-style: none;
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+/* A one-line row has no room for the styling note. */
+.surface.bare .look {
+	display: none;
+}
+
+/* A very tall capture is cut off rather than filling the page with empty panel. */
+.crop {
+	max-height: 520px;
+}
+
+nav a.untied {
+	margin: 8px -4px 0;
+	font-size: 13px;
+}
+
+.surface h3 a {
+	color: var(--text);
+	cursor: pointer;
+}
+
+.surface h3 a:hover,
+.surface h3 a:focus-visible {
+	color: var(--pink);
+}

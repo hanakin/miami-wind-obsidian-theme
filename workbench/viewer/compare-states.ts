@@ -1,6 +1,6 @@
 import { matchesElement, mayMatchElement } from "./elements.ts";
 import type { CompareState } from "./types.ts";
-import { kinds, plainProperty } from "./words.ts";
+import { itemName, kinds, plainProperty } from "./words.ts";
 
 interface CompareFixture {
 	id: string;
@@ -66,8 +66,9 @@ function tally(states: CompareState[]): [string, number][] {
 }
 
 const NOT_COMPARED: CompareState = { status: "not-proven", reasons: ["not compared yet"] };
-/** Said when a larger capture differs, but not on an element that is surely the component's. */
-export const CHANGED_ELSEWHERE = "a larger capture changed, but not on this component itself";
+/** Said when a capture differs, but not on an element that is surely the component's. */
+export const changedElsewhere = (component: string) =>
+	`a change in this capture, not on the ${component} itself`;
 
 /** One capture's verdict. A capture the compare tool has no result for is not proven. */
 export const captureState = (compare: Record<string, CompareState> | null, id: string) =>
@@ -78,10 +79,10 @@ export const captureState = (compare: Record<string, CompareState> | null, id: s
  * the component appears in; `touched` lists, per capture, the components with a recorded
  * difference on their own elements.
  *
- * With captures of the component itself, those decide. Otherwise every larger capture that
- * contains it does: same when all are proven same; differs or accepted when that capture's
- * change lands on the component's own elements; and not proven when one is not proven or changed
- * somewhere that cannot be ruled out for this component. Undefined only when no capture contains it there.
+ * The component's own captures there decide, or, when it has none, every larger capture that
+ * contains it. One rule for both: a capture counts as differing (or accepted) for this component
+ * only when its change lands on the component's own elements. A change elsewhere in the capture
+ * is not proven, never same. Undefined only when no capture contains the component there.
  */
 export function rowState(
 	component: string,
@@ -91,21 +92,29 @@ export function rowState(
 	touched: Record<string, string[]> = {},
 ): PlaceVerdict | undefined {
 	const here = fixtures.filter((f) => f.surface === surface);
-	const own = here.filter((f) => f.component === component);
-	if (own.length) {
-		const states = own.map((f) => captureState(compare, f.id));
-		return { state: combine(states), inside: false, captures: own.length, reasons: tally(states) };
-	}
 	if (here.length === 0) return undefined;
-	const states = here.map((f): CompareState => {
-		const state = captureState(compare, f.id);
-		if (state.status === "same" || state.status === "not-proven") return state;
-		if (touched[f.id]?.includes(component)) return state;
-		// The change is not surely on this component's own elements. That does not prove the
-		// component is the same, whether the capture's change was accepted or not.
-		return { status: "not-proven", reasons: [CHANGED_ELSEWHERE] };
-	});
-	return { state: combine(states), inside: true, captures: here.length, reasons: tally(states) };
+	const own = here.filter((f) => f.component === component);
+	const judged = own.length ? own : here;
+	const states = judged.map((f) => stateFor(component, f.id, compare, touched));
+	return {
+		state: combine(states),
+		inside: own.length === 0,
+		captures: judged.length,
+		reasons: tally(states),
+	};
+}
+
+/** What one capture says about one component: its change counts only when it is on the component. */
+export function stateFor(
+	component: string,
+	id: string,
+	compare: Record<string, CompareState> | null,
+	touched: Record<string, string[]>,
+): CompareState {
+	const state = captureState(compare, id);
+	if (state.status === "same" || state.status === "not-proven") return state;
+	if (touched[id]?.includes(component)) return state;
+	return { status: "not-proven", reasons: [changedElsewhere(component)] };
 }
 
 // Worst first: what a page's dot and a group of captures report.
@@ -176,8 +185,14 @@ interface Difference {
 export interface Change {
 	/** What changed, in plain words: "Text color", "Padding left". */
 	what: string;
-	/** Which items it is on, in plain words: "the tag", "another item (span.cm-underline)". */
-	where: string;
+	/** The items it is on, in plain words: "link brackets and 1 other item". */
+	items: string;
+	/** The same items by their code names, for looking them up. */
+	code: string[];
+	/** Components with one of these items surely among their own elements. */
+	components: string[];
+	/** Components one of these items might belong to; the report cannot tell (no attributes). */
+	maybe: string[];
 	/** Every property that changes this way, most common first. */
 	properties: string[];
 	before: string | null;
@@ -209,36 +224,23 @@ function nameOf(properties: string[]): string {
 	return plain.charAt(0).toUpperCase() + plain.slice(1);
 }
 
-/** Says which items a change is on, relative to the capture's own component. */
-function whereOf(elements: string[], component?: { name: string; selector?: string }): string {
-	const others = (n: number) => `${n} other ${n === 1 ? "item" : "items"}`;
-	const first = describe(elements[0] ?? "");
-	const rest = elements.length > 1 ? ` and ${others(elements.length - 1)}` : "";
-	const selector = component?.selector;
-	if (!component || !selector) return `${first}${rest}`;
-	const own = elements.filter((e) => matchesElement(selector, e)).length;
-	if (own === elements.length) return `the ${component.name}`;
-	if (own > 0) return `the ${component.name} and ${others(elements.length - own)}`;
-	// The key has no attributes: an input may or may not be the checkbox. Say so rather than guess.
-	if (elements.some((e) => mayMatchElement(selector, e))) {
-		return `${first}${rest} (can't tell if this is the ${component.name})`;
-	}
-	return `another item, not the ${component.name} (${first}${rest})`;
-}
-
 /**
  * A capture's style differences boiled down to distinct changes, most common first. The compare
  * tool lists every element and property; most repeat the same change of value. `acceptedElements`
  * are the element keys the compare tool accepted (its acceptanceScope), pseudo-elements included.
- * `component` is the capture's own component, to say whether a change is on it or on something else.
+ * `selectors` maps the components found in the capture to their selector lists, to say which
+ * component each change is on.
  */
 export function changes(
 	differences: Difference[],
 	acceptedElements: string[] = [],
-	component?: { name: string; selector?: string },
+	selectors: Record<string, string> = {},
 	limit = 30,
 ): { total: number; list: Change[] } {
-	type Group = Omit<Change, "what" | "where"> & { seen: Map<string, number>; on: Set<string> };
+	type Group = Pick<Change, "before" | "after" | "count" | "accepted"> & {
+		seen: Map<string, number>;
+		on: Set<string>;
+	};
 	const byChange = new Map<string, Group>();
 	for (const { element, property, before, after } of differences) {
 		if (LOGICAL.test(property)) continue;
@@ -246,7 +248,6 @@ export function changes(
 		const accepted = acceptedElements.includes(item);
 		const key = `${before}\n${after}\n${accepted}`;
 		const change = byChange.get(key) ?? {
-			properties: [],
 			before,
 			after,
 			count: 0,
@@ -261,11 +262,21 @@ export function changes(
 	}
 	const list = [...byChange.values()]
 		.sort((a, b) => b.count - a.count)
-		.map(({ seen, on, ...change }) => {
+		.map(({ seen, on, ...change }): Change => {
 			const properties = [...seen].sort((a, b) => b[1] - a[1]).map(([property]) => property);
+			const elements = [...on];
+			const code = [...new Set(elements.map(describe))];
+			const names = [...new Set(code.map(itemName))];
+			const sure = (c: string) => elements.some((e) => matchesElement(selectors[c] ?? "", e));
+			const components = Object.keys(selectors).filter(sure);
 			return {
 				what: nameOf(properties),
-				where: whereOf([...on], component),
+				items: `${names[0]}${names.length > 1 ? ` and ${names.length - 1} other ${names.length === 2 ? "item" : "items"}` : ""}`,
+				code,
+				components,
+				maybe: Object.keys(selectors).filter(
+					(c) => !sure(c) && elements.some((e) => mayMatchElement(selectors[c] ?? "", e)),
+				),
 				...change,
 				properties,
 			};

@@ -42,7 +42,17 @@ addEventListener("load", async () => {
 	const focus = ${JSON.stringify(focus)};
 	const visible = (e) => e.getClientRects().length > 0 && e.checkVisibility({ opacityProperty: true, visibilityProperty: true });
 	const target = document.querySelector("[data-capture-target]") ?? document.body;
-	const mine = (e) => e.matches(focus.is) && !focus.not.some((s) => e.matches(s)) && visible(e);
+	// Really showing: after any scrolling, the point at its middle is the element, not something over it.
+	const onTop = (e) => {
+		let r = e.getBoundingClientRect();
+		for (let a = e.parentElement; a && (r.bottom > innerHeight || r.top < 0); a = a.parentElement) {
+			a.scrollTop += r.top - a.getBoundingClientRect().top - (a.clientHeight - r.height) / 2;
+			r = e.getBoundingClientRect();
+		}
+		const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+		return hit !== null && (e.contains(hit) || hit.contains(e));
+	};
+	const mine = (e) => e.matches(focus.is) && !focus.not.some((s) => e.matches(s)) && visible(e) && onTop(e);
 	const el = focus ? [target, ...target.querySelectorAll(focus.is)].find(mine) : visible(target) && target;
 	if (!el) return parent.postMessage({ mwRect: null }, "*");
 	// Bring an element below the fold into view. Not scrollIntoView: it would scroll the viewer too.
@@ -127,7 +137,8 @@ export function frameCsp(origin: string, nonce: string): string {
 		"sandbox allow-scripts",
 		"default-src 'none'",
 		`style-src ${origin}/css/ 'unsafe-inline'`,
-		`font-src ${origin}/css/public/`,
+		// App fonts, and the MathJax fonts math captures ask for. Nothing wider.
+		`font-src ${origin}/css/public/ ${origin}/lib/mathjax/`,
 		`img-src ${origin}/css/public/ data:`,
 		`script-src 'nonce-${nonce}'`,
 		// Captured srcdoc iframes only; they inherit this policy.

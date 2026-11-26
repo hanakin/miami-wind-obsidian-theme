@@ -1,9 +1,9 @@
 import {
 	type Change,
-	captureState,
 	type PlaceVerdict,
 	pageSummary,
 	rowState,
+	stateFor,
 } from "./compare-states.ts";
 import type { CompareState, Fixture, Theme, ViewerData } from "./types.ts";
 import { bySurface, kinds, plainReason, surfaceName } from "./words.ts";
@@ -30,8 +30,9 @@ const LABEL = Object.fromEntries(STATES) as Record<Status, string>;
 const DESKTOP: [number, number] = [1600, 1000];
 // Room around the shown element, and the least a crop shows, so small things keep some context.
 const PAD = 16;
+// Less room above and below, so the crop does not show slices of the neighboring lines.
+const PAD_Y = 6;
 const MIN_W = 320;
-const MIN_H = 96;
 const GAP = 8;
 // How many captures to try when looking for one that shows a state for the shared look.
 const MAX_TRIES = 6;
@@ -140,6 +141,13 @@ function renderNav(): void {
 			h("div", { class: "brand" }, "Miami Wind components"),
 			filter,
 			legend(),
+			untiedCount > 0 &&
+				h(
+					"a",
+					{ href: `#${UNTIED}`, "data-name": UNTIED, class: "untied" },
+					h("span", { class: "nav-name" }, "Changes not tied to a component"),
+					h("span", { class: "nav-count" }, String(untiedCount)),
+				),
 		),
 		h(
 			"div",
@@ -210,8 +218,14 @@ const MAX_AROUND = 760;
 const onMissing = new WeakMap<Element, () => void>();
 
 /** A span of at least `min` around [start, start + size], kept inside [0, limit]. */
-function span(start: number, size: number, min: number, limit: number): [number, number] {
-	const length = Math.min(limit, Math.max(size + 2 * PAD, min));
+function span(
+	start: number,
+	size: number,
+	min: number,
+	limit: number,
+	pad = PAD,
+): [number, number] {
+	const length = Math.min(limit, Math.max(size + 2 * pad, min));
 	const from = Math.min(Math.max(0, start + size / 2 - length / 2), limit - length);
 	return [from, length];
 }
@@ -229,7 +243,7 @@ function layout(figure: Element): void {
 		const [left, width] = whole
 			? span(a[0], a[1], MIN_W, Number(frame.width))
 			: span(r[0], r[2], MIN_W, Number(frame.width));
-		const [top, height] = span(r[1], r[3], MIN_H, Number(frame.height));
+		const [top, height] = span(r[1], r[3], 0, Number(frame.height), PAD_Y);
 		return [{ crop: crop as HTMLElement, frame, left, top, width, height }];
 	});
 	const half = (room - GAP) / 2 - 2;
@@ -294,23 +308,48 @@ function value(v: string | null): HTMLElement {
 }
 
 /** One change in plain words: what changed, from what to what, and on which item. */
-function changeLine(c: Change): HTMLElement {
+function changeLine(c: Change, component: string): HTMLElement {
+	// Which item changed, relative to the component this page is about.
+	const where = c.components.includes(component)
+		? `the ${component}`
+		: c.maybe.includes(component)
+			? `${c.items} (can't tell if this is the ${component})`
+			: c.items;
 	return h(
 		"li",
-		{ title: `${c.properties.join(", ")}\n${c.before} → ${c.after}` },
+		{ title: `${c.code.join(", ")}\n${c.properties.join(", ")}\n${c.before} → ${c.after}` },
 		`${c.what}: `,
 		value(c.before),
 		" → ",
 		value(c.after),
-		` on ${c.where}`,
+		` on ${where}`,
 		c.accepted && h("span", { class: "verdict accepted" }, ", accepted (intentional)"),
 	);
 }
 
+/** A change no component can claim: it sits on items that are surely none of them. */
+const untied = (c: Change) => c.components.length === 0;
+// Those changes get a page of their own, so that judging each component by its own items hides nothing.
+const UNTIED = "~untied";
+const untiedCaptures = data.fixtures.filter((f) => data.changes[f.id]?.list.some(untied));
+const untiedCount = untiedCaptures.reduce(
+	(n, f) => n + (data.changes[f.id]?.list.filter(untied).length ?? 0),
+	0,
+);
+
 /** What differs in a capture, in plain words: the first few changes, the rest behind a click. */
-function whatDiffers(f: Fixture): HTMLElement | false {
-	const found = data.changes[f.id];
-	if (!found) return false;
+function whatDiffers(
+	f: Fixture,
+	component: string,
+	only?: (c: Change) => boolean,
+): HTMLElement | false {
+	const all = data.changes[f.id];
+	if (!all) return false;
+	const list = only ? all.list.filter(only) : all.list;
+	// A filtered list is complete as shown; the full one may have been cut by the server.
+	const found = { ...all, list, total: only ? list.length : all.total };
+	if (list.length === 0) return false;
+	const line = (c: Change) => changeLine(c, component);
 	const more = found.list.slice(MAX_CHANGES);
 	const picture =
 		found.diffImage && h("img", { alt: `Changed pixels in ${f.id}`, loading: "lazy" });
@@ -329,7 +368,7 @@ function whatDiffers(f: Fixture): HTMLElement | false {
 					.join(" and "),
 			),
 		);
-		if (more.length) details.append(h("ul", {}, ...more.map(changeLine)));
+		if (more.length) details.append(h("ul", {}, ...more.map(line)));
 		if (found.total > found.list.length) {
 			details.append(h("p", {}, `…and ${found.total - found.list.length} rarer ones.`));
 		}
@@ -346,24 +385,39 @@ function whatDiffers(f: Fixture): HTMLElement | false {
 	return h(
 		"div",
 		{ class: "differs" },
-		h("ul", {}, ...found.list.slice(0, MAX_CHANGES).map(changeLine)),
+		h("ul", {}, ...found.list.slice(0, MAX_CHANGES).map(line)),
 		details,
 	);
 }
 
-/** A verdict's reason in plain words, when it has one. */
-function reasonOf(verdict: CompareState): string {
-	if (verdict.status === "not-proven") return verdict.reasons.map(plainReason).join("; ");
-	return verdict.status === "accepted" ? `intentional: ${verdict.reason}` : "";
+/** A capture's verdict under its picture: the state, then each reason on its own line. */
+function verdictLines(verdict: CompareState): HTMLElement | false {
+	if (verdict.status === "same") return false;
+	const reasons =
+		verdict.status === "not-proven"
+			? verdict.reasons.map(plainReason)
+			: verdict.status === "accepted"
+				? [`intentional: ${verdict.reason}`]
+				: [];
+	return h(
+		"ul",
+		{ class: `reasons verdict ${verdict.status}` },
+		...(reasons.length ? reasons : [""]).map((r, i) =>
+			h("li", {}, i === 0 ? `${LABEL[verdict.status]}${r ? `: ${r}` : ""}` : r),
+		),
+	);
 }
 
-/** `focus` names the component to crop to when the fixture captured something larger around it. */
-function capture(f: Fixture, focus?: string): HTMLElement {
+/**
+ * One capture with its pictures. `focus` names the component to crop to when the fixture captured
+ * something larger around it; the verdict shown is always about that component.
+ */
+function capture(f: Fixture, focus?: string, only?: (c: Change) => boolean): HTMLElement {
 	const themes: Theme[] = mode === "both" ? ["current", "new"] : [mode];
-	// A larger capture previewed for another component: its own verdict is not that component's.
-	const around = focus !== undefined && f.component !== focus;
-	const verdict = around ? undefined : captureState(data.compare, f.id);
-	const reason = verdict && reasonOf(verdict);
+	const component = focus ?? f.component;
+	// A larger capture previewed for another component: the row above already gives the verdict.
+	const around = f.component !== component;
+	const verdict = around ? undefined : stateFor(component, f.id, data.compare, data.touched);
 	return h(
 		"figure",
 		{ class: "capture" },
@@ -374,15 +428,9 @@ function capture(f: Fixture, focus?: string): HTMLElement {
 			h("span", { class: f.state === "default" ? "state" : "state forced" }, f.state),
 			h("code", {}, f.id),
 			around && h("span", { class: "aside" }, `in ${f.component}`),
-			verdict &&
-				verdict.status !== "same" &&
-				h(
-					"span",
-					{ class: `verdict ${verdict.status}` },
-					`${LABEL[verdict.status]}${reason ? `: ${reason}` : ""}`,
-				),
 		),
-		verdict && verdict.status !== "same" && whatDiffers(f),
+		verdict && verdictLines(verdict),
+		whatDiffers(f, component, only),
 	);
 }
 
@@ -415,6 +463,9 @@ function fold(summary: string, ...content: Child[]): HTMLElement {
 
 /** How this place departs from the component's shared look (component-diffs.json), in one line. */
 function sharedLookLine(component: string, surface: string): HTMLElement | false {
+	const all = Object.values(data.diffs?.[component] ?? {});
+	// Styled differently in every place means there is no standard to differ from: say nothing.
+	if (all.length > 1 && all.every((x) => !x.same)) return false;
 	const d = data.diffs?.[component]?.[surface];
 	// Nothing to say when it matches. This is about the component across places, not 1.x vs 2.0.
 	if (!d || d.same) return false;
@@ -592,9 +643,57 @@ function reportLine(): string | false {
 		month: "short",
 		day: "numeric",
 	});
-	return r.after
-		? `Compared 1.x with 2.0 build ${r.after.sha256.slice(0, 7)}, ${date}.`
-		: `Compared 1.x with a 2.0 build on ${date}. The report does not record which build.`;
+	const compared = Object.keys(data.compare ?? {}).length;
+	const part =
+		compared < data.fixtures.length
+			? ` This report covers ${compared.toLocaleString("en-US")} of ${data.fixtures.length.toLocaleString("en-US")} captures.`
+			: "";
+	return (
+		(r.after
+			? `Compared 1.x with 2.0 build ${r.after.sha256.slice(0, 7)}, ${date}.`
+			: `Compared 1.x with a 2.0 build on ${date}. The report does not record which build.`) + part
+	);
+}
+
+/** Every change that sits on no component's own items, each with the capture it is in. */
+function renderUntied(): void {
+	main.replaceChildren(
+		h(
+			"header",
+			{ class: "top" },
+			h(
+				"div",
+				{},
+				h("h1", {}, "Changes not tied to a component"),
+				h(
+					"p",
+					{},
+					`${untiedCount} ${untiedCount === 1 ? "change" : "changes"} in ${untiedCaptures.length} ${untiedCaptures.length === 1 ? "capture" : "captures"}, on items that belong to no component the viewer knows.`,
+				),
+				h("p", { class: "report" }, reportLine()),
+			),
+			modeSwitch(),
+		),
+		...[reportNotice()].filter((n): n is HTMLElement => Boolean(n)),
+		h(
+			"section",
+			{},
+			...untiedCaptures.map((f) =>
+				h(
+					"section",
+					{ class: "surface" },
+					h(
+						"header",
+						{},
+						h("h3", {}, h("a", { href: `#${f.component}` }, f.component)),
+						h("p", { class: "reason" }, surfaceName(f.surface)),
+					),
+					h("div", { class: "captures" }, capture(f, undefined, untied)),
+				),
+			),
+		),
+	);
+	main.scrollTop = 0;
 }
 
 /** A warning when the pictures may not show the build the results describe. */
@@ -622,6 +721,10 @@ function renderPage(): void {
 	for (const a of nav.querySelectorAll("a")) {
 		if (a.dataset.name === name) a.setAttribute("aria-current", "page");
 		else a.removeAttribute("aria-current");
+	}
+	if (name === UNTIED) {
+		renderUntied();
+		return;
 	}
 	const entry = data.components[name];
 	const all = capturesOf(name);

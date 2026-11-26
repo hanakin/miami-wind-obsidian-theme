@@ -68,3 +68,34 @@ export function kinds(props: string[]): string {
 export function plainProperty(prop: string): string {
 	return prop.replace(/^-webkit-/, "").replaceAll("-", " ");
 }
+
+// Plain names for the items a change can sit on, by class first, then by tag. First match wins.
+const ITEMS: [RegExp, string][] = [
+	[/\.cm-formatting-link/, "link brackets"],
+	[/\.cm-formatting-math|\.cm-math/, "math"],
+	[/\.cm-formatting-code|\.cm-inline-code/, "inline code"],
+	[/\.cm-formatting-header|\.cm-header|\.HyperMD-header/, "heading"],
+	[/\.cm-formatting/, "formatting marks"],
+	[/\.cm-hashtag|\.tag\b/, "tag"],
+	[/\.cm-url|\.external-link/, "web link"],
+	[/\.cm-hmd-internal-link|\.internal-link|\.cm-underline|\.cm-link/, "link"],
+	[/\.cm-line/, "editor line"],
+	[/\.clickable-icon/, "icon button"],
+	[/^select\b/, "dropdown"],
+	[/^button\b/, "button"],
+	[/^textarea\b/, "text box"],
+	[/^input\b/, "input field"],
+	[/^(svg|path)\b/, "icon"],
+	[/^a\b/, "link"],
+	[/^(code|pre)\b/, "code"],
+	[/^h[1-6]\b/, "heading"],
+	[/^(li|ul|ol)\b/, "list"],
+	[/^(td|th|tr|table)\b/, "table"],
+	[/^blockquote\b/, "quote"],
+	[/^p\b/, "paragraph"],
+];
+
+/** "span.cm-formatting.cm-formatting-link-string" → "link brackets"; unknown items keep their code name. */
+export function itemName(code: string): string {
+	return ITEMS.find(([re]) => re.test(code))?.[1] ?? code;
+}
