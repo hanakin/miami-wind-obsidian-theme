@@ -298,6 +298,14 @@ const limitations = [
 	"Invisible targets remain in style comparisons; screenshots show the 1600×1000 viewport and may not paint them.",
 	"Component diffs describe after-theme surface consistency, not before/after parity; filtered runs only cover selected uses.",
 ];
+const status =
+	exitCode === 1
+		? "different"
+		: exitCode === 2
+			? "not-proven"
+			: accepted.length
+				? "accepted"
+				: "same";
 await Bun.write(
 	`${out}/compare.json`,
 	JSON.stringify(
@@ -307,14 +315,7 @@ await Bun.write(
 				flags: BROWSER_OPTIONS.args,
 				capture: "Page.captureScreenshot",
 			},
-			status:
-				exitCode === 1
-					? "different"
-					: exitCode === 2
-						? "not-proven"
-						: accepted.length
-							? "accepted"
-							: "same",
+			status,
 			accepted,
 			notProven,
 			noise,
@@ -338,7 +339,7 @@ await Bun.write(
 		2,
 	),
 );
-const text = `${summary.checked} fixtures checked; ${changed} with differences; ${summary.unchanged} same; ${summary.notProvenOnly} not proven; ${summary.accepted} accepted (intentional); ${seconds}s.\nCoverage limits: ${summary.notProven} fixtures (can overlap differences or accepted results).\nEngine: Playwright Chromium ${browser.version()}. Independent before/after repeats (2 each): ${summary.sanity}.\nInvisible targets: ${summary.invisibleTargets}.\n\nAccepted (intentional):\n${accepted.map((r) => `- ${r.id}: accepted: ${r.reason}`).join("\n")}\n\nNot proven:\n${notProven.map((r) => `- ${r.id}: ${r.reasons.join("; ")}`).join("\n")}\n\nTop element/property differences:\n${topDifferences.map((d) => `- ${d.count}: ${d.elementProperty}`).join("\n")}\n\nLimits:\n${limitations.map((l) => `- ${l}`).join("\n")}\n`;
+const text = `Status: ${status}.\n${summary.checked} fixtures checked; ${changed} with differences; ${summary.unchanged} same; ${summary.notProvenOnly} not proven; ${summary.accepted} accepted (intentional); ${seconds}s.\nCoverage limits: ${summary.notProven} fixtures (can overlap differences or accepted results).\nEngine: Playwright Chromium ${browser.version()}. Independent before/after repeats (2 each): ${summary.sanity}.\nInvisible targets: ${summary.invisibleTargets}.\n\nAccepted (intentional):\n${accepted.map((r) => `- ${r.id}: accepted: ${r.reason}`).join("\n")}\n\nNot proven:\n${notProven.map((r) => `- ${r.id}: ${r.reasons.join("; ")}`).join("\n")}\n\nTop element/property differences:\n${topDifferences.map((d) => `- ${d.count}: ${d.elementProperty}`).join("\n")}\n\nLimits:\n${limitations.map((l) => `- ${l}`).join("\n")}\n`;
 await Bun.write(`${out}/compare.md`, text);
 console.log(text);
 process.exitCode = exitCode;

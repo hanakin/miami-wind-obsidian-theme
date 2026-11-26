@@ -24,7 +24,8 @@ const match = {
 	color: "rgb(0, 0, 0)",
 	backgroundColor: "rgba(0, 0, 0, 0)",
 };
-const scope = acceptanceScope([[match], [match], [match], [match]]);
+const beforeMatch = { ...match, color: "magenta", backgroundColor: "magenta" };
+const scope = acceptanceScope([[beforeMatch], [beforeMatch], [match], [match]]);
 const difference = (element = match.element): Difference => ({
 	element,
 	property: "color",
@@ -135,6 +136,27 @@ test("requires both inline colors to win in both after captures, including uncha
 		acceptanceScope([[before], [before], [match], [match]]).elements,
 	).toEqual([match.element]);
 });
+test("accepts currentColor consequences only when their before value followed the select text", () => {
+	for (const property of entries[0]!.properties.filter(
+		(p) => p !== "color" && p !== "background-color",
+	)) {
+		const element = property.startsWith("border-")
+			? "4:select::before"
+			: "4:select";
+		const change = { ...difference(element), property };
+		expect(
+			acceptedOutcome(verdict(), { ...evidence, differences: [change] }).status,
+			property,
+		).toBe("accepted");
+		expect(
+			acceptedOutcome(verdict(), {
+				...evidence,
+				differences: [{ ...change, before: "rgb(0, 0, 255)" }],
+			}).status,
+			property,
+		).toBe("different");
+	}
+});
 test("accepted differences with coverage limits still fail as not-proven", () => {
 	expect(
 		comparisonExitCode([
@@ -167,11 +189,12 @@ test("requires the same matching element in all four captures and retains their 
 	expect(scope).toEqual({
 		elements: ["4:select"],
 		rects: Array(4).fill(match.rect),
+		beforeColors: { "4:select": "magenta" },
 	});
 	expect(
 		acceptedOutcome(verdict(), {
 			...evidence,
-			scope: { elements: [], rects: [] },
+			scope: { elements: [], rects: [], beforeColors: {} },
 		}).status,
 	).toBe("different");
 });
