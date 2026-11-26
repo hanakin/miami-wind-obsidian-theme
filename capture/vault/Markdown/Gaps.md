@@ -4,6 +4,9 @@ mismatch: not a number
 nested:
   inner: 1
 empty_date:
+tags:
+  - gaps
+  - two words
 ---
 # Gaps
 

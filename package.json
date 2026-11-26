@@ -3,6 +3,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
+		"capture:extract-runtime-css": "bun capture/scripts/runtime-css.ts",
 		"capture:extract-app-css": "bun capture/scripts/extract-app-css.ts",
 		"capture:checklist": "bun capture/scripts/build-checklist.ts",
 		"capture:run": "bun capture/scripts/capture.ts",

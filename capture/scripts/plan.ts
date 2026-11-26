@@ -33,6 +33,8 @@ export interface Exclusions {
 	platformSelectors: Record<string, string>;
 	/** Theme-affected app classes this capture cannot show (account, platform, mobile, no producer), with the reason. */
 	appClassesOutOfScope?: Record<string, string>;
+	/** Theme-affected app classes not captured because of a capture limit: reported as open gaps (missing), not excluded. */
+	appClassGaps?: Record<string, string>;
 	/** theme.css selectors only met in a labeled scripted fixture, with the label. */
 	themeSelectorsScripted?: Record<string, string>;
 }

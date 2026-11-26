@@ -239,3 +239,29 @@ export function themeAffectedClasses(appCss: string, themeCss: string): Set<stri
 	});
 	return out;
 }
+
+/**
+ * A stylesheet rewritten to replay saved fixtures: state pseudo-classes become the capture marks
+ * (:hover -> [data-capture-state~="hover"], :visited -> [data-capture-visited]), and hover/pointer
+ * media match how the fixture was captured (touch: (hover: none), (pointer: coarse); else a mouse).
+ */
+export function replayCss(css: string, touch: boolean): string {
+	const root = postcss.parse(css);
+	const STATE = /(?<!:):(hover|active|focus-visible|focus-within|focus|visited)(?![\w-])/g;
+	root.walkRules((r: Rule) => {
+		if (!STATE.test(r.selector)) return;
+		STATE.lastIndex = 0;
+		r.selector = r.selector.replace(STATE, (_m, p: string) =>
+			p === "visited" ? "[data-capture-visited]" : `[data-capture-state~="${p}"]`,
+		);
+	});
+	root.walkAtRules("media", (a: AtRule) => {
+		const q = a.params.replace(/\s+/g, "");
+		const mouse = /^\((any-)?(hover:hover|pointer:fine)\)$/.test(q);
+		const tap = /^\((any-)?(hover:none|pointer:coarse)\)$/.test(q);
+		if (!mouse && !tap) return;
+		if (mouse !== touch) a.replaceWith(a.nodes ?? []);
+		else a.remove();
+	});
+	return root.toString();
+}

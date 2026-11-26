@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-23T15:44:09.962Z",
+	"generated": "2026-11-24T08:15:02.677Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
 		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/config/obsidian"
@@ -13913,7 +13913,8 @@
 				"in": "leaf"
 			},
 			"note": "A kanban column held mid-drag with the real mouse (pressing on a card starts a column reorder): the column gets .is-being-dragged and a .drag-reorder-ghost copy follows the pointer.",
-			"expect": ":has(> .bases-kanban-column.is-being-dragged)"
+			"expect": ":has(> .bases-kanban-column.is-being-dragged)",
+			"minUnobscured": 0
 		},
 		{
 			"id": "qc.drag.kanban-ghost",
@@ -14432,6 +14433,19 @@
 			"note": "Tags, attachments, orphans, unresolved links and a color group are on; Pixi draws them on a canvas with the colors Obsidian reads from .graph-view.color-* probes. evidence.record holds the colors the renderer read from each probe class and how many screenshot pixels have exactly that color."
 		},
 		{
+			"id": "qc.graph.node-hover",
+			"scene": "qc.graph",
+			"surface": "graph",
+			"component": "graph",
+			"state": "default",
+			"source": "catalog:graph-qc",
+			"target": {
+				"sel": ".workspace-leaf-content",
+				"in": "leaf"
+			},
+			"note": "The pointer on the Kitchen sink node: Obsidian highlights it and its links (focused fill, circle, highlight colors) and fades the rest."
+		},
+		{
 			"id": "qc.media.print",
 			"scene": "qc.media",
 			"surface": "editor-reading-view",
@@ -14439,7 +14453,7 @@
 			"state": "default",
 			"source": "catalog:media-emulation",
 			"target": "body > .print",
-			"note": "Obsidian's export modal testPrint() renders the print layout (body > .print) into the window; @media print emulated through Emulation.setEmulatedMedia."
+			"note": "Debug view, not the export: Obsidian's testPrint() lays the print layout (body > .print) into the dark main window, with @media print emulated. Real Export to PDF renders in its own window with body.theme-light: see qc.print.export-window."
 		},
 		{
 			"id": "qc.media.forced-colors",
@@ -15049,6 +15063,130 @@
 			"expect": ".bases-error"
 		},
 		{
+			"id": "qc.gap.bases-group-rows",
+			"scene": "qc.gaps2",
+			"surface": "menu",
+			"component": "menu",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".menu .bases-group-list",
+				"closest": ".menu"
+			},
+			"note": "Group menu with Manual order: one row per group (with counts, hidden ones dimmed).",
+			"expect": ":has(.bases-group-row)"
+		},
+		{
+			"id": "qc.gap.bases-add-group",
+			"scene": "qc.gaps2",
+			"surface": "menu",
+			"component": "menu",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".menu .bases-group-row.is-editing",
+				"closest": ".menu"
+			},
+			"note": "The Add group row being edited.",
+			"expect": ":has(.bases-group-row.is-editing)"
+		},
+		{
+			"id": "qc.gap.drag-header-highlight",
+			"scene": "qc.gaps2",
+			"surface": "workspace",
+			"component": "view-header",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".view-header.is-highlighted",
+				"in": "leaf"
+			},
+			"note": "A file dragged over the open note's header: the header is highlighted as a drop target.",
+			"expect": ".is-highlighted"
+		},
+		{
+			"id": "qc.gap.reader-mode",
+			"scene": "qc.gaps2",
+			"surface": "workspace",
+			"component": "webviewer",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".workspace-leaf-content[data-type='webviewer']",
+				"in": "leaf"
+			},
+			"note": "Web viewer reader mode on a local test page (capture/web/article.html served on 127.0.0.1 only).",
+			"expect": ":has(.view-action.mod-webviewer):has(.reader-mode-content)"
+		},
+		{
+			"id": "qc.gap.pdf-page-loading",
+			"scene": "qc.gaps2",
+			"surface": "pdf",
+			"component": "pdf",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": {
+				"sel": ".pdf-page-input.mod-page-loading",
+				"closest": ".pdf-toolbar"
+			},
+			"note": "A PDF still loading its pages: the toolbar's page box shows .mod-page-loading. The CPU is slowed 40x until Obsidian turns the indicator on; its reset is then held until the shot (released in the next item).",
+			"expect": ":has(.pdf-page-input.mod-page-loading)",
+			"minUnobscured": 0.3
+		},
+		{
+			"id": "qc.gap.button-loading",
+			"scene": "qc.gaps2",
+			"surface": "modal",
+			"component": "button",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": ".modal button.mod-cta.mod-loading",
+			"note": "Export to PDF's button while its save dialog is open (the dialog itself is held, since a native dialog cannot show here).",
+			"expect": ".mod-loading"
+		},
+		{
+			"id": "qc.gaps2.restore",
+			"scene": "qc.gaps2",
+			"surface": "workspace",
+			"component": "workspace",
+			"state": "default",
+			"source": "catalog:theme-affected-gaps",
+			"target": ".app-container"
+		},
+		{
+			"id": "qc.gap.vim-confirm",
+			"scene": "qc.settings-forms",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:settings-forms",
+			"target": ".modal:has(.form-field)",
+			"note": "Turning on Vim key bindings asks a question in a form field first.",
+			"expect": ":has(.form-field .input-label)"
+		},
+		{
+			"id": "qc.gap.excluded-filter-form",
+			"scene": "qc.settings-forms",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:settings-forms",
+			"target": ".modal:has(.form-field)",
+			"note": "Files and links > Excluded files > Add exclusion: a form field with help text.",
+			"expect": ":has(.form-field .form-field-help)"
+		},
+		{
+			"id": "qc.print.export-window",
+			"scene": "qc.print-export",
+			"surface": "window",
+			"component": "print",
+			"state": "default",
+			"source": "catalog:print-export",
+			"target": ".print",
+			"note": "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs.",
+			"expect": "body.theme-light > .print"
+		},
+		{
 			"id": "qc.media.hover-none",
 			"scene": "qc.no-pointer",
 			"surface": "workspace",
@@ -15393,7 +15531,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".app-container",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Reading view with the mobile navigation bar.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. Reading view with the mobile navigation bar.",
 			"expect": ".app-container"
 		},
 		{
@@ -15404,7 +15542,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".mobile-navbar",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ":has(.mobile-navbar-actions)"
 		},
 		{
@@ -15415,7 +15553,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".mobile-toolbar",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Editing shows the mobile editing toolbar.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. Editing shows the mobile editing toolbar.",
 			"expect": ":has(.mobile-toolbar-option)"
 		},
 		{
@@ -15426,7 +15564,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".workspace-drawer.mod-left",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The left sidebar as a drawer (vault switcher, tabs, file explorer).",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The left sidebar as a drawer (vault switcher, tabs, file explorer).",
 			"expect": ":has(.workspace-drawer-inner)"
 		},
 		{
@@ -15437,7 +15575,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".workspace-drawer.mod-left .workspace-drawer-tab-options:not(.is-collapsed)",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The drawer's tab chooser opened (list of sidebar tabs).",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The drawer's tab chooser opened (list of sidebar tabs).",
 			"expect": ":has(.workspace-drawer-tab-options-list .workspace-tab-header)"
 		},
 		{
@@ -15448,7 +15586,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".workspace-drawer.mod-right",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ":has(.workspace-drawer-inner)"
 		},
 		{
@@ -15459,7 +15597,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".mobile-tab-switcher",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The active tab is pinned first, so its card shows the pin.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The active tab is pinned first, so its card shows the pin.",
 			"expect": ":has(.mobile-tab)"
 		},
 		{
@@ -15470,8 +15608,42 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".menu",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. On a phone, menus open as bottom sheets (.menu.mod-sheet).",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. On a phone, menus open as bottom sheets (.menu.mod-sheet).",
 			"expect": ".menu.mod-sheet"
+		},
+		{
+			"id": "mobile.phone.menu-backdrop",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "menu",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".suggestion-bg",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The dimmed backdrop behind a menu sheet (.suggestion-bg).",
+			"expect": ".suggestion-bg",
+			"minUnobscured": 0.2
+		},
+		{
+			"id": "mobile.phone.menu-disabled",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "menu-item",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".menu .menu-item.is-disabled",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A disabled row of the menu, scrolled into view inside the sheet.",
+			"expect": ".is-disabled"
+		},
+		{
+			"id": "mobile.phone.menu-selected",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "menu-item",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".menu .menu-item.selected",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A menu row selected with the keyboard (.menu-item.selected).",
+			"expect": ".selected"
 		},
 		{
 			"id": "mobile.phone.file-menu",
@@ -15481,7 +15653,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".menu",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. A file's context menu from the file explorer drawer, with the destructive Delete item.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A file's context menu from the file explorer drawer, with the destructive Delete item.",
 			"expect": ".menu.mod-sheet:has(.menu-item.is-warning)"
 		},
 		{
@@ -15492,7 +15664,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".prompt",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ":has(.suggestion-item)"
 		},
 		{
@@ -15503,8 +15675,30 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".prompt",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ":has(.suggestion-item)"
+		},
+		{
+			"id": "mobile.phone.suggestion-tap",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "suggestion",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".prompt .suggestion-item.mobile-tap",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A suggestion row while it is pressed (.mobile-tap, set by Obsidian's pointer handlers in the mobile layout).",
+			"expect": ".mobile-tap"
+		},
+		{
+			"id": "mobile.phone.properties-invalid-tag",
+			"scene": "mobile.phone",
+			"surface": "mobile-phone",
+			"component": "property",
+			"state": "default",
+			"source": "catalog:emulated-phone",
+			"target": ".metadata-property[data-property-key='tags']",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. Gaps.md has a tag with a space, which Obsidian marks invalid (.multi-select-pill.is-invalid).",
+			"expect": ":has(.multi-select-pill.is-invalid)"
 		},
 		{
 			"id": "mobile.phone.link-suggest",
@@ -15514,7 +15708,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".suggestion-container",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Link suggestions while typing [[ in the editor.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. Link suggestions while typing [[ in the editor.",
 			"expect": ":has(.suggestion-item)"
 		},
 		{
@@ -15525,7 +15719,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".modal",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The delete confirmation; it is cancelled, nothing is deleted.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The delete confirmation; it is cancelled, nothing is deleted.",
 			"expect": ":has(.modal-button-container)"
 		},
 		{
@@ -15536,7 +15730,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".modal.mod-settings",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. On a phone, Settings opens as a list of pages.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. On a phone, Settings opens as a list of pages.",
 			"expect": ".mod-settings:has(.vertical-tab-nav-item)"
 		},
 		{
@@ -15547,7 +15741,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".modal.mod-settings",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. A Settings page (Editor), opened by tapping its entry; on a phone it slides in with a back button.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A Settings page (Editor), opened by tapping its entry; on a phone it slides in with a back button.",
 			"expect": ".mod-settings:has(.vertical-tab-content .setting-item)"
 		},
 		{
@@ -15558,7 +15752,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".app-container",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ".app-container:has(.bases-view)"
 		},
 		{
@@ -15569,7 +15763,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".menu",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The Bases view settings menu (on a phone it also holds Filter, Sort, Group and Properties).",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The Bases view settings menu (on a phone it also holds Filter, Sort, Group and Properties).",
 			"expect": ":has(.bases-toolbar-menu-item)"
 		},
 		{
@@ -15580,7 +15774,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".menu",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The Bases filter editor as a sheet with its filter rows.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The Bases filter editor as a sheet with its filter rows.",
 			"expect": ".menu.mod-sheet:has(.bases-filter-page .filter-row)"
 		},
 		{
@@ -15591,7 +15785,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".menu",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The Bases properties menu (menu item icons).",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The Bases properties menu (menu item icons).",
 			"expect": ":has(.bases-toolbar-menu-item)"
 		},
 		{
@@ -15602,7 +15796,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".app-container",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Reading view with the mobile navigation bar.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. Reading view with the mobile navigation bar.",
 			"expect": ".app-container"
 		},
 		{
@@ -15613,7 +15807,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".mobile-toolbar",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Editing shows the mobile editing toolbar.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. Editing shows the mobile editing toolbar.",
 			"expect": ":has(.mobile-toolbar-option)"
 		},
 		{
@@ -15624,7 +15818,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".workspace-drawer.mod-left",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The left sidebar as a drawer (vault switcher, tabs, file explorer).",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The left sidebar as a drawer (vault switcher, tabs, file explorer).",
 			"expect": ":has(.workspace-drawer-inner)"
 		},
 		{
@@ -15635,7 +15829,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".workspace-drawer.mod-left .workspace-drawer-tab-options:not(.is-collapsed)",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The drawer's tab chooser opened (list of sidebar tabs).",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The drawer's tab chooser opened (list of sidebar tabs).",
 			"expect": ":has(.workspace-drawer-tab-options-list .workspace-tab-header)"
 		},
 		{
@@ -15646,7 +15840,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".workspace-drawer.mod-right",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ":has(.workspace-drawer-inner)"
 		},
 		{
@@ -15657,7 +15851,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".mobile-tab-switcher",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The active tab is pinned first, so its card shows the pin.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The active tab is pinned first, so its card shows the pin.",
 			"expect": ":has(.mobile-tab)"
 		},
 		{
@@ -15668,8 +15862,30 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".menu",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ".menu"
+		},
+		{
+			"id": "mobile.tablet.menu-disabled",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "menu-item",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".menu .menu-item.is-disabled",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A disabled row of the menu, scrolled into view inside the sheet.",
+			"expect": ".is-disabled"
+		},
+		{
+			"id": "mobile.tablet.menu-selected",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "menu-item",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".menu .menu-item.selected",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A menu row selected with the keyboard (.menu-item.selected).",
+			"expect": ".selected"
 		},
 		{
 			"id": "mobile.tablet.file-menu",
@@ -15679,7 +15895,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".menu",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. A file's context menu from the file explorer drawer, with the destructive Delete item.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A file's context menu from the file explorer drawer, with the destructive Delete item.",
 			"expect": ":has(.menu-item.is-warning)"
 		},
 		{
@@ -15690,7 +15906,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".prompt",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ":has(.suggestion-item)"
 		},
 		{
@@ -15701,8 +15917,30 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".prompt",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ":has(.suggestion-item)"
+		},
+		{
+			"id": "mobile.tablet.suggestion-tap",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "suggestion",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".prompt .suggestion-item.mobile-tap",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A suggestion row while it is pressed (.mobile-tap, set by Obsidian's pointer handlers in the mobile layout).",
+			"expect": ".mobile-tap"
+		},
+		{
+			"id": "mobile.tablet.properties-invalid-tag",
+			"scene": "mobile.tablet",
+			"surface": "mobile-tablet",
+			"component": "property",
+			"state": "default",
+			"source": "catalog:emulated-tablet",
+			"target": ".metadata-property[data-property-key='tags']",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. Gaps.md has a tag with a space, which Obsidian marks invalid (.multi-select-pill.is-invalid).",
+			"expect": ":has(.multi-select-pill.is-invalid)"
 		},
 		{
 			"id": "mobile.tablet.link-suggest",
@@ -15712,7 +15950,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".suggestion-container",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Link suggestions while typing [[ in the editor.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. Link suggestions while typing [[ in the editor.",
 			"expect": ":has(.suggestion-item)"
 		},
 		{
@@ -15723,7 +15961,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".modal",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The delete confirmation; it is cancelled, nothing is deleted.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The delete confirmation; it is cancelled, nothing is deleted.",
 			"expect": ":has(.modal-button-container)"
 		},
 		{
@@ -15734,7 +15972,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".modal.mod-settings",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ".mod-settings:has(.vertical-tab-nav-item)"
 		},
 		{
@@ -15745,7 +15983,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".modal.mod-settings",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. A Settings page (Editor), opened by tapping its entry; on a phone it slides in with a back button.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A Settings page (Editor), opened by tapping its entry; on a phone it slides in with a back button.",
 			"expect": ".mod-settings:has(.vertical-tab-content .setting-item)"
 		},
 		{
@@ -15756,7 +15994,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".app-container",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ".app-container:has(.bases-view)"
 		},
 		{
@@ -15767,7 +16005,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".menu",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device.",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"expect": ":has(.filter-row)"
 		},
 		{
@@ -15778,7 +16016,7 @@
 			"state": "default",
 			"source": "catalog:emulated-tablet",
 			"target": ".menu",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. The Bases properties menu (menu item icons).",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The Bases properties menu (menu item icons).",
 			"expect": ":has(.bases-toolbar-menu-item)"
 		},
 		{
@@ -18322,8 +18560,7 @@
 				"suggest.link.selected",
 				"suggest.link.item.hover",
 				"suggest.heading.selected"
-			],
-			"excluded": "mobile-tap is only set by the mobile app on touch"
+			]
 		},
 		{
 			"id": "573:0",
@@ -19169,8 +19406,8 @@
 				"modal.button-cta",
 				"modal.button.hover",
 				"modal.button-cta.hover",
-				"inwindow.modal.button.hover",
-				"inwindow.modal.button-cta.hover"
+				"qc.gap.button-loading",
+				"inwindow.modal.button.hover"
 			]
 		},
 		{
@@ -22784,7 +23021,7 @@
 		},
 		{
 			"name": "mobile-tap",
-			"excluded": "set on an element while a touch tap is held; desktop mobile emulation has no touch input"
+			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code"
 		},
 		{
 			"name": "mobile-toolbar",
@@ -24486,8 +24723,7 @@
 			"name": "suggestion-aux"
 		},
 		{
-			"name": "suggestion-bg",
-			"excluded": "phone sheets only: the backdrop is shown only when a suggestion opens as a sheet (isShownAsSheet = Platform.isPhone)"
+			"name": "suggestion-bg"
 		},
 		{
 			"name": "suggestion-container"
