@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdirSync, rmSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { chromium } from "playwright";
@@ -39,6 +40,7 @@ if (values.help) {
 	process.exit(0);
 }
 const started = performance.now();
+const generated = new Date().toISOString();
 const out = "workbench/out";
 for (const file of ["compare.json", "compare.md", "component-diffs.json"])
 	rmSync(`${out}/${file}`, { force: true });
@@ -56,6 +58,25 @@ const before = values.before
 	? await Bun.file(values.before).text()
 	: execFileSync("git", ["show", "b478dc8:theme.css"], { encoding: "utf8" });
 const after = await Bun.file(values.after ?? "theme.css").text();
+mkdirSync(`${out}/themes`, { recursive: true });
+const snapshotTheme = async (
+	side: "before" | "after",
+	css: string,
+	source: string,
+) => {
+	const file = `themes/${side}.css`;
+	await Bun.write(`${out}/${file}`, css);
+	return {
+		sha256: createHash("sha256").update(css, "utf8").digest("hex"),
+		source,
+		file,
+	};
+};
+const [beforeTheme, afterTheme] = await Promise.all([
+	snapshotTheme("before", before, values.before ?? "b478dc8:theme.css"),
+	snapshotTheme("after", after, values.after ?? "theme.css"),
+]);
+const themes = { before: beforeTheme, after: afterTheme };
 if (!(await Bun.file("capture/.app/app.css").exists()))
 	throw new Error("Missing app CSS: run bun run capture:extract-app-css first");
 const appVersion = (
@@ -242,7 +263,13 @@ try {
 	await Bun.write(
 		`${out}/compare.json`,
 		JSON.stringify(
-			{ status: "error", error: String(error), checked: results.length },
+			{
+				generated,
+				themes,
+				status: "error",
+				error: String(error),
+				checked: results.length,
+			},
 			null,
 			2,
 		),
@@ -311,6 +338,8 @@ await Bun.write(
 	JSON.stringify(
 		{
 			schemaVersion: 1,
+			generated,
+			themes,
 			rasterization: {
 				flags: BROWSER_OPTIONS.args,
 				capture: "Page.captureScreenshot",

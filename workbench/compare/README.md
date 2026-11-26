@@ -38,7 +38,8 @@ Exit codes:
 
 Outputs are local and gitignored. Each run removes old reports and diff images before validation.
 
-- `workbench/out/compare.json`: metadata, summary, fixture results, and coverage limits.
+- `workbench/out/compare.json`: metadata, summary, fixture results, and coverage limits. `generated` is the run start time in ISO format. `themes.before` and `themes.after` each contain the exact compared text’s SHA-256 hash, its source label, and its snapshot file path relative to `workbench/out/`.
+- `workbench/out/themes/{before,after}.css`: copies of the exact compared theme texts. The viewer uses these files even if the source files change later.
 - `workbench/out/compare.md`: summary, not-proven reasons, and top element/property changes.
 - `workbench/out/diffs/`: before, after, diff, and sanity evidence images. JSON image paths are relative to `workbench/out/`.
 - `workbench/out/component-diffs.json`: `{ [component]: { [surface]: { same, props } } }`.
