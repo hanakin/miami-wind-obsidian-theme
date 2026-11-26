@@ -435,7 +435,7 @@ export async function captureItem(
 				if (!real)
 					return { id: item.id, error: `the real pointer did not produce ${pseudo.join("+")}` };
 			}
-		} else await sleep(200);
+		} else await sleep(200 + (item.settle ?? 0));
 		const probe = (await page.evaluate(
 			`(() => {
 				let el = window.__cap.target;

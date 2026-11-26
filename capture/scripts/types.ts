@@ -59,7 +59,7 @@ export interface ItemDef {
 	 * screenshot (evidence.record.graphPixels).
 	 */
 	record?: string;
-	/** Extra milliseconds to wait after forcing the state (CSS transitions with a delay). */
+	/** Extra milliseconds to wait after forcing the state, or before the shot when nothing is forced (CSS transitions with a delay). */
 	settle?: number;
 	/** Huge lists: keep `keep` matches of `sel` plus any matching `keepAlso`, and record the trim. */
 	trim?: { sel: string; keep: number; keepAlso: string };

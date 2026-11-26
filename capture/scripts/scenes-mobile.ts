@@ -212,6 +212,8 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 			component: "menu",
 			surface,
 			target: ".menu",
+			// The sheet marks its title row selected just after it opens (a 0.1 s fade).
+			settle: 600,
 			expect:
 				size === "phone"
 					? ".menu.mod-sheet:has(.menu-item.is-warning)"

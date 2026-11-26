@@ -633,15 +633,18 @@ export const INPAGE = String.raw`
 		// edit button) with no solid background between it and that layer.
 		// It is also see-through when something between them is faded or blended (a PDF text
 		// layer at 20% opacity over the page canvas).
-		let seeThrough = false;
+		let layer = false;
 		let solid = false;
 		let veiled = false;
 		for (let a = el; a && a !== doc.body; a = a.parentElement) {
 			const cs = win.getComputedStyle(a);
-			if (parseFloat(cs.opacity) < 1 || cs.mixBlendMode !== "normal") veiled = true;
-			if (alphaOf(cs.backgroundColor) >= 0.99 || cs.backgroundImage !== "none") solid = true;
-			if (/^(absolute|fixed)$/.test(cs.position)) { seeThrough = !solid || veiled; break; }
+			if (!layer && (alphaOf(cs.backgroundColor) >= 0.99 || cs.backgroundImage !== "none")) solid = true;
+			// A fade at or above the solid part composites it over what is behind (a faded row
+			// below its menu's own background does not).
+			if (solid && (parseFloat(cs.opacity) < 1 || cs.mixBlendMode !== "normal")) veiled = true;
+			if (/^(absolute|fixed)$/.test(cs.position)) layer = true;
 		}
+		const seeThrough = layer && (!solid || veiled);
 		const whole = opts.context === "document" || seeThrough;
 		if (el === doc.body || el === doc.documentElement || whole) {
 			for (const c of copy.body.childNodes) out.body.appendChild(out.importNode(c, true));

@@ -518,11 +518,12 @@ for (const id of renderOrder) {
 			readFileSync(replayShot).toString("base64"),
 			// The target box; a thin one (a slider track) is padded like the screenshot, so a pixel
 			// of drift does not decide alone.
+			// (Only the thinner side when both are thin: a tiny node's neighbors are stand-ins.)
 			[
-				lw < 16 ? lx - cx - 8 : lx - cx,
-				lh < 16 ? ly - cy - 8 : ly - cy,
-				lw < 16 ? lw + 16 : lw,
-				lh < 16 ? lh + 16 : lh,
+				lw < 16 && lw <= lh ? lx - cx - 8 : lx - cx,
+				lh < 16 && lh < lw ? ly - cy - 8 : ly - cy,
+				lw < 16 && lw <= lh ? lw + 16 : lw,
+				lh < 16 && lh < lw ? lh + 16 : lh,
 			],
 			(got.masks ?? []).map(([x = 0, y = 0, w = 0, h = 0]) => [x - cx, y - cy, w, h]),
 		] as const,
