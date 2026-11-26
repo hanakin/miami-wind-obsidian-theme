@@ -65,7 +65,10 @@ export interface ReportInfo {
 	after?: { sha256: string; source?: string };
 	/** True when the report's 2.0 theme is not the current theme.css; null when it does not say. */
 	stale: boolean | null;
-	/** True when the pictures are drawn with the very theme files the report compared. */
+	/**
+	 * True when both sides are drawn with theme text that has the hash the report recorded. False
+	 * when either side cannot be verified.
+	 */
 	exact: boolean;
 }
 

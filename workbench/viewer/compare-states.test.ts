@@ -177,6 +177,13 @@ it("boils a capture's differences down to distinct changes, most common first", 
 		["Text color", "another item, not the tag (p)", 1, false],
 	]);
 	expect(found.list[0]?.properties).toEqual(["color", "border-top-color", "outline-color"]);
+	// An input the key cannot identify is not called "not the checkbox".
+	expect(
+		changes([d("2:input.task-list-item-checkbox", "color", "red", "blue")], [], {
+			name: "checkbox",
+			selector: "input[type=checkbox]",
+		}).list[0]?.where,
+	).toBe("input.task-list-item-checkbox (can't tell if this is the checkbox)");
 	// Without a known component the items are just named.
 	expect(changes([d("1:div.a.b.c.d", "width", "1px", "2px")]).list[0]?.where).toBe("div.a.b");
 });

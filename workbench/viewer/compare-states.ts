@@ -1,4 +1,4 @@
-import { matchesElement } from "./elements.ts";
+import { matchesElement, mayMatchElement } from "./elements.ts";
 import type { CompareState } from "./types.ts";
 import { kinds, plainProperty } from "./words.ts";
 
@@ -219,6 +219,10 @@ function whereOf(elements: string[], component?: { name: string; selector?: stri
 	const own = elements.filter((e) => matchesElement(selector, e)).length;
 	if (own === elements.length) return `the ${component.name}`;
 	if (own > 0) return `the ${component.name} and ${others(elements.length - own)}`;
+	// The key has no attributes: an input may or may not be the checkbox. Say so rather than guess.
+	if (elements.some((e) => mayMatchElement(selector, e))) {
+		return `${first}${rest} (can't tell if this is the ${component.name})`;
+	}
 	return `another item, not the ${component.name} (${first}${rest})`;
 }
 

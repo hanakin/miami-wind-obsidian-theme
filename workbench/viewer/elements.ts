@@ -7,6 +7,18 @@ import selectorParser from "postcss-selector-parser";
  * no attributes, so a selector that needs one (input[type=checkbox]) is never a sure match.
  */
 export function matchesElement(selector: string, key: string): boolean {
+	return match(selector, key, false);
+}
+
+/**
+ * True when the element could match once its attributes are known: the tag and classes fit, and
+ * only an attribute or state the key does not record stands between it and a sure match.
+ */
+export function mayMatchElement(selector: string, key: string): boolean {
+	return match(selector, key, true);
+}
+
+function match(selector: string, key: string, lenient: boolean): boolean {
 	const [tag = "", ...classes] = (key.split("::")[0] ?? "").replace(/^\d+:/, "").split(".");
 	let sure = false;
 	selectorParser((root) => {
@@ -16,7 +28,8 @@ export function matchesElement(selector: string, key: string): boolean {
 				alternative.nodes.every(
 					(node) =>
 						(node.type === "tag" && node.value.toLowerCase() === tag) ||
-						(node.type === "class" && classes.includes(node.value)),
+						(node.type === "class" && classes.includes(node.value)) ||
+						(lenient && (node.type === "attribute" || node.type === "pseudo")),
 				),
 		);
 	}).processSync(selector);

@@ -1,7 +1,7 @@
 // The viewer's local asset handling, as a Vite plugin: the data for the page, the fixtures wrapped
 // with Obsidian's CSS plus one theme, and a reload when the built theme or the compare result changes.
 import { execFileSync } from "node:child_process";
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, statSync, watchFile } from "node:fs";
 import type { ServerResponse } from "node:http";
 import Specificity from "@bramus/specificity";
@@ -13,6 +13,7 @@ import { changes, compareStates } from "./compare-states.ts";
 import { touchedComponents } from "./elements.ts";
 import { forceStates } from "./force-states.ts";
 import { frameCsp, frameDocument, type ImageSize } from "./frame.ts";
+import { type ReportTheme, sha256, side } from "./themes.ts";
 import type { ViewerData } from "./types.ts";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
@@ -49,13 +50,6 @@ function moreSpecific(component: string): string[] {
 const json = (path: string): unknown =>
 	existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
 
-interface ReportTheme {
-	sha256?: string;
-	source?: string;
-	/** The theme text the report compared, saved beside it (relative to workbench/out). */
-	file?: string;
-}
-
 /** What a compare.json says about itself. Older reports record none of this. */
 interface ReportMeta {
 	generated?: string;
@@ -63,21 +57,35 @@ interface ReportMeta {
 	fixtures?: ReportFixture[];
 }
 
-/** The saved theme file a report points at, when it is a plain name under workbench/out/themes. */
-function savedTheme(theme: ReportTheme | undefined): string | null {
-	if (!theme?.file || !/^themes\/[\w.-]+\.css$/.test(theme.file)) return null;
-	const path = `${ROOT}workbench/out/${theme.file}`;
-	return existsSync(path) ? path : null;
+const OUT = `${ROOT}workbench/out`;
+
+// The 1.x theme the viewer draws when a report saved none: the file at CURRENT_REF.
+let gitTheme: string | undefined;
+function currentTheme(): string {
+	gitTheme ??= execFileSync("git", ["show", `${CURRENT_REF}:theme.css`], {
+		cwd: ROOT,
+		encoding: "utf8",
+	});
+	return gitTheme;
+}
+
+/** How each side is drawn for a report, and whether it is provably what the report compared. */
+function sides(report: ReportMeta | null) {
+	return {
+		before: side(OUT, report?.themes?.before, currentTheme()),
+		after: side(OUT, report?.themes?.after, readFileSync(paths.new, "utf8")),
+	};
 }
 
 function reportInfo(report: ReportMeta): ViewerData["report"] {
-	const current = createHash("sha256").update(readFileSync(paths.new)).digest("hex");
 	const after = report.themes?.after;
+	const drawn = sides(report);
 	return {
 		generated: report.generated ?? statSync(paths.compare).mtime.toISOString(),
 		after: after?.sha256 ? { sha256: after.sha256, source: after.source } : undefined,
-		stale: after?.sha256 ? after.sha256 !== current : null,
-		exact: Boolean(savedTheme(report.themes?.before) && savedTheme(after)),
+		stale: after?.sha256 ? after.sha256 !== sha256(readFileSync(paths.new)) : null,
+		// Both sides, each checked against its recorded hash. One unverified side is not exact.
+		exact: drawn.before.matches && drawn.after.matches,
 	};
 }
 
@@ -179,8 +187,8 @@ function savedThemes(): { before: string | null; after: string | null } {
 	if (!existsSync(paths.compare)) return { before: null, after: null };
 	const mtime = statSync(paths.compare).mtimeMs;
 	if (saved?.mtime !== mtime) {
-		const themes = (json(paths.compare) as ReportMeta | null)?.themes;
-		saved = { mtime, before: savedTheme(themes?.before), after: savedTheme(themes?.after) };
+		const drawn = sides(json(paths.compare) as ReportMeta | null);
+		saved = { mtime, before: drawn.before.path, after: drawn.after.path };
 	}
 	return saved;
 }
@@ -198,9 +206,8 @@ export function viewer(): Plugin {
 		configureServer(server) {
 			const index = json(paths.fixtures) as FixtureIndex;
 			const byId = new Map(index.fixtures.map((f) => [f.id, f]));
-			const currentCss = forceStates(
-				execFileSync("git", ["show", `${CURRENT_REF}:theme.css`], { cwd: ROOT, encoding: "utf8" }),
-			);
+			const currentCss = forceStates(currentTheme());
+
 			// Bumped on every change so frames fetch fresh CSS while unchanged CSS stays cached.
 			let version = Date.now();
 			for (const path of [paths.new, paths.diffs, paths.compare, paths.app, paths.cm]) {

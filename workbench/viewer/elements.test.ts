@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { matchesElement, touchedComponents } from "./elements.ts";
+import { matchesElement, mayMatchElement, touchedComponents } from "./elements.ts";
 
 it("matches an element key against tag and class selectors", () => {
 	expect(matchesElement("button", "12:button.mod-cta")).toBe(true);
@@ -9,6 +9,9 @@ it("matches an element key against tag and class selectors", () => {
 	expect(matchesElement(".menu", "3:div.menu-item")).toBe(false);
 	// The key has no attributes, so this is never a sure match.
 	expect(matchesElement("input[type=checkbox]", "5:input.task-list-item-checkbox")).toBe(false);
+	// It could be one, though: only the attribute is unknown. A div could not.
+	expect(mayMatchElement("input[type=checkbox]", "5:input.task-list-item-checkbox")).toBe(true);
+	expect(mayMatchElement("input[type=checkbox]", "5:div.task")).toBe(false);
 });
 
 it("lists the components a capture's differences land on", () => {

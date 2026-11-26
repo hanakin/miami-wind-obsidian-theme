@@ -600,17 +600,20 @@ function reportLine(): string | false {
 /** A warning when the pictures may not show the build the results describe. */
 function reportNotice(): HTMLElement | false {
 	const r = data.report;
-	// Nothing to warn about: the report is of the current build, or says nothing but saved its themes.
-	if (!r || r.stale === false || (r.stale === null && r.exact)) return false;
+	if (!r) return false;
+	const older = r.stale ? "This report is older than the current build. " : "";
+	if (r.exact) {
+		// Both sides verified against the report's hashes: only an old report is worth a note.
+		return older
+			? h("p", { class: "message warn" }, older, "The pictures show the build it compared.")
+			: false;
+	}
+	// Either side unverified is enough: a matching 2.0 theme does not vouch for the 1.x side.
 	return h(
 		"p",
 		{ class: "message warn" },
-		r.stale
-			? "This report is older than the current build. "
-			: "This report may be older than the current build. ",
-		r.exact
-			? "The pictures show the build it compared."
-			: "The pictures show the current build, so they can differ from what the results say.",
+		older,
+		"The pictures could not be checked against the theme files this report compared, so they can differ from what the results say.",
 	);
 }
 
