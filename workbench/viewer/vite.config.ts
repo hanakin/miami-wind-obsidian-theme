@@ -9,6 +9,8 @@ export default defineConfig({
 		host: "127.0.0.1",
 		port: Number(process.env.PORT ?? 5175),
 		strictPort: true,
+		// Vite serves only the viewer's own files; captures and CSS go through the plugin's routes.
+		fs: { strict: true, allow: [import.meta.dirname] },
 		headers: {
 			"Content-Security-Policy": [
 				"default-src 'self'",

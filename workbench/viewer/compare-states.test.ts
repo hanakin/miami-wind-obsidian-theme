@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { combine, compareStates } from "./compare-states.ts";
+import { combine, compareStates, rowState } from "./compare-states.ts";
 import type { CompareState } from "./types.ts";
 
 it("reads the three statuses and keeps not-proven reasons", () => {
@@ -52,4 +52,27 @@ it("never calls a group the same unless every capture is proven the same", () =>
 	const accepted: CompareState = { status: "accepted", reason: "intentional" };
 	expect(combine([same, accepted])).toEqual(accepted);
 	expect(combine([accepted, unproven])).toEqual(unproven);
+});
+
+it("judges a row with no capture of its own by every capture that contains the component", () => {
+	const fixtures = [
+		{ id: "small", component: "menu", surface: "modal" },
+		{ id: "large", component: "window", surface: "modal" },
+		{ id: "own", component: "button", surface: "settings" },
+		{ id: "around", component: "window", surface: "settings" },
+	];
+	const compare: Record<string, CompareState> = {
+		small: { status: "same" },
+		large: { status: "different" },
+		own: { status: "same" },
+		around: { status: "different" },
+	};
+	// Two fallback captures, one same and one different: never "same", whichever is previewed.
+	expect(rowState("button", "modal", fixtures, compare)).toEqual({ status: "different" });
+	expect(rowState("button", "modal", fixtures.toReversed(), compare)).toEqual({
+		status: "different",
+	});
+	// A capture of the component itself decides its own row.
+	expect(rowState("button", "settings", fixtures, compare)).toEqual({ status: "same" });
+	expect(rowState("button", "modal", fixtures, null)).toBeUndefined();
 });

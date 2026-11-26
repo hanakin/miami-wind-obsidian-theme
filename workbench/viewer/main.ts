@@ -1,4 +1,4 @@
-import { combine } from "./compare-states.ts";
+import { combine, rowState } from "./compare-states.ts";
 import type { CompareState, Fixture, Theme, ViewerData } from "./types.ts";
 
 type Mode = Theme | "both";
@@ -251,20 +251,14 @@ function capture(f: Fixture, focus?: string): HTMLElement {
  * The first of `candidates` in which the component is really found and visible, tried one at a
  * time as the frames report back. When none qualifies, `none()` takes its place.
  */
-function firstShowing(
-	candidates: Fixture[],
-	focus: string,
-	none: () => Node,
-	trying?: (f: Fixture | undefined) => void,
-): Node {
+function firstShowing(candidates: Fixture[], focus: string, none: () => Node): Node {
 	const [f, ...rest] = candidates;
-	trying?.(f);
 	if (!f) return none();
 	const figure = capture(f, focus);
 	onMissing.set(figure, () => {
 		const row = figure.closest(".surface");
 		const section = figure.closest("section");
-		figure.replaceWith(firstShowing(rest, focus, none, trying));
+		figure.replaceWith(firstShowing(rest, focus, none));
 		settle(row);
 		// A "Shared look" left with nothing to show goes away.
 		if (section?.classList.contains("shared") && !section.querySelector("figure")) section.remove();
@@ -292,23 +286,14 @@ function badge(verdict: CompareState | undefined): HTMLElement {
 	);
 }
 
-/** The verdict for a surface row: over the component's own captures there, when it has any. */
-function rowVerdict(component: string, surface: string, all: Fixture[]): CompareState | undefined {
-	const own = all.filter((f) => f.surface === surface && f.component === component);
-	return data.compare ? combine(own.map((f) => data.compare?.[f.id])) : undefined;
-}
-
 function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLElement {
 	const here = all.filter((f) => f.surface === surface);
 	const own = here.filter((f) => f.component === component);
 	// From component-diffs.json: how this surface departs from the component's shared look.
 	const props = data.diffs?.[component]?.[surface]?.props ?? [];
-	const verdict = h("div", {}, badge(rowVerdict(component, surface, all)));
+	const verdict = badge(rowState(component, surface, all, data.compare));
 	const none = () =>
 		h("p", { class: "none" }, "No capture of this component on this surface.") as Node;
-	// Without a capture of its own, the row is judged by the larger capture it ends up showing.
-	const trying = (f: Fixture | undefined) =>
-		verdict.replaceChildren(badge(f ? data.compare?.[f.id] : undefined));
 	const row = h(
 		"section",
 		{ class: "surface" },
@@ -337,7 +322,7 @@ function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLEle
 			// Captures of the component itself; failing that, one larger capture that visibly has it.
 			...(own.length
 				? own.map((f) => capture(f))
-				: [firstShowing(here.toSorted(bySize).slice(0, MAX_TRIES), component, none, trying)]),
+				: [firstShowing(here.toSorted(bySize).slice(0, MAX_TRIES), component, none)]),
 		),
 	);
 	settle(row);
@@ -437,7 +422,7 @@ function renderPage(): void {
 	const all = (entry?.fixtures ?? []).flatMap((id) => fixtures.get(id) ?? []);
 	const own = all.filter((f) => f.component === name);
 	const verdicts = new Map(
-		(entry?.surfaces ?? []).map((x) => [x, rowVerdict(name, x, all)?.status]),
+		(entry?.surfaces ?? []).map((x) => [x, rowState(name, x, all, data.compare)?.status]),
 	);
 	const differs = (x: string) => verdicts.get(x) === "different";
 	// Differing surfaces first; the sort is stable, so each group stays alphabetical.

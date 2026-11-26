@@ -39,6 +39,23 @@ export function compareStates(json: unknown): Record<string, CompareState> | str
 }
 
 /**
+ * The verdict for one component on one surface: over its own captures there, or, when it has
+ * none, over every capture on that surface that contains it. Which capture the row previews
+ * never changes this.
+ */
+export function rowState(
+	component: string,
+	surface: string,
+	fixtures: { id: string; component: string; surface: string }[],
+	compare: Record<string, CompareState> | null,
+): CompareState | undefined {
+	if (!compare) return undefined;
+	const here = fixtures.filter((f) => f.surface === surface);
+	const own = here.filter((f) => f.component === component);
+	return combine((own.length ? own : here).map((f) => compare[f.id]));
+}
+
+/**
  * One verdict for several captures: any proven difference wins, then anything not proven, then an
  * accepted change. Only when every capture is proven the same is the group the same. Undefined when nothing was compared.
  */

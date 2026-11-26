@@ -64,9 +64,13 @@ const decode = (attr: string) =>
 		.replace(/&amp;/g, "&");
 const encode = (text: string) => text.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
+// The capture's empty stand-ins only keep sibling order for the CSS; they never show.
+const HIDE_PLACEHOLDERS = "<style>[data-capture-placeholder] { display: none !important; }</style>";
+
 /**
- * Iframes Obsidian fills by script were captured as srcdoc without their stylesheets. Each gets
- * the same stylesheets as the outer frame and an empty sandbox: it only has to draw.
+ * Iframes Obsidian fills by script were captured as srcdoc without their stylesheets. Each one,
+ * at any depth, gets the same stylesheets and hidden stand-ins as the outer frame, and an empty
+ * sandbox: it only has to draw.
  */
 function innerFrames(html: string, links: string): string {
 	// Quoted attribute values may hold ">" (the srcdoc does), so the tag is matched around them.
@@ -75,16 +79,15 @@ function innerFrames(html: string, links: string): string {
 			.replace(/\ssandbox(="[^"]*")?/gi, "")
 			.replace(/^<iframe/i, '<iframe sandbox=""');
 		return open.replace(/\ssrcdoc="([^"]*)"/i, (_, doc: string) => {
-			const inner = sanitize(decode(doc)).replace(/<base\b[^>]*>/gi, "");
+			const inner = innerFrames(sanitize(decode(doc)).replace(/<base\b[^>]*>/gi, ""), links);
+			const extra = links + HIDE_PLACEHOLDERS;
 			const styled = /<head[^>]*>/i.test(inner)
-				? inner.replace(/<head[^>]*>/i, (head) => head + links)
-				: links + inner;
+				? inner.replace(/<head[^>]*>/i, (head) => head + extra)
+				: extra + inner;
 			return ` srcdoc="${encode(styled)}"`;
 		});
 	});
 }
-
-const HIDE_PLACEHOLDERS = "[data-capture-placeholder] { display: none !important; }";
 
 /**
  * The fixture with its stylesheets in the compare tool's order (CodeMirror runtime rules, app
@@ -105,21 +108,23 @@ export function frameDocument(
 	const head = [
 		`<head><meta charset="utf-8"${end}`,
 		links.replaceAll(">", end),
-		// The capture's empty stand-ins only keep sibling order for the CSS; they never show.
-		`<style>${HIDE_PLACEHOLDERS}</style>`,
+		HIDE_PLACEHOLDERS,
 		`<script nonce="${nonce}">${script}</script></head>`,
 	].join("");
 	return innerFrames(sanitize(html), links).replace(/<head>[\s\S]*?<\/head>/i, head);
 }
 
-/** What a frame may load: our stylesheets and fonts, inline styles, and the one nonce'd script. */
+/**
+ * What a frame may load: the viewer's stylesheets, the fonts and images app.css points at, inline
+ * styles and data: images, and the one nonce'd script. Captured markup cannot reach any other URL.
+ */
 export function frameCsp(origin: string, nonce: string): string {
 	return [
 		"sandbox allow-scripts",
 		"default-src 'none'",
-		`style-src ${origin} 'unsafe-inline'`,
-		`font-src ${origin}`,
-		`img-src ${origin} data:`,
+		`style-src ${origin}/css/ 'unsafe-inline'`,
+		`font-src ${origin}/css/public/`,
+		`img-src ${origin}/css/public/ data:`,
 		`script-src 'nonce-${nonce}'`,
 		// Captured srcdoc iframes only; they inherit this policy.
 		"frame-src about:",
