@@ -324,3 +324,21 @@ it("keeps hanging indents on wrapped numbered and dashed list items", async () =
 	});
 	expect(twice.css).toBe(result.css);
 });
+
+it("uses real section descriptions and requires them for new surfaces", async () => {
+	const result = await postcss([formatCss()]).process(
+		"/* @source: src/unmapped.css */ /* @section src/code.css */ .x { color: red; }",
+		{ from: undefined },
+	);
+	expect(result.css).toContain("@source: src/unmapped.css");
+	expect(result.css).toContain(
+		"Inline code, fenced code and editor syntax tokens: colors and backgrounds.",
+	);
+	expect(result.css).not.toContain("Obsidian code surface.");
+	await expect(
+		postcss([formatCss()]).process(
+			"/* @section src/unknown.css */ .x { color: red; }",
+			{ from: undefined },
+		),
+	).rejects.toThrow("Missing section description for src/unknown.css");
+});

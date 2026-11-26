@@ -29,15 +29,11 @@ function fileInfo(file: string) {
 }
 function sectionBanner(file: string, continued: boolean): string {
 	const { source, name, label, layer } = fileInfo(file);
+	const settings = config.sections[name];
+	if (!settings) throw new Error(`Missing section description for ${source}`);
 	return banner(
 		`@${layer}: ${label.replace(/\b\w/g, (letter) => letter.toUpperCase())}${continued ? " (continued)" : ""}`,
-		[
-			`@source: ${source}`,
-			"@description:",
-			"",
-			config.sections[name]?.description ?? `Obsidian ${label} surface.`,
-			"",
-		],
+		[`@source: ${source}`, "@description:", "", settings.description, ""],
 	);
 }
 function contents(files: string[]): string {
@@ -286,6 +282,7 @@ export function formatCss(): Plugin {
 				const file = node.text.match(/@source: (src\/\S+\.css)/)?.[1];
 				if (
 					file &&
+					config.sections[fileInfo(file).name] &&
 					[false, true].some(
 						(continued) =>
 							node.text === commentText(sectionBanner(file, continued)),

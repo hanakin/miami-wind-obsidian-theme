@@ -1,4 +1,3 @@
 @define-mixin surface-background {
-	/* Component: surface-background */
 	background-color: var(--mw-surface-background);
 }

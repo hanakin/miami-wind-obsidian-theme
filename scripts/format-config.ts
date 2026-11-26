@@ -14,12 +14,113 @@ export const formatConfig = {
 	sections: {
 		"tokens.css": {
 			layer: "setting",
-			description: "Palette and Obsidian variable assignments.",
+			description:
+				"Palette colors and shared variables for note text and interface states.",
 		},
 		"legacy.css": {
 			layer: "theme",
 			description:
-				"Unported rules retained at their original cascade positions.",
+				"Remaining shared controls and unported rules in their original order.",
 		},
-	} as Record<string, { layer: string; description: string }>,
+		"headings.css": {
+			description: "Heading colors in the editor and reading view.",
+		},
+		"code.css": {
+			description:
+				"Inline code, fenced code and editor syntax tokens: colors and backgrounds.",
+		},
+		"inline-marks.css": {
+			description:
+				"Highlighted text across editor tokens, reading view and PDF export.",
+		},
+		"selection.css": {
+			description: "Selection text and background colors throughout the app.",
+		},
+		"links.css": {
+			description:
+				"Reading-view link colors across normal, hover, visited and focus states.",
+		},
+		"blockquotes.css": {
+			description: "Blockquote text, borders and backgrounds in reading view.",
+		},
+		"icons.css": {
+			description: "Clickable icon hover fills and disabled pointer behavior.",
+		},
+		"ribbon.css": {
+			description: "Ribbon icon backgrounds in hover and active states.",
+		},
+		"sidebars.css": {
+			description:
+				"Drawer actions, sidebar tab states and the vault profile border.",
+		},
+		"tabs.css": {
+			description:
+				"Workspace tab icons, header backgrounds and active, hover and close states.",
+		},
+		"canvas.css": {
+			description: "Canvas controls, card menus and their icon hover states.",
+		},
+		"properties.css": {
+			description: "Property labels, tag pills and property action buttons.",
+		},
+		"suggestions.css": {
+			description:
+				"Suggestion lists, selected rows, property fields and complex-item flair.",
+		},
+		"status-bar.css": {
+			description:
+				"Status bar backgrounds, item text and clickable hover states.",
+		},
+		"navigation.css": {
+			description: "Active file entries in the file explorer.",
+		},
+		"tasks.css": {
+			description:
+				"Editor task states: marker colors, text colors and completion styling.",
+		},
+		"tables.css": {
+			description: "Note table backgrounds, borders and text in reading view.",
+		},
+		"callouts.css": {
+			description:
+				"Callout backgrounds and title colors for each built-in callout type.",
+		},
+		"modals.css": {
+			description:
+				"Dialog surfaces, navigation, action buttons and close-button states.",
+		},
+		"dropdowns.css": {
+			description:
+				"Dropdown controls, option states and PDF form select colors.",
+		},
+		"prompts.css": {
+			description: "Command prompt surfaces and instruction key colors.",
+		},
+		"search.css": {
+			description: "Search input clear buttons in normal and hover states.",
+		},
+		"tags.css": {
+			description:
+				"Tag pills in editor and reading view: colors, hover and invalid tags.",
+		},
+		"tag-hover.css": {
+			description:
+				"Joined tag highlighting when the editor tag text is hovered.",
+		},
+		"horizontal-rule.css": {
+			description: "Horizontal divider colors in notes.",
+		},
+		"menus.css": {
+			description:
+				"Menu surfaces, icons, selected items and mobile action rows.",
+		},
+		"bases.css": {
+			description:
+				"Bases toolbar actions and filter-row controls in normal and hover states.",
+		},
+		"overrides.css": {
+			description:
+				"Final state overrides for settings tabs, scrollbars and disabled icons.",
+		},
+	} as Record<string, { layer?: string; description: string }>,
 } as const;

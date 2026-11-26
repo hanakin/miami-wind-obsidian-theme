@@ -26,7 +26,7 @@
  * @source: src/tokens.css
  * @description:
  *
- * Palette and Obsidian variable assignments.
+ * Palette colors and shared variables for note text and interface states.
  *
  * -------------------------------------------------------------------------- */
 
@@ -109,7 +109,7 @@
 	--text-disabled: var(--grey-5);
 
 	/*
-	 * Markdown Global colors
+	 * Markdown global colors
 	 * -------------------------------------------------------------------------
 	 */
 
@@ -118,8 +118,10 @@
 	--inline-code: var(--green);
 
 	/*
-	 * invalid, error, undefined, null, etc.
+	 * Markdown formatting colors
+	 * -------------------------------------------------------------------------
 	 */
+
 	--strikethrough: var(--red);
 	--bold: var(--orange);
 	--italic: var(--yellow);
@@ -161,7 +163,7 @@
 	--graph-node-unresolved: var(--yellow);
 
 	/*
-	 * UI Icon Buttons
+	 * UI icon buttons
 	 * -------------------------------------------------------------------------
 	 */
 
@@ -174,7 +176,7 @@
 	--icon-background-active: var(--cyan-transparent);
 
 	/*
-	 * UI List Items
+	 * UI list items
 	 * -------------------------------------------------------------------------
 	 */
 
@@ -192,7 +194,7 @@
 	--list-marker-color: var(--purple);
 
 	/*
-	 * UI Inputs
+	 * UI inputs
 	 * -------------------------------------------------------------------------
 	 */
 
@@ -206,7 +208,7 @@
 	--ui-input-disabled-foreground: var(--text-normal);
 
 	/*
-	 * UI Tabs
+	 * UI tabs
 	 * -------------------------------------------------------------------------
 	 */
 
@@ -267,6 +269,12 @@
 
 	--code-background: var(--black);
 	--code-foreground: var(--inline-code);
+
+	/*
+	 * Text and title colors
+	 * -------------------------------------------------------------------------
+	 */
+
 	--border-color: transparent;
 	--text-selection: var(--magenta);
 	--text-selection-fg: var(--background-primary);
@@ -323,7 +331,7 @@
  * @source: src/legacy.css
  * @description:
  *
- * Unported rules retained at their original cascade positions.
+ * Remaining shared controls and unported rules in their original order.
  *
  * -------------------------------------------------------------------------- */
 
@@ -371,24 +379,15 @@
  * @source: src/code.css
  * @description:
  *
- * Obsidian code surface.
+ * Inline code, fenced code and editor syntax tokens: colors and backgrounds.
  *
  * -------------------------------------------------------------------------- */
 
 /* #css */
 
-/*
- * Code
- * -----------------------------------------------------------------------------
- */
-
 .markdown-rendered code {
 	--mw-surface-background: var(--code-background);
 	font-family: var(--font-monospace-theme);
-
-	/*
-	 * @component: surface-background
-	 */
 	background-color: var(--mw-surface-background);
 	border-radius: 3px;
 	color: var(--markup-code);
@@ -397,10 +396,6 @@
 
 .cm-inline-code {
 	--mw-surface-background: var(--code-background);
-
-	/*
-	 * @component: surface-background
-	 */
 	background-color: var(--mw-surface-background);
 }
 
@@ -427,10 +422,6 @@
 
 .markdown-rendered pre {
 	--mw-surface-background: var(--code-background);
-
-	/*
-	 * @component: surface-background
-	 */
 	background-color: var(--mw-surface-background);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 5px;
@@ -481,7 +472,7 @@
  * @source: src/legacy.css
  * @description:
  *
- * Unported rules retained at their original cascade positions.
+ * Remaining shared controls and unported rules in their original order.
  *
  * -------------------------------------------------------------------------- */
 
@@ -550,7 +541,7 @@ mark {
 }
 
 /*
- * Icon Buttons
+ * Icon buttons
  * -----------------------------------------------------------------------------
  */
 
@@ -567,7 +558,7 @@ mark {
 }
 
 /*
- * Panel Ribbon
+ * Panel ribbon
  * -----------------------------------------------------------------------------
  */
 
@@ -580,7 +571,7 @@ mark {
 }
 
 /*
- * Panel Drawer
+ * Panel drawer
  * -----------------------------------------------------------------------------
  */
 
@@ -589,7 +580,7 @@ mark {
 }
 
 /*
- * Panel Sidebar Tabs
+ * Panel sidebar tabs
  * -----------------------------------------------------------------------------
  */
 
@@ -606,7 +597,7 @@ mark {
 }
 
 /*
- * Panel Tabs
+ * Panel tabs
  * -----------------------------------------------------------------------------
  */
 
@@ -627,16 +618,11 @@ mark {
  * @source: src/tabs.css
  * @description:
  *
- * Obsidian tabs surface.
+ * Workspace tab icons, header backgrounds and active, hover and close states.
  *
  * -------------------------------------------------------------------------- */
 
 /* #css */
-
-/*
- * Tabs
- * -----------------------------------------------------------------------------
- */
 
 .workspace-tab-header-container {
 	background-color: var(--grey-11);
@@ -644,10 +630,6 @@ mark {
 
 .workspace .mod-root .workspace-tab-header {
 	--mw-surface-background: var(--grey-10);
-
-	/*
-	 * @component: surface-background
-	 */
 	background-color: var(--mw-surface-background);
 	border-radius: 0;
 	cursor: pointer;
@@ -687,7 +669,7 @@ mark {
  * @source: src/legacy.css
  * @description:
  *
- * Unported rules retained at their original cascade positions.
+ * Remaining shared controls and unported rules in their original order.
  *
  * -------------------------------------------------------------------------- */
 
@@ -781,7 +763,7 @@ textarea:focus-within,
 }
 
 /*
- * Meta
+ * Properties
  * -----------------------------------------------------------------------------
  */
 
@@ -1250,7 +1232,7 @@ input.prompt-input:focus-visible {
  * @source: src/tag-hover.css
  * @description:
  *
- * Obsidian tag hover surface.
+ * Joined tag highlighting when the editor tag text is hovered.
  *
  * -------------------------------------------------------------------------- */
 
@@ -1271,14 +1253,14 @@ input.prompt-input:focus-visible {
  * @source: src/legacy.css
  * @description:
  *
- * Unported rules retained at their original cascade positions.
+ * Remaining shared controls and unported rules in their original order.
  *
  * -------------------------------------------------------------------------- */
 
 /* #css */
 
 /*
- * Horizontal Rule
+ * Horizontal rule
  * -----------------------------------------------------------------------------
  */
 

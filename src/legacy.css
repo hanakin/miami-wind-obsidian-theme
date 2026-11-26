@@ -52,7 +52,7 @@ mark {
 	padding: 8px 16px 16px 16px !important;
 }
 
-/* @heading Icon Buttons */
+/* @heading Icon buttons */
 .clickable-icon:hover,
 .mod-left-split .workspace-tab-header,
 .mod-right-split .workspace-tab-header {
@@ -64,7 +64,7 @@ mark {
 	background-color: transparent !important;
 }
 
-	/* @heading Panel Ribbon */
+	/* @heading Panel ribbon */
 	.workspace-ribbon .clickable-icon:hover {
 		background-color: var(--icon-background-hover);
 	}
@@ -73,12 +73,12 @@ mark {
 		background-color: var(--icon-background-active);
 	}
 
-	/* @heading Panel Drawer */
+	/* @heading Panel drawer */
 	.workspace-drawer-vault-actions .clickable-icon:hover {
 		background-color: var(--icon-background-hover);
 	}
 
-	/* @heading Panel Sidebar Tabs */
+	/* @heading Panel sidebar tabs */
 	.mod-left-split .workspace-tab-header:hover,
 	.mod-right-split .workspace-tab-header:hover  {
 		background-color: var(--icon-background-hover);
@@ -91,7 +91,7 @@ mark {
 		background-color: var(--icon-background-active);
 	}
 
-	/* @heading Panel Tabs */
+	/* @heading Panel tabs */
 	.workspace-tabs .clickable-icon:hover {
 		background-color: var(--icon-background-hover);
 	}
@@ -190,7 +190,7 @@ textarea:focus-within,
 }
 
 
-/* @heading Meta */
+/* @heading Properties */
 .metadata-properties-title {
 	color: var(--purple);
 }
@@ -626,7 +626,7 @@ input.prompt-input:focus-visible {
 
 @pilot tag-hover;
 
-/* @heading Horizontal Rule */
+/* @heading Horizontal rule */
 hr {
 	border-color: var(--cyan);
 }
