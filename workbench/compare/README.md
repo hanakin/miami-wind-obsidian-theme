@@ -32,8 +32,8 @@ Both same-CSS pairs must have zero style and pixel changes. A noisy fixture rece
 
 Exit codes:
 
-- `0`: every selected fixture has proven `same` status.
-- `1`: at least one fixture has proven `different` status, or setup fails.
+- `0`: every selected fixture has `same` or `accepted` status.
+- `1`: at least one fixture has unaccepted `different` status, or setup fails.
 - `2`: no proven differences, but at least one fixture is not proven.
 
 Outputs are local and gitignored. Each run removes old reports and diff images before validation.
@@ -47,7 +47,7 @@ The JSON keeps `schemaVersion: 1` and the existing fields. Each fixture adds `st
 
 The top-level `notProven` list contains `{ id, reasons }` records. The top-level `noise` list contains the fixture ID and its style, union-pixel, before-pixel, and after-pixel noise counts. Summary additions are `notProven`, `notProvenOnly`, and `noise` counts.
 
-`summary.changed` counts proven differences. `summary.unchanged` counts proven same results. `summary.notProvenOnly` counts fixtures with not-proven status. These three counts sum to `summary.checked`. `summary.notProven` includes every fixture with a coverage limit. It can overlap proven differences because a partial replay can still expose a genuine CSS difference.
+`summary.changed` counts proven differences. `summary.unchanged` counts proven same results. `summary.notProvenOnly` counts fixtures with not-proven status. These counts and `summary.accepted` sum to `summary.checked`. `summary.notProven` includes every fixture with a coverage limit. It can overlap proven differences because a partial replay can still expose a genuine CSS difference.
 
 The shared component look uses each property's most common after-theme value within the same interaction state. Ties select the first use in fixture ID order. The comparison excludes container dimensions: width, height, inline-size, block-size, transform-origin, and perspective-origin. Filtered runs describe only the selected uses. This output measures surface consistency independently of before/after parity.
 
@@ -60,3 +60,20 @@ Fixtures can provide `imageSizes: [{ index, width, height }]`. The index uses ze
 If `/tmp` is full, set `TMPDIR` to a directory under `~/Work` before running checks or comparisons.
 
 Diff images use red for stable changes and orange for unstable pixels. All unstable pixels remain visible in the evidence. Noisy fixtures also save all four screenshots for inspection.
+
+
+Accepted differences use the exact fixture IDs in `workbench/compare/accepted-differences.json`.
+The sole approved entry is `qc.pdf.forms`.
+Mike accepted its inline PDF select appearance on 2026-11-25.
+A test pins the complete list and the exact decision text.
+
+An observed approved difference has `status: "accepted"`, `same: false`, and `acceptanceReason`.
+Its `comparisonStatus` retains the original verdict.
+The JSON report includes `accepted: [{ id, reason }]` and `summary.accepted`.
+The Markdown report shows the decision, change counts, and image links.
+Accepted results retain their measured differences, screenshots, noise, and coverage limits.
+
+Accepted results do not cause failure.
+Unlisted differences and not-proven results retain their failure exit codes.
+The console counts each result once as different, same, not proven, or accepted.
+`summary.notProven` still counts coverage limits, which can overlap accepted or different results.
