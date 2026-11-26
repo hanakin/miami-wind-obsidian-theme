@@ -289,6 +289,7 @@ export async function render(
 			).filter((el) => !el.closest("[data-capture-placeholder]"));
 			for (const [i, el] of elements.entries()) {
 				const element = `${i}:${el.localName}${el.getAttribute("class") ? `.${el.getAttribute("class")?.trim().replace(/\s+/g, ".")}` : ""}`;
+				const props = read(el);
 				if (
 					el instanceof HTMLSelectElement &&
 					el.matches(acceptance.selector) &&
@@ -298,9 +299,13 @@ export async function render(
 					)
 				) {
 					const { x, y, width, height } = el.getBoundingClientRect();
-					acceptanceMatches.push({ element, rect: { x, y, width, height } });
+					acceptanceMatches.push({
+						element,
+						rect: { x, y, width, height },
+						color: props.color ?? "",
+						backgroundColor: props["background-color"] ?? "",
+					});
 				}
-				const props = read(el);
 				styles.push({ element, props });
 				const pseudos = ["::before", "::after", "::marker"];
 				if (
