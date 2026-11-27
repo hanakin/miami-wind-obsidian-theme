@@ -32,9 +32,11 @@ export interface Replayed {
 
 export interface ReplayOptions {
 	/**
-	 * Size media stand-ins and absolutely placed ancestors of the target to their recorded live size
+	 * Size media stand-ins and absolutely placed ancestors of the target to their recorded live size,
+	 * and force back scrollbars recorded live (data-capture-scrollbar) where the replay has none
 	 * (default true: the coverage check proves a fixture reproduces its screenshot). A comparison of
-	 * another stylesheet passes false, so its own sizes show, and reads Replayed.geometry.
+	 * another stylesheet passes false, so its own sizes and overflow show, and reads
+	 * Replayed.geometry. Empty stand-ins (data-capture-placeholder) are sized either way.
 	 */
 	forceRecordedGeometry?: boolean;
 }
@@ -186,8 +188,11 @@ export async function replayFixture(
 					e.style.setProperty(k as string, v as string, "important");
 			}
 			// A scrollbar shown live but missing here (a trimmed list no longer overflows) is forced
-			// back; one already shown is left alone.
-			for (const e of document.querySelectorAll<HTMLElement>("[data-capture-scrollbar]")) {
+			// back; one already shown is left alone. Not when a comparison asked for its own sizes
+			// (forceRecordedGeometry false): its overflow decides.
+			for (const e of force
+				? document.querySelectorAll<HTMLElement>("[data-capture-scrollbar]")
+				: []) {
 				const bars = e.getAttribute("data-capture-scrollbar") ?? "";
 				const cs = getComputedStyle(e);
 				const bw = (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.borderRightWidth) || 0);
