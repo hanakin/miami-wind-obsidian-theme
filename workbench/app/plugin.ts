@@ -274,7 +274,7 @@ function send(res: ServerResponse, status: number, type: string, body: string | 
 
 export function viewer(): Plugin {
 	return {
-		name: "miami-wind-viewer",
+		name: "miami-wind-workbench",
 		configureServer(server) {
 			const index = json(paths.fixtures) as FixtureIndex;
 			const byId = new Map(index.fixtures.map((f) => [f.id, f]));

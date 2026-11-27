@@ -6,7 +6,7 @@
 			"test/**/*.ts",
 			"capture/scripts/**/*.ts",
 			"workbench/compare/**/*.ts",
-			"workbench/viewer/**/*.ts"
+			"workbench/app/**/*.ts"
 		]
 	},
 	"formatter": {
@@ -22,7 +22,7 @@
 		{
 			"includes": [
 				"capture/scripts/**/*.ts",
-				"workbench/viewer/**/*.ts"
+				"workbench/app/**/*.ts"
 			],
 			"formatter": {
 				"lineWidth": 100
