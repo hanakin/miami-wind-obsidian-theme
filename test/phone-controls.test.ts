@@ -44,6 +44,8 @@ async function compareStates(html: string, legacy: string, touch = false) {
 				["focus"],
 				["active"],
 				["focus", "hover"],
+				["focus-within"],
+				["hover", "focus-within"],
 				["focus-visible", "focus"],
 			]) {
 				for (const nodeId of nodeIds)
@@ -210,5 +212,19 @@ it("preserves XFA select color and fill through focus", async () => {
 	await compareStates(
 		`<div class="xfaLayer" style="color: rgb(0, 0, 255)"><select class="xfaSelect" data-target><option>Choice</option></select><select class="xfaSelect" disabled data-target><option>Disabled</option></select></div>`,
 		`select { color: var(--black) !important; background-color: var(--magenta) !important; }`,
+	);
+});
+
+it("preserves editing Bases group-row hover and keyboard focus fills", async () => {
+	const rows = ["", "selected", "mod-hidden", "mod-hidden selected"]
+		.map(
+			(state) =>
+				`<div class="bases-toolbar-menu-item bases-group-row is-editing ${state}" tabindex="0" data-target>Group</div>`,
+		)
+		.join("");
+	await compareStates(
+		`<div class="bases-group-page" style="--background-modifier-hover: rgba(255,255,255,.067)">${rows}</div>`,
+		`.bases-toolbar-menu-item:hover, .bases-toolbar-menu-item:focus, .bases-toolbar-menu-item:active, .bases-toolbar-menu-item.selected { background-color: var(--cyan-transparent) !important; color: var(--magenta); cursor: pointer; }
+		.bases-toolbar-menu-item.mod-hidden:hover { background-color: transparent !important; color: var(--text-disabled); cursor: default; }`,
 	);
 });

@@ -1242,6 +1242,14 @@ select option:checked {
 }
 
 /*
+ * Tie the app’s editing-row focus-within fill only when a theme item state
+ * applies.
+ */
+.bases-toolbar-menu-item.is-editing:focus-within:is(:hover, :focus, :active, .selected) {
+	background-color: var(--mw-item-background);
+}
+
+/*
  * Phone action/suggestion rows read these variables at higher specificity.
  * Scope them to the row states so their descendants keep the existing paint.
  */
@@ -1280,6 +1288,8 @@ select option:checked {
 }
 
 .bases-toolbar-menu-item.mod-hidden:hover {
+	--mw-item-background: transparent;
+
 	--interactive-normal: transparent;
 	--interactive-hover: transparent;
 }
