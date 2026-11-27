@@ -12,11 +12,14 @@ export interface Probe {
 	full: string;
 	/** What the selector's last part is written with: the names a rule calls its element by. */
 	last: Compound;
+	/** The selector as written, and the line its rule starts on. */
+	selector: string;
+	line: number;
 	/**
-	 * The selector cut before each of its later parts: `.a .b > .c` gives `.a` and `.a .b`. A rule
-	 * that styles something inside an item reaches the item when one of these is the item.
+	 * True for a section's labeled, scoped adjustment of a shared item: the rule sits under a
+	 * "Shared component adjustment" comment and reaches the item through a container.
 	 */
-	prefixes: string[];
+	adjustment: boolean;
 }
 
 /** The tag, classes and attribute tests written on one element of a selector. */
@@ -54,7 +57,8 @@ export const RULES = [
 	"A rule counts for an item only when it selects the item's own element in a capture and names it by the item's own class or element. A section's own class on that element (.xfaSelect on a select) is the section's, not the item's.",
 	"States (is-*, mod-*, has-*, :hover and the like) and context (.theme-dark, body and platform classes) are not items and never cause an overlap.",
 	"Rules that only set variables (--name) belong to the file they are in and never cause an overlap.",
-	"An overlap is one item styled from two top-level places: global, markdown, or one app section (sections/<x>). The fix is always to move its rules into global/.",
+	"An overlap is one item styled from two top-level places: global, markdown, or one app section (sections/<x>, with pdf-*.css counted as PDF). Several files inside one place are fine. The fix is always to move its rules into global/.",
+	'A section may adjust a shared item: a rule under a "Shared component adjustment" comment that reaches the item through a container (.bases-view .clickable-icon) is allowed and is not an overlap.',
 ];
 
 /** True when a selector's last compound names something: a tag, or a class that is not a state. */
@@ -72,6 +76,8 @@ function namesSomething(selector: selectorParser.Selector): boolean {
 	);
 }
 
+const ADJUSTMENT = /shared component adjustment/i;
+
 /** Every selector in the source files that can own an item (see RULES). */
 export function probes(
 	files: { path: string; css: string }[],
@@ -79,7 +85,12 @@ export function probes(
 ): Probe[] {
 	const out: Probe[] = [];
 	files.forEach(({ css }, file) => {
-		postcss.parse(css).walkRules((rule) => {
+		// The comment a rule sits under labels it: the last comment before it in the file.
+		let label = "";
+		postcss.parse(css).walk((node) => {
+			if (node.type === "comment") label = node.text;
+			if (node.type !== "rule") return;
+			const rule = node;
 			// Mixin bodies and keyframe steps are not rules on elements.
 			for (
 				let p = rule.parent as postcss.Node | undefined;
@@ -98,18 +109,15 @@ export function probes(
 					const text = selector.toString().trim();
 					// `.view ::selection` styles selected text anywhere inside: it names no item.
 					if (/(^|[\s>+~])::[\w-]+$/.test(text) || !namesSomething(selector)) continue;
-					const prefixes: string[] = [];
-					let sofar = "";
-					for (const node of selector.nodes) {
-						if (node.type === "combinator" && sofar.trim()) prefixes.push(sofar.trim());
-						sofar += node.toString();
-					}
+					const scoped = selector.nodes.some((n) => n.type === "combinator");
 					try {
 						out.push({
 							file,
 							full: rewrite(text),
 							last: lastCompounds(text)[0] as Compound,
-							prefixes: prefixes.map(rewrite),
+							selector: text,
+							line: rule.source?.start?.line ?? 0,
+							adjustment: scoped && ADJUSTMENT.test(label),
 						});
 					} catch {
 						// A selector the rewrite cannot read names nothing we can test.
@@ -127,8 +135,23 @@ function placeOf(path: string, all: string[]): string {
 	if (folder !== "sections") return folder;
 	const name = file.replace(/\.css$/, "");
 	const start = name.split("-")[0] ?? name;
-	const shared = all.filter((p) => p.startsWith(`sections/${start}-`)).length > 1;
-	return `sections/${shared ? start : name}`;
+	// pdf.css and pdf-xfa.css are both the PDF section.
+	const family = all.filter(
+		(p) => p === `sections/${start}.css` || p.startsWith(`sections/${start}-`),
+	);
+	return `sections/${family.length > 1 ? start : name}`;
+}
+
+/** One source rule that reaches an item. */
+export interface RuleHit {
+	item: string;
+	/** "global/inputs.css" */
+	file: string;
+	line: number;
+	selector: string;
+	/** True when the rule's last part names the item itself; false when it only selects its element. */
+	named: boolean;
+	adjustment: boolean;
 }
 
 export interface Group {
@@ -145,35 +168,48 @@ export interface Section {
 
 export interface Organization {
 	sections: Section[];
-	/** Items styled from more than one place, with every file that styles them. */
-	overlaps: { item: string; files: string[] }[];
+	/** Items whose own styling is split across top-level places, with the rules that do it. */
+	overlaps: { item: string; files: string[]; rules: string[] }[];
+	/** Shared items a section adjusts, with the files that adjust them. Allowed; shown on the page. */
+	adjusted: Record<string, string[]>;
 }
 
 /**
- * One place for every item. `named` lists, per item, the files with a rule that names the item
- * itself; `selected` the files with any rule that selects its element.
+ * One place for every item, from the rules that reach it.
  *
- * An item named from more than one place is an overlap: it is listed under Global, where its
- * rules belong. Otherwise it sits in the place that names it, or failing that the place whose
- * rules select it (Global first when several do). An item no file reaches goes under "other".
+ * An item named from more than one top-level place is an overlap: it is listed under Global,
+ * where its rules belong. A section's labeled, scoped adjustment of a shared item is not an
+ * overlap; it is noted. Otherwise an item sits in the place that names it, or failing that the
+ * place whose rules select its element (Global first when several do). An item no rule reaches
+ * goes under "other".
  */
-export function organize(
-	styled: { selected: Record<string, string[]>; named: Record<string, string[]> },
-	items: string[],
-	paths: string[],
-): Organization {
+export function organize(hits: RuleHit[], items: string[], paths: string[]): Organization {
 	// Only folders whose files style elements own items; settings and components hold no rules of their own.
-	const owning = (list: string[] | undefined) =>
-		(list ?? []).filter((path) => /^(global|markdown|sections)\//.test(path)).sort();
+	const owning = hits.filter((h) => /^(global|markdown|sections)\//.test(h.file));
+	const filesOf = (list: RuleHit[]) => [...new Set(list.map((h) => h.file))].sort();
 	const placesOf = (files: string[]) => [...new Set(files.map((f) => placeOf(f, paths)))];
 	const overlaps: Organization["overlaps"] = [];
+	const adjusted: Organization["adjusted"] = {};
 	const placed = new Map<string, Map<string, string[]>>();
 	for (const item of [...items].sort()) {
-		const named = owning(styled.named[item]);
-		const selected = owning(styled.selected[item]);
+		const mine = owning.filter((h) => h.item === item);
+		const base = mine.filter((h) => h.named && !h.adjustment);
+		const named = filesOf(base);
 		const overlap = placesOf(named).length > 1;
-		if (overlap) overlaps.push({ item, files: named });
-		const files = named.length ? named : selected;
+		if (overlap) {
+			overlaps.push({
+				item,
+				files: named,
+				rules: base
+					.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line)
+					.map((h) => `src/${h.file}:${h.line}  ${h.selector}`),
+			});
+		}
+		const adjustments = filesOf(mine.filter((h) => h.named && h.adjustment));
+		// Listed by the rules that name it; failing that by any rule that reaches it, and only
+		// then by an adjustment (an item with nothing but adjustments still needs a home).
+		const reached = filesOf(mine.filter((h) => !h.adjustment));
+		const files = named.length ? named : reached.length ? reached : adjustments;
 		const places = placesOf(files);
 		const section =
 			places.length === 0
@@ -181,6 +217,9 @@ export function organize(
 				: overlap || places.includes("global")
 					? "global"
 					: (places[0] as string);
+		// An adjustment made in the item's own place is just part of its styling.
+		const elsewhere = adjustments.filter((f) => placeOf(f, paths) !== section);
+		if (elsewhere.length) adjusted[item] = elsewhere;
 		// Listed under a file of its own section.
 		const file = files.find((f) => placeOf(f, paths) === section) ?? files[0] ?? "";
 		const groups = placed.get(section) ?? new Map<string, string[]>();
@@ -199,5 +238,6 @@ export function organize(
 					.map(([file, list]) => ({ file, items: list })),
 			})),
 		overlaps,
+		adjusted,
 	};
 }

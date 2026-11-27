@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { matchable } from "../../capture/scripts/css.ts";
 import { COMPONENTS } from "../../capture/scripts/engine.ts";
-import { type Compound, lastCompounds, type Probe, probes } from "./organization.ts";
+import { type Compound, lastCompounds, type Probe, probes, type RuleHit } from "./organization.ts";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const CACHE = `${ROOT}workbench/out/organization.json`;
@@ -49,7 +49,7 @@ function hits(args: {
 			if (selector) for (const el of doc.querySelectorAll(selector)) own(el, item);
 		}
 		if (owners.size === 0) continue;
-		for (const probe of args.probes) {
+		for (const [index, probe] of args.probes.entries()) {
 			let matched: Element[];
 			try {
 				matched = Array.from(doc.querySelectorAll(probe.full)).slice(0, 40);
@@ -71,25 +71,11 @@ function hits(args: {
 					)
 				);
 			};
+			// The rule reaches an item only when it selects the item's own element; it names the
+			// item when its last part also carries the item's own class or element.
 			for (const el of matched) {
 				for (const item of owners.get(el) ?? []) {
-					found.add(`${item}\n${probe.file}\n${calls(item) ? "named" : "selected"}`);
-				}
-				if (owners.has(el) || probe.prefixes.length === 0) continue;
-				// Something inside an item, in a rule that goes through the item to get there: the
-				// rule reaches the item (for listing it), without naming it.
-				for (let up = el.parentElement; up; up = up.parentElement) {
-					const items = owners.get(up);
-					if (!items) continue;
-					const through = probe.prefixes.some((p) => {
-						try {
-							return up.matches(p);
-						} catch {
-							return false;
-						}
-					});
-					if (through) for (const item of items) found.add(`${item}\n${probe.file}\nselected`);
-					break;
+					found.add(`${item}\n${index}\n${calls(item) ? "named" : "selected"}`);
 				}
 			}
 		}
@@ -97,19 +83,11 @@ function hits(args: {
 	return [...found];
 }
 
-/** For each item, the source files whose rules reach it. */
-export interface Styled {
-	/** Files with a rule that selects the item's own element: where the item is listed. */
-	selected: Record<string, string[]>;
-	/** Files with a rule that also names the item itself: what the overlap check judges. */
-	named: Record<string, string[]>;
-}
-
 /**
- * For each item, the source files with a rule that styles it. `files` are the source files as
- * "folder/file.css" with their text.
+ * Every source rule that reaches an item, found by testing the rules against the captures.
+ * `files` are the source files as "folder/file.css" with their text.
  */
-export async function styledBy(files: { path: string; css: string }[]): Promise<Styled> {
+export async function styledBy(files: { path: string; css: string }[]): Promise<RuleHit[]> {
 	const index = readFileSync(`${ROOT}capture/fixtures.json`, "utf8");
 	const list = probes(files, matchable);
 	// Everything the answer depends on: the selectors tested, the captures, and how they are matched.
@@ -119,7 +97,7 @@ export async function styledBy(files: { path: string; css: string }[]): Promise<
 	if (existsSync(CACHE)) {
 		const cached = JSON.parse(readFileSync(CACHE, "utf8")) as {
 			key: string;
-			styled: Styled;
+			styled: RuleHit[];
 		};
 		if (cached.key === key) return cached.styled;
 	}
@@ -162,15 +140,25 @@ export async function styledBy(files: { path: string; css: string }[]): Promise<
 	} finally {
 		await browser.close();
 	}
-	const styled: Styled = { selected: {}, named: {} };
+	// One entry per item and rule; a rule that names the item wins over one that only selects it.
+	const byRule = new Map<string, RuleHit>();
 	for (const pair of pairs) {
-		const [item = "", file = "0", how = ""] = pair.split("\n");
-		const path = files[Number(file)]?.path ?? "";
-		// A rule that names the item also selects it.
-		for (const set of how === "named" ? [styled.named, styled.selected] : [styled.selected]) {
-			if (!set[item]?.includes(path)) set[item] = [...(set[item] ?? []), path].sort();
-		}
+		const [item = "", index = "0", how = ""] = pair.split("\n");
+		const probe = list[Number(index)];
+		if (!probe) continue;
+		const file = files[probe.file]?.path ?? "";
+		const key = `${item}\n${file}\n${probe.line}\n${probe.selector}`;
+		const named = how === "named" || byRule.get(key)?.named === true;
+		byRule.set(key, {
+			item,
+			file,
+			line: probe.line,
+			selector: probe.selector,
+			named,
+			adjustment: probe.adjustment,
+		});
 	}
+	const styled = [...byRule.values()];
 	mkdirSync(`${ROOT}workbench/out`, { recursive: true });
 	writeFileSync(CACHE, JSON.stringify({ key, styled }));
 	return styled;

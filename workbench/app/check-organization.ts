@@ -13,8 +13,9 @@ if (overlaps.length === 0) {
 		`Organization: ${overlaps.length} items are styled from more than one place.\n${rules}\n`,
 	);
 	console.log("Move their rules into src/global/ so each has one home:");
-	for (const { item, files } of overlaps) {
-		console.log(`- ${item}: ${files.map((f) => `src/${f}`).join(", ")}`);
+	for (const { item, rules } of overlaps) {
+		console.log(`- ${item}`);
+		for (const rule of rules) console.log(`    ${rule}`);
 	}
 	process.exit(1);
 }

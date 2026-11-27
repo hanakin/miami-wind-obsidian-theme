@@ -214,9 +214,8 @@ function ingest(index: FixtureIndex): void {
 
 async function data(index: FixtureIndex): Promise<ViewerData> {
 	ingest(index);
-	const { sections, overlaps } = await organization();
 	return {
-		organization: { sections, overlaps },
+		organization: await organization(),
 		appCss: existsSync(paths.app),
 		cmCss: existsSync(paths.cm),
 		fixtures: index.fixtures.map(({ id, file, component, surface, state, note }) => ({
