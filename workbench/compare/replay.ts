@@ -21,10 +21,18 @@ function transformed(text: string, touch: boolean): string {
 	}
 	return value;
 }
-const limits: Record<string, string> = existsSync("capture/coverage.json")
-	? (JSON.parse(readFileSync("capture/coverage.json", "utf8")).replay?.limits ??
-		{})
-	: {};
+let limits: Record<string, string> | undefined;
+export function loadReplayLimits(): Record<string, string> {
+	if (!limits) {
+		if (!existsSync("capture/coverage.json"))
+			throw new Error("Missing capture coverage: capture/coverage.json");
+		limits =
+			JSON.parse(readFileSync("capture/coverage.json", "utf8")).replay
+				?.limits ?? {};
+	}
+	return limits!;
+}
+
 function sheet(
 	token: string,
 	css: { app: string; cm: string; theme: string },
@@ -119,7 +127,9 @@ export async function prepareReplay(
 		void document.body.offsetHeight;
 	}, styles);
 	const frames: Record<string, string> = {};
-	for (const match of html.matchAll(/data-capture-frame-styles="([^"]*)"/g)) {
+	for (const match of html.matchAll(
+		/data-capture-frame-styles=(?:"|(?:&amp;)*&quot;)([^"&]*)/g,
+	)) {
 		const key = match[1] ?? "";
 		frames[key] = rewrite(
 			key
@@ -131,15 +141,22 @@ export async function prepareReplay(
 	}
 	const canvases = (fixture.canvasPixels ?? []).map((c) => ({
 		index: c.index,
+		frame: c.frame ?? null,
 		b64: readFileSync(`capture/fixtures/${c.file}`).toString("base64"),
 	}));
 	const got = await replayFixture(
 		page,
 		rewrite(html).replaceAll('src="/lib/', `src="${origin}lib/`),
-		fixture.imageSizes ?? [],
+		(fixture.imageSizes ?? []).map((im) => ({
+			...im,
+			url: im.file
+				? `data:${({ png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", svg: "image/svg+xml", webp: "image/webp", avif: "image/avif", bmp: "image/bmp" } as Record<string, string>)[im.file.split(".").pop() ?? ""] ?? "image/png"};base64,${readFileSync(`capture/fixtures/${im.file}`).toString("base64")}`
+				: null,
+		})),
 		canvases,
 		frames,
 		fixture.trimSelector ?? null,
+		{ forceRecordedGeometry: false },
 	);
 	await page.locator("style[data-compare-suppression]").evaluate((el) => {
 		el.textContent =
@@ -149,8 +166,8 @@ export async function prepareReplay(
 		got,
 		issues: [
 			...(got.why ? [got.why] : []),
-			...(limits[fixture.id]
-				? [`capture replay limit: ${limits[fixture.id]}`]
+			...(loadReplayLimits()[fixture.id]
+				? [`capture replay limit: ${loadReplayLimits()[fixture.id]}`]
 				: []),
 		],
 	};

@@ -129,6 +129,19 @@ export function filterFixtures<
 	);
 }
 
+export function mergedCoverage(
+	...sides: {
+		invisibleTarget: boolean;
+		unsupported: string[];
+		replayIssues: string[];
+	}[]
+) {
+	return {
+		invisible: sides.some((s) => s.invisibleTarget),
+		unsupported: [...new Set(sides.flatMap((s) => s.unsupported))],
+		replayIssues: [...new Set(sides.flatMap((s) => s.replayIssues))],
+	};
+}
 export function outcome(input: {
 	differences: number;
 	pixels: number;

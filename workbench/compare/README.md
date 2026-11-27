@@ -29,7 +29,9 @@ Each observation primes one identical reconstruction before its style read and s
 
 Capture's shared stylesheet transformation restores recorded pseudo-states. Its shared replay restores text selection, field selection, canvas pixels, styled frame documents, and scrolling. An unavailable state receives a not-proven reason. Computed styles inside frames remain compared.
 
-Style reads compare standard computed properties on every element. Applicable pseudo-elements include generated content, markers, selection, placeholders, scrollbars, scrollbar thumbs, tracks, corners, and file-selector buttons. Offscreen probes resolve graph, canvas, and PDF colors that Obsidian reads through JavaScript.
+Compare passes `forceRecordedGeometry: false` to capture replay. Real positioned parents, media, and restored frames keep their natural CSS geometry. Only empty stand-ins retain forced recorded boxes. This prevents saved dimensions from hiding theme width or height changes.
+
+Style reads compare standard computed properties on every element. Applicable pseudo-elements include generated content, markers, selection, placeholders, scrollbars, scrollbar thumbs, tracks, corners, and file-selector buttons. The command also compares the audited JavaScript-read custom properties on every real element. The list lives in `variables.ts`. Offscreen probes resolve graph, canvas, startup/mobile colors, and the page color inside an app-shaped `.pdf-container.mod-themed` context.
 
 The command disables animation and caret suppression during computed-style reads. It enables suppression for screenshots. Caret-color changes remain visible in computed-style differences. Native media UI remains present on shared replays. Its unrestored playback state receives a coverage limit. Pixel comparison checks every RGBA channel exactly, including antialiasing. A changed pixel counts only when both before captures agree and both after captures agree. There is no color tolerance or geometric mask. A same-CSS pixel flip creates a noise record and makes pixel-only conclusions not-proven.
 
@@ -57,9 +59,9 @@ The top-level `notProven` list contains `{ id, reasons }` records. The top-level
 
 The shared component look uses each property's most common after-theme value within the same interaction state. Ties select the first use in fixture ID order. The comparison excludes container dimensions: width, height, inline-size, block-size, transform-origin, and perspective-origin. Filtered runs describe only the selected uses. This output measures surface consistency independently of before/after parity.
 
-Missing image and media interiors receive not-proven reasons. Unrecorded canvas or frame contents also receive not-proven reasons. The report retains limits declared by capture's replay check. Hidden or offscreen targets remain in computed-style comparisons.
+Missing image and media interiors receive not-proven reasons. Unrecorded canvas or frame contents also receive not-proven reasons. The report retains limits declared by capture's replay check. A missing `capture/coverage.json` fails setup. Coverage reasons from both themes and their repeats remain in the report. Drag ghosts with captured JavaScript-copied custom properties remain not proven until that runtime initialization can be reconstructed. Hidden or offscreen targets remain in computed-style comparisons.
 
-Loaded images retain their pixels. Capture uses `imageSizes: [{ index, width, height }]` for same-size placeholders. The index follows zero-based `document.images` order, including spacer images. Width and height are intrinsic pixels. Placeholders preserve layout while their missing image interiors remain not proven. CodeMirror spacers and images without sources do not represent missing assets.
+Images with a recorded fixture file load their saved pixels. Other loaded images retain their pixels. Capture uses `imageSizes: [{ index, width, height }]` for same-size placeholders. The index follows zero-based `document.images` order, including spacer images. Width and height are intrinsic pixels. Placeholders preserve layout while their missing image interiors remain not proven. CodeMirror spacers and images without sources do not represent missing assets.
 
 MathJax fonts load from the matching local Obsidian archive. No font binaries are committed. Every capture waits for font loading. Failed MathJax faces or missing glyph metrics create not-proven reasons. Other fonts use local host fallbacks. Platform variants do not prove native macOS or Windows appearance.
 

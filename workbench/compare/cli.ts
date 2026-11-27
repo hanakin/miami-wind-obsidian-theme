@@ -10,12 +10,14 @@ import {
 	comparisonExitCode,
 	componentDiffs,
 	filterFixtures,
+	mergedCoverage,
 	outcome,
 	type Sample,
 	styleDiff,
 } from "./model";
 import { repeatedPixels } from "./pixels";
 import { render } from "./render";
+import { loadReplayLimits } from "./replay";
 import { runtimeCss } from "./runtime";
 
 const { values } = parseArgs({
@@ -42,6 +44,12 @@ for (const file of ["compare.json", "compare.md", "component-diffs.json"])
 	rmSync(`${out}/${file}`, { force: true });
 rmSync(`${out}/diffs`, { recursive: true, force: true });
 mkdirSync(`${out}/diffs`, { recursive: true });
+for (const side of ["before", "after"] as const)
+	if (values[side] !== undefined && !values[side]?.trim())
+		throw new Error(
+			`Expected non-empty --${side} path; pass an empty CSS file for Default Obsidian.`,
+		);
+loadReplayLimits();
 const registry = (await Bun.file("capture/fixtures.json").json()) as {
 	obsidianVersion: string;
 	fixtures: FixtureEntry[];
@@ -201,13 +209,12 @@ try {
 					);
 				}
 				const differences = styleDiff(a.styles, b.styles);
+				const coverage = mergedCoverage(a, sanity, b, afterRepeat);
 				const verdict = outcome({
 					differences: differences.length,
 					pixels: pixel.count,
 					noise: !!(styleNoise || pixel.noise.pixels),
-					invisible: b.invisibleTarget,
-					unsupported: b.unsupported,
-					replayIssues: b.replayIssues,
+					...coverage,
 				});
 				const result: Result = {
 					id: f.id,
@@ -225,8 +232,8 @@ try {
 					pixelDiff: pixel.count,
 					rawPixelDiff: pixel.rawCount,
 					differences,
-					invisibleTarget: b.invisibleTarget,
-					unsupported: b.unsupported,
+					invisibleTarget: coverage.invisible,
+					unsupported: coverage.unsupported,
 				};
 				if (verdict.status === "different") {
 					const prefix = `diffs/${f.id}`;

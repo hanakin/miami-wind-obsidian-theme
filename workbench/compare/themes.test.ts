@@ -20,6 +20,10 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 	try {
 		mkdirSync(join(cwd, "capture/fixtures"), { recursive: true });
 		mkdirSync(join(cwd, "capture/.app"));
+		writeFileSync(
+			join(cwd, "capture/coverage.json"),
+			JSON.stringify({ replay: { limits: {} } }),
+		);
 		mkdirSync(join(cwd, "workbench/out/themes"), { recursive: true });
 		writeFileSync(
 			join(cwd, "capture/fixtures.json"),
@@ -167,6 +171,20 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 			expect(invalid.status).not.toBe(0);
 			expect(invalid.stderr).toContain("ENOENT");
 		}
+		for (const side of ["before", "after"] as const) {
+			const args = [
+				resolve("workbench/compare/cli.ts"),
+				"--before",
+				side === "before" ? "" : "empty theme.css",
+				"--after",
+				side === "after" ? "" : "empty theme.css",
+			];
+			const emptyArgument = spawnSync("bun", args, { cwd, encoding: "utf8" });
+			expect(emptyArgument.status).not.toBe(0);
+			expect(emptyArgument.stderr).toContain(
+				`Expected non-empty --${side} path`,
+			);
+		}
 		const missing = spawnSync(
 			"bun",
 			[
@@ -182,6 +200,26 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 		);
 		expect(missing.status).not.toBe(0);
 		expect(missing.stderr).toContain("Unknown fixture IDs");
+		rmSync(join(cwd, "capture/coverage.json"));
+		for (const file of ["compare.json", "compare.md", "component-diffs.json"])
+			writeFileSync(join(cwd, "workbench/out", file), "stale");
+		const noCoverage = spawnSync(
+			"bun",
+			[
+				resolve("workbench/compare/cli.ts"),
+				"--before",
+				"empty theme.css",
+				"--after",
+				"empty theme.css",
+				"--id",
+				"test",
+			],
+			{ cwd, encoding: "utf8" },
+		);
+		expect(noCoverage.status).not.toBe(0);
+		expect(noCoverage.stderr).toContain("Missing capture coverage");
+		for (const file of ["compare.json", "compare.md", "component-diffs.json"])
+			expect(() => readFileSync(join(cwd, "workbench/out", file))).toThrow();
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}

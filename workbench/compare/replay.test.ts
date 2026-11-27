@@ -6,6 +6,7 @@ import type { FixtureEntry } from "../../capture/scripts/types";
 import { BROWSER_OPTIONS } from "./browser";
 import { outcome, styleDiff } from "./model";
 import { render } from "./render";
+import { JS_READ_PROPERTIES } from "./variables";
 
 let browser: Browser;
 beforeAll(async () => {
@@ -202,3 +203,192 @@ test
 	},
 	30000,
 );
+
+test.skipIf(!existsSync("capture/.app/runtime")).each([
+	[
+		"extra.property-value-suggest-item.hover",
+		".suggestion-container {width:420px}",
+		"width",
+		"420px",
+	],
+	["command.bases:add-view", ".menu {width:300px}", "width", "300px"],
+	[
+		"md.callout-abstract.reading",
+		".callout[data-callout=abstract] {--callout-icon:lucide-flame}",
+		"--callout-icon",
+		"lucide-flame",
+	],
+	[
+		"qc.pdf.themed",
+		".pdf-container {--pdf-page-background:red}",
+		"--pdf-page-background",
+		"red",
+	],
+])(
+	"QC regression: %s exposes %s",
+	async (id, mutation, property, value) => {
+		const { page, cdp } = await setup();
+		const f = (
+			JSON.parse(readFileSync("capture/fixtures.json", "utf8")) as {
+				fixtures: FixtureEntry[];
+			}
+		).fixtures.find((f) => f.id === id)!;
+		const html = readFileSync(`capture/fixtures/${f.file}`, "utf8");
+		const css = {
+			app: readFileSync("capture/.app/app.css", "utf8"),
+			cm: "",
+			theme: execFileSync("git", ["show", "b478dc8:theme.css"], {
+				encoding: "utf8",
+			}),
+		};
+		const a = await render(page, cdp, html, css, f);
+		if (id === "md.callout-abstract.reading") {
+			const noOp = await render(
+				page,
+				cdp,
+				html,
+				{
+					...css,
+					theme: css.theme + "\n.callout{--callout-icon:lucide-flame}",
+				},
+				f,
+			);
+			expect(styleDiff(a.styles, noOp.styles)).toEqual([]);
+		}
+		const b = await render(
+			page,
+			cdp,
+			html,
+			{ ...css, theme: css.theme + "\n" + mutation },
+			f,
+		);
+		expect(
+			styleDiff(a.styles, b.styles).some(
+				(d) => d.property === property && d.after?.trim() === value,
+			),
+		).toBe(true);
+		await page.close();
+	},
+	30000,
+);
+
+test("QC regression: resolves PDF page color in its app-created themed container", async () => {
+	const { page, cdp } = await setup();
+	const css = {
+		app: "",
+		cm: "",
+		theme: ".pdf-container{--pdf-page-background:blue}",
+	};
+	const a = await render(
+		page,
+		cdp,
+		"<button data-capture-target>Test</button>",
+		css,
+		base,
+	);
+	const b = await render(
+		page,
+		cdp,
+		"<button data-capture-target>Test</button>",
+		{ ...css, theme: ".pdf-container{--pdf-page-background:red}" },
+		base,
+	);
+	expect(
+		styleDiff(a.styles, b.styles).some(
+			(d) =>
+				d.element === "probe:pdf-container.mod-themed" &&
+				d.property === "color" &&
+				d.after === "rgb(255, 0, 0)",
+		),
+	).toBe(true);
+	await page.close();
+});
+
+test("compares every audited JavaScript-read custom property on each element", async () => {
+	const { page, cdp } = await setup();
+	const theme = (value: string) =>
+		`body {${JS_READ_PROPERTIES.map((p) => `${p}:${value}`).join(";")}}`;
+	const a = await render(
+		page,
+		cdp,
+		"<button data-capture-target>Test</button>",
+		{ app: "", cm: "", theme: theme("before") },
+		base,
+	);
+	const b = await render(
+		page,
+		cdp,
+		"<button data-capture-target>Test</button>",
+		{ app: "", cm: "", theme: theme("after") },
+		base,
+	);
+	const button = b.styles.find((s) => s.element.endsWith(":button"))!;
+	for (const name of JS_READ_PROPERTIES)
+		expect(button.props[name]).toBe("after");
+	expect(
+		new Set(
+			styleDiff(a.styles, b.styles)
+				.filter(
+					(d) => d.element.endsWith(":button") && d.property.startsWith("--"),
+				)
+				.map((d) => d.property),
+		),
+	).toEqual(new Set(JS_READ_PROPERTIES));
+	await page.close();
+});
+
+test("restored frames keep theme sizing even when their capture records a size", async () => {
+	const { page, cdp } = await setup();
+	const html =
+		'<div data-capture-target><iframe data-capture-size="100 50" data-capture-frame-styles="" srcdoc="&lt;body&gt;Frame&lt;/body&gt;"></iframe></div>';
+	const a = await render(
+		page,
+		cdp,
+		html,
+		{ app: "", cm: "", theme: "iframe{width:100px;height:50px}" },
+		base,
+	);
+	const b = await render(
+		page,
+		cdp,
+		html,
+		{ app: "", cm: "", theme: "iframe{width:200px;height:50px}" },
+		base,
+	);
+	expect(
+		styleDiff(a.styles, b.styles).some(
+			(d) =>
+				d.element.endsWith(":iframe") &&
+				d.property === "width" &&
+				d.after === "200px",
+		),
+	).toBe(true);
+	await page.close();
+});
+
+test("does not prove a drag ghost with a frozen JavaScript variable map", async () => {
+	const { page, cdp } = await setup();
+	const html =
+		'<div data-capture-target class="drag-reorder-ghost"><div class="mod-dragged-item" style="--paint:blue;background:var(--paint);width:30px;height:30px"></div></div>';
+	const r = await render(
+		page,
+		cdp,
+		html,
+		{ app: "", cm: "", theme: ".source{--paint:red}" },
+		base,
+	);
+	expect(
+		outcome({
+			differences: 0,
+			pixels: 0,
+			noise: false,
+			invisible: r.invisibleTarget,
+			unsupported: r.unsupported,
+			replayIssues: r.replayIssues,
+		}).status,
+	).toBe("not-proven");
+	expect(r.replayIssues).toContain(
+		"drag ghost JavaScript variable copy is not reconstructed",
+	);
+	await page.close();
+});
