@@ -135,8 +135,9 @@ export const formatConfig = {
 			description:
 				"Joined tag highlighting when the editor tag text is hovered.",
 		},
-		"horizontal-rule.css": {
-			description: "Horizontal divider colors in notes.",
+		"dividers.css": {
+			description:
+				"Divider border colors for Markdown horizontal rules and the app pane resize handle.",
 		},
 		"menus.css": {
 			description:

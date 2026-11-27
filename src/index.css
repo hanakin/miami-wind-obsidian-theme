@@ -21,6 +21,7 @@
 @import 'global/menus.css';
 @import 'global/overrides.css';
 @import 'global/icons.css';
+@import 'global/dividers.css';
 @import 'markdown/headings.css';
 @import 'markdown/code.css';
 @import 'markdown/code-actions.css';
@@ -33,7 +34,6 @@
 @import 'markdown/callouts.css';
 @import 'markdown/tags.css';
 @import 'markdown/tag-hover.css';
-@import 'markdown/horizontal-rule.css';
 @import 'sections/canvas.css';
 @import 'sections/properties.css';
 @import 'sections/file-explorer.css';
