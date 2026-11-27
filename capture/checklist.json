@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-27T14:17:10.525Z",
+	"generated": "2026-11-27T15:16:47.293Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
 		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/config/obsidian"
@@ -14239,16 +14239,6 @@
 			"minUnobscured": 0.3
 		},
 		{
-			"id": "qc.canvas.snaps",
-			"scene": "qc.canvas",
-			"surface": "canvas",
-			"component": "canvas",
-			"state": "dragging-node",
-			"source": "catalog:canvas-qc",
-			"target": ".canvas-wrapper",
-			"expect": ":has(.canvas-snaps)"
-		},
-		{
 			"id": "qc.canvas.zoomed-out",
 			"scene": "qc.canvas",
 			"surface": "canvas",
@@ -14265,6 +14255,16 @@
 			"state": "default",
 			"source": "catalog:canvas-qc",
 			"target": ".canvas-node-placeholder"
+		},
+		{
+			"id": "qc.canvas.snaps",
+			"scene": "qc.canvas",
+			"surface": "canvas",
+			"component": "canvas",
+			"state": "dragging-node",
+			"source": "catalog:canvas-qc",
+			"target": ".canvas-wrapper",
+			"expect": ":has(.canvas-snaps)"
 		},
 		{
 			"id": "qc.pdf.find-settings",

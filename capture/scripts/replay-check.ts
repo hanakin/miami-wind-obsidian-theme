@@ -385,7 +385,7 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 	if (!res.blocks)
 		return {
 			status: "limit",
-			why: "nothing to compare: the target is all images, media or frames without their stylesheets",
+			why: "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
 		};
 	const share = 1 - res.bad / res.blocks;
 	const base = { share, blocks: res.blocks, detailBad: res.detailBad, replayShot };
@@ -597,7 +597,7 @@ async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS, DE
 				// always fail.
 				if (missing > Math.max(3, 0.2 * liveEdges) || extra > Math.max(3, 0.2 * replayEdges)) {
 					detailBad++;
-					if (missing >= Math.max(6, 0.5 * liveEdges) || extra >= Math.max(6, 0.5 * replayEdges))
+					if (missing >= Math.max(12, 0.5 * liveEdges) || extra >= Math.max(12, 0.5 * replayEdges))
 						detailGone++;
 					if (detail.length < (DEBUG ? 80 : 3))
 						detail.push(

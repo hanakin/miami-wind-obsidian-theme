@@ -605,6 +605,8 @@ const basesQc: Scene = {
 				await ctx.page.mouse.click(b[0], b[1]);
 				await ctx.page.keyboard.press("End");
 				await ctx.page.keyboard.press("ArrowLeft");
+				// The pointer off the editor: pointer events under it would close the docstring tooltip.
+				await ctx.page.mouse.move(5, 995);
 				await ctx.sleep(400);
 			},
 			note: "Typing .contains( auto-closes the bracket; with the cursor between them the formula editor marks both with .cm-matchingBracket.",
@@ -711,24 +713,6 @@ const canvasQc: Scene = {
 			},
 		},
 		{
-			id: "qc.canvas.snaps",
-			component: "canvas",
-			target: ".canvas-wrapper",
-			state: "dragging-node",
-			full: true,
-			expect: ":has(.canvas-snaps)",
-			before: async (ctx) => {
-				await ctx.page.mouse.up();
-				await ctx.js("app.workspace.activeLeaf.view.canvas.deselectAll(); await sleep(200);");
-				const b = await center(ctx, { sel: ".canvas-node", text: "Colored card 3" });
-				await ctx.page.mouse.move(b[0], b[1]);
-				await ctx.page.mouse.down();
-				// Toward the middle: held near the canvas edge, the canvas keeps scrolling.
-				await ctx.page.mouse.move(b[0] + 200, b[1] + 2, { steps: 12 });
-				await ctx.sleep(400);
-			},
-		},
-		{
 			id: "qc.canvas.zoomed-out",
 			component: "canvas",
 			target: ".canvas-wrapper.mod-zoomed-out",
@@ -743,6 +727,30 @@ const canvasQc: Scene = {
 			id: "qc.canvas.node-placeholder",
 			component: "canvas-node",
 			target: ".canvas-node-placeholder",
+		},
+		{
+			// Last: releasing the drags of the items before it leaves the canvas panned away.
+			id: "qc.canvas.snaps",
+			component: "canvas",
+			target: ".canvas-wrapper",
+			state: "dragging-node",
+			full: true,
+			expect: ":has(.canvas-snaps)",
+			before: async (ctx) => {
+				await ctx.page.mouse.up();
+				// A fresh canvas: earlier items leave it zoomed out and panned away from the cards.
+				await ctx.open("Canvas.canvas", "live");
+				await ctx.js(
+					"const c = app.workspace.getLeavesOfType('canvas').find((l) => l.view.containerEl.isShown())?.view.canvas; c.deselectAll(); c.zoomToFit(); await sleep(2000); return [c.x, c.y, c.zoom, c.nodes.size];",
+				);
+				const b = await center(ctx, { sel: ".canvas-node", text: "Colored card 3" });
+				const mid = await center(ctx, ".canvas-wrapper");
+				await ctx.page.mouse.move(b[0], b[1]);
+				await ctx.page.mouse.down();
+				// A short way toward the middle: held near the canvas edge, the canvas keeps scrolling.
+				await ctx.page.mouse.move(b[0] + Math.sign(mid[0] - b[0]) * 60, b[1] + 2, { steps: 8 });
+				await ctx.sleep(400);
+			},
 		},
 	],
 };

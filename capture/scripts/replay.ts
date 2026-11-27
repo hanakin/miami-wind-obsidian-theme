@@ -111,11 +111,17 @@ export async function replayFixture(
 				])
 					e.style.setProperty(k as string, v as string, "important");
 			}
-			// Scrollbars shown live stay (a trimmed list no longer overflows).
+			// A scrollbar shown live but missing here (a trimmed list no longer overflows) is forced
+			// back; one already shown is left alone.
 			for (const e of document.querySelectorAll<HTMLElement>("[data-capture-scrollbar]")) {
 				const bars = e.getAttribute("data-capture-scrollbar") ?? "";
-				if (bars.includes("y")) e.style.setProperty("overflow-y", "scroll", "important");
-				if (bars.includes("x")) e.style.setProperty("overflow-x", "scroll", "important");
+				const cs = getComputedStyle(e);
+				const bw = (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.borderRightWidth) || 0);
+				const bh = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+				if (bars.includes("y") && e.offsetWidth - e.clientWidth - bw <= 0)
+					e.style.setProperty("overflow-y", "scroll", "important");
+				if (bars.includes("x") && e.offsetHeight - e.clientHeight - bh <= 0)
+					e.style.setProperty("overflow-x", "scroll", "important");
 			}
 			// Controls whose state is not in the markup.
 			for (const e of document.querySelectorAll<HTMLSelectElement>(

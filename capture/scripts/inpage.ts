@@ -753,38 +753,57 @@ export const INPAGE = String.raw`
 							if (o) {
 								const cs = win.getComputedStyle(o);
 								const r = o.getBoundingClientRect();
-								if (cs.visibility === "visible" && parseFloat(cs.opacity) > 0 && r.width * r.height > 0) {
-									ph.setAttribute("data-capture-shown", "");
+								// (A box of its own is not needed for its parts: an empty container can hold a
+								// fixed tooltip, like CodeMirror's tooltip root on <body>.)
+								if (cs.visibility === "visible" && parseFloat(cs.opacity) > 0 && cs.display !== "none") {
+									if (r.width * r.height > 0) ph.setAttribute("data-capture-shown", "");
 									// Parts of it painted over the target (the titlebar's buttons, the status bar
 									// above a drag preview): keep exactly the cells, inside the target's box, where
 									// a hit test finds one of its painting elements on top, so a replay leaves those
 									// out (a popover under a menu hides nothing of the menu).
 									const tb = el.getBoundingClientRect();
 									const zone = { x: tb.x - 8, y: tb.y - 8, right: tb.right + 8, bottom: tb.bottom + 8 };
-									if (r.x < zone.right && r.right > zone.x && r.y < zone.bottom && r.bottom > zone.y) {
-										const cells = new Set();
+									{
+										// Cell key -> [x0, y0, x1, y1]: the 8 px cell clipped to the painting part's box (a
+										// neighbor's corner must not cover a tiny target), widened when several parts paint it.
+										const cells = new Map();
 										withHitTesting(o, () => {
 											let n = 0;
-											for (const e of [o, ...o.querySelectorAll("*")]) {
+											const done = new Set();
+											for (const e0 of [o, ...o.querySelectorAll("*")]) {
 												if (n >= 400) break;
+												// An icon paints with thin strokes a grid point can miss: its whole <svg> box counts.
+												const svg = e0.namespaceURI === "http://www.w3.org/2000/svg";
+												const e = svg ? (e0.localName === "svg" ? e0 : e0.ownerSVGElement) : e0;
+												if (!e || done.has(e)) continue;
+												if (svg && e === e0) continue; // the <svg> itself counts once one of its shapes paints
+												done.add(e);
 												const er0 = e.getBoundingClientRect();
 												const er = { x: Math.max(er0.x, zone.x), y: Math.max(er0.y, zone.y), right: Math.min(er0.right, zone.right), bottom: Math.min(er0.bottom, zone.bottom) };
-												if (er.right - er.x < 1 || er.bottom - er.y < 1 || clear(win, e)) continue;
+												if (er.right - er.x < 1 || er.bottom - er.y < 1 || (!svg && clear(win, e))) continue;
 												n++;
-												for (let y = Math.floor(er.y / 8) * 8; y < er.bottom && cells.size < 4000; y += 8)
+												for (let y = Math.floor(er.y / 8) * 8; y < er.bottom && cells.size < 20000; y += 8)
 													for (let x = Math.floor(er.x / 8) * 8; x < er.right; x += 8) {
 														const k = x + "," + y;
-														if (cells.has(k)) continue;
-														const px = Math.min(Math.max(x + 4, er.x + 0.5), er.right - 0.5);
-														const py = Math.min(Math.max(y + 4, er.y + 0.5), er.bottom - 0.5);
-														if (px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e)) cells.add(k);
+														const c0 = [Math.max(x, er.x), Math.max(y, er.y), Math.min(x + 8, er.right), Math.min(y + 8, er.bottom)];
+														const had = cells.get(k);
+														if (had && had[0] <= c0[0] && had[1] <= c0[1] && had[2] >= c0[2] && had[3] >= c0[3]) continue;
+														const px = (c0[0] + c0[2]) / 2;
+														const py = (c0[1] + c0[3]) / 2;
+														if (px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e))
+															cells.set(k, had ? [Math.min(had[0], c0[0]), Math.min(had[1], c0[1]), Math.max(had[2], c0[2]), Math.max(had[3], c0[3])] : c0);
 													}
 											}
 										});
-										// Rows of cells merged into runs.
+										// Full cells merged into runs along each row; clipped cells kept as they are.
 										const runs = [];
 										const byRow = new Map();
-										for (const k of cells) { const [x, y] = k.split(",").map(Number); if (!byRow.has(y)) byRow.set(y, []); byRow.get(y).push(x); }
+										const fmt = (v) => Math.round(v * 10) / 10;
+										for (const [k, c] of cells) {
+											const [x, y] = k.split(",").map(Number);
+											if (c[0] === x && c[1] === y && c[2] === x + 8 && c[3] === y + 8) { if (!byRow.has(y)) byRow.set(y, []); byRow.get(y).push(x); }
+											else runs.push([c[0], c[1], c[2] - c[0], c[3] - c[1]].map(fmt).join(","));
+										}
 										for (const [y, xs] of byRow) {
 											xs.sort((a, b) => a - b);
 											let start = xs[0], prev = xs[0];
@@ -794,7 +813,7 @@ export const INPAGE = String.raw`
 												start = x; prev = x;
 											}
 										}
-										if (runs.length) ph.setAttribute("data-capture-paints", runs.slice(0, 600).join(" "));
+										if (runs.length) ph.setAttribute("data-capture-paints", runs.slice(0, 2000).join(" "));
 									}
 								}
 							}
