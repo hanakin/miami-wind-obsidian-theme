@@ -321,3 +321,24 @@ it("does not read a checkbox as same when a change sits on an input the key cann
 		rowState("checkbox", "editor-reading-view", captures, { around: different }, touched)?.state,
 	).toEqual({ status: "not-proven", reasons: [changedElsewhere("checkbox")] });
 });
+
+it("counts a change to the component seen inside a larger capture, even beside its own captures", () => {
+	const captures = [
+		{ id: "own", component: "combobox", surface: "menu" },
+		{ id: "sort-menu", component: "menu", surface: "menu" },
+	];
+	const results: Record<string, CompareState> = { own: same, "sort-menu": different };
+	for (const list of [captures, captures.toReversed()]) {
+		// The larger capture differs on the combobox itself: the place differs.
+		expect(rowState("combobox", "menu", list, results, { "sort-menu": ["combobox"] })).toEqual({
+			state: different,
+			inside: false,
+			captures: 2,
+			reasons: [],
+		});
+		// It differs on something else: the combobox's own capture decides.
+		expect(rowState("combobox", "menu", list, results, { "sort-menu": ["button"] })?.state).toEqual(
+			same,
+		);
+	}
+});

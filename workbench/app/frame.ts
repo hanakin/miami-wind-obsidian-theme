@@ -125,7 +125,16 @@ export function frameDocument(
 		HIDE_PLACEHOLDERS,
 		`<script nonce="${nonce}">${script}</script></head>`,
 	].join("");
-	return innerFrames(sanitize(html), links).replace(/<head>[\s\S]*?<\/head>/i, head);
+	const clean = sanitize(html);
+	// Runtime rules the capture kept in the fixture's own head (MathJax's glyph rules) stay: they
+	// go first, where runtime rules belong, ahead of app CSS and the theme.
+	const kept = (/<head>[\s\S]*?<\/head>/i.exec(clean)?.[0] ?? "")
+		.match(/<style\b[^>]*\sdata-capture-runtime\b[^>]*>[\s\S]*?<\/style>/gi)
+		?.join("");
+	return innerFrames(clean, links).replace(
+		/<head>[\s\S]*?<\/head>/i,
+		head.replace(`<meta charset="utf-8"${end}`, `<meta charset="utf-8"${end}${kept ?? ""}`),
+	);
 }
 
 /**

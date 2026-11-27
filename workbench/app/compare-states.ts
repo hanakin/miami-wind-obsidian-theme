@@ -93,14 +93,33 @@ export function rowState(
 	const here = fixtures.filter((f) => f.surface === surface);
 	if (here.length === 0) return undefined;
 	const own = here.filter((f) => f.component === component);
-	const judged = own.length ? own : here;
-	const states = judged.map((f) => stateFor(component, f.id, compare, touched));
+	// The component's own captures, or every capture that contains it when it has none. Either
+	// way, a larger capture with a difference on this component's own elements is counted too:
+	// a real change to the component is never left out because it was seen inside something else.
+	const judged = own.length
+		? [...own, ...here.filter((f) => changedIn(component, f, compare, touched))]
+		: here;
+	const states = [...new Set(judged)].map((f) => stateFor(component, f.id, compare, touched));
 	return {
 		state: combine(states),
 		inside: own.length === 0,
-		captures: judged.length,
+		captures: states.length,
 		reasons: tally(states),
 	};
+}
+
+/** True for a larger capture that differs on this component's own elements. */
+export function changedIn(
+	component: string,
+	capture: Place,
+	compare: Record<string, CompareState> | null,
+	touched: Record<string, string[]>,
+): boolean {
+	return (
+		capture.component !== component &&
+		compare?.[capture.id]?.status === "different" &&
+		(touched[capture.id]?.includes(component) ?? false)
+	);
 }
 
 /** What one capture says about one component: its change counts only when it is on the component. */

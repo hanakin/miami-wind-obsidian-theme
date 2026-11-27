@@ -66,3 +66,18 @@ it("builds XHTML fixtures as well-formed XML and hides the capture's stand-ins",
 	expect(doc).toContain('<script nonce="N1">//<![CDATA[');
 	expect(doc).toContain("//]]></script></head>");
 });
+
+it("keeps the runtime rules a capture carries in its own head", () => {
+	const doc = frameDocument(
+		'<!doctype html><html><head><meta charset="utf-8"><style data-capture-runtime="mathjax">mjx-c.mjx-c32 { padding: 1em; }</style><style>.other { color: red; }</style></head><body><p>x</p></body></html>',
+		["/css/cm.css", "/css/app.css"],
+		null,
+		"N1",
+	);
+	expect(doc).toContain(
+		'<style data-capture-runtime="mathjax">mjx-c.mjx-c32 { padding: 1em; }</style>',
+	);
+	// Only the capture's marked runtime rules are kept, and they come before the stylesheets.
+	expect(doc).not.toContain(".other");
+	expect(doc.indexOf("mjx-c32")).toBeLessThan(doc.indexOf("/css/cm.css"));
+});

@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import {
 	type Change,
+	changedIn,
 	type PlaceVerdict,
 	pageSummary,
 	rowState,
@@ -570,7 +571,11 @@ function capture(f: Fixture, focus?: string, only?: (c: Change) => boolean): HTM
 	const component = focus ?? f.component;
 	// A larger capture previewed for another component: the row above already gives the verdict.
 	const around = f.component !== component;
-	const verdict = around ? undefined : stateFor(component, f.id, live.compare, live.touched);
+	// Unless that larger capture differs on this very component: then it says so.
+	const verdict =
+		around && !changedIn(component, f, live.compare, live.touched)
+			? undefined
+			: stateFor(component, f.id, live.compare, live.touched);
 	return h(
 		"figure",
 		{ class: "capture" },
@@ -684,7 +689,13 @@ function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLEle
 						return h("p", { class: "reason" }, "No close-up to show.");
 					}),
 				]
-			: here.filter((f) => f.component === component).map((f) => capture(f))),
+			: [
+					...here.filter((f) => f.component === component).map((f) => capture(f)),
+					// Larger captures that differ on this item itself: shown with only those changes.
+					...here
+						.filter((f) => changedIn(component, f, live.compare, live.touched))
+						.map((f) => capture(f, component, (c) => c.components.includes(component))),
+				]),
 	);
 	return row;
 }
