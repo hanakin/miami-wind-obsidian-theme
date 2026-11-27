@@ -1,0 +1,97 @@
+/* Menus */
+.menu {
+	--menu-background: var(--black);
+	--menu-border-color: var(--cyan);
+	--menu-border-width: 1px;
+	--menu-radius: 5px;
+}
+
+.menu .clickable-icon {
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--black);
+	@mixin action-button;
+}
+
+.menu .clickable-icon.bases-toolbar-menu-item-icon {
+	background-color: transparent;
+}
+
+.menu .clickable-icon.bases-toolbar-menu-item-icon:hover {
+	background-color: transparent;
+}
+
+.menu .bases-toolbar-menu-item:hover .clickable-icon,
+.menu .bases-toolbar-menu-item.is-selected .clickable-icon {
+	--text-on-accent: var(--magenta);
+	color: var(--magenta);
+}
+
+.menu .clickable-icon:hover,
+.menu .back-button:hover {
+	--mw-action-color: var(--magenta);
+	--mw-action-background: var(--magenta-transparent);
+	@mixin action-button;
+}
+
+.menu .back-button:hover .back-icon {
+	color: var(--magenta);
+}
+
+.menu-separator {
+	border-color: var(--cyan);
+}
+
+.menu-item-icon {
+	color: var(--cyan);
+}
+
+.menu-item:hover,
+.menu-item:focus,
+.menu-item:active,
+.menu-item.selected,
+.bases-toolbar-menu-item:hover,
+.bases-toolbar-menu-item:focus,
+.bases-toolbar-menu-item:active,
+.bases-toolbar-menu-item.selected {
+	--mw-item-background: var(--cyan-transparent);
+	--mw-item-color: var(--magenta);
+	@mixin menu-item-state;
+}
+
+/* Phone action/suggestion rows read these variables at higher specificity.
+   Scope them to the row states so their descendants keep the existing paint. */
+.bases-toolbar-menu-item:hover,
+.bases-toolbar-menu-item:focus,
+.bases-toolbar-menu-item:active,
+.bases-toolbar-menu-item.selected {
+	--interactive-normal: var(--cyan-transparent);
+	--interactive-hover: var(--cyan-transparent);
+}
+
+/* Tie phone fills without raising text specificity over warning items. */
+.menu-item:not(.is-label):not(.is-disabled).selected,
+.menu-item:not(.is-label):not(.is-disabled):hover,
+.menu-item:not(.is-label):not(.is-disabled):focus,
+.menu-item:not(.is-label):not(.is-disabled):active {
+	background-color: var(--cyan-transparent);
+}
+
+/* Disabled selected/focus/active used the normal fill; hover still wins below. */
+.menu-item.is-disabled.selected,
+.menu-item.is-disabled:focus,
+.menu-item.is-disabled:active {
+	background-color: var(--cyan-transparent);
+}
+
+.menu-item.is-disabled:hover,
+.bases-toolbar-menu-item.mod-hidden:hover {
+	background-color: transparent;
+	color: var(--text-disabled);
+	cursor: default;
+}
+
+
+.bases-toolbar-menu-item.mod-hidden:hover {
+	--interactive-normal: transparent;
+	--interactive-hover: transparent;
+}

@@ -1,0 +1,48 @@
+/* Overrides */
+
+body:not(.is-phone) .horizontal-tab-nav-item.is-active,
+body:not(.is-phone) .vertical-tab-nav-item.is-active,
+.modal .vertical-tab-nav-item.is-active,
+.modal .vertical-tab-nav-item.is-active:hover {
+	color: var(--text-normal);
+	background-color: var(--magenta-transparent);
+	cursor: pointer;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	cursor: pointer;
+}
+
+/* Disabled paint must follow surface states; cursor keeps its original cascade position. */
+.clickable-icon[aria-disabled='true'],
+.clickable-icon[aria-disabled='true']:hover,
+.clickable-icon[aria-disabled='true']:active,
+.clickable-icon[aria-disabled='true'].is-active,
+.clickable-icon[aria-disabled='true'].has-active-menu {
+	background-color: transparent;
+}
+
+.clickable-icon[aria-disabled='true'],
+.clickable-icon[aria-disabled='true']:is(:hover, :active, .is-active, .has-active-menu):where(:not(.modal-close-button:hover)) {
+	color: var(--text-disabled);
+}
+
+/* Sheet actions read accent text directly at 0,5,0 / 0,6,0. */
+.filter-row-actions .clickable-icon:where([aria-disabled='true']),
+.filter-group-header-actions .clickable-icon:where([aria-disabled='true']) {
+	--text-on-accent: var(--text-disabled);
+}
+
+.filter-group-header-actions .clickable-icon:where([aria-disabled='true']) {
+	--text-faint: transparent;
+}
+
+/* The old filter hover fill outranked the old disabled fill. */
+.filter-row-actions .clickable-icon:where([aria-disabled='true']):hover {
+	background-color: var(--magenta-transparent);
+}
+
+/* Tie Obsidian 1.15.1's 0,3,1 sidebar button color without changing child variables. */
+.mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true']) {
+	color: var(--text-disabled);
+}

@@ -1,3 +1,17 @@
+	/* Panel Tabs */
+	.workspace-tabs .clickable-icon:hover {
+		--mw-icon-background: var(--icon-background-hover);
+		@mixin icon-background;
+	}
+
+	.workspace-tabs .clickable-icon:active,
+	.workspace-tabs .clickable-icon.has-active-menu,
+	.workspace-tabs .clickable-icon.is-active {
+		--mw-icon-background: var(--icon-background-active);
+		@mixin icon-background;
+	}
+
+/* Tabs */
 .workspace-tab-header-container {
 	background-color: var(--grey-11);
 }

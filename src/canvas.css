@@ -1,0 +1,37 @@
+/* Canvas */
+.canvas-control-group {
+	border: none;
+	box-shadow: none;
+	--canvas-controls-radius: 0;
+}
+
+.canvas-control-item {
+	color: var(--cyan);
+	background-color: transparent;
+	box-shadow: none;
+	border: none;
+	cursor: pointer;
+	border-radius: 4px;
+}
+
+.canvas-control-item:hover {
+	background-color: var(--magenta-transparent);
+}
+
+.canvas-control-item:hover .svg-icon {
+	color: var(--magenta);
+}
+
+.canvas-card-menu {
+	border: 1px solid var(--magenta);
+}
+
+.canvas-card-menu .canvas-card-menu-button {
+	color: var(--cyan);
+}
+
+.canvas-card-menu .canvas-card-menu-button:hover {
+	color: var(--magenta);
+}
+
+

@@ -1,0 +1,70 @@
+.modal .dropdown,
+.dropdown,
+select,
+select:hover,
+select:focus,
+select:focus-visible,
+select:focus-within,
+select:active {
+	color: var(--black);
+	--dropdown-background: var(--magenta);
+	--dropdown-background-hover: var(--magenta);
+	cursor: pointer;
+}
+
+.modal .dropdown option,
+.dropdown option,
+select option {
+	color: var(--black);
+	background-color: var(--magenta-transparent);
+	cursor: pointer;
+}
+
+.dropdown,
+select {
+	--scrollbar-thumb-bg: var(--black);
+	--scrollbar-active-thumb-bg: var(--black);
+}
+
+.modal .dropdown option:hover,
+.modal .dropdown option:checked,
+.dropdown option:hover,
+.dropdown option:checked,
+select option:hover,
+select option:checked {
+	background-color: var(--cyan);
+}
+
+/* Obsidian's query conjunction uses a literal fill; its hover reads this leaf variable. */
+.filter-group-header .conjunction.dropdown {
+	background-color: var(--magenta);
+	--background-modifier-hover: var(--magenta);
+}
+
+/* Search-result sorting also uses literal fills and separate rest/hover text colors. */
+.search-results-info .dropdown,
+.search-results-info .dropdown:hover {
+	background-color: var(--magenta);
+	color: var(--black);
+}
+
+/* Obsidian 1.15.1 PDF forms use background:none at 0,3,1; tie only its color. */
+.annotationLayer .choiceWidgetAnnotation select:focus,
+.annotationLayer .choiceWidgetAnnotation select[disabled] {
+	background-color: var(--magenta);
+}
+
+/* Onboarding uses a literal transparent fill at 0,2,1. */
+.mobile-onboarding .language-dropdown select {
+	background-color: var(--magenta);
+}
+
+/* pdf.js XFA resets color/fill on every child, then clears focused select fills. */
+.xfaSelect {
+	color: var(--black);
+	background-color: var(--magenta);
+}
+
+.xfaSelect:focus {
+	background-color: var(--magenta);
+}

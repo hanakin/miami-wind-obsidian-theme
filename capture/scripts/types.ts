@@ -82,6 +82,8 @@ export interface Scene {
 	noPointer?: boolean;
 	/** Emulated mobile app (Obsidian's app.emulateMobile) at phone or tablet size; captured by --mobile runs. */
 	mobile?: "phone" | "tablet";
+	/** Run in the main window after the scene, before extra windows close (release held work). */
+	teardown?: (main: Ctx) => Promise<void>;
 }
 
 export interface ChecklistItem {
@@ -127,6 +129,8 @@ export interface FixtureEntry {
 	 * (app:, https:, file:), by zero-based index in the saved fixture's document.images order.
 	 */
 	imageSizes?: { index: number; width: number; height: number }[];
+	/** "xhtml" when the tree cannot be written as HTML text (e.g. a <div> inside a <p>); parse it as application/xhtml+xml. */
+	format?: "xhtml";
 }
 
 /** What the capture proved about one fixture, checked again by the coverage script. */
@@ -172,5 +176,7 @@ export interface Evidence {
 	styleProps?: string[];
 	scroll?: { positions: number[]; scrollHeight: number; clientHeight: number };
 	media?: string;
+	/** The window's input media at capture: (hover: hover) and (pointer: fine). */
+	inputMedia?: { hover: boolean; finePointer: boolean };
 	screenshot?: { sha256: string; width: number; height: number; colors: number };
 }

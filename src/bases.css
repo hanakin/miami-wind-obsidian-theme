@@ -1,0 +1,29 @@
+.bases-toolbar-item .text-icon-button,
+.bases-toolbar-section-content .text-icon-button {
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--cyan-transparent);
+	@mixin action-button;
+}
+
+.bases-toolbar-item .text-icon-button:hover,
+.bases-toolbar-section-content .text-icon-button:hover {
+	color: var(--magenta);
+	background-color: var(--magenta-transparent);
+}
+
+.bases-toolbar-section-content .filter-group-actions .text-icon-button,
+.filter-row-actions .clickable-icon {
+	margin-right: 4px;
+}
+
+.filter-row-actions .clickable-icon {
+	--text-faint: transparent;
+	background-color: transparent;
+}
+
+.filter-row-actions .clickable-icon:hover {
+	--text-faint: var(--magenta-transparent);
+	color: var(--magenta);
+	background-color: var(--magenta-transparent);
+}
+

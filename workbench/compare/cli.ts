@@ -5,6 +5,11 @@ import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import type { FixtureEntry } from "../../capture/scripts/types";
 import { compile } from "../../scripts/pipeline";
+import {
+	acceptanceScope,
+	acceptedOutcome,
+	comparisonExitCode,
+} from "./accepted";
 import { BROWSER_OPTIONS } from "./browser";
 import {
 	componentDiffs,
@@ -87,6 +92,8 @@ type Result = {
 	state: string;
 	same: boolean;
 	status: string;
+	comparisonStatus: string;
+	acceptanceReason?: string;
 	notProvenReasons: string[];
 	noise: {
 		styles: number;
@@ -97,6 +104,8 @@ type Result = {
 	repeats: { before: number; after: number };
 	pixelDiff: number;
 	rawPixelDiff: number;
+	pixelsOutsideAcceptance: number;
+	acceptanceScope: ReturnType<typeof acceptanceScope>;
 	differences: ReturnType<typeof styleDiff>;
 	images?: { before: string; after: string; diff: string };
 	invisibleTarget: boolean;
@@ -142,9 +151,16 @@ try {
 					f,
 				);
 				const afterStyles = styleDiff(b.styles, afterRepeat.styles);
+				const scope = acceptanceScope([
+					a.acceptanceMatches,
+					sanity.acceptanceMatches,
+					b.acceptanceMatches,
+					afterRepeat.acceptanceMatches,
+				]);
 				const pixel = repeatedPixels(
 					[a.png, sanity.png],
 					[b.png, afterRepeat.png],
+					scope.rects,
 				);
 				const sanityPixels = pixel.noise.before;
 				const styleNoise = sanityStyles.length + afterStyles.length;
@@ -174,14 +190,22 @@ try {
 					);
 				}
 				const differences = styleDiff(a.styles, b.styles);
-				const verdict = outcome({
-					differences: differences.length,
-					pixels: pixel.count,
-					noise: !!(styleNoise || pixel.noise.pixels),
-					invisible: b.invisibleTarget,
-					unsupported: b.unsupported,
-					replayIssues: b.replayIssues,
-				});
+				const verdict = acceptedOutcome(
+					outcome({
+						differences: differences.length,
+						pixels: pixel.count,
+						noise: !!(styleNoise || pixel.noise.pixels),
+						invisible: b.invisibleTarget,
+						unsupported: b.unsupported,
+						replayIssues: b.replayIssues,
+					}),
+					{
+						scope,
+						differences,
+						outsidePixels: pixel.outsideAcceptance,
+						noise: !!(styleNoise || pixel.noise.pixels),
+					},
+				);
 				const result: Result = {
 					id: f.id,
 					component: f.component,
@@ -197,11 +221,13 @@ try {
 					repeats: { before: 2, after: 2 },
 					pixelDiff: pixel.count,
 					rawPixelDiff: pixel.rawCount,
+					pixelsOutsideAcceptance: pixel.outsideAcceptance,
+					acceptanceScope: scope,
 					differences,
 					invisibleTarget: b.invisibleTarget,
 					unsupported: b.unsupported,
 				};
-				if (verdict.status === "different") {
+				if (verdict.comparisonStatus === "different") {
 					const prefix = `diffs/${f.id}`;
 					result.images = {
 						before: `${prefix}.before.png`,
@@ -239,6 +265,10 @@ try {
 }
 results.sort((a, b) => a.id.localeCompare(b.id));
 const changed = results.filter((r) => r.status === "different").length;
+const accepted = results
+	.filter((r) => r.status === "accepted")
+	.map((r) => ({ id: r.id, reason: r.acceptanceReason }));
+const exitCode = comparisonExitCode(results);
 const notProven = results
 	.filter((r) => r.status === "not-proven" || r.notProvenReasons.length)
 	.map((r) => ({ id: r.id, reasons: r.notProvenReasons }));
@@ -259,6 +289,7 @@ const topDifferences = [...counts]
 const summary = {
 	checked: results.length,
 	changed,
+	accepted: accepted.length,
 	unchanged: results.filter((r) => r.status === "same").length,
 	notProven: notProven.length,
 	notProvenOnly: results.filter((r) => r.status === "not-proven").length,
@@ -286,7 +317,15 @@ await Bun.write(
 				flags: BROWSER_OPTIONS.args,
 				capture: "Page.captureScreenshot",
 			},
-			status: changed ? "different" : notProven.length ? "not-proven" : "same",
+			status:
+				exitCode === 1
+					? "different"
+					: exitCode === 2
+						? "not-proven"
+						: accepted.length
+							? "accepted"
+							: "same",
+			accepted,
 			notProven,
 			noise,
 			engine: `Playwright Chromium ${browser.version()}`,
@@ -309,7 +348,7 @@ await Bun.write(
 		2,
 	),
 );
-const text = `${summary.checked} fixtures checked; ${changed} with differences; ${summary.unchanged} same; ${summary.notProven} not proven (${summary.notProvenOnly} without a proven difference); ${seconds}s.\nEngine: Playwright Chromium ${browser.version()}. Independent before/after repeats (2 each): ${summary.sanity}.\nInvisible targets: ${summary.invisibleTargets}.\n\nNot proven:\n${notProven.map((r) => `- ${r.id}: ${r.reasons.join("; ")}`).join("\n")}\n\nTop element/property differences:\n${topDifferences.map((d) => `- ${d.count}: ${d.elementProperty}`).join("\n")}\n\nLimits:\n${limitations.map((l) => `- ${l}`).join("\n")}\n`;
+const text = `${summary.checked} fixtures checked; ${changed} with differences; ${summary.unchanged} same; ${summary.notProvenOnly} not proven; ${summary.accepted} accepted (intentional); ${seconds}s.\nCoverage limits: ${summary.notProven} fixtures (can overlap differences or accepted results).\nEngine: Playwright Chromium ${browser.version()}. Independent before/after repeats (2 each): ${summary.sanity}.\nInvisible targets: ${summary.invisibleTargets}.\n\nAccepted (intentional):\n${accepted.map((r) => `- ${r.id}: accepted: ${r.reason}`).join("\n")}\n\nNot proven:\n${notProven.map((r) => `- ${r.id}: ${r.reasons.join("; ")}`).join("\n")}\n\nTop element/property differences:\n${topDifferences.map((d) => `- ${d.count}: ${d.elementProperty}`).join("\n")}\n\nLimits:\n${limitations.map((l) => `- ${l}`).join("\n")}\n`;
 await Bun.write(`${out}/compare.md`, text);
 console.log(text);
-process.exitCode = changed ? 1 : notProven.length ? 2 : 0;
+process.exitCode = exitCode;

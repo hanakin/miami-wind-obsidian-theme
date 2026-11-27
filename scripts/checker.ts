@@ -100,6 +100,25 @@ export function checkCss(legacyFile?: string): Plugin {
 						)
 							return;
 
+						// Obsidian 1.15.1 button.mod-destructive.mod-cta(:hover) uses
+						// 0,2,1 / 0,3,1 reading --background-modifier-error/-hover; ties preserve CTA fills.
+						if (
+							rule.source?.input.file === path.resolve("src/modals.css") &&
+							[".modal button.mod-cta", ".modal button.mod-cta:hover"].includes(
+								selector.toString().trim(),
+							)
+						)
+							return;
+
+						// Obsidian 1.15.1's community sidebar button.clickable-icon reads
+						// --text-normal at 0,3,1; the zero-weight state keeps an exact tie.
+						if (
+							rule.source?.input.file === path.resolve("src/overrides.css") &&
+							selector.toString().trim() ===
+								".mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true'])"
+						)
+							return;
+
 						const siblings = tag.parent?.nodes ?? [];
 						const index = siblings.indexOf(tag);
 						const before = siblings
