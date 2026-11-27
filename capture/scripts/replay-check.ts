@@ -17,7 +17,7 @@ import { APP_CSS_MARK, RUNTIME_DIR } from "./engine.ts";
 import { INPAGE } from "./inpage.ts";
 import { SCREENSHOTS, WORK } from "./obsidian.ts";
 import { CAPTURE } from "./plan.ts";
-import { replayFixture } from "./replay.ts";
+import { type Replayed, type ReplayOptions, replayFixture } from "./replay.ts";
 import type { FixtureEntry } from "./types.ts";
 
 /** Share of blocks whose mean color must match. */
@@ -88,6 +88,8 @@ export interface Result {
 		worstCell: number;
 		inkBad: number;
 	};
+	/** Recorded-size forcing the replay applied or skipped (Replayed.geometry), once compared. */
+	geometry?: Replayed["geometry"];
 }
 
 interface Stage {
@@ -214,7 +216,12 @@ export interface Mutation {
 	js?: string;
 }
 
-export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation): Promise<Result> {
+export async function checkFixture(
+	env: Env,
+	f: FixtureEntry,
+	mutate?: Mutation,
+	options: ReplayOptions = {},
+): Promise<Result> {
 	const st = f.quirks ? env.stages.quirks : env.stages.standards;
 	const { page, cdp } = st;
 	const touch = f.id.startsWith("mobile.");
@@ -320,6 +327,7 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 		pixels,
 		frames,
 		f.trimSelector ?? null,
+		options,
 	);
 	if (got.why) return { status: "fail", why: `does not render alone: ${got.why}` };
 	if (mutate?.css)
@@ -471,6 +479,7 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 		};
 	const share = res.blocks ? 1 - res.bad / res.blocks : 1;
 	const base = {
+		geometry: got.geometry,
 		share,
 		blocks: res.blocks,
 		detailBad: res.detailBad,
