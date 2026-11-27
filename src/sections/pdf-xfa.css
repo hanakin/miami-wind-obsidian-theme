@@ -20,9 +20,3 @@
 .xfaRadio:focus {
 	outline: none;
 }
-
-/* XFA’s layer reset also clears checkbox fills; its inputs have no inline fill literals. */
-.xfaLayer input {
-	background-color: var(--grey-11);
-	border-color: var(--mw-input-border);
-}

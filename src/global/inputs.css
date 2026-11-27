@@ -72,3 +72,56 @@ input[type='color'] {
 input[type] {
 	border-color: var(--mw-input-border);
 }
+
+/* Shared icon controls in Bases. */
+
+/* Sheet filter buttons have literal app fills; tie only those exact selectors. */
+.menu.mod-sheet .filter-row .filter-property-select.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-property-select,
+.menu.mod-sheet .filter-row .filter-operator.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-operator {
+	background-color: var(--grey-11);
+}
+
+/* Editable table values otherwise reset their inputs with background shorthand. */
+.bases-rendered-value input {
+	background-color: var(--grey-11);
+}
+
+/* Shared text fields in the Properties editor. */
+.metadata-property-key-input {
+	--metadata-label-text-color: var(--magenta);
+}
+
+/* Tie Obsidian’s literal transparent property-input fills without affecting pills. */
+
+.metadata-property .metadata-property-key-input,
+.metadata-property .metadata-property-key-input:hover,
+.metadata-property .metadata-property-key-input:active,
+.metadata-property .metadata-property-key-input:focus,
+.metadata-property-value .metadata-input-text,
+.metadata-property-value .metadata-input-text:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .metadata-input-number,
+.metadata-property-value .metadata-input-number:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .multi-select-container input {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}
+
+/* The former modal hover color was hidden by the global important border; keep that paint. */
+.modal input:hover {
+	border-color: var(--mw-input-border);
+}
+
+/* Phone prompt inputs set a separate border shorthand; preserve the shared field border paint. */
+.is-phone .prompt-input[type='text'] {
+	border-color: var(--mw-input-border);
+}
+
+/* Shared inputs in the XFA layer. */
+
+/* XFA’s layer reset also clears checkbox fills; its inputs have no inline fill literals. */
+.xfaLayer input {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}

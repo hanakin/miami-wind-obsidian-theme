@@ -186,19 +186,19 @@
 				}
 			},
 			{
+				"surface": "icons.css",
+				"selector": ".bases-toolbar-item .text-icon-button,\n.bases-toolbar-section-content .text-icon-button",
+				"properties": {
+					"--mw-action-color": "var(--cyan)",
+					"--mw-action-background": "var(--cyan-transparent)"
+				}
+			},
+			{
 				"surface": "code-actions.css",
 				"selector": ".code-block-flair:hover,\n.edit-block-button:hover,\n.markdown-source-view.mod-cm6 .code-block-flair:hover,\n.markdown-source-view.mod-cm6 .edit-block-button:hover",
 				"properties": {
 					"--mw-action-background": "var(--cyan-transparent)",
 					"--mw-action-color": "var(--magenta)"
-				}
-			},
-			{
-				"surface": "bases.css",
-				"selector": ".bases-toolbar-item .text-icon-button,\n.bases-toolbar-section-content .text-icon-button",
-				"properties": {
-					"--mw-action-color": "var(--cyan)",
-					"--mw-action-background": "var(--cyan-transparent)"
 				}
 			}
 		]

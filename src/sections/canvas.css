@@ -24,10 +24,6 @@
 	background-color: var(--magenta-transparent);
 }
 
-.canvas-control-item:hover .svg-icon {
-	color: var(--magenta);
-}
-
 .canvas-card-menu {
 	border: 1px solid var(--magenta);
 }

@@ -2,6 +2,10 @@ export interface ElementStyle {
 	element: string;
 	props: Record<string, string>;
 }
+export function comparisonExitCode(results: readonly { status: string }[]) {
+	if (results.some((result) => result.status === "different")) return 1;
+	return results.some((result) => result.status === "not-proven") ? 2 : 0;
+}
 export interface Difference {
 	element: string;
 	property: string;
@@ -90,11 +94,18 @@ export function filterFixtures<
 	},
 >(
 	fixtures: T[],
-	filters: { id?: string; component?: string; surface?: string },
+	filters: {
+		id?: string | readonly string[];
+		component?: string;
+		surface?: string;
+	},
 ): T[] {
 	return fixtures.filter(
 		(f) =>
-			(!filters.id || f.id.includes(filters.id)) &&
+			(!filters.id ||
+				(typeof filters.id === "string"
+					? f.id.includes(filters.id)
+					: filters.id.includes(f.id))) &&
 			(!filters.surface || f.surface === filters.surface) &&
 			(!filters.component ||
 				f.component === filters.component ||

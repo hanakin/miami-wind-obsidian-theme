@@ -7,8 +7,8 @@
 @import 'settings/palette.css';
 @import 'settings/tokens.css';
 @import 'global/inputs.css';
+@import 'global/task-inputs.css';
 @import 'global/multi-select.css';
-@import 'global/icons.css';
 @import 'global/ribbon.css';
 @import 'global/sidebars.css';
 @import 'global/tabs.css';
@@ -20,6 +20,7 @@
 @import 'global/search.css';
 @import 'global/menus.css';
 @import 'global/overrides.css';
+@import 'global/icons.css';
 @import 'markdown/headings.css';
 @import 'markdown/code.css';
 @import 'markdown/code-actions.css';
@@ -28,7 +29,6 @@
 @import 'markdown/links.css';
 @import 'markdown/blockquotes.css';
 @import 'markdown/tasks.css';
-@import 'markdown/task-inputs.css';
 @import 'markdown/tables.css';
 @import 'markdown/callouts.css';
 @import 'markdown/tags.css';
@@ -37,8 +37,6 @@
 @import 'sections/canvas.css';
 @import 'sections/properties.css';
 @import 'sections/file-explorer.css';
-@import 'sections/bases.css';
 @import 'sections/graph.css';
-@import 'sections/pdf-forms.css';
+@import 'sections/pdf.css';
 @import 'sections/pdf-xfa.css';
-@import 'sections/community-browser.css';

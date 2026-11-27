@@ -14,7 +14,7 @@ import { expect, test } from "vitest";
 test("reports the run date and preserves the exact compared CSS with hashes and source paths", () => {
 	const cwd = mkdtempSync(join(tmpdir(), "compare-themes-"));
 	const inputs = {
-		before: "/* Before: λ */\r\nbody {color:black}\r\n",
+		before: "/* Before: λ */\r\nbody {color:blue}\r\n",
 		after: "/* After: 🌴 */\nbody {color:red}\n",
 	};
 	try {
@@ -69,6 +69,16 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 		);
 		expect(report.schemaVersion).toBe(1);
 		expect(report.status).toBe("different");
+		expect(report).not.toHaveProperty("accepted");
+		expect(report.summary).not.toHaveProperty("accepted");
+		for (const fixture of report.fixtures)
+			for (const key of [
+				"comparisonStatus",
+				"acceptanceReason",
+				"acceptanceScope",
+				"pixelsOutsideAcceptance",
+			])
+				expect(fixture).not.toHaveProperty(key);
 		expect(new Date(report.generated).toISOString()).toBe(report.generated);
 		expect(Date.parse(report.generated)).toBeGreaterThanOrEqual(started);
 		expect(Date.parse(report.generated)).toBeLessThanOrEqual(Date.now());
@@ -87,7 +97,92 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 				),
 			).toBe(inputs[side]);
 		}
+		const registryPath = join(cwd, "capture/fixtures.json");
+		const registry = JSON.parse(readFileSync(registryPath, "utf8"));
+		registry.fixtures = ["test", "other", "test.extra"].map((id) => ({
+			...registry.fixtures[0],
+			id,
+		}));
+		writeFileSync(registryPath, JSON.stringify(registry));
+		for (const side of ["before", "after"] as const)
+			writeFileSync(join(cwd, `${side} theme.css`), inputs[side]);
+		writeFileSync(join(cwd, "empty theme.css"), "");
+		for (const [before, after, ids] of [
+			["empty theme.css", "empty theme.css", ["--id", "test,other"]],
+			["empty theme.css", "empty theme.css", ["--id", "test"]],
+			["empty theme.css", "after theme.css", ["--id", "test", "--id", "other"]],
+			["before theme.css", "empty theme.css", ["--id", "test,other"]],
+		] as const) {
+			const child = spawnSync(
+				"bun",
+				[
+					resolve("workbench/compare/cli.ts"),
+					"--before",
+					before,
+					"--after",
+					after,
+					...ids,
+				],
+				{ cwd, encoding: "utf8" },
+			);
+			expect(child.status, child.stderr).toBe(
+				before === "empty theme.css" && after === "empty theme.css" ? 0 : 1,
+			);
+			const current = JSON.parse(
+				readFileSync(join(cwd, "workbench/out/compare.json"), "utf8"),
+			);
+			expect(current.fixtures.map((f: { id: string }) => f.id).sort()).toEqual(
+				ids.length === 2 && ids[1] === "test" ? ["test"] : ["other", "test"],
+			);
+			for (const side of ["before", "after"] as const)
+				if (current.themes[side].source === "empty theme.css") {
+					expect(current.themes[side].sha256).toBe(
+						createHash("sha256").update("").digest("hex"),
+					);
+					expect(
+						readFileSync(
+							join(cwd, "workbench/out", current.themes[side].file),
+							"utf8",
+						),
+					).toBe("");
+				}
+		}
+		for (const [before, after] of [
+			["none", "empty theme.css"],
+			["empty theme.css", "none"],
+		]) {
+			const invalid = spawnSync(
+				"bun",
+				[
+					resolve("workbench/compare/cli.ts"),
+					"--before",
+					before!,
+					"--after",
+					after!,
+					"--id",
+					"test",
+				],
+				{ cwd, encoding: "utf8" },
+			);
+			expect(invalid.status).not.toBe(0);
+			expect(invalid.stderr).toContain("ENOENT");
+		}
+		const missing = spawnSync(
+			"bun",
+			[
+				resolve("workbench/compare/cli.ts"),
+				"--before",
+				"empty theme.css",
+				"--after",
+				"empty theme.css",
+				"--id",
+				"test,missing",
+			],
+			{ cwd, encoding: "utf8" },
+		);
+		expect(missing.status).not.toBe(0);
+		expect(missing.stderr).toContain("Unknown fixture IDs");
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}
-}, 15000);
+}, 30000);

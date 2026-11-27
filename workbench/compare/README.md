@@ -8,9 +8,9 @@ Run `bun run compare`.
 
 The default command builds the after theme first. It compares `b478dc8:theme.css` with the built root `theme.css`.
 Use `--before path` to select a baseline file.
-Use `--after path` to select an after file without building.
+Use `--after path` to select an after file without building. Pass an empty CSS file for Default Obsidian. The report records the file path, an empty snapshot, and the SHA-256 hash of the empty string.
 
-Use `--id substring` to filter fixture IDs.
+Use `--id substring` to search fixture IDs. A single exact fixture ID selects only that fixture. Use `--id id1,id2` or repeat `--id id1 --id id2` for an exact list. Unknown IDs in a list fail the run.
 Use `--component exact-name` to filter component tags, including nested tags.
 Use `--surface exact-name` to filter surfaces.
 Combine filters to narrow the selection. An empty selection fails.
@@ -32,9 +32,9 @@ Both same-CSS pairs must have zero style and pixel changes. A noisy fixture rece
 
 Exit codes:
 
-- `0`: every selected fixture is same or accepted, with no coverage limits on accepted results.
+- `0`: every selected fixture is proven same.
 - `1`: at least one fixture has proven `different` status, or setup fails.
-- `2`: no unaccepted differences, but at least one fixture is not proven or an accepted result has coverage limits.
+- `2`: no differences, but at least one fixture is not proven.
 
 Outputs are local and gitignored. Each run removes old reports and diff images before validation.
 
@@ -48,7 +48,7 @@ The JSON keeps `schemaVersion: 1` and the existing fields. Each fixture adds `st
 
 The top-level `notProven` list contains `{ id, reasons }` records. The top-level `noise` list contains the fixture ID and its style, union-pixel, before-pixel, and after-pixel noise counts. Summary additions are `notProven`, `notProvenOnly`, and `noise` counts.
 
-`summary.changed` counts proven differences. `summary.unchanged` counts proven same results. `summary.notProvenOnly` counts fixtures with not-proven status. These counts plus `summary.accepted` sum to `summary.checked`. `summary.notProven` includes every fixture with a coverage limit. It can overlap proven differences because a partial replay can still expose a genuine CSS difference.
+`summary.changed` counts proven differences. `summary.unchanged` counts proven same results. `summary.notProvenOnly` counts fixtures with not-proven status. These three counts sum to `summary.checked`. `summary.notProven` includes every fixture with a coverage limit. It can overlap proven differences because a partial replay can still expose a genuine CSS difference.
 
 The shared component look uses each property's most common after-theme value within the same interaction state. Ties select the first use in fixture ID order. The comparison excludes container dimensions: width, height, inline-size, block-size, transform-origin, and perspective-origin. Filtered runs describe only the selected uses. This output measures surface consistency independently of before/after parity.
 
@@ -62,10 +62,7 @@ If `/tmp` is full, set `TMPDIR` to a directory under `~/Work` before running che
 
 Diff images use red for stable changes and orange for unstable pixels. All unstable pixels remain visible in the evidence. Noisy fixtures also save all four screenshots for inspection.
 
-The accepted-difference list is `workbench/compare/accepted-differences.json`. It contains one intentional PDF form-dropdown decision. The DOM must match its select selector and inline black/transparent style guard in all four captures. Both after captures must resolve the select to black text and a transparent background. The pinned property list allows only those colors and their currentColor consequences. Each currentColor consequence must start at the select’s before text color. Border-color changes are allowed only on the select’s own pseudos. Typography, geometry, stacking, visibility, and other properties remain differences. A fixture becomes `accepted` only when every computed-style difference belongs to that select or its own pseudo-elements and every stable changed pixel intersects the union of its measured before/after rectangles. A sibling or descendant style difference, stable pixel change outside those rectangles, repeat noise, or a pixel-only result prevents acceptance. This attribution never masks pixels or changes the measured counts or evidence. `acceptanceScope` records matched element keys, rectangles, and `beforeColors` by element key. `pixelsOutsideAcceptance` records stable changes outside them.
-
-Matching and not-proven observations retain their measured status. Accepted results retain `same: false`, `comparisonStatus: different`, all measurements, coverage reasons, and evidence images. `acceptanceReason` records the decision. The top-level `accepted` list contains `{ id, reason }` records for accepted fixtures. `summary.accepted` counts them. Unaccepted differences fail with exit 1. Not-proven results, including accepted results with coverage limits, fail with exit 2 and give the report not-proven status when no unaccepted differences remain. The JSON keeps schema version 1. CodeMirror `.cm-tooltip` uses belong to the shared `tooltip` component.
-
 Run `bun run compare:formatting` to compare the same sources before and after formatting.
 The baseline is saved as `workbench/out/before-format.css`.
 The default `bun run compare` still uses 1.x.
+

@@ -41,3 +41,11 @@ select option:checked {
 .mobile-onboarding .language-dropdown select {
 	background-color: var(--magenta);
 }
+
+/* Shared icon controls in Bases. */
+
+/* Obsidian's query conjunction uses a literal fill; its hover reads this leaf variable. */
+.filter-group-header .conjunction.dropdown {
+	--background-modifier-hover: var(--magenta);
+	background-color: var(--magenta);
+}

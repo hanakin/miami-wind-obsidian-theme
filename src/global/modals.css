@@ -60,7 +60,3 @@
 	background-color: var(--purple-transparent);
 	color: var(--purple);
 }
-
-.modal input:hover {
-	border-color: var(--cyan-transparent);
-}

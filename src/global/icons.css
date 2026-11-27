@@ -9,3 +9,72 @@
 .clickable-icon[aria-disabled='true'] {
 	cursor: default;
 }
+
+/* Shared icon controls in Bases. */
+.bases-toolbar-section-content .filter-group-actions .text-icon-button,
+.filter-row-actions .clickable-icon {
+	margin-right: 4px;
+}
+
+.filter-row-actions .clickable-icon {
+	--text-faint: transparent;
+	background-color: transparent;
+}
+
+.filter-row-actions .clickable-icon:hover {
+	--text-faint: var(--magenta-transparent);
+	background-color: var(--magenta-transparent);
+	color: var(--magenta);
+}
+
+/* Keep the original 0,3,0 hover tie by using the disabled attribute instead of the icon class. */
+.filter-row-actions [aria-disabled='true']:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--text-disabled);
+}
+
+/* Sheet actions read accent text directly at 0,5,0 / 0,6,0. */
+.filter-row-actions [aria-disabled='true'],
+.filter-group-header-actions [aria-disabled='true'] {
+	--text-on-accent: var(--text-disabled);
+}
+
+.filter-group-header-actions [aria-disabled='true'] {
+	--text-faint: transparent;
+}
+
+/* Shared SVG icons in Canvas. */
+.canvas-control-item:hover .svg-icon {
+	color: var(--magenta);
+}
+
+/* Shared SVG icons in Properties. */
+.metadata-container .metadata-show-source-button:hover .svg-icon,
+.metadata-container .metadata-add-button:hover .svg-icon {
+	color: var(--black);
+}
+
+/* Shared controls in community browser. */
+
+/* Tie Obsidian 1.15.1's 0,3,1 sidebar button color without changing child variables. */
+.mod-community-modal button.clickable-icon[aria-disabled='true'] {
+	color: var(--text-disabled);
+}
+
+/* Bases toolbar actions and filter-row controls in normal and hover states. */
+
+/* Shared component adjustments: action-button.
+ * Local --mw-* variables below set this section’s colors and backgrounds. */
+
+.bases-toolbar-item .text-icon-button,
+.bases-toolbar-section-content .text-icon-button {
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--cyan-transparent);
+	@mixin action-button;
+}
+
+.bases-toolbar-item .text-icon-button:hover,
+.bases-toolbar-section-content .text-icon-button:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--magenta);
+}
