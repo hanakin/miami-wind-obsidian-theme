@@ -590,6 +590,14 @@ input[type] {
 	border-color: var(--mw-input-border);
 }
 
+/*
+ * The sort-direction divider reads this border token; focus shadows use a
+ * separate token.
+ */
+.bases-sort-direction {
+	--background-modifier-border: var(--mw-input-border);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @global application: Task Inputs
