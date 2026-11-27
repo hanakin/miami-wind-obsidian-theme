@@ -17,7 +17,7 @@ Combine filters to narrow the selection. An empty selection fails.
 
 The command uses Playwright Chromium with single-threaded software rasterization, scale 1, in sRGB. It disables partial raster reuse, zero-copy rasterization, and threaded scrolling and animation. Normal compositor scheduling remains active for background pages. Scrollbars remain visible.
 
-The extracted app CSS version must match the fixture version. Runtime extraction saves ordered stylesheet hashes under `capture/.app/runtime/`. Regenerate app and runtime CSS after an Obsidian update. Extracted files remain gitignored.
+The extracted app CSS version must match the fixture version. Each capture saves ordered stylesheet hashes under `capture/.app/runtime/`. Use the matching capture cache when copying fixtures to another worktree. The runtime extraction command supplies the combined stylesheet for older fixtures. Regenerate app and runtime CSS after an Obsidian update. Extracted files remain gitignored.
 
 Compare calls `capture/scripts/replay.ts` for recorded fixtures. Capture owns DOM, canvas, frame, geometry, native selection, and scroll restoration. Compare substitutes the selected theme into the recorded stylesheet order. Each fixture uses its recorded viewport, media preferences, and document mode. XHTML passes through capture's XML parser.
 
