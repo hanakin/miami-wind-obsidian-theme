@@ -52,7 +52,14 @@ export async function replayFixture(
 				const sd = fr.getAttribute("srcdoc") ?? "";
 				loads.push(new Promise((ok) => fr.addEventListener("load", ok, { once: true })));
 				fr.setAttribute("data-replay-frame", "");
-				fr.srcdoc = sd.replace(/<head([^>]*)>/i, (m) => `${m}<style>${css}</style>`);
+				// Its Content-Security-Policy allowed the app's own font origin; the replay serves the
+				// same files from another one, so the policy is left out.
+				fr.srcdoc = sd
+					.replace(/<meta[^>]*http-equiv=["']?Content-Security-Policy[^>]*>/gi, "")
+					.replace(
+						/<head([^>]*)>/i,
+						(m) => `${m}<style>${css.replace(/<\/style/gi, "<\\/style")}</style>`,
+					);
 			}
 			await Promise.race([Promise.all(loads), new Promise((ok) => setTimeout(ok, 3000))]);
 			// Offline images get same-size stand-ins from the recorded imageSizes.
@@ -103,6 +110,12 @@ export async function replayFixture(
 					["flex", "none"],
 				])
 					e.style.setProperty(k as string, v as string, "important");
+			}
+			// Scrollbars shown live stay (a trimmed list no longer overflows).
+			for (const e of document.querySelectorAll<HTMLElement>("[data-capture-scrollbar]")) {
+				const bars = e.getAttribute("data-capture-scrollbar") ?? "";
+				if (bars.includes("y")) e.style.setProperty("overflow-y", "scroll", "important");
+				if (bars.includes("x")) e.style.setProperty("overflow-x", "scroll", "important");
 			}
 			// Controls whose state is not in the markup.
 			for (const e of document.querySelectorAll<HTMLSelectElement>(

@@ -723,7 +723,8 @@ const canvasQc: Scene = {
 				const b = await center(ctx, { sel: ".canvas-node", text: "Colored card 3" });
 				await ctx.page.mouse.move(b[0], b[1]);
 				await ctx.page.mouse.down();
-				await ctx.page.mouse.move(b[0] - 240, b[1] + 2, { steps: 12 });
+				// Toward the middle: held near the canvas edge, the canvas keeps scrolling.
+				await ctx.page.mouse.move(b[0] + 200, b[1] + 2, { steps: 12 });
 				await ctx.sleep(400);
 			},
 		},
@@ -2406,6 +2407,8 @@ const startupSnapshot: Scene = {
 		{
 			id: "qc.startup-snapshot.loading",
 			component: "workspace",
+			// The app is starting under the screen; a retake would find the screen gone.
+			changing: true,
 			target: "#startup-snapshot",
 			expect: "#startup-snapshot[data-loaded]",
 			full: true,

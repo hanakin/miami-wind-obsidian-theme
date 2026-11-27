@@ -38,6 +38,14 @@ const CASES: { id: string; name: string; mutate?: Mutation; pass: boolean }[] = 
 	},
 	{
 		id: "command.app:open-vault",
+		name: "one icon hidden",
+		mutate: {
+			js: "(() => { const i = [...document.querySelectorAll('[data-capture-target] svg.svg-icon')].find((e) => e.getBoundingClientRect().width > 8); if (i) i.style.setProperty('opacity', '0', 'important'); return !!i; })()",
+		},
+		pass: false,
+	},
+	{
+		id: "command.app:open-vault",
 		name: "every svg hidden (logo too)",
 		mutate: { css: "svg { opacity: 0 !important; }" },
 		pass: false,

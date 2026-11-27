@@ -91,7 +91,9 @@ export async function makeEnv(browser: Browser): Promise<Env> {
 		await page.route("**", (r) => {
 			const url = r.request().url();
 			const file = `${CAPTURE}.app/assets/${url.slice(ASSETS.length).split("?")[0]}`;
-			if (url.startsWith(ASSETS) && existsSync(file)) return r.fulfill({ path: file });
+			// Fonts load across origins only with CORS (a sandboxed frame has an opaque origin).
+			if (url.startsWith(ASSETS) && existsSync(file))
+				return r.fulfill({ path: file, headers: { "Access-Control-Allow-Origin": "*" } });
 			return r.abort();
 		});
 		// Quirks mode for fixtures from a window without a doctype (the print window).
@@ -292,6 +294,7 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 			document.head.appendChild(e);
 		}, mutate.css);
 	if (mutate?.js) await page.evaluate(mutate.js);
+	if (process.env.REPLAY_DEBUG_JS) console.log(await page.evaluate(process.env.REPLAY_DEBUG_JS));
 	const ev = f.evidence;
 	const shot = `${SCREENSHOTS}/${f.id}.png`;
 	if (!ev?.clip || !existsSync(shot))
@@ -302,6 +305,14 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 	const regions: number[][] = [];
 	if (f.trimmed) {
 		// Trimmed lists: each kept entry, compared by its own live and replayed box.
+		if (process.env.REPLAY_DEBUG)
+			for (const e of (got.entries ?? []).slice(0, 4))
+				console.log(
+					"entry live",
+					e.live.map(Math.round).join(","),
+					"now",
+					e.now.map(Math.round).join(","),
+				);
 		for (const e of got.entries ?? []) {
 			const [lx = 0, ly = 0, w = 0, h = 0] = e.live;
 			const [rx = 0, ry = 0] = e.now;
@@ -362,10 +373,12 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 		regions,
 		EDGE,
 		EDGE_LOSS,
+		!!process.env.REPLAY_DEBUG,
 	] as const)) as {
 		blocks: number;
 		bad: number;
 		detailBad: number;
+		detailGone: number;
 		where: string[];
 		detail: string[];
 	};
@@ -382,7 +395,15 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 			status: "fail",
 			why: `replay differs from the live screenshot in ${Math.round((100 * res.bad) / res.blocks)}% of the target (16 px blocks; first at ${res.where.join(" ")} in ${replayShot})`,
 		};
-	if (res.detailBad)
+	// Forced colors take their palette from the browser build (Electron's and the replay's differ
+	// in border shades): detail is not judged there, and that is labeled.
+	if ((res.detailBad >= 3 || res.detailGone) && (f.evidence?.media ?? "").includes("forced-colors"))
+		return {
+			...base,
+			status: "limit",
+			why: "forced colors: the system palette differs between Electron's Chromium and the replay's, so only block colors are judged",
+		};
+	if (res.detailBad >= 3 || res.detailGone)
 		return {
 			...base,
 			status: "fail",
@@ -392,7 +413,7 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 }
 
 /** Runs in the compare page: block colors and edges per region, masked pixels left out. */
-async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS]: readonly [
+async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS, DEBUG]: readonly [
 	string,
 	string,
 	string | null,
@@ -400,6 +421,7 @@ async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS]: r
 	number[][],
 	number,
 	number,
+	boolean,
 ]) {
 	const data = async (b64: string) => {
 		const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${b64}`)).blob());
@@ -492,6 +514,7 @@ async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS]: r
 	let blocks = 0;
 	let bad = 0;
 	let detailBad = 0;
+	let detailGone = 0;
 	const where: string[] = [];
 	const detail: string[] = [];
 	// Even cuts of about B px, so no sliver of a block at the edge decides alone.
@@ -567,12 +590,21 @@ async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS]: r
 					bad++;
 					if (where.length < 3) where.push(`${lx + sx + bx0},${ly + sy + by0}`);
 				}
-				// A lost or added detail: more than a few edge pixels with no counterpart within 1 px.
+				// A block that lost or gained detail: more than a few pixels of contrast with no
+				// counterpart within 2 px. One or two such blocks can be glyph rendering between Chromium
+				// builds (small or italic text a pixel off); they fail only when at least half a block's
+				// detail is gone or new (a hidden icon, a vanished part, a missing border). Three or more
+				// always fail.
 				if (missing > Math.max(3, 0.2 * liveEdges) || extra > Math.max(3, 0.2 * replayEdges)) {
 					detailBad++;
-					if (detail.length < 3) detail.push(`${lx + sx + bx0},${ly + sy + by0}`);
+					if (missing >= Math.max(6, 0.5 * liveEdges) || extra >= Math.max(6, 0.5 * replayEdges))
+						detailGone++;
+					if (detail.length < (DEBUG ? 80 : 3))
+						detail.push(
+							`${lx + sx + bx0},${ly + sy + by0}${DEBUG ? `[miss ${missing}/${liveEdges} extra ${extra}/${replayEdges}]` : ""}`,
+						);
 				}
 			}
 	}
-	return { blocks, bad, detailBad, where, detail };
+	return { blocks, bad, detailBad, detailGone, where, detail };
 }

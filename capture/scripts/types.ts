@@ -40,6 +40,8 @@ export interface ItemDef {
 	before?: (ctx: Ctx) => Promise<void>;
 	/** Listed in the checklist as excluded, with the reason; never run. */
 	excluded?: string;
+	/** The page keeps changing by design (an app still starting): no retake of shot and snapshot. */
+	changing?: true;
 	/** "document": keep the whole window in the fixture (overlays that show the page under them). */
 	context?: "document";
 	/** Screenshot the whole window instead of the element. */
@@ -122,7 +124,8 @@ export interface ChecklistItem {
  *   a floating one: the boxes it painted over the window (its background, its buttons).
  * - data-capture-size on img (shown size of an image that does not load offline), video, audio,
  *   iframe, object, embed and webview: their live border-box size.
- * - data-capture-scroll="TOP LEFT": scroll offsets to restore after layout.
+ * - data-capture-scroll="TOP LEFT": scroll offsets to restore after layout; data-capture-scrollbar
+ *   ="y", "x" or "yx": scrollbars shown live (a viewer keeps them, e.g. with overflow: scroll).
  * - data-capture-box="X Y W H": live box (CSS px, window coordinates) of the target, each
  *   ancestor and their direct children, and the first 300 elements inside the target, to check
  *   a replay part by part.
@@ -134,8 +137,8 @@ export interface ChecklistItem {
  * - data-capture-frame-styles="TOKENS" on an iframe: its document's stylesheets in order, like
  *   runtimeStyles below (its srcdoc holds the markup without them); data-capture-frame-empty: the
  *   frame showed nothing live (a resize helper), so it hides nothing.
- * - data-capture-animated="X,Y,W,H ..." on <html>: animated parts and the text caret at the shot
- *   (their state is not in the markup); data-capture-select-none: a select with nothing chosen.
+ * - data-capture-animated="X,Y,W,H ..." on <html>: animated parts, the text caret and native
+ *   text-area resize grips at the shot (not in the markup, or drawn by the browser itself); data-capture-select-none: a select with nothing chosen.
  * - data-capture-viewport / data-capture-styles on <html>: as viewport and styles below.
  * - <style data-capture-runtime="mathjax"> in <head>: MathJax's rule for each character in the
  *   fixture (MathJax keeps them only while the character is on screen). Viewers apply it.

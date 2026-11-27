@@ -147,6 +147,7 @@ export const INPAGE = String.raw`
 	function withHitTesting(el, fn) {
 		const doc = el.ownerDocument;
 		const st = doc.createElement("style");
+		st.setAttribute("data-capture-hit", "");
 		st.textContent = "*, *::before, *::after { pointer-events: auto !important; }";
 		(doc.head ?? doc.documentElement).appendChild(st);
 		try { return fn(); } finally { st.remove(); }
@@ -478,6 +479,15 @@ export const INPAGE = String.raw`
 			if (s) c.setAttribute("data-capture-state", s.join(" "));
 			// Text selected inside a field is not a document selection: keep its range.
 			if (o === doc.activeElement && typeof o.selectionStart === "number" && o.selectionStart !== o.selectionEnd) c.setAttribute("data-capture-input-selection", o.selectionStart + " " + o.selectionEnd + " " + (o.selectionDirection ?? "none"));
+			// A scrollbar shown live (its content overflowed): kept even when a trimmed list no longer
+			// overflows, so the layout keeps its width.
+			if (o.offsetWidth && o.clientWidth) {
+				const ocs = doc.defaultView.getComputedStyle(o);
+				const bw = (parseFloat(ocs.borderLeftWidth) || 0) + (parseFloat(ocs.borderRightWidth) || 0);
+				const bh = (parseFloat(ocs.borderTopWidth) || 0) + (parseFloat(ocs.borderBottomWidth) || 0);
+				const bars = (o.offsetWidth - o.clientWidth - bw > 0 && /auto|scroll/.test(ocs.overflowY) ? "y" : "") + (o.offsetHeight - o.clientHeight - bh > 0 && /auto|scroll/.test(ocs.overflowX) ? "x" : "");
+				if (bars) c.setAttribute("data-capture-scrollbar", bars);
+			}
 			// Scroll offsets are not part of the markup; a viewer restores them from this mark.
 			if (o.scrollTop || o.scrollLeft) c.setAttribute("data-capture-scroll", o.scrollTop + " " + o.scrollLeft);
 			// Media and frames get their size from content that does not load offline.
@@ -572,7 +582,9 @@ export const INPAGE = String.raw`
 			const own = fc.hasAttribute("srcdoc");
 			const scripted = !own && idoc?.documentElement && !(fc.getAttribute("src") && fc.getAttribute("src") !== "about:blank");
 			if (!idoc?.documentElement || !(own || scripted)) continue;
-			const ir = (own ? new DOMParser().parseFromString(fc.getAttribute("srcdoc"), "text/html").documentElement : idoc.documentElement.cloneNode(true));
+			// The live frame document, with whatever scripts changed after it loaded (the startup
+			// screen hides the status bar and adds its loading item).
+			const ir = idoc.documentElement.cloneNode(true);
 			const dropped = [];
 			for (const st of ir.querySelectorAll("style, link[rel=stylesheet]")) {
 				dropped.push(st.localName === "link" ? "link " + st.getAttribute("href") : "style" + (st.id ? "#" + st.id : "") + " (" + st.textContent.length + " chars)");
@@ -641,23 +653,41 @@ export const INPAGE = String.raw`
 		// cursors: their state at the shot is not in the markup) and the native text caret.
 		const box = (r, pad = 0) => [r.x - pad, r.y, r.width + 2 * pad, r.height].map((v) => Math.round(v * 10) / 10).join(",");
 		const moving = new Set();
-		for (const an of doc.getAnimations()) {
+		// The window's animations and those of its same-origin frames (the startup screen's
+		// loading bar), in window coordinates.
+		const anims = doc.getAnimations().map((an) => [an, 0, 0]);
+		for (const fr of doc.querySelectorAll("iframe")) {
+			let fd = null;
+			try { fd = fr.contentDocument; } catch {}
+			if (!fd) continue;
+			const fr0 = fr.getBoundingClientRect();
+			for (const an of fd.getAnimations()) anims.push([an, fr0.x + fr.clientLeft, fr0.y + fr.clientTop]);
+		}
+		for (const [an, ox, oy] of anims) {
 			if (!/running|paused/.test(an.playState)) continue;
 			let e = an.effect?.target;
 			if (!e?.getBoundingClientRect) continue;
 			// A part sliding inside a clipped track (an indeterminate progress bar): the whole track.
+			const ew = e.ownerDocument.defaultView;
 			for (let a = e.parentElement, k = 0; a && k < 3; a = a.parentElement, k++) {
-				const cs = win.getComputedStyle(a);
+				const cs = ew.getComputedStyle(a);
 				const ar = a.getBoundingClientRect();
-				if ((cs.overflowX !== "visible" || cs.overflowY !== "visible") && ar.width * ar.height < 0.25 * win.innerWidth * win.innerHeight) { e = a; break; }
+				if ((cs.overflowX !== "visible" || cs.overflowY !== "visible") && ar.width * ar.height < 0.25 * ew.innerWidth * ew.innerHeight) { e = a; break; }
 			}
-			const r = e.getBoundingClientRect();
+			const shift = (r) => ({ x: r.x + ox, y: r.y + oy, width: r.width, height: r.height });
+			const r = shift(e.getBoundingClientRect());
 			if (r.width * r.height >= 1) { if (moving.size < 60) moving.add(box(r, 1)); continue; }
 			// A zero-size layer (CodeMirror's cursor layer blinking its cursors): its children.
 			for (const c of [...e.children].slice(0, 20)) {
-				const cr = c.getBoundingClientRect();
+				const cr = shift(c.getBoundingClientRect());
 				if (cr.width * cr.height >= 1 && moving.size < 60) moving.add(box(cr, 1));
 			}
+		}
+		// Native resize grips of text areas: Chromium draws them itself, differently per build.
+		for (const ta of doc.querySelectorAll("textarea")) {
+			const r = ta.getBoundingClientRect();
+			if (r.width < 1 || win.getComputedStyle(ta).resize === "none" || moving.size >= 60) continue;
+			moving.add([r.right - 18, r.bottom - 18, 18, 18].map((v) => Math.round(v * 10) / 10).join(","));
 		}
 		const ae = doc.activeElement;
 		const dsel = doc.getSelection();
@@ -725,18 +755,46 @@ export const INPAGE = String.raw`
 								const r = o.getBoundingClientRect();
 								if (cs.visibility === "visible" && parseFloat(cs.opacity) > 0 && r.width * r.height > 0) {
 									ph.setAttribute("data-capture-shown", "");
-									// A floating one (the titlebar, the status bar) painted over parts of the
-									// window: keep the boxes it really painted (its background, its buttons), so a
-									// replay leaves exactly those out.
-									if (/^(absolute|fixed|sticky)$/.test(cs.position)) {
-										const paints = [];
-										for (const e of [o, ...o.querySelectorAll("*")].slice(0, 400)) {
-											if (paints.length >= 40) break;
-											const er = e.getBoundingClientRect();
-											if (er.width < 1 || er.height < 1 || clear(win, e)) continue;
-											paints.push([er.x, er.y, er.width, er.height].map((v) => Math.round(v * 10) / 10).join(","));
+									// Parts of it painted over the target (the titlebar's buttons, the status bar
+									// above a drag preview): keep exactly the cells, inside the target's box, where
+									// a hit test finds one of its painting elements on top, so a replay leaves those
+									// out (a popover under a menu hides nothing of the menu).
+									const tb = el.getBoundingClientRect();
+									const zone = { x: tb.x - 8, y: tb.y - 8, right: tb.right + 8, bottom: tb.bottom + 8 };
+									if (r.x < zone.right && r.right > zone.x && r.y < zone.bottom && r.bottom > zone.y) {
+										const cells = new Set();
+										withHitTesting(o, () => {
+											let n = 0;
+											for (const e of [o, ...o.querySelectorAll("*")]) {
+												if (n >= 400) break;
+												const er0 = e.getBoundingClientRect();
+												const er = { x: Math.max(er0.x, zone.x), y: Math.max(er0.y, zone.y), right: Math.min(er0.right, zone.right), bottom: Math.min(er0.bottom, zone.bottom) };
+												if (er.right - er.x < 1 || er.bottom - er.y < 1 || clear(win, e)) continue;
+												n++;
+												for (let y = Math.floor(er.y / 8) * 8; y < er.bottom && cells.size < 4000; y += 8)
+													for (let x = Math.floor(er.x / 8) * 8; x < er.right; x += 8) {
+														const k = x + "," + y;
+														if (cells.has(k)) continue;
+														const px = Math.min(Math.max(x + 4, er.x + 0.5), er.right - 0.5);
+														const py = Math.min(Math.max(y + 4, er.y + 0.5), er.bottom - 0.5);
+														if (px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e)) cells.add(k);
+													}
+											}
+										});
+										// Rows of cells merged into runs.
+										const runs = [];
+										const byRow = new Map();
+										for (const k of cells) { const [x, y] = k.split(",").map(Number); if (!byRow.has(y)) byRow.set(y, []); byRow.get(y).push(x); }
+										for (const [y, xs] of byRow) {
+											xs.sort((a, b) => a - b);
+											let start = xs[0], prev = xs[0];
+											for (const x of [...xs.slice(1), Infinity]) {
+												if (x === prev + 8) { prev = x; continue; }
+												runs.push([start, y, prev + 8 - start, 8].join(","));
+												start = x; prev = x;
+											}
 										}
-										if (paints.length) ph.setAttribute("data-capture-paints", paints.join(" "));
+										if (runs.length) ph.setAttribute("data-capture-paints", runs.slice(0, 600).join(" "));
 									}
 								}
 							}
