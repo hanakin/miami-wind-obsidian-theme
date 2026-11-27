@@ -93,6 +93,7 @@
 	"appClassesOutOfScope": {
 		"card": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it (the only matches are <style> tags and the canvas 'card' option name)",
 		"cm-completionInfo": "CodeMirror's completion info pane; the only completions in the app (Bases formula editor) carry no info, so it never opens",
+		"cm-dropCursor": "never created by Obsidian 1.15.1 itself (confirmed by the Obsidian SME from app.js, see the vault's surfaces.md and codemirror.md): CodeMirror's dropCursor() (function Ode, returning [vy, Fde]) is only re-exported from @codemirror/view for plugins and never called, so no editor gets the dragover handler that creates .cm-dropCursor. A plugin that adds dropCursor() would. Matches the capture: a real text and file drag, a synthetic dragenter/dragover on a .cm-line, and DevTools Input.dispatchDragEvent over an editable line never created it",
 		"cm-hmd-orgmode-markup": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
 		"cm-invalidchar": "only the bundled CodeMirror 5 library (lib/codemirror/codemirror.js) creates it; Obsidian's desktop editor is CodeMirror 6",
 		"cm-positive": "no code in Obsidian 1.15.1 creates this class (searched app.js, starter.js, help.js, the bundled libraries and pdf.js); only app.css styles it",
@@ -124,7 +125,5 @@
 		".dropdown option:hover": "scripted, native popup not capturable: the dropdown list is drawn by the OS outside the page; a size=6 list box shows the options in the page instead",
 		"select option:hover": "scripted, native popup not capturable: the dropdown list is drawn by the OS outside the page; a size=6 list box shows the options in the page instead"
 	},
-	"appClassGaps": {
-		"cm-dropCursor": "open until the SME confirms. Evidence: never created by Obsidian 1.15.1 itself: app.js defines CodeMirror's drop cursor extension (function Ode, which returns [vy, Fde]) only as the dropCursor export of @codemirror/view that plugins can import; nothing in the app calls it, so no editor gets the dragover handler that creates .cm-dropCursor. A plugin that adds dropCursor() would. Tried and recorded: a real text and file drag over editable lines, a synthetic dragenter/dragover with an empty DataTransfer on a .cm-line, and DevTools Input.dispatchDragEvent (dragEnter/dragOver with text/plain) over an editable line; none created it"
-	}
+	"appClassGaps": {}
 }

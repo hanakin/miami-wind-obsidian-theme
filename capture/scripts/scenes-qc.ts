@@ -605,6 +605,8 @@ const basesQc: Scene = {
 				await ctx.page.mouse.click(b[0], b[1]);
 				await ctx.page.keyboard.press("End");
 				await ctx.page.keyboard.press("ArrowLeft");
+				// The pointer off the editor: pointer events under it would close the docstring tooltip.
+				await ctx.page.mouse.move(5, 995);
 				await ctx.sleep(400);
 			},
 			note: "Typing .contains( auto-closes the bracket; with the cursor between them the formula editor marks both with .cm-matchingBracket.",
@@ -711,23 +713,6 @@ const canvasQc: Scene = {
 			},
 		},
 		{
-			id: "qc.canvas.snaps",
-			component: "canvas",
-			target: ".canvas-wrapper",
-			state: "dragging-node",
-			full: true,
-			expect: ":has(.canvas-snaps)",
-			before: async (ctx) => {
-				await ctx.page.mouse.up();
-				await ctx.js("app.workspace.activeLeaf.view.canvas.deselectAll(); await sleep(200);");
-				const b = await center(ctx, { sel: ".canvas-node", text: "Colored card 3" });
-				await ctx.page.mouse.move(b[0], b[1]);
-				await ctx.page.mouse.down();
-				await ctx.page.mouse.move(b[0] - 240, b[1] + 2, { steps: 12 });
-				await ctx.sleep(400);
-			},
-		},
-		{
 			id: "qc.canvas.zoomed-out",
 			component: "canvas",
 			target: ".canvas-wrapper.mod-zoomed-out",
@@ -742,6 +727,30 @@ const canvasQc: Scene = {
 			id: "qc.canvas.node-placeholder",
 			component: "canvas-node",
 			target: ".canvas-node-placeholder",
+		},
+		{
+			// Last: releasing the drags of the items before it leaves the canvas panned away.
+			id: "qc.canvas.snaps",
+			component: "canvas",
+			target: ".canvas-wrapper",
+			state: "dragging-node",
+			full: true,
+			expect: ":has(.canvas-snaps)",
+			before: async (ctx) => {
+				await ctx.page.mouse.up();
+				// A fresh canvas: earlier items leave it zoomed out and panned away from the cards.
+				await ctx.open("Canvas.canvas", "live");
+				await ctx.js(
+					"const c = app.workspace.getLeavesOfType('canvas').find((l) => l.view.containerEl.isShown())?.view.canvas; c.deselectAll(); c.zoomToFit(); await sleep(2000); return [c.x, c.y, c.zoom, c.nodes.size];",
+				);
+				const b = await center(ctx, { sel: ".canvas-node", text: "Colored card 3" });
+				const mid = await center(ctx, ".canvas-wrapper");
+				await ctx.page.mouse.move(b[0], b[1]);
+				await ctx.page.mouse.down();
+				// A short way toward the middle: held near the canvas edge, the canvas keeps scrolling.
+				await ctx.page.mouse.move(b[0] + Math.sign(mid[0] - b[0]) * 60, b[1] + 2, { steps: 8 });
+				await ctx.sleep(400);
+			},
 		},
 	],
 };
@@ -773,8 +782,9 @@ const pdfQc: Scene = {
 			target: leaf(".pdfViewer .spread"),
 			before: async (ctx) => {
 				await ctx.page.keyboard.press("Escape");
+				// Escape closes the find bar; the viewer slides back (a 275 ms transition) before the shot.
 				await ctx.js(
-					"const v = app.workspace.getMostRecentLeaf(app.workspace.rootSplit).view; const pv = v.viewer?.child?.pdfViewer?.pdfViewer; pv.spreadMode = 1; await sleep(800);",
+					"const v = app.workspace.getMostRecentLeaf(app.workspace.rootSplit).view; const pv = v.viewer?.child?.pdfViewer?.pdfViewer; pv.spreadMode = 1; await sleep(1500);",
 				);
 			},
 		},
@@ -824,21 +834,33 @@ const pdfQc: Scene = {
 			note: "locked.pdf is sample.pdf encrypted with qpdf (password capture-user).",
 		},
 		{
+			// Fillable-PDF form boxes (pdf.js AcroForm widgets) are out of scope: listed, never run.
 			id: "qc.pdf.forms",
 			component: "pdf",
 			target: leaf(".annotationLayer"),
+			excluded:
+				"Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)",
+		},
+		{
+			id: "qc.pdf.text-field.focus",
+			component: "text-input",
+			target: leaf(".annotationLayer .textWidgetAnnotation input"),
+			pseudo: ["focus"],
+			excluded:
+				"Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)",
+		},
+		{
+			// annotations.pdf has the non-form annotations only (sticky note, free text, highlight,
+			// link, attached file).
+			id: "qc.pdf.annotations",
+			component: "pdf",
+			target: leaf(".annotationLayer"),
 			before: async (ctx) => {
-				await ctx.open("Attachments/forms.pdf", "live");
+				await ctx.open("Attachments/annotations.pdf", "live");
 				await ctx.sleep(2000);
 			},
-			note: "forms.pdf is a hand-written sample with AcroForm fields and annotations.",
+			note: "annotations.pdf is a hand-written sample with non-form annotations only (no fillable fields).",
 		},
-		p(
-			"qc.pdf.text-field.focus",
-			"text-input",
-			leaf(".annotationLayer .textWidgetAnnotation input"),
-			["focus"],
-		),
 		{
 			id: "qc.pdf.annotation-popup",
 			component: "pdf",
@@ -846,13 +868,27 @@ const pdfQc: Scene = {
 			state: "popup-open",
 			expect: ".popupWrapper:not([hidden]):has(.popup:not([hidden]) .popupContent)",
 			before: async (ctx) => {
-				await ctx.open("Attachments/forms.pdf", "live");
+				await ctx.open("Attachments/annotations.pdf", "live");
 				await ctx.sleep(2000);
-				const b = await center(ctx, leaf(".annotationLayer .textAnnotation"));
-				await ctx.page.mouse.click(b[0], b[1]);
-				await ctx.sleep(600);
+				// The annotation layer may still be redrawing after the file opens: click until the
+				// popup shows.
+				await ctx.page.keyboard.press("Escape");
+				for (let i = 0; i < 4; i++) {
+					await ctx.js(
+						"cap.ROOTS.leaf().querySelector('.annotationLayer .textAnnotation')?.scrollIntoView({ block: 'center' }); await sleep(400);",
+					);
+					const b = await center(ctx, leaf(".annotationLayer .textAnnotation"));
+					await ctx.page.mouse.click(b[0], b[1]);
+					await ctx.sleep(700);
+					if (
+						await ctx.js<boolean>(
+							"return !!cap.ROOTS.leaf().querySelector('.annotationLayer .popupWrapper:not([hidden])');",
+						)
+					)
+						break;
+				}
 			},
-			note: "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup.",
+			note: "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup (a PDF without form fields).",
 		},
 		{
 			id: "qc.pdf.xfa",
@@ -866,7 +902,11 @@ const pdfQc: Scene = {
 			},
 			note: "xfa-form.pdf is a hand-written pure XFA form (template packet only); Obsidian's pdf.js has enableXfa on and draws it with its XFA layer.",
 		},
-		p("qc.pdf.xfa-text.focus", "text-input", leaf(".xfaLayer .xfaTextfield"), ["focus"]),
+		{
+			...p("qc.pdf.xfa-text.focus", "text-input", leaf(".xfaLayer .xfaTextfield"), ["focus"]),
+			// The field's XFA border frame (a sibling, drawn over it) stays in the fixture.
+			context: "document",
+		},
 	],
 };
 
@@ -2219,7 +2259,7 @@ const printExport: Scene = {
 			expect: "body.theme-light > .print",
 			full: true,
 			media: { media: "print" },
-			note: "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs.",
+			note: "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs. The window has no doctype (quirks mode), so the fixture has none either.",
 		},
 	],
 };
@@ -2394,6 +2434,8 @@ const startupSnapshot: Scene = {
 		{
 			id: "qc.startup-snapshot.loading",
 			component: "workspace",
+			// The app is starting under the screen; a retake would find the screen gone.
+			changing: true,
 			target: "#startup-snapshot",
 			expect: "#startup-snapshot[data-loaded]",
 			full: true,

@@ -203,6 +203,16 @@ async function emulateMedia(
 	return null;
 }
 
+/** A crop of a PNG file as PNG bytes (null when ImageMagick fails). */
+function cropPng(path: string, x: number, y: number, w: number, h: number): Buffer | null {
+	const tmp = join(WORK, "tmp");
+	mkdirSync(tmp, { recursive: true });
+	const r = Bun.spawnSync(["magick", path, "-crop", `${w}x${h}+${x}+${y}`, "+repage", "png:-"], {
+		env: { ...process.env, MAGICK_TEMPORARY_PATH: tmp, TMPDIR: tmp },
+	});
+	return r.exitCode === 0 && r.stdout.length ? Buffer.from(r.stdout) : null;
+}
+
 /** ImageMagick with its temporary files under the work folder (/tmp may be out of quota); throws on failure. */
 function magick(args: string[]): string {
 	const tmp = join(WORK, "tmp");
@@ -332,6 +342,8 @@ interface Snap {
 	viewport: [number, number];
 	styles: string[];
 	whole: "see-through" | null;
+	quirks: boolean;
+	frameSheets: Snap["sheets"][];
 	sheets: { kind: "app" | "theme" | "runtime"; text?: string }[];
 }
 
@@ -464,11 +476,19 @@ export async function captureItem(
 		}
 		if (!probe.expectOk)
 			return { id: item.id, error: `state not shown: target does not match ${item.expect}` };
-		// Let finite running animations (a menu row's fade, a sheet sliding in) end, so the shot
-		// shows the state the snapshot holds. Held or endless ones are left alone.
-		await page.evaluate(
-			"(async () => { const d = window.__cap.target?.ownerDocument ?? document; for (let i = 0; i < 40; i++) { const r = d.getAnimations().filter((a) => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming?.().endTime ?? Infinity)); if (!r.length) break; await new Promise((ok) => setTimeout(ok, 25)); } })()",
-		);
+		// (Not for a page that changes by design: it would be gone.)
+		if (!item.changing) {
+			// Let the page settle so the shot shows what the snapshot holds: no DOM change for 300 ms
+			// (a dialog still adding its buttons), at most 2 s.
+			await page.evaluate(
+				"(async () => { const d = window.__cap.target?.ownerDocument ?? document; let last = performance.now(); const mo = new MutationObserver(() => { last = performance.now(); }); mo.observe(d, { subtree: true, childList: true, attributes: true, characterData: true }); const t0 = performance.now(); while (performance.now() - last < 300 && performance.now() - t0 < 2000) await new Promise((ok) => setTimeout(ok, 50)); mo.disconnect(); })()",
+			);
+			// Let finite running animations (a menu row's fade, a sheet sliding in) end, so the shot
+			// shows the state the snapshot holds. Held or endless ones are left alone.
+			await page.evaluate(
+				"(async () => { const d = window.__cap.target?.ownerDocument ?? document; for (let i = 0; i < 40; i++) { const r = d.getAnimations().filter((a) => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming?.().endTime ?? Infinity)); if (!r.length) break; await new Promise((ok) => setTimeout(ok, 25)); } })()",
+			);
+		}
 		const vp = (await page.evaluate(
 			"({ width: innerWidth, height: innerHeight, hover: matchMedia('(hover: hover)').matches, finePointer: matchMedia('(pointer: fine)').matches, dark: matchMedia('(prefers-color-scheme: dark)').matches, canvas: (() => { const d = document.createElement('div'); d.style.backgroundColor = 'Canvas'; document.body.append(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return c; })() })",
 		)) as {
@@ -521,58 +541,100 @@ export async function captureItem(
 			magick([...parts, "-append", shot]);
 			for (const p of parts) rmSync(p, { force: true });
 			scroll = { positions, scrollHeight: sh, clientHeight: ch };
-		} else {
-			await page.evaluate(`cap.witness(window.__cap.target, ${clipArr})`);
-			await page.screenshot({ path: shot, clip });
 		}
+		// The shot and the snapshot must show the same page: changes to the DOM between them (a
+		// tooltip closing) are watched; when there were any, both are taken again (once).
 		let record: Evidence["record"];
-		if (item.record) {
-			record = (await page.evaluate(`(async () => { ${item.record} })()`)) as typeof record;
-			if (record?.graphColors)
-				record.graphPixels = pixelCounts(
-					shot,
-					record.graphColors,
-					(record.graphAlpha as Record<string, number> | undefined) ?? {},
-					{
-						region: record.graphRegion as Rect | undefined,
-						excludes: (record.graphExclude as Rect[] | undefined) ?? [],
-						classRegions: record.classRegions as Record<string, Rect> | undefined,
-					},
-				);
+		let stats: { width: number; height: number; colors: number } = {
+			width: 0,
+			height: 0,
+			colors: 0,
+		};
+		let sha256 = "";
+		let snap = { lost: true } as Snap;
+		for (let attempt = 0; attempt < 2; attempt++) {
+			await page.evaluate(
+				"(() => { const d = window.__cap.target?.ownerDocument ?? document; window.__capMut = 0; window.__capObs?.disconnect(); const mine = (n) => n.nodeType === 1 && n.hasAttribute('data-capture-hit'); window.__capObs = new MutationObserver((l) => { for (const m of l) if (!(m.type === 'childList' && [...m.addedNodes, ...m.removedNodes].every(mine))) window.__capMut++; }); window.__capObs.observe(d, { subtree: true, childList: true, attributes: true, characterData: true }); })()",
+			);
+			if (!scroll) {
+				await page.evaluate(`cap.witness(window.__cap.target, ${clipArr})`);
+				await page.screenshot({ path: shot, clip });
+			}
+			record = undefined;
+			if (item.record) {
+				const rec = (await page.evaluate(`(async () => { ${item.record} })()`)) as NonNullable<
+					Evidence["record"]
+				>;
+				if (rec?.graphColors)
+					rec.graphPixels = pixelCounts(
+						shot,
+						rec.graphColors,
+						(rec.graphAlpha as Record<string, number> | undefined) ?? {},
+						{
+							region: rec.graphRegion as Rect | undefined,
+							excludes: (rec.graphExclude as Rect[] | undefined) ?? [],
+							classRegions: rec.classRegions as Record<string, Rect> | undefined,
+						},
+					);
+				record = rec;
+			}
+			stats = pngStats(shot);
+			if (stats.colors < 2) return { id: item.id, error: "screenshot is blank (one color)" };
+			sha256 = new Bun.CryptoHasher("sha256")
+				.update(await Bun.file(shot).arrayBuffer())
+				.digest("hex");
+			// DevTools matched selectors on the nodes that can carry the forced state (still forced here).
+			if (pseudo.length) await matchedOnCandidates(page, cdp);
+			// Changes up to here (the snapshot itself writes marks, which are not watched).
+			const changed = (await page.evaluate(
+				"(() => { const n = window.__capMut; window.__capObs?.disconnect(); window.__capObs = null; return n; })()",
+			)) as number;
+			snap = (await page.evaluate(
+				`cap.snapshot(${JSON.stringify({
+					sels: out.live,
+					components: COMPONENTS,
+					trim: item.trim ?? null,
+					label: item.state && item.state !== "default" ? item.state : null,
+					synthetic: item.synthetic ?? null,
+					context: item.context ?? null,
+				})})`,
+			)) as Snap;
+			if (!changed || scroll || item.changing) break;
 		}
-		const stats = pngStats(shot);
-		if (stats.colors < 2) return { id: item.id, error: "screenshot is blank (one color)" };
-		const sha256 = new Bun.CryptoHasher("sha256")
-			.update(await Bun.file(shot).arrayBuffer())
-			.digest("hex");
-		// DevTools matched selectors on the nodes that can carry the forced state (still forced here).
-		if (pseudo.length) await matchedOnCandidates(page, cdp);
-		const snap = (await page.evaluate(
-			`cap.snapshot(${JSON.stringify({
-				sels: out.live,
-				components: COMPONENTS,
-				trim: item.trim ?? null,
-				label: item.state && item.state !== "default" ? item.state : null,
-				synthetic: item.synthetic ?? null,
-				context: item.context ?? null,
-			})})`,
-		)) as Snap;
 		if (snap.lost) return { id: item.id, error: "target vanished before the snapshot" };
 		const unseen = snap.seen
 			? null
 			: ((await page.evaluate("cap.stackAt(window.__cap.target)")) as string[]);
 		const file = `${item.id}.${snap.format}`;
-		writeFileSync(join(out.fixturesDir, file), snap.html);
+		// Each frame names its own stylesheets, saved like the window's (local only).
+		const html = snap.html.replace(
+			/data-capture-frame="(\d+)"/g,
+			(_, k: string) =>
+				`data-capture-frame-styles="${saveSheets(snap.frameSheets[Number(k)] ?? []).join(" ")}"`,
+		);
+		writeFileSync(join(out.fixturesDir, file), html);
 		// Canvas pixels as PNG files named by content (PDF pages repeat across fixtures). WebGL
 		// canvases read back empty, so those come from the screen.
 		const canvasPixels: NonNullable<FixtureEntry["canvasPixels"]> = [];
 		for (const c of snap.canvasPixels) {
 			const [cx = 0, cy = 0, cw = 0, ch = 0] = c.rect;
+			// From the shot itself when the canvas lies inside it: a moving canvas (the graph's
+			// force layout) must match the shot, not a moment later.
+			const x0 = Math.round(cx - clip.x);
+			const y0 = Math.round(cy - clip.y);
+			const inShot =
+				!scroll &&
+				x0 >= 0 &&
+				y0 >= 0 &&
+				x0 + Math.round(cw) <= clip.width + 1 &&
+				y0 + Math.round(ch) <= clip.height + 1;
 			const png = c.url
 				? Buffer.from(c.url.slice(c.url.indexOf(",") + 1), "base64")
-				: await page
-						.screenshot({ clip: { x: cx, y: cy, width: cw, height: ch } })
-						.catch(() => null);
+				: inShot
+					? cropPng(shot, x0, y0, Math.round(cw), Math.round(ch))
+					: await page
+							.screenshot({ clip: { x: cx, y: cy, width: cw, height: ch } })
+							.catch(() => null);
 			if (!png) continue;
 			const name = `pixels/${new Bun.CryptoHasher("sha256").update(png).digest("hex").slice(0, 32)}.png`;
 			mkdirSync(join(out.fixturesDir, "pixels"), { recursive: true });
@@ -595,6 +657,8 @@ export async function captureItem(
 			viewport: snap.viewport,
 			styles: snap.styles,
 			runtimeStyles: saveSheets(snap.sheets),
+			...(snap.quirks ? { quirks: true } : {}),
+			...(snap.trimmed ? { trimSelector: snap.trimmed.selector } : {}),
 			...(item.context
 				? { context: item.context }
 				: snap.whole

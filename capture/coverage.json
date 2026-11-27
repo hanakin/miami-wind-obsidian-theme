@@ -1,35 +1,15 @@
 {
 	"obsidianVersion": "1.15.1",
 	"summary": [
-		"Obsidian 1.15.1 · 1201 fixtures, 1199 with valid evidence (6 synthetic macOS/Windows variants)",
-		"Checklist items shown in their claimed state: 1212/1221 (99.3%); 29 of them scripted or synthetic (labeled); state applied but its change not visible (limitation, listed): 3; excluded with reason: 4; missing: 2",
+		"Obsidian 1.15.1 · 1200 fixtures, 1200 with valid evidence (6 synthetic macOS/Windows variants)",
+		"Checklist items shown in their claimed state: 1213/1222 (99.3%); 29 of them scripted or synthetic (labeled); state applied but its change not visible (limitation, listed): 3; excluded with reason: 6; missing: 0",
 		"theme.css selectors visibly matched (fixture and live agree, on painted elements): 240/247 (97.2%); excluded with reason: 4; scripted only (labeled): 3; missing: 0 (0 only on hidden/clipped elements, 0 only in scripted fixtures); fixture/live disagreements: 3",
-		"App CSS classes visibly captured: 1188 (11 of them classes credited by screenshot pixels (graph probes)), excluded 226, not theme-affected (accepted gaps) 237, theme-affected but out of scope (labeled) 26, theme-affected missing 1, of 1678; of the theme-affected missing: 0 in the DOM but never painted, 0 only in scripted fixtures, 0 seen in the runtime census only",
+		"App CSS classes visibly captured: 1182 (11 of them classes credited by screenshot pixels (graph probes)), excluded 226, not theme-affected (accepted gaps) 244, theme-affected but out of scope (labeled) 26, theme-affected missing 0, of 1678; of the theme-affected missing: 0 in the DOM but never painted, 0 only in scripted fixtures, 0 seen in the runtime census only",
 		"Screenshots: files re-checked against recorded hashes; 66 groups of identical screenshots (64 explained by their fixtures, 2 where a state applies but does not show (limitation), 0 unexplained)",
-		"Replay alone: 1173 fixtures rendered from their own files (recorded window size and stylesheets, canvas pixels, stand-in sizes, scroll offsets) matched their live screenshot in at least 97% of 16 px blocks (lowest 84.1%; images, media and iframes masked); replay limits (labeled, not compared): 21"
+		"Replay alone: 1182 fixtures rendered from their own files (recorded window size and stylesheets, canvas pixels, stand-in sizes, scroll offsets) matched their live screenshot in at least 97% of 16 px blocks (lowest 99.7%; images, media and iframes masked); replay limits (labeled, not compared): 13"
 	],
-	"missingItems": [
-		{
-			"id": "qc.print.export-window",
-			"why": [
-				"replay layout differs: target at 0,0,1024,667 live, 0,0,1024,679 replayed alone; first moved: div. inside the target at 32,523,960,24, live 32,520,960,16"
-			]
-		},
-		{
-			"id": "mobile.phone.file-menu",
-			"why": [
-				"replay differs from the live screenshot in 16% of the target (16 px blocks; first at 49,338 65,338 81,338 in /home/hanakin/Work/miami-wind-obsidian-capture/replay/mobile.phone.file-menu.png)"
-			]
-		}
-	],
-	"invalidFixtures": {
-		"mobile.phone.file-menu": [
-			"replay differs from the live screenshot in 16% of the target (16 px blocks; first at 49,338 65,338 81,338 in /home/hanakin/Work/miami-wind-obsidian-capture/replay/mobile.phone.file-menu.png)"
-		],
-		"qc.print.export-window": [
-			"replay layout differs: target at 0,0,1024,667 live, 0,0,1024,679 replayed alone; first moved: div. inside the target at 32,523,960,24, live 32,520,960,16"
-		]
-	},
+	"missingItems": [],
+	"invalidFixtures": {},
 	"themeSelectors": [
 		{
 			"id": "3:0",
@@ -870,6 +850,7 @@
 				"mobile.phone.confirm-modal",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -1089,12 +1070,11 @@
 				"qc.migration.modal",
 				"qc.migration.results",
 				"qc.pdf.annotation-popup",
+				"qc.pdf.annotations",
 				"qc.pdf.find-settings",
-				"qc.pdf.forms",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
-				"qc.pdf.text-field.focus",
 				"qc.pdf.themed",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
@@ -1267,7 +1247,8 @@
 				"command.workspaces:open-modal",
 				"command.workspaces:save",
 				"command.workspaces:save-and-load",
-				"light-mode.window"
+				"light-mode.window",
+				"qc.print.export-window"
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
@@ -2085,6 +2066,7 @@
 				"mobile.phone.confirm-modal",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -2267,12 +2249,11 @@
 				"qc.migration.modal",
 				"qc.migration.results",
 				"qc.pdf.annotation-popup",
+				"qc.pdf.annotations",
 				"qc.pdf.find-settings",
-				"qc.pdf.forms",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
-				"qc.pdf.text-field.focus",
 				"qc.pdf.themed",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
@@ -2682,6 +2663,7 @@
 				"md.task-star.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -2779,6 +2761,7 @@
 				"mobile.tablet.workspace",
 				"popover.page-preview",
 				"qc.canvas.connecting",
+				"qc.canvas.snaps",
 				"qc.combo.heading-tag.hover",
 				"qc.dialogs.restore",
 				"qc.embedded-backlinks.off",
@@ -2787,6 +2770,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading",
 				"view.type.canvas",
 				"view.type.release-notes"
@@ -2822,6 +2806,7 @@
 				"md.embed-pdf.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -3392,6 +3377,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading",
 				"view.type.release-notes"
 			],
@@ -3438,6 +3424,7 @@
 				"md.tags.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -3459,6 +3446,7 @@
 				"qc.canvas.interaction-layer",
 				"qc.canvas.resizer",
 				"qc.canvas.selection-box",
+				"qc.canvas.snaps",
 				"qc.combo.heading-tag.hover",
 				"qc.copy-code-button.hover",
 				"qc.gap.canvas-readonly",
@@ -3669,6 +3657,7 @@
 				"md.table.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -3764,6 +3753,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading"
 			],
 			"fixtureOnly": [],
@@ -3798,6 +3788,7 @@
 				"md.tags.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -3820,6 +3811,7 @@
 				"qc.canvas.interaction-layer",
 				"qc.canvas.resizer",
 				"qc.canvas.selection-box",
+				"qc.canvas.snaps",
 				"qc.gap.canvas-readonly",
 				"qc.gap.kanban-empty",
 				"qc.gap.pdf-outline",
@@ -3879,6 +3871,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading"
 			],
 			"fixtureOnly": [],
@@ -3913,6 +3906,7 @@
 				"md.tags.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -3935,6 +3929,7 @@
 				"qc.canvas.interaction-layer",
 				"qc.canvas.resizer",
 				"qc.canvas.selection-box",
+				"qc.canvas.snaps",
 				"qc.copy-code-button.hover",
 				"qc.gap.canvas-readonly",
 				"qc.gap.kanban-empty",
@@ -4106,6 +4101,7 @@
 				"md.property-url.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -4360,6 +4356,7 @@
 				"md.tab-character.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -4757,6 +4754,7 @@
 				"md.kitchen-sink.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -5045,6 +5043,7 @@
 				"md.property-url.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -5121,12 +5120,14 @@
 				"mobile.phone.workspace",
 				"mobile.tablet.workspace",
 				"qc.canvas.connecting",
+				"qc.canvas.snaps",
 				"qc.dialogs.restore",
 				"qc.gap.canvas-readonly",
 				"qc.gap.reading-find-highlight",
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading",
 				"view.type.canvas"
 			],
@@ -5166,6 +5167,7 @@
 				"md.table-wide.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -5333,6 +5335,7 @@
 				"md.table.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -5410,12 +5413,14 @@
 				"mobile.phone.workspace",
 				"mobile.tablet.workspace",
 				"qc.canvas.connecting",
+				"qc.canvas.snaps",
 				"qc.dialogs.restore",
 				"qc.gap.canvas-readonly",
 				"qc.gap.reading-find-highlight",
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading",
 				"view.type.canvas"
 			],
@@ -5458,6 +5463,7 @@
 				"md.table-wide.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -5651,7 +5657,6 @@
 				"qc.edit-block-button.hover",
 				"qc.gap.property-link-flair",
 				"qc.gap.unlinked-mention-button.hover",
-				"qc.pdf.text-field.focus",
 				"qc.pdf.xfa-text.focus",
 				"qc.search.copy-results.textarea.focus",
 				"sidebar.search-result.hover",
@@ -5782,6 +5787,7 @@
 				"mobile.phone.workspace",
 				"mobile.tablet.workspace",
 				"qc.canvas.connecting",
+				"qc.canvas.snaps",
 				"qc.combo.external-code-link.focus",
 				"qc.combo.external-code-link.hover",
 				"qc.combo.heading-link.hover",
@@ -5796,6 +5802,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading",
 				"view.type.canvas",
 				"view.type.release-notes"
@@ -5830,6 +5837,7 @@
 				"md.table-wide.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -6152,12 +6160,13 @@
 				"qc.gap.pdf-outline",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.window.titlebar-maximized",
 				"suggest.block",
 				"suggest.embed",
@@ -6299,12 +6308,13 @@
 				"qc.gap.pdf-outline",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.settings-in-window.restore",
 				"qc.window.titlebar-maximized",
 				"suggest.block",
@@ -6542,6 +6552,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -6593,12 +6604,13 @@
 				"qc.gap.pdf-outline",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.window.titlebar-maximized",
 				"sidebar.all-properties",
 				"sidebar.backlinks",
@@ -6821,12 +6833,13 @@
 				"qc.gap.pdf-outline",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.window.titlebar-maximized",
 				"suggest.block",
 				"suggest.embed",
@@ -6982,12 +6995,13 @@
 				"qc.gap.pdf-outline",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.settings-in-window.restore",
 				"qc.window.titlebar-maximized",
 				"suggest.block",
@@ -7087,7 +7101,6 @@
 			"matchable": ".workspace-tabs .clickable-icon.is-active",
 			"fixtures": [
 				"chrome.workspace-tabs-icon.is-active",
-				"qc.gap.pdf-zoom-min",
 				"sidebar.tags",
 				"view.type.tag"
 			],
@@ -7103,15 +7116,7 @@
 				"extra.modal.close-button.hover",
 				"pdf.highlight",
 				"qc.gap.pdf-outline",
-				"qc.pdf.annotation-popup",
 				"qc.pdf.find-settings",
-				"qc.pdf.forms",
-				"qc.pdf.horizontal",
-				"qc.pdf.password",
-				"qc.pdf.spread",
-				"qc.pdf.themed",
-				"qc.pdf.wrapped",
-				"qc.pdf.xfa",
 				"sidebar.search-options"
 			],
 			"synthetic": []
@@ -7889,6 +7894,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -8010,12 +8016,11 @@
 				"qc.highlight-color-widget",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
+				"qc.pdf.annotations",
 				"qc.pdf.find-settings",
-				"qc.pdf.forms",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
-				"qc.pdf.text-field.focus",
 				"qc.pdf.themed",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
@@ -8205,6 +8210,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -8250,12 +8256,13 @@
 				"qc.gap.pdf-outline",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.window.titlebar-maximized",
 				"suggest.block",
 				"suggest.embed",
@@ -8394,6 +8401,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -8439,12 +8447,13 @@
 				"qc.gap.pdf-outline",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.window.titlebar-maximized",
 				"suggest.block",
 				"suggest.embed",
@@ -8639,6 +8648,7 @@
 				"mobile.phone.command-palette",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -8688,12 +8698,13 @@
 				"qc.gap.pdf-outline",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.tab.linked",
 				"qc.tab.pinned",
 				"qc.tab.pinned-header",
@@ -9100,6 +9111,7 @@
 				"qc.bases.properties-page",
 				"qc.bases.results-page",
 				"qc.canvas.connecting",
+				"qc.canvas.snaps",
 				"qc.dialog.unlinked-attachments",
 				"qc.dialog.unlinked-attachments.gallery",
 				"qc.dialogs.restore",
@@ -9133,11 +9145,10 @@
 				"qc.media.forced-colors",
 				"qc.media.hover-none",
 				"qc.media.print",
-				"qc.pdf.forms",
 				"qc.pdf.password",
-				"qc.pdf.text-field.focus",
 				"qc.pdf.xfa",
 				"qc.pdf.xfa-text.focus",
+				"qc.print.export-window",
 				"qc.rtl",
 				"qc.rtl-language.restore",
 				"qc.rtl-language.window",
@@ -9294,6 +9305,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -9368,6 +9380,7 @@
 				"qc.hotkeys.filter",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
+				"qc.pdf.annotations",
 				"qc.pdf.find-settings",
 				"qc.pdf.horizontal",
 				"qc.pdf.spread",
@@ -9515,7 +9528,6 @@
 				"qc.gap.vim-confirm",
 				"qc.hotkey-conflict.restore",
 				"qc.pdf.password",
-				"qc.pdf.text-field.focus",
 				"qc.pdf.xfa-text.focus",
 				"settings.about",
 				"settings.appearance",
@@ -9855,6 +9867,7 @@
 				"canvas.view",
 				"command.canvas:new-file",
 				"qc.canvas.connecting",
+				"qc.canvas.snaps",
 				"qc.canvas.zoomed-out",
 				"qc.gap.canvas-readonly",
 				"view.type.canvas"
@@ -9886,8 +9899,7 @@
 				"qc.canvas.connection-point",
 				"qc.canvas.interaction-layer",
 				"qc.canvas.resizer",
-				"qc.canvas.selection-box",
-				"qc.canvas.snaps"
+				"qc.canvas.selection-box"
 			],
 			"synthetic": []
 		},
@@ -9905,6 +9917,7 @@
 				"canvas.view",
 				"command.canvas:new-file",
 				"qc.canvas.connecting",
+				"qc.canvas.snaps",
 				"qc.canvas.zoomed-out",
 				"qc.gap.canvas-readonly",
 				"view.type.canvas"
@@ -9936,8 +9949,7 @@
 				"qc.canvas.connection-point",
 				"qc.canvas.interaction-layer",
 				"qc.canvas.resizer",
-				"qc.canvas.selection-box",
-				"qc.canvas.snaps"
+				"qc.canvas.selection-box"
 			],
 			"synthetic": []
 		},
@@ -10127,6 +10139,7 @@
 				"properties.title.hover",
 				"qc.bases.new-item",
 				"qc.canvas.connecting",
+				"qc.canvas.snaps",
 				"qc.dialogs.restore",
 				"qc.gap.canvas-readonly",
 				"qc.gap.editor-caret",
@@ -10293,6 +10306,7 @@
 				"md.tags.source.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -10412,6 +10426,7 @@
 				"properties.tag-pill",
 				"properties.tag-pill.hover",
 				"qc.canvas.connecting",
+				"qc.canvas.snaps",
 				"qc.dialogs.restore",
 				"qc.gap.canvas-readonly",
 				"qc.gap.editor-caret",
@@ -10525,6 +10540,7 @@
 				"md.tags.source.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -10664,6 +10680,7 @@
 				"properties.add-button.hover",
 				"properties.reading-view",
 				"qc.canvas.connecting",
+				"qc.canvas.snaps",
 				"qc.dialogs.restore",
 				"qc.gap.canvas-readonly",
 				"qc.gap.editor-caret",
@@ -10832,6 +10849,7 @@
 				"md.tags.source.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -11037,6 +11055,7 @@
 				"properties.key-input.focus",
 				"properties.reading-view",
 				"qc.canvas.connecting",
+				"qc.canvas.snaps",
 				"qc.dialogs.restore",
 				"qc.gap.canvas-readonly",
 				"qc.gap.editor-caret",
@@ -11127,6 +11146,7 @@
 				"md.tags.source.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -12299,6 +12319,7 @@
 				"mobile.phone.command-palette",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -12425,12 +12446,11 @@
 				"qc.highlight-color-widget",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
+				"qc.pdf.annotations",
 				"qc.pdf.find-settings",
-				"qc.pdf.forms",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
-				"qc.pdf.text-field.focus",
 				"qc.pdf.themed",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
@@ -12610,6 +12630,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -12655,12 +12676,13 @@
 				"qc.gap.pdf-outline",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.startup-snapshot.loading",
 				"qc.window.titlebar-maximized",
 				"suggest.block",
@@ -12783,6 +12805,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -12828,12 +12851,13 @@
 				"qc.gap.pdf-outline",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.settings-in-window.restore",
 				"qc.startup-snapshot.loading",
 				"qc.window.titlebar-maximized",
@@ -13021,12 +13045,13 @@
 				"qc.gap.pdf-outline",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.window.titlebar-maximized",
 				"sidebar.bookmarks",
 				"sidebar.file-explorer.multi-select",
@@ -13172,12 +13197,13 @@
 				"qc.gap.kanban-empty",
 				"qc.gap.pdf-outline",
 				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
+				"qc.pdf.annotations",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"view.sidebars-collapsed",
 				"view.split"
 			],
@@ -13828,6 +13854,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -13962,6 +13989,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14094,6 +14122,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14225,6 +14254,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14359,6 +14389,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14493,6 +14524,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14624,6 +14656,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14756,6 +14789,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -15254,6 +15288,7 @@
 				"qc.media.forced-colors",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl",
 				"qc.rtl-language.restore",
 				"qc.rtl-language.window",
@@ -15326,6 +15361,7 @@
 				"md.inline-title.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -15349,6 +15385,7 @@
 				"qc.canvas.interaction-layer",
 				"qc.canvas.resizer",
 				"qc.canvas.selection-box",
+				"qc.canvas.snaps",
 				"qc.drag.done",
 				"qc.drag.drop-overlay",
 				"qc.drag.ghost",
@@ -15410,6 +15447,7 @@
 				"qc.media.forced-colors",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl",
 				"qc.rtl-language.restore",
 				"qc.rtl-language.window",
@@ -15482,6 +15520,7 @@
 				"md.inline-title.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -15505,6 +15544,7 @@
 				"qc.canvas.interaction-layer",
 				"qc.canvas.resizer",
 				"qc.canvas.selection-box",
+				"qc.canvas.snaps",
 				"qc.drag.done",
 				"qc.drag.drop-overlay",
 				"qc.drag.ghost",
@@ -15565,6 +15605,7 @@
 				"qc.media.forced-colors",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl",
 				"qc.rtl-language.restore",
 				"qc.rtl-language.window",
@@ -15637,6 +15678,7 @@
 				"md.inline-title.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -15661,6 +15703,7 @@
 				"qc.canvas.interaction-layer",
 				"qc.canvas.resizer",
 				"qc.canvas.selection-box",
+				"qc.canvas.snaps",
 				"qc.drag.done",
 				"qc.drag.drop-overlay",
 				"qc.drag.ghost",
@@ -15758,6 +15801,7 @@
 				"md.kitchen-sink.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -15874,6 +15918,7 @@
 				"md.kitchen-sink.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -16740,7 +16785,6 @@
 				"qc.bases.filter-group",
 				"qc.bases.formula-editor",
 				"qc.bases.matching-bracket",
-				"qc.pdf.forms",
 				"qc.pdf.xfa",
 				"qc.search.copy-results",
 				"settings.about",
@@ -16766,6 +16810,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -16790,7 +16835,7 @@
 				"mobile.tablet.workspace",
 				"modal.setting-heading",
 				"qc.bases.docstring",
-				"qc.pdf.annotation-popup",
+				"qc.pdf.xfa-text.focus",
 				"qc.search.copy-results.textarea.focus",
 				"sidebar.search-options",
 				"view.type.search"
@@ -17039,6 +17084,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -17075,9 +17121,8 @@
 				"qc.bases.filter-group",
 				"qc.bases.formula-editor",
 				"qc.bases.matching-bracket",
-				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.search.copy-results",
 				"qc.search.copy-results.textarea.focus",
 				"settings.about",
@@ -17261,7 +17306,6 @@
 				"qc.bases.filter-group",
 				"qc.bases.formula-editor",
 				"qc.bases.matching-bracket",
-				"qc.pdf.forms",
 				"qc.pdf.xfa",
 				"qc.search.copy-results",
 				"settings.about",
@@ -17287,6 +17331,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -17311,7 +17356,7 @@
 				"mobile.tablet.workspace",
 				"modal.setting-heading",
 				"qc.bases.docstring",
-				"qc.pdf.annotation-popup",
+				"qc.pdf.xfa-text.focus",
 				"qc.search.copy-results.textarea.focus",
 				"sidebar.search-options",
 				"view.type.search"
@@ -17536,6 +17581,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -17572,9 +17618,8 @@
 				"qc.bases.filter-group",
 				"qc.bases.formula-editor",
 				"qc.bases.matching-bracket",
-				"qc.pdf.annotation-popup",
-				"qc.pdf.forms",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.search.copy-results",
 				"qc.search.copy-results.textarea.focus",
 				"settings.about",
@@ -17855,6 +17900,7 @@
 				"mobile.phone.bases-properties",
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.drawer-tab-list",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -17928,14 +17974,15 @@
 				"qc.media.hover-none",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
+				"qc.pdf.annotations",
 				"qc.pdf.find-settings",
-				"qc.pdf.forms",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
 				"qc.pdf.themed",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"qc.rtl-language.restore",
 				"qc.rtl-language.window",
 				"qc.settings-in-window.restore",
@@ -18208,6 +18255,7 @@
 				"md.tags.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -18355,6 +18403,7 @@
 				"md.combo-bold-link.reading",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -18410,6 +18459,7 @@
 				"qc.media.forced-colors",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-language.restore",
 				"qc.rtl-language.window",
 				"qc.rtl-reading",
@@ -19152,6 +19202,7 @@
 				"mobile.phone.command-palette",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -19279,12 +19330,11 @@
 				"qc.highlight-color-widget",
 				"qc.migration.modal",
 				"qc.pdf.annotation-popup",
+				"qc.pdf.annotations",
 				"qc.pdf.find-settings",
-				"qc.pdf.forms",
 				"qc.pdf.horizontal",
 				"qc.pdf.password",
 				"qc.pdf.spread",
-				"qc.pdf.text-field.focus",
 				"qc.pdf.themed",
 				"qc.pdf.wrapped",
 				"qc.pdf.xfa",
@@ -19422,6 +19472,7 @@
 				"mobile.phone.bases-filter",
 				"mobile.phone.bases-properties",
 				"mobile.phone.bases-settings-menu",
+				"mobile.phone.file-menu",
 				"mobile.phone.menu",
 				"mobile.phone.menu-disabled",
 				"mobile.phone.menu-selected",
@@ -19689,6 +19740,7 @@
 				"menu.tab-list.item.hover",
 				"menu.tab.item.hover",
 				"menu.vault-switcher.item.hover",
+				"mobile.phone.file-menu",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
 				"mobile.phone.menu-disabled",
@@ -19735,6 +19787,7 @@
 				"menu.tab.item.hover",
 				"menu.vault-switcher",
 				"menu.vault-switcher.item.hover",
+				"mobile.phone.file-menu",
 				"mobile.phone.menu",
 				"mobile.phone.menu-disabled",
 				"mobile.phone.menu-selected",
@@ -20166,6 +20219,7 @@
 				"md.kitchen-sink.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -20304,6 +20358,7 @@
 				"md.mermaid.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -20424,7 +20479,6 @@
 		},
 		{
 			"name": "annotationContent",
-			"fixture": "qc.pdf.forms",
 			"dom": "qc.pdf.annotation-popup",
 			"census": true
 		},
@@ -20567,7 +20621,7 @@
 			"name": "bases-display-page",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope",
 			"fixture": "mobile.phone.bases-settings-menu",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "bases-embed",
@@ -21233,9 +21287,7 @@
 		},
 		{
 			"name": "buttonWidgetAnnotation",
-			"fixture": "qc.pdf.forms",
-			"dom": "qc.pdf.annotation-popup",
-			"census": true
+			"census": false
 		},
 		{
 			"name": "callout",
@@ -21558,9 +21610,7 @@
 		},
 		{
 			"name": "checkBox",
-			"fixture": "qc.pdf.forms",
-			"dom": "qc.pdf.annotation-popup",
-			"census": true
+			"census": false
 		},
 		{
 			"name": "checkbox-container",
@@ -21570,9 +21620,7 @@
 		},
 		{
 			"name": "choiceWidgetAnnotation",
-			"fixture": "qc.pdf.forms",
-			"dom": "qc.pdf.annotation-popup",
-			"census": true
+			"census": false
 		},
 		{
 			"name": "class-name",
@@ -21596,7 +21644,7 @@
 			"name": "close-button",
 			"excluded": "built only in the mobile tab switcher card (.mobile-tab-preview, app.js class for the mobile tab switcher)",
 			"dom": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "close-icon",
@@ -22793,7 +22841,7 @@
 		{
 			"name": "conjunction-chevron",
 			"fixture": "mobile.phone.bases-filter",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "connecting-line",
@@ -23173,31 +23221,31 @@
 			"name": "feedback-banner",
 			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone",
 			"dom": "mobile.phone.settings",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "feedback-banner-container",
 			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone",
 			"dom": "mobile.phone.settings",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "feedback-banner-content",
 			"excluded": "phone Settings rating banner: built hidden and shown only by a timed in-app rating prompt",
 			"dom": "mobile.phone.settings",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "feedback-banner-dismiss-button",
 			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone",
 			"dom": "mobile.phone.settings",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "feedback-banner-title",
 			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone",
 			"dom": "mobile.phone.settings",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "file-browser-description",
@@ -23290,7 +23338,7 @@
 		},
 		{
 			"name": "fileAttachmentAnnotation",
-			"fixture": "qc.pdf.forms",
+			"fixture": "qc.pdf.annotations",
 			"dom": "qc.pdf.annotation-popup",
 			"census": true
 		},
@@ -23634,7 +23682,7 @@
 		},
 		{
 			"name": "hasPopup",
-			"fixture": "qc.pdf.forms",
+			"fixture": "qc.pdf.annotations",
 			"dom": "qc.pdf.annotation-popup",
 			"census": true
 		},
@@ -24321,7 +24369,7 @@
 			"name": "is-fullscreen",
 			"fixture": "qc.window.fullscreen",
 			"synthetic": "qc.window.fullscreen.macos",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "is-grabbing",
@@ -24378,6 +24426,7 @@
 		},
 		{
 			"name": "is-label",
+			"fixture": "mobile.phone.file-menu",
 			"census": true
 		},
 		{
@@ -24402,7 +24451,7 @@
 		{
 			"name": "is-maximized",
 			"fixture": "qc.edit-block-button.hover",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "is-measuring",
@@ -24479,7 +24528,7 @@
 		{
 			"name": "is-scrolled",
 			"fixture": "mobile.phone.menu-disabled",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "is-searching",
@@ -24525,7 +24574,7 @@
 			"name": "is-tablet",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope",
 			"fixture": "mobile.tablet.bases",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "is-text-garbled",
@@ -24917,6 +24966,7 @@
 		},
 		{
 			"name": "menu-item-desc",
+			"fixture": "mobile.phone.file-menu",
 			"census": true
 		},
 		{
@@ -25254,7 +25304,7 @@
 			"name": "mobile-tab",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-footer",
@@ -25265,73 +25315,73 @@
 			"name": "mobile-tab-group-container",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-pin",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-preview",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-preview-embed",
 			"excluded": "tab card preview image: the mobile app renders it from an on-device page screenshot (is-screenshotting runs only in the mobile app)",
 			"dom": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-preview-empty",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-inner-scroll",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-menu-button",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-menu-button-chevron",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-menu-spacer",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-menubar",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-scroll",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-search",
@@ -25342,21 +25392,21 @@
 			"name": "mobile-tab-title",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tap",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.bases-properties",
 			"dom": "mobile.tablet.bases-filter",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.editor-toolbar",
 			"dom": "mobile.phone.link-suggest",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar-floating-options",
@@ -25368,34 +25418,34 @@
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.editor-toolbar",
 			"dom": "mobile.phone.link-suggest",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar-options-container",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.editor-toolbar",
 			"dom": "mobile.phone.link-suggest",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar-options-list",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.editor-toolbar",
 			"dom": "mobile.phone.link-suggest",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar-options-list-container",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.editor-toolbar",
 			"dom": "mobile.phone.link-suggest",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar-spacer",
 			"excluded": "zero-height spacer below the mobile toolbar; it never paints",
 			"dom": "mobile.phone.editor-toolbar",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mod-action",
@@ -25931,8 +25981,7 @@
 		},
 		{
 			"name": "mod-increase",
-			"fixture": "qc.dialog.export-progress",
-			"dom": "qc.startup-snapshot.loading",
+			"dom": "qc.dialog.export-progress",
 			"census": true
 		},
 		{
@@ -26353,7 +26402,7 @@
 			"name": "mod-toolbar-open",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; these touch-gesture and mobile-toolbar states need touch input",
 			"fixture": "mobile.phone.editor-toolbar",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mod-top",
@@ -26764,7 +26813,7 @@
 		},
 		{
 			"name": "norotate",
-			"fixture": "qc.pdf.forms",
+			"fixture": "qc.pdf.annotations",
 			"dom": "qc.pdf.annotation-popup",
 			"census": true
 		},
@@ -26780,7 +26829,7 @@
 		{
 			"name": "notice-container",
 			"fixture": "command.app:toggle-default-new-pane-mode",
-			"dom": "prompt.command-palette",
+			"dom": "qc.dialogs.restore",
 			"census": true
 		},
 		{
@@ -27364,9 +27413,7 @@
 		},
 		{
 			"name": "pushButton",
-			"fixture": "qc.pdf.forms",
-			"dom": "qc.pdf.annotation-popup",
-			"census": true
+			"census": false
 		},
 		{
 			"name": "quadrilateralsContainer",
@@ -27389,9 +27436,7 @@
 		},
 		{
 			"name": "radioButton",
-			"fixture": "qc.pdf.forms",
-			"dom": "qc.pdf.annotation-popup",
-			"census": true
+			"census": false
 		},
 		{
 			"name": "radioLabel",
@@ -27494,8 +27539,9 @@
 		},
 		{
 			"name": "search-empty-state",
-			"fixture": "qc.media.hover-none",
+			"fixture": "qc.rtl-language.window",
 			"dom": "chrome.resize-handle",
+			"synthetic": "qc.rtl-language.window.macos",
 			"census": true
 		},
 		{
@@ -27547,7 +27593,7 @@
 			"name": "search-result",
 			"fixture": "chrome.backlinks-pane",
 			"dom": "chrome.resize-handle",
-			"synthetic": "qc.rtl-language.window.macos",
+			"synthetic": "qc.translucent",
 			"census": true
 		},
 		{
@@ -27605,7 +27651,7 @@
 			"name": "search-result-file-title",
 			"fixture": "chrome.backlinks-pane",
 			"dom": "chrome.resize-handle",
-			"synthetic": "qc.rtl-language.window.macos",
+			"synthetic": "qc.translucent",
 			"census": true
 		},
 		{
@@ -28684,7 +28730,7 @@
 		},
 		{
 			"name": "textAnnotation",
-			"fixture": "qc.pdf.forms",
+			"fixture": "qc.pdf.annotations",
 			"dom": "qc.pdf.annotation-popup",
 			"census": true
 		},
@@ -28696,9 +28742,7 @@
 		},
 		{
 			"name": "textWidgetAnnotation",
-			"fixture": "qc.pdf.forms",
-			"dom": "qc.pdf.annotation-popup",
-			"census": true
+			"census": false
 		},
 		{
 			"name": "theme-dark",
@@ -29283,7 +29327,7 @@
 		{
 			"name": "workspace-drawer-backdrop",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input",
-			"dom": "mobile.phone.left-drawer",
+			"dom": "mobile.phone.file-menu",
 			"census": true
 		},
 		{
@@ -29357,6 +29401,7 @@
 		{
 			"name": "workspace-drawer-navbar-backdrop",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input",
+			"dom": "mobile.phone.file-menu",
 			"census": true
 		},
 		{
@@ -29614,6 +29659,7 @@
 		{
 			"name": "xfaButton",
 			"fixture": "qc.pdf.xfa",
+			"dom": "qc.pdf.xfa-text.focus",
 			"census": true
 		},
 		{
@@ -29625,11 +29671,13 @@
 		{
 			"name": "xfaCaptionForCheckButton",
 			"fixture": "qc.pdf.xfa",
+			"dom": "qc.pdf.xfa-text.focus",
 			"census": true
 		},
 		{
 			"name": "xfaCheckbox",
 			"fixture": "qc.pdf.xfa",
+			"dom": "qc.pdf.xfa-text.focus",
 			"census": true
 		},
 		{
@@ -29701,6 +29749,7 @@
 		{
 			"name": "xfaReadOnly",
 			"fixture": "qc.pdf.xfa",
+			"dom": "qc.pdf.xfa-text.focus",
 			"census": true
 		},
 		{
@@ -29732,6 +29781,7 @@
 		{
 			"name": "xfaSelect",
 			"fixture": "qc.pdf.xfa",
+			"dom": "qc.pdf.xfa-text.focus",
 			"census": true
 		},
 		{
@@ -29852,6 +29902,13 @@
 			},
 			{
 				"ids": [
+					"command.workspaces:open-modal",
+					"command.workspaces:save"
+				],
+				"reason": "identical fixture DOM"
+			},
+			{
+				"ids": [
 					"editor.link.hover",
 					"editor.link.hover-focus"
 				],
@@ -29945,20 +30002,6 @@
 			},
 			{
 				"ids": [
-					"md.callout-help.live",
-					"md.callout-metadata.live"
-				],
-				"reason": "the same target element"
-			},
-			{
-				"ids": [
-					"md.callout-unknown-type.live",
-					"md.callout-unknown-type.reading"
-				],
-				"reason": "the same target element"
-			},
-			{
-				"ids": [
 					"md.code-yaml.live",
 					"md.code-yaml.source"
 				],
@@ -30036,8 +30079,8 @@
 			},
 			{
 				"ids": [
-					"md.highlight-red.live",
-					"md.highlight-red.reading"
+					"md.highlight-yellow.live",
+					"md.highlight-yellow.reading"
 				],
 				"reason": "the same element in another editor mode"
 			},
@@ -30100,13 +30143,6 @@
 			},
 			{
 				"ids": [
-					"md.mermaid-pie.live",
-					"md.mermaid-pie.reading"
-				],
-				"reason": "the same target element"
-			},
-			{
-				"ids": [
 					"md.mermaid-sequence.live",
 					"md.mermaid-sequence.reading"
 				],
@@ -30128,6 +30164,13 @@
 			},
 			{
 				"ids": [
+					"md.property-created.live",
+					"md.property-created.reading"
+				],
+				"reason": "the same target element"
+			},
+			{
+				"ids": [
 					"md.property-cssclasses.live",
 					"md.property-cssclasses.reading"
 				],
@@ -30137,6 +30180,13 @@
 				"ids": [
 					"md.property-description.live",
 					"md.property-description.reading"
+				],
+				"reason": "the same target element"
+			},
+			{
+				"ids": [
+					"md.property-due.live",
+					"md.property-due.reading"
 				],
 				"reason": "the same target element"
 			},
@@ -30165,13 +30215,6 @@
 				"ids": [
 					"md.property-list.live",
 					"md.property-list.reading"
-				],
-				"reason": "the same target element"
-			},
-			{
-				"ids": [
-					"md.property-not-done.live",
-					"md.property-not-done.reading"
 				],
 				"reason": "the same target element"
 			},
@@ -30209,6 +30252,13 @@
 					"md.tab-character.source"
 				],
 				"reason": "the same target element"
+			},
+			{
+				"ids": [
+					"mobile.phone.menu",
+					"mobile.phone.menu-backdrop"
+				],
+				"reason": "identical fixture DOM"
 			},
 			{
 				"ids": [
@@ -30274,6 +30324,7 @@
 	"appClassBuckets": {
 		"notThemeAffected": [
 			"active",
+			"annotationContent",
 			"annotationTextContent",
 			"bases-filter-query-message",
 			"bases-kanban-card-drop-placeholder",
@@ -30283,12 +30334,15 @@
 			"bottom",
 			"boundingRect",
 			"button-container",
+			"buttonWidgetAnnotation",
 			"canvas-card-menu-divider",
 			"canvas-cursor",
 			"canvas-mover",
 			"canvas-watermark",
 			"card-title",
 			"check-small",
+			"checkBox",
+			"choiceWidgetAnnotation",
 			"cm-animate-fat-cursor",
 			"cm-completionDetail",
 			"cm-fat-cursor-mark",
@@ -30374,7 +30428,6 @@
 			"logo-wireframe",
 			"lucide-uppercase-lowercase-a",
 			"markdown-preview-pusher",
-			"menu-item-desc",
 			"menu-title",
 			"menu-title-inner",
 			"metadata-error-cta",
@@ -30396,6 +30449,7 @@
 			"mod-hover-label",
 			"mod-image-lightbox",
 			"mod-image-selected",
+			"mod-increase",
 			"mod-info",
 			"mod-inside-iframe",
 			"mod-leaf",
@@ -30443,8 +30497,10 @@
 			"popupTriggerArea",
 			"progress-bar-button-container",
 			"progress-bar-context-button",
+			"pushButton",
 			"quadrilateralsContainer",
 			"quick-start-container",
+			"radioButton",
 			"richText",
 			"search-result-hover-button",
 			"selecting",
@@ -30486,6 +30542,7 @@
 			"table-row-btn",
 			"table-row-drag-handle",
 			"tag-pane-tag-parent",
+			"textWidgetAnnotation",
 			"thumbnailImage",
 			"top",
 			"upload-progress-container",
@@ -30514,6 +30571,7 @@
 		"outOfScope": [
 			"card",
 			"cm-completionInfo",
+			"cm-dropCursor",
 			"cm-hmd-orgmode-markup",
 			"cm-invalidchar",
 			"cm-positive",
@@ -30521,7 +30579,6 @@
 			"cm-selectionLayer",
 			"form-field-error",
 			"frontmatter",
-			"is-label",
 			"list-heading",
 			"mod-back",
 			"mod-completed",
@@ -30539,9 +30596,7 @@
 			"setting-progress-bar",
 			"style"
 		],
-		"missing": [
-			"cm-dropCursor"
-		]
+		"missing": []
 	},
 	"themeScripted": [
 		".modal .dropdown option:hover",
@@ -30600,6 +30655,7 @@
 			"canvas.node-color-5": 1,
 			"canvas.node-color-6": 1,
 			"canvas.node-color-custom": 1,
+			"canvas.node-editing": 1,
 			"canvas.node-file": 1,
 			"canvas.node-missing-file": 1,
 			"canvas.node-selected": 1,
@@ -30626,7 +30682,7 @@
 			"chrome.ribbon-icon.hover": 1,
 			"chrome.right-split": 1,
 			"chrome.root-split": 1,
-			"chrome.scrollbar": 0.989,
+			"chrome.scrollbar": 1,
 			"chrome.sidebar-tab.active": 1,
 			"chrome.sidebar-tab.active.hover": 1,
 			"chrome.sidebar-tab.hover": 1,
@@ -30668,10 +30724,10 @@
 			"command.bases:copy-table": 1,
 			"command.bases:new-file": 1,
 			"command.bookmarks:bookmark-all-tabs": 1,
-			"command.bookmarks:bookmark-current-heading": 0.999,
+			"command.bookmarks:bookmark-current-heading": 1,
 			"command.bookmarks:bookmark-current-search": 1,
-			"command.bookmarks:bookmark-current-section": 0.999,
-			"command.bookmarks:bookmark-current-view": 0.999,
+			"command.bookmarks:bookmark-current-section": 1,
+			"command.bookmarks:bookmark-current-view": 1,
 			"command.canvas:export-as-image": 1,
 			"command.canvas:jump-to-group": 1,
 			"command.canvas:new-file": 1,
@@ -30704,9 +30760,9 @@
 			"command.workspace:copy-path": 1,
 			"command.workspace:copy-url": 1,
 			"command.workspace:export-pdf": 1,
-			"command.workspace:move-to-new-window": 0.997,
+			"command.workspace:move-to-new-window": 1,
 			"command.workspace:new-window": 1,
-			"command.workspace:open-in-new-window": 0.998,
+			"command.workspace:open-in-new-window": 1,
 			"command.workspaces:load": 1,
 			"command.workspaces:open-modal": 1,
 			"command.workspaces:save": 1,
@@ -30741,10 +30797,14 @@
 			"extra.community.debug-list": 1,
 			"extra.community.enabled": 1,
 			"extra.community.item.hover": 1,
+			"extra.community.plugin-browser": 1,
+			"extra.community.plugin-details": 1,
 			"extra.community.restricted": 1,
+			"extra.community.theme-browser": 1,
 			"extra.community.theme-browser-offline": 1,
 			"extra.external-link.visited": 1,
 			"extra.file-recovery.modal": 1,
+			"extra.graph-color-group": 1,
 			"extra.hashtag-begin.hover": 1,
 			"extra.hashtag-begin.hover-line": 1,
 			"extra.image-lightbox": 1,
@@ -30789,6 +30849,8 @@
 			"extra.textarea.focus-within": 1,
 			"extra.vim-command-panel": 1,
 			"extra.vim-mode": 1,
+			"graph.controls": 1,
+			"graph.controls-section.hover": 1,
 			"graph.local": 1,
 			"graph.view": 1,
 			"inwindow.extra.select-option.checked.hover": 1,
@@ -31388,7 +31450,7 @@
 			"mobile.phone.confirm-modal": 1,
 			"mobile.phone.drawer-tab-list": 1,
 			"mobile.phone.editor-toolbar": 1,
-			"mobile.phone.file-menu": 0.841,
+			"mobile.phone.file-menu": 1,
 			"mobile.phone.left-drawer": 1,
 			"mobile.phone.link-suggest": 1,
 			"mobile.phone.menu": 1,
@@ -31500,9 +31562,10 @@
 			"qc.bases.filter-group": 1,
 			"qc.bases.formula-editor": 1,
 			"qc.bases.formula-error": 1,
+			"qc.bases.group-menu": 1,
 			"qc.bases.grouped-summary": 1,
 			"qc.bases.list-view": 1,
-			"qc.bases.matching-bracket": 0.995,
+			"qc.bases.matching-bracket": 1,
 			"qc.bases.new-item": 1,
 			"qc.bases.properties-page": 1,
 			"qc.bases.results-page": 1,
@@ -31512,10 +31575,9 @@
 			"qc.canvas.connecting": 1,
 			"qc.canvas.connection-point": 1,
 			"qc.canvas.interaction-layer": 1,
-			"qc.canvas.node-placeholder": 1,
 			"qc.canvas.resizer": 1,
 			"qc.canvas.selection-box": 1,
-			"qc.canvas.snaps": 0.977,
+			"qc.canvas.snaps": 1,
 			"qc.canvas.zoomed-out": 1,
 			"qc.combo.external-code-link.focus": 1,
 			"qc.combo.external-code-link.hover": 1,
@@ -31530,17 +31592,17 @@
 			"qc.combo.unresolved-code-link.hover": 1,
 			"qc.copy-code-button.hover": 1,
 			"qc.dialog.encryption-unavailable": 1,
-			"qc.dialog.export-progress": 0.991,
+			"qc.dialog.export-progress": 1,
 			"qc.dialog.rename": 1,
 			"qc.dialog.startup-time": 1,
 			"qc.dialog.unlinked-attachments": 1,
 			"qc.dialog.unlinked-attachments.gallery": 1,
-			"qc.dialogs.restore": 0.999,
+			"qc.dialogs.restore": 1,
 			"qc.drag.done": 1,
 			"qc.drag.dragged-item": 1,
 			"qc.drag.drop-overlay": 1,
 			"qc.drag.ghost": 1,
-			"qc.drag.kanban-column": 0.974,
+			"qc.drag.kanban-column": 1,
 			"qc.drag.kanban-ghost": 1,
 			"qc.drag.over-folder": 1,
 			"qc.drag.tab-sidebar-edge": 1,
@@ -31570,6 +31632,7 @@
 			"qc.gap.find-no-match": 1,
 			"qc.gap.formula-status": 1,
 			"qc.gap.generic-file-embed": 1,
+			"qc.gap.graph-controls-closed": 1,
 			"qc.gap.hotkey-conflict-badge": 1,
 			"qc.gap.js-property-access": 1,
 			"qc.gap.kanban-card-cover": 1,
@@ -31608,16 +31671,16 @@
 			"qc.migration.modal": 1,
 			"qc.migration.results": 1,
 			"qc.pdf.annotation-popup": 1,
+			"qc.pdf.annotations": 1,
 			"qc.pdf.find-settings": 1,
-			"qc.pdf.forms": 1,
 			"qc.pdf.horizontal": 1,
 			"qc.pdf.password": 1,
 			"qc.pdf.spread": 1,
-			"qc.pdf.text-field.focus": 1,
 			"qc.pdf.themed": 1,
 			"qc.pdf.wrapped": 1,
 			"qc.pdf.xfa": 1,
-			"qc.pdf.xfa-text.focus": 0.989,
+			"qc.pdf.xfa-text.focus": 1,
+			"qc.print.export-window": 1,
 			"qc.rtl": 1,
 			"qc.rtl-language.restore": 1,
 			"qc.rtl-language.window": 1,
@@ -31628,10 +31691,11 @@
 			"qc.selection.layer": 1,
 			"qc.settings-in-window.restore": 1,
 			"qc.spellcheck.dictionary": 1,
+			"qc.startup-snapshot.loading": 1,
 			"qc.tab.linked": 1,
 			"qc.tab.pinned": 1,
 			"qc.tab.pinned-header": 1,
-			"qc.translucent": 0.996,
+			"qc.translucent": 1,
 			"qc.translucent-off": 1,
 			"qc.window.fullscreen": 1,
 			"qc.window.maximized": 1,
@@ -31726,27 +31790,19 @@
 			"view.window-unfocused": 1
 		},
 		"limits": {
-			"canvas.node-editing": "nothing to compare: the target is all images, media or iframes",
-			"canvas.node-image": "nothing to compare: the target is all images, media or iframes",
-			"canvas.node-link": "nothing to compare: the target is all images, media or iframes",
-			"extra.community.plugin-browser": "trimmed fixture: the live screenshot shows the untrimmed list",
-			"extra.community.plugin-details": "trimmed fixture: the live screenshot shows the untrimmed list",
-			"extra.community.theme-browser": "trimmed fixture: the live screenshot shows the untrimmed list",
-			"extra.graph-color-group": "nothing to compare: the target is all images, media or iframes",
-			"graph.controls": "nothing to compare: the target is all images, media or iframes",
-			"graph.controls-section.hover": "nothing to compare: the target is all images, media or iframes",
-			"md.embed-audio.live": "nothing to compare: the target is all images, media or iframes",
-			"md.embed-audio.reading": "nothing to compare: the target is all images, media or iframes",
-			"md.embed-image-markdown.live": "nothing to compare: the target is all images, media or iframes",
-			"md.embed-image-markdown.reading": "nothing to compare: the target is all images, media or iframes",
-			"md.embed-image-resized.live": "nothing to compare: the target is all images, media or iframes",
-			"md.embed-image-resized.reading": "nothing to compare: the target is all images, media or iframes",
-			"md.embed-image.live": "nothing to compare: the target is all images, media or iframes",
-			"md.embed-image.reading": "nothing to compare: the target is all images, media or iframes",
-			"md.html-iframe.reading": "nothing to compare: the target is all images, media or iframes",
-			"qc.bases.group-menu": "nothing to compare: the target is all images, media or iframes",
-			"qc.gap.graph-controls-closed": "nothing to compare: the target is all images, media or iframes",
-			"qc.startup-snapshot.loading": "nothing to compare: the target is all images, media or iframes"
+			"canvas.node-image": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"canvas.node-link": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"md.embed-audio.live": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"md.embed-audio.reading": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"md.embed-image-markdown.live": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"md.embed-image-markdown.reading": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"md.embed-image-resized.live": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"md.embed-image-resized.reading": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"md.embed-image.live": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"md.embed-image.reading": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"md.html-iframe.reading": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"qc.canvas.node-placeholder": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
+			"qc.media.forced-colors": "forced colors: the system palette differs between Electron's Chromium and the replay's, so only block colors are judged"
 		}
 	}
 }

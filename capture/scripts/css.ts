@@ -179,6 +179,15 @@ if (import.meta.main) {
 			throw new Error(`liveSelector(${input}) = ${JSON.stringify(got)}`);
 	}
 	if (keyClassesOf(".a .b.c:hover").join() !== "c,b") throw new Error("keyClassesOf");
+	const thumb = replayCss(
+		"b ::-webkit-scrollbar-thumb:hover,b ::-webkit-scrollbar-thumb:active{color:red}",
+		false,
+	);
+	if (
+		thumb !==
+		'b [data-capture-state~="scrollbar-hover"]::-webkit-scrollbar-thumb,b [data-capture-state~="scrollbar-active"]::-webkit-scrollbar-thumb{color:red}'
+	)
+		throw new Error(`replayCss(scrollbar thumb states) = ${thumb}`);
 	console.log("css.ts self-check passed");
 }
 
@@ -249,6 +258,17 @@ export function replayCss(css: string, touch: boolean): string {
 	const root = postcss.parse(css);
 	const STATE = /(?<!:):(hover|active|focus-visible|focus-within|focus|visited)(?![\w-])/g;
 	root.walkRules((r: Rule) => {
+		// A hovered scrollbar thumb: the capture marks the scrolling element (scrollbar-hover); a
+		// state after the pseudo-element would make the selector invalid.
+		// Other states on a scrollbar part (thumb :active) have no mark: moved before the pseudo-
+		// element they stay valid (one invalid selector would drop the whole rule) and never match.
+		if (/::-webkit-scrollbar[\w-]*:(hover|active|focus)/.test(r.selector))
+			r.selectors = r.selectors.map((one) =>
+				one.replace(
+					/(::-webkit-scrollbar[\w-]*):(hover|active|focus)/g,
+					(_m, part: string, st: string) => `[data-capture-state~="scrollbar-${st}"]${part}`,
+				),
+			);
 		if (!STATE.test(r.selector)) return;
 		STATE.lastIndex = 0;
 		r.selector = r.selector.replace(STATE, (_m, p: string) =>

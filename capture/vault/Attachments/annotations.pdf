@@ -1,0 +1,64 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Length 128 >>
+stream
+BT /F1 18 Tf 40 780 Td (Annotation sample) Tj ET
+BT /F1 11 Tf 40 700 Td (Highlighted words for the highlight annotation.) Tj ET
+endstream
+endobj
+3 0 obj
+<< /Type /Annot /Subtype /Text /Rect [320 640 340 660] /Contents (A sticky note) /T (Capture) /Open false /Name /Comment >>
+endobj
+4 0 obj
+<< /Type /Annot /Subtype /FreeText /Rect [320 560 560 600] /Contents (Free text annotation) /DA (/F1 12 Tf 0 0 1 rg) >>
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [40 695 300 715] /QuadPoints [40 715 300 715 40 695 300 695] /C [1 1 0] /Contents (Highlight comment) /T (Capture) >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Link /Rect [40 460 200 480] /Border [0 0 0] /A << /S /URI /URI (https://obsidian.md) >> >>
+endobj
+7 0 obj
+<< /Type /EmbeddedFile /Length 22 >>
+stream
+attached file contents
+endstream
+endobj
+8 0 obj
+<< /Type /Filespec /F (note.txt) /UF (note.txt) /EF << /F 7 0 R >> >>
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /FileAttachment /Rect [320 460 340 480] /FS 8 0 R /Contents (Attached file) /Name /PushPin >>
+endobj
+10 0 obj
+<< /Type /Page /Parent 11 0 R /MediaBox [0 0 595 842] /Contents 2 0 R /Resources << /Font << /F1 1 0 R >> >> /Annots [3 0 R 4 0 R 5 0 R 6 0 R 9 0 R] >>
+endobj
+11 0 obj
+<< /Type /Pages /Kids [10 0 R] /Count 1 >>
+endobj
+12 0 obj
+<< /Type /Catalog /Pages 11 0 R >>
+endobj
+xref
+0 13
+0000000000 65535 f 
+0000000009 00000 n 
+0000000079 00000 n 
+0000000257 00000 n 
+0000000396 00000 n 
+0000000531 00000 n 
+0000000706 00000 n 
+0000000838 00000 n 
+0000000930 00000 n 
+0000001015 00000 n 
+0000001149 00000 n 
+0000001317 00000 n 
+0000001376 00000 n 
+trailer
+<< /Size 13 /Root 12 0 R >>
+startxref
+1427
+%%EOF
