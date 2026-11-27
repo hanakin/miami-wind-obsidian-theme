@@ -5,6 +5,8 @@ import type { PixelRect } from "./pixels";
 // One intentional decision, pinned in accepted.test.ts. Match it in the DOM,
 // not by fixture name or by inferring selectors from computed-style keys.
 export const acceptanceRule = entries[0];
+// The CSSOM serializes the rule's transparent inline background in this form.
+const transparentColor = "rgba(0, 0, 0, 0)";
 export interface AcceptanceMatch {
 	element: string;
 	rect: PixelRect;
@@ -14,7 +16,12 @@ export interface AcceptanceMatch {
 export function acceptanceScope(
 	captures: readonly (readonly AcceptanceMatch[])[],
 ) {
-	if (captures.length !== 4) return { elements: [], rects: [] };
+	if (captures.length !== 4)
+		return {
+			elements: [],
+			rects: [],
+			beforeColors: {} as Record<string, string>,
+		};
 	const elements = (captures[0] ?? [])
 		.map((match) => match.element)
 		.filter((element) =>
@@ -25,12 +32,17 @@ export function acceptanceScope(
 						// Both after captures must actually show the inline colors, even if one color did not change.
 						(index < 2 ||
 							(match.color === acceptanceRule.inlineStyles.color &&
-								match.backgroundColor === "rgba(0, 0, 0, 0)")),
+								match.backgroundColor === transparentColor)),
 				),
 			),
 		);
 	return {
 		elements,
+		beforeColors: Object.fromEntries(
+			(captures[0] ?? [])
+				.filter((match) => elements.includes(match.element))
+				.map((match) => [match.element, match.color]),
+		),
 		rects: captures.flatMap((capture) =>
 			capture
 				.filter((match) => elements.includes(match.element))
@@ -62,9 +74,11 @@ export function acceptedOutcome(
 				// Only pseudo borders follow currentColor here; the select's own border is not an inline color decision.
 				(!difference.property.startsWith("border-") || !!pseudo) &&
 				(difference.property !== "background-color" || !pseudo) &&
+				(["color", "background-color"].includes(difference.property) ||
+					difference.before === evidence.scope.beforeColors[element!]) &&
 				difference.after ===
 					(difference.property === "background-color"
-						? "rgba(0, 0, 0, 0)"
+						? transparentColor
 						: acceptanceRule.inlineStyles.color)
 			);
 		});

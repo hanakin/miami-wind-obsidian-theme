@@ -7,12 +7,6 @@ Run `bun run capture:extract-runtime-css`.
 Run `bun run compare`.
 
 The default command builds the after theme first. It compares `b478dc8:theme.css` with the built root `theme.css`.
-Run `bun run compare:formatting` to compare the same sources before and after the formatter.
-This command saves the pre-format build as `workbench/out/before-format.css`, then builds the formatted `theme.css`.
-It runs the full fixture set by default. It accepts the same fixture filters.
-Use this command for formatting parity after merging port branches into a preview worktree.
-The default `bun run compare` baseline remains 1.x.
-
 Use `--before path` to select a baseline file.
 Use `--after path` to select an after file without building.
 
@@ -44,7 +38,8 @@ Exit codes:
 
 Outputs are local and gitignored. Each run removes old reports and diff images before validation.
 
-- `workbench/out/compare.json`: metadata, summary, fixture results, and coverage limits.
+- `workbench/out/compare.json`: metadata, summary, fixture results, and coverage limits. `generated` is the run start time in ISO format. `themes.before` and `themes.after` each contain the exact compared text’s SHA-256 hash, its source label, and its snapshot file path relative to `workbench/out/`.
+- `workbench/out/themes/{before,after}.css`: copies of the exact compared theme texts. The viewer uses these files even if the source files change later.
 - `workbench/out/compare.md`: summary, not-proven reasons, and top element/property changes.
 - `workbench/out/diffs/`: before, after, diff, and sanity evidence images. JSON image paths are relative to `workbench/out/`.
 - `workbench/out/component-diffs.json`: `{ [component]: { [surface]: { same, props } } }`.
@@ -59,7 +54,7 @@ The shared component look uses each property's most common after-theme value wit
 
 DOM replay cannot reconstruct canvas content, media playback, native media controls, populated iframe contents, missing external images, or Obsidian runtime behavior. Fixtures with those elements receive not-proven reasons. CodeMirror spacer images and images without a source do not represent missing assets. Loaded images are rebuilt. Source-less empty iframes are empty, including graph resize sensors. The controlled Canvas editor iframe remains not-proven because Obsidian injects its editor document through JavaScript. Hidden or offscreen targets also receive not-proven reasons. Their computed styles remain compared.
 
-Fonts are local host fonts. Platform variants do not prove native macOS or Windows appearance. A zero-difference result does not prove live-app parity when the report lists not-proven fixtures.
+MathJax WOFF2 fonts are embedded from the matching local Obsidian archive at runtime. The archive must match the extracted app CSS version. No font binaries are committed. Every capture waits for font loading. Failed MathJax faces or missing per-glyph sizing rules create explicit not-proven reasons. The captured runtime stylesheet must retain the glyph rules needed by the fixture. Other fonts use local host fallbacks. Platform variants do not prove native macOS or Windows appearance. A zero-difference result does not prove live-app parity when the report lists not-proven fixtures.
 
 Fixtures can provide `imageSizes: [{ index, width, height }]`. The index uses zero-based `document.images` order from the serialized fixture HTML, including CodeMirror spacers. Width and height are positive intrinsic `naturalWidth` and `naturalHeight` pixels. Missing images with this metadata receive a plain SVG placeholder at those intrinsic dimensions. The original image classes and CSS sizing remain active. These placeholders prove layout, not image pixels, and do not create a not-proven reason. Loaded images retain their actual pixels.
 
@@ -67,6 +62,10 @@ If `/tmp` is full, set `TMPDIR` to a directory under `~/Work` before running che
 
 Diff images use red for stable changes and orange for unstable pixels. All unstable pixels remain visible in the evidence. Noisy fixtures also save all four screenshots for inspection.
 
-The accepted-difference list is `workbench/compare/accepted-differences.json`. It contains one intentional PDF form-dropdown decision. The DOM must match its select selector and inline black/transparent style guard in all four captures. Both after captures must resolve the select to black text and a transparent background. The pinned property list allows only those colors and their currentColor consequences. Border-color changes are allowed only on the select’s own pseudos. Typography, geometry, stacking, visibility, and other properties remain differences. A fixture becomes `accepted` only when every computed-style difference belongs to that select or its own pseudo-elements and every stable changed pixel intersects the union of its measured before/after rectangles. A sibling or descendant style difference, stable pixel change outside those rectangles, repeat noise, or a pixel-only result prevents acceptance. This attribution never masks pixels or changes the measured counts or evidence. `acceptanceScope` records matched element keys and rectangles. `pixelsOutsideAcceptance` records stable changes outside them.
+The accepted-difference list is `workbench/compare/accepted-differences.json`. It contains one intentional PDF form-dropdown decision. The DOM must match its select selector and inline black/transparent style guard in all four captures. Both after captures must resolve the select to black text and a transparent background. The pinned property list allows only those colors and their currentColor consequences. Each currentColor consequence must start at the select’s before text color. Border-color changes are allowed only on the select’s own pseudos. Typography, geometry, stacking, visibility, and other properties remain differences. A fixture becomes `accepted` only when every computed-style difference belongs to that select or its own pseudo-elements and every stable changed pixel intersects the union of its measured before/after rectangles. A sibling or descendant style difference, stable pixel change outside those rectangles, repeat noise, or a pixel-only result prevents acceptance. This attribution never masks pixels or changes the measured counts or evidence. `acceptanceScope` records matched element keys, rectangles, and `beforeColors` by element key. `pixelsOutsideAcceptance` records stable changes outside them.
 
 Matching and not-proven observations retain their measured status. Accepted results retain `same: false`, `comparisonStatus: different`, all measurements, coverage reasons, and evidence images. `acceptanceReason` records the decision. The top-level `accepted` list contains `{ id, reason }` records for accepted fixtures. `summary.accepted` counts them. Unaccepted differences fail with exit 1. Not-proven results, including accepted results with coverage limits, fail with exit 2 and give the report not-proven status when no unaccepted differences remain. The JSON keeps schema version 1. CodeMirror `.cm-tooltip` uses belong to the shared `tooltip` component.
+
+Run `bun run compare:formatting` to compare the same sources before and after formatting.
+The baseline is saved as `workbench/out/before-format.css`.
+The default `bun run compare` still uses 1.x.
