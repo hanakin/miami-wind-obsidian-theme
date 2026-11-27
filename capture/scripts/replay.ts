@@ -132,6 +132,22 @@ export async function replayFixture(
 				"input[data-capture-indeterminate]",
 			))
 				e.indeterminate = true;
+			// Absolutely placed ancestors of the target take their recorded live size when the replay
+			// differs (a PDF viewer sized by state the markup does not hold). The surroundings, not
+			// the target, so the target is still judged.
+			{
+				const tgt = document.querySelector("[data-capture-target]");
+				for (let a = tgt?.parentElement ?? null; a && a !== document.body; a = a.parentElement) {
+					const want = a.getAttribute("data-capture-box")?.split(" ").map(Number);
+					if (!want || !/^(absolute|fixed)$/.test(getComputedStyle(a).position)) continue;
+					const r = a.getBoundingClientRect();
+					if (Math.abs(r.width - (want[2] ?? 0)) > 1 || Math.abs(r.height - (want[3] ?? 0)) > 1) {
+						(a as HTMLElement).style.setProperty("box-sizing", "border-box", "important");
+						(a as HTMLElement).style.setProperty("width", `${want[2]}px`, "important");
+						(a as HTMLElement).style.setProperty("height", `${want[3]}px`, "important");
+					}
+				}
+			}
 			// The recorded native text selection.
 			const end = (name: string): [Node, number] | null => {
 				const e = document.querySelector(`[data-capture-sel-${name}]`);

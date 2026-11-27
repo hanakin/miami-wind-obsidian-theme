@@ -665,6 +665,9 @@ export const INPAGE = String.raw`
 		}
 		for (const [an, ox, oy] of anims) {
 			if (!/running|paused/.test(an.playState)) continue;
+			// Near-instant ones are hooks, not motion (Obsidian's node-insert-event detects insertion).
+			const tm = an.effect?.getComputedTiming?.();
+			if (tm && Number.isFinite(tm.endTime) && tm.endTime < 50) continue;
 			let e = an.effect?.target;
 			if (!e?.getBoundingClientRect) continue;
 			// A part sliding inside a clipped track (an indeterminate progress bar): the whole track.

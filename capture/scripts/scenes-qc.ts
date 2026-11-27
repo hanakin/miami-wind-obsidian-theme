@@ -782,8 +782,9 @@ const pdfQc: Scene = {
 			target: leaf(".pdfViewer .spread"),
 			before: async (ctx) => {
 				await ctx.page.keyboard.press("Escape");
+				// Escape closes the find bar; the viewer slides back (a 275 ms transition) before the shot.
 				await ctx.js(
-					"const v = app.workspace.getMostRecentLeaf(app.workspace.rootSplit).view; const pv = v.viewer?.child?.pdfViewer?.pdfViewer; pv.spreadMode = 1; await sleep(800);",
+					"const v = app.workspace.getMostRecentLeaf(app.workspace.rootSplit).view; const pv = v.viewer?.child?.pdfViewer?.pdfViewer; pv.spreadMode = 1; await sleep(1500);",
 				);
 			},
 		},
@@ -869,9 +870,23 @@ const pdfQc: Scene = {
 			before: async (ctx) => {
 				await ctx.open("Attachments/annotations.pdf", "live");
 				await ctx.sleep(2000);
-				const b = await center(ctx, leaf(".annotationLayer .textAnnotation"));
-				await ctx.page.mouse.click(b[0], b[1]);
-				await ctx.sleep(600);
+				// The annotation layer may still be redrawing after the file opens: click until the
+				// popup shows.
+				await ctx.page.keyboard.press("Escape");
+				for (let i = 0; i < 4; i++) {
+					await ctx.js(
+						"cap.ROOTS.leaf().querySelector('.annotationLayer .textAnnotation')?.scrollIntoView({ block: 'center' }); await sleep(400);",
+					);
+					const b = await center(ctx, leaf(".annotationLayer .textAnnotation"));
+					await ctx.page.mouse.click(b[0], b[1]);
+					await ctx.sleep(700);
+					if (
+						await ctx.js<boolean>(
+							"return !!cap.ROOTS.leaf().querySelector('.annotationLayer .popupWrapper:not([hidden])');",
+						)
+					)
+						break;
+				}
 			},
 			note: "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup (a PDF without form fields).",
 		},
