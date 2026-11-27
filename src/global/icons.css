@@ -60,3 +60,21 @@
 .mod-community-modal button.clickable-icon[aria-disabled='true'] {
 	color: var(--text-disabled);
 }
+
+/* Bases toolbar actions and filter-row controls in normal and hover states. */
+
+/* Shared component adjustments: action-button.
+ * Local --mw-* variables below set this section’s colors and backgrounds. */
+
+.bases-toolbar-item .text-icon-button,
+.bases-toolbar-section-content .text-icon-button {
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--cyan-transparent);
+	@mixin action-button;
+}
+
+.bases-toolbar-item .text-icon-button:hover,
+.bases-toolbar-section-content .text-icon-button:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--magenta);
+}

@@ -15,28 +15,28 @@
  * 1. settings: palette..................src/settings/palette.css
  * 2. settings: tokens...................src/settings/tokens.css
  * 3. global application: inputs.........src/global/inputs.css
- * 4. global application: multi select...src/global/multi-select.css
- * 5. global application: ribbon.........src/global/ribbon.css
- * 6. global application: sidebars.......src/global/sidebars.css
- * 7. global application: tabs...........src/global/tabs.css
- * 8. global application: suggestions....src/global/suggestions.css
- * 9. global application: status bar.....src/global/status-bar.css
- * 10. global application: modals........src/global/modals.css
- * 11. global application: dropdowns.....src/global/dropdowns.css
- * 12. global application: prompts.......src/global/prompts.css
- * 13. global application: search........src/global/search.css
- * 14. global application: menus.........src/global/menus.css
- * 15. global application: overrides.....src/global/overrides.css
- * 16. global application: icons.........src/global/icons.css
- * 17. markdown: headings................src/markdown/headings.css
- * 18. markdown: code....................src/markdown/code.css
- * 19. markdown: code actions............src/markdown/code-actions.css
- * 20. markdown: inline marks............src/markdown/inline-marks.css
- * 21. markdown: selection...............src/markdown/selection.css
- * 22. markdown: links...................src/markdown/links.css
- * 23. markdown: blockquotes.............src/markdown/blockquotes.css
- * 24. markdown: tasks...................src/markdown/tasks.css
- * 25. markdown: task inputs.............src/markdown/task-inputs.css
+ * 4. global application: task inputs....src/global/task-inputs.css
+ * 5. global application: multi select...src/global/multi-select.css
+ * 6. global application: ribbon.........src/global/ribbon.css
+ * 7. global application: sidebars.......src/global/sidebars.css
+ * 8. global application: tabs...........src/global/tabs.css
+ * 9. global application: suggestions....src/global/suggestions.css
+ * 10. global application: status bar....src/global/status-bar.css
+ * 11. global application: modals........src/global/modals.css
+ * 12. global application: dropdowns.....src/global/dropdowns.css
+ * 13. global application: prompts.......src/global/prompts.css
+ * 14. global application: search........src/global/search.css
+ * 15. global application: menus.........src/global/menus.css
+ * 16. global application: overrides.....src/global/overrides.css
+ * 17. global application: icons.........src/global/icons.css
+ * 18. markdown: headings................src/markdown/headings.css
+ * 19. markdown: code....................src/markdown/code.css
+ * 20. markdown: code actions............src/markdown/code-actions.css
+ * 21. markdown: inline marks............src/markdown/inline-marks.css
+ * 22. markdown: selection...............src/markdown/selection.css
+ * 23. markdown: links...................src/markdown/links.css
+ * 24. markdown: blockquotes.............src/markdown/blockquotes.css
+ * 25. markdown: tasks...................src/markdown/tasks.css
  * 26. markdown: tables..................src/markdown/tables.css
  * 27. markdown: callouts................src/markdown/callouts.css
  * 28. markdown: tags....................src/markdown/tags.css
@@ -45,10 +45,9 @@
  * 31. app section: canvas...............src/sections/canvas.css
  * 32. app section: properties...........src/sections/properties.css
  * 33. app section: file explorer........src/sections/file-explorer.css
- * 34. app section: bases................src/sections/bases.css
- * 35. graph: graph......................src/sections/graph.css
- * 36. PDF: pdf..........................src/sections/pdf.css
- * 37. PDF: pdf xfa......................src/sections/pdf-xfa.css
+ * 34. graph: graph......................src/sections/graph.css
+ * 35. PDF: pdf..........................src/sections/pdf.css
+ * 36. PDF: pdf xfa......................src/sections/pdf-xfa.css
  */
 
 
@@ -578,6 +577,78 @@ input[type] {
  */
 .is-phone .prompt-input[type='text'] {
 	border-color: var(--mw-input-border);
+}
+
+/*
+ * Shared inputs in the XFA layer.
+ *
+ * XFA’s layer reset also clears checkbox fills; its inputs have no inline fill
+ * literals.
+ */
+.xfaLayer input {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}
+
+
+/* -----------------------------------------------------------------------------
+ * @global application: Task Inputs
+ * -----------------------------------------------------------------------------
+ * @source: src/global/task-inputs.css
+ * @description:
+ *
+ * Task checkbox fills, borders and marker colors for each task state.
+ *
+ * -------------------------------------------------------------------------- */
+
+/*
+ * Task checkbox fills, borders and marker colors for each task state.
+ */
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] input {
+	background-color: var(--red);
+	border-color: var(--red);
+	color: var(--black);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] input {
+	background-color: var(--black);
+	border-color: var(--magenta);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] input {
+	background-color: var(--black);
+	border-color: var(--orange);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] input {
+	background-color: var(--black);
+	border-color: var(--blue);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] input {
+	background-color: var(--green);
+	border-color: var(--green);
+	color: var(--black);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] input {
+	background-color: var(--black);
+	border-color: var(--cyan);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] input {
+	background-color: var(--black);
+	border-color: var(--yellow);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] input {
+	background-color: var(--black);
+	border-color: var(--grey-3);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] input {
+	background-color: var(--black);
+	border-color: var(--purple);
 }
 
 
@@ -1334,6 +1405,27 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 	color: var(--text-disabled);
 }
 
+/*
+ * Bases toolbar actions and filter-row controls in normal and hover states.
+ *
+ * Shared component adjustments: action-button. Local --mw-* variables below set
+ * this section’s colors and backgrounds.
+ */
+.bases-toolbar-item .text-icon-button,
+.bases-toolbar-section-content .text-icon-button {
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--cyan-transparent);
+	background-color: var(--mw-action-background);
+	color: var(--mw-action-color);
+	cursor: pointer;
+}
+
+.bases-toolbar-item .text-icon-button:hover,
+.bases-toolbar-section-content .text-icon-button:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--magenta);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @markdown: Headings
@@ -1763,67 +1855,6 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 
 
 /* -----------------------------------------------------------------------------
- * @markdown: Task Inputs
- * -----------------------------------------------------------------------------
- * @source: src/markdown/task-inputs.css
- * @description:
- *
- * Task checkbox fills, borders and marker colors for each task state.
- *
- * -------------------------------------------------------------------------- */
-
-/*
- * Task checkbox fills, borders and marker colors for each task state.
- */
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] input {
-	background-color: var(--red);
-	border-color: var(--red);
-	color: var(--black);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] input {
-	background-color: var(--black);
-	border-color: var(--magenta);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] input {
-	background-color: var(--black);
-	border-color: var(--orange);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] input {
-	background-color: var(--black);
-	border-color: var(--blue);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] input {
-	background-color: var(--green);
-	border-color: var(--green);
-	color: var(--black);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] input {
-	background-color: var(--black);
-	border-color: var(--cyan);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] input {
-	background-color: var(--black);
-	border-color: var(--yellow);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] input {
-	background-color: var(--black);
-	border-color: var(--grey-3);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] input {
-	background-color: var(--black);
-	border-color: var(--purple);
-}
-
-
-/* -----------------------------------------------------------------------------
  * @markdown: Tables
  * -----------------------------------------------------------------------------
  * @source: src/markdown/tables.css
@@ -2106,38 +2137,6 @@ hr {
 
 
 /* -----------------------------------------------------------------------------
- * @app section: Bases
- * -----------------------------------------------------------------------------
- * @source: src/sections/bases.css
- * @description:
- *
- * Bases toolbar actions and filter-row controls in normal and hover states.
- *
- * -------------------------------------------------------------------------- */
-
-/*
- * Bases toolbar actions and filter-row controls in normal and hover states.
- *
- * Shared component adjustments: action-button. Local --mw-* variables below set
- * this section’s colors and backgrounds.
- */
-.bases-toolbar-item .text-icon-button,
-.bases-toolbar-section-content .text-icon-button {
-	--mw-action-color: var(--cyan);
-	--mw-action-background: var(--cyan-transparent);
-	background-color: var(--mw-action-background);
-	color: var(--mw-action-color);
-	cursor: pointer;
-}
-
-.bases-toolbar-item .text-icon-button:hover,
-.bases-toolbar-section-content .text-icon-button:hover {
-	background-color: var(--magenta-transparent);
-	color: var(--magenta);
-}
-
-
-/* -----------------------------------------------------------------------------
  * @graph: Graph
  * -----------------------------------------------------------------------------
  * @source: src/sections/graph.css
@@ -2214,13 +2213,4 @@ hr {
 .xfaCheckbox:focus,
 .xfaRadio:focus {
 	outline: none;
-}
-
-/*
- * XFA’s layer reset also clears checkbox fills; its inputs have no inline fill
- * literals.
- */
-.xfaLayer input {
-	background-color: var(--grey-11);
-	border-color: var(--mw-input-border);
 }

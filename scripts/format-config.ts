@@ -142,10 +142,6 @@ export const formatConfig = {
 			description:
 				"Menu surfaces, icons, selected items and mobile action rows.",
 		},
-		"bases.css": {
-			description:
-				"Bases toolbar actions and filter-row controls in normal and hover states.",
-		},
 		"overrides.css": {
 			description:
 				"Final state overrides for settings tabs, scrollbars and disabled icons.",
