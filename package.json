@@ -17,7 +17,8 @@
 		"compare": "bun workbench/compare/cli.ts",
 		"compare:formatting": "bun workbench/compare/cli.ts --formatting",
 		"test": "playwright install chromium && vitest run",
-		"lint:css": "bun scripts/lint-css.ts"
+		"lint:css": "bun scripts/lint-css.ts",
+		"capture:selftest": "bun capture/scripts/selftest.ts && bun capture/scripts/css.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.8",

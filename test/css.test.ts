@@ -209,6 +209,48 @@ it("does not shorten a shorthand whose variables can expand into multiple values
 });
 
 it.each([
+	".cm-s-obsidian span.cm-highlight",
+	".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
+	".cm-s-obsidian span.is-flashing:where(.cm-highlight)",
+	".cm-s-obsidian span.cm-hashtag.cm-hmd-escape-backslash:where(.cm-highlight)",
+	".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight)",
+	".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight):hover",
+	".markdown-source-view.mod-cm6 span.cm-highlight.cm-footref",
+	".markdown-source-view.mod-cm6 span.cm-highlight.cm-hmd-footnote",
+	".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)",
+])(
+	"limits the highlight exception to its exact surface: %s",
+	async (selector) => {
+		const css = `${selector} { background-color: var(--highlight) }`;
+		await expect(
+			postcss([checkCss()]).process(css, { from: "src/inline-marks.css" }),
+		).resolves.toBeDefined();
+		await expect(check(css)).rejects.toThrow();
+		await expect(
+			postcss([checkCss()]).process(css.replace("span.", "div."), {
+				from: "src/inline-marks.css",
+			}),
+		).rejects.toThrow();
+	},
+);
+
+it.each([".modal button.mod-cta", ".modal button.mod-cta:hover"])(
+	"allows only the exact modal CTA rival %s",
+	async (selector) => {
+		const css = `${selector} { background-color: var(--cyan) }`;
+		await expect(
+			postcss([checkCss()]).process(css, { from: "src/modals.css" }),
+		).resolves.toBeDefined();
+		await expect(check(css)).rejects.toThrow();
+		await expect(
+			postcss([checkCss()]).process(css.replace("button.", "div."), {
+				from: "src/modals.css",
+			}),
+		).rejects.toThrow();
+	},
+);
+
+it.each([
 	"overflow-wrap: break-word; word-wrap: normal",
 	"gap: 2px; grid-gap: 1px",
 	"break-before: page; page-break-before: avoid",
@@ -225,6 +267,19 @@ it.each([
 		);
 	},
 );
+it("allows only the exact disabled community-sidebar rival in overrides.css", async () => {
+	const css =
+		".mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true']) { color: var(--text-disabled) }";
+	await expect(
+		postcss([checkCss()]).process(css, { from: "src/overrides.css" }),
+	).resolves.toBeDefined();
+	await expect(check(css)).rejects.toThrow();
+	await expect(
+		postcss([checkCss()]).process(css.replace("button.", "div."), {
+			from: "src/overrides.css",
+		}),
+	).rejects.toThrow();
+});
 
 it("preserves comment lists, descriptions, explicit headings and literal replacement codes", async () => {
 	const license = "/*! Copyright $& $' */";

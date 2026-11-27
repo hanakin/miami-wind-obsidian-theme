@@ -70,6 +70,7 @@ const sidebarStates: Scene = {
 		),
 		{
 			id: "extra.tab-list.has-active-menu",
+			expect: ".has-active-menu",
 			component: "clickable-icon",
 			surface: "workspace",
 			target: ".workspace-tabs .has-active-menu",
@@ -78,6 +79,7 @@ const sidebarStates: Scene = {
 		},
 		{
 			id: "extra.menu.keyboard-selected",
+			expect: ".selected",
 			component: "menu-item",
 			surface: "menu",
 			target: ".menu .menu-item.selected",
@@ -120,12 +122,9 @@ const selectStates: Scene = {
 	items: [
 		p("extra.select.focus-visible", "dropdown", ".modal select.dropdown", ["focus-visible"]),
 		p("extra.select.focus-within", "dropdown", ".modal select.dropdown", ["focus-within"]),
-		p("extra.select-option.hover", "dropdown", ".modal select.dropdown option", ["hover"]),
-		p("extra.select-option.checked.hover", "dropdown", ".modal select.dropdown option:checked", [
-			"hover",
-		]),
 		{
 			id: "extra.settings-search-empty",
+			expect: ":has(.setting-search-empty)",
 			component: "search-input",
 			target: ".modal.mod-settings",
 			state: "search-no-results",
@@ -137,6 +136,7 @@ const selectStates: Scene = {
 		},
 		{
 			id: "extra.settings-search-results",
+			expect: ":has(.setting-search-result-item)",
 			component: "search-input",
 			target: ".modal.mod-settings",
 			state: "search-results",
@@ -160,6 +160,14 @@ const formControls: Scene = {
 	},
 	items: [
 		{ id: "extra.modal.shell", component: "modal", target: ".modal-container", full: true },
+		{
+			id: "extra.modal.header-button",
+			component: "clickable-icon",
+			target: ".modal .modal-header-button",
+		},
+		p("extra.modal.header-button.hover", "clickable-icon", ".modal .modal-header-button", [
+			"hover",
+		]),
 		p("extra.modal.button.hover", "button", ".modal button", ["hover"]),
 		{
 			id: "extra.textarea.focus",
@@ -226,9 +234,10 @@ const editorExtras: Scene = {
 		{
 			id: "extra.properties-invalid",
 			component: "metadata-container",
-			target: leaf(".markdown-source-view .metadata-container"),
-			state: "invalid-yaml",
-			before: (ctx) => ctx.open("Markdown/Broken properties.md", "live"),
+			surface: "editor-reading-view",
+			target: leaf(".markdown-reading-view .metadata-container.mod-error"),
+			before: (ctx) => ctx.open("Markdown/Broken properties.md", "reading"),
+			note: "app.css hides the error box in the editor; Reading view shows it.",
 		},
 		p("extra.properties-show-source.hover", "button", leaf(".metadata-show-source-button"), [
 			"hover",
@@ -264,6 +273,7 @@ const editorExtras: Scene = {
 		),
 		{
 			id: "extra.vim-mode",
+			expect: ".cm-editor:has(.cm-vimMode)",
 			component: "editor-line",
 			target: leaf(".markdown-source-view .cm-editor"),
 			state: "vim-normal-mode",
@@ -279,6 +289,7 @@ const editorExtras: Scene = {
 		},
 		{
 			id: "extra.vim-command-panel",
+			expect: ".cm-panels",
 			component: "editor-line",
 			target: leaf(".cm-panels, .cm-vim-panel"),
 			state: "vim-command",
@@ -288,29 +299,34 @@ const editorExtras: Scene = {
 			},
 		},
 		{
-			id: "extra.placeholder",
-			component: "editor-line",
-			target: leaf(".markdown-source-view .cm-placeholder, .markdown-source-view .cm-content"),
-			state: "empty-note",
-			before: async (ctx) => {
-				await ctx.js(
-					"if (!app.vault.getAbstractFileByPath('Empty note.md')) await app.vault.create('Empty note.md', ''); await sleep(200);",
-				);
-				await ctx.open("Empty note.md", "live");
-				await ctx.js("app.workspace.activeEditor.editor.focus(); await sleep(300);");
-			},
-		},
-		{
 			id: "extra.image-lightbox",
 			component: "lightbox",
 			surface: "modal",
 			target: ".lightbox",
 			full: true,
 			before: async (ctx) => {
+				// Vim mode is a vault setting: turn it off again after the vim items above.
+				await ctx.page.keyboard.press("Escape");
+				await ctx.page.keyboard.press("Escape");
+				await ctx.js("app.vault.setConfig('vimMode', false); await sleep(300);");
 				await ctx.open("Markdown/Embeds.md", "reading");
+				// Reading view only renders sections near the viewport; an earlier scene may have left
+				// this note scrolled past the image.
 				await ctx.js(
-					"cap.ROOTS.leaf().querySelector('.markdown-reading-view .image-embed img')?.click(); await sleep(800);",
+					"const v = app.workspace.activeLeaf.view; const n = v.data.split('\\n').findIndex((l) => l.includes('![[sample-image.png')); v.currentMode.applyScroll(Math.max(0, n - 1)); await sleep(600);",
 				);
+				for (let i = 0; i < 5; i++) {
+					const b = await ctx.js<number[] | null>(
+						"if (document.querySelector('.lightbox')) return null; const e = cap.ROOTS.leaf().querySelector('.markdown-reading-view .image-embed.is-loaded img'); if (!e) { await sleep(400); return [0, 0]; } e.scrollIntoView({ block: 'center' }); await sleep(300); const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2];",
+					);
+					if (!b) break;
+					if (b[0]) await ctx.page.mouse.click(b[0], b[1] ?? 0);
+					await ctx.sleep(700);
+				}
+				const state = await ctx.js<string>(
+					"const w = app.workspace; const l = w.activeLeaf; return JSON.stringify({ lightbox: !!document.querySelector('.lightbox'), active: l?.view?.getViewType?.(), file: l?.view?.file?.path, mode: l?.view?.getMode?.(), imgs: cap.ROOTS.leaf()?.querySelectorAll('.image-embed img').length, embeds: [...(cap.ROOTS.leaf()?.querySelectorAll('.internal-embed') ?? [])].slice(0, 4).map((e) => e.className + ':' + e.getAttribute('src')).join(' | '), png: !!app.vault.getAbstractFileByPath('Attachments/sample-image.png'), headings: !!app.vault.getAbstractFileByPath('Markdown/Headings.md'), files: app.vault.getFiles().length, floating: w.floatingSplit?.children?.length ?? 0, docFocus: document.hasFocus(), activeDocMain: activeDocument === document });",
+				);
+				if (!state.includes('"lightbox":true')) console.error(`\nlightbox not open: ${state}`);
 			},
 		},
 		{
@@ -329,18 +345,6 @@ const editorExtras: Scene = {
 				surface: "modal",
 			},
 		),
-		{
-			id: "extra.indentation-guide-active",
-			component: "list",
-			target: leaf(".markdown-source-view .cm-content"),
-			state: "active-indent",
-			before: async (ctx) => {
-				await ctx.open("Markdown/Lists and tasks.md", "live");
-				await ctx.js(
-					"const e = app.workspace.activeEditor.editor; const n = e.getValue().split('\\n').findIndex((l) => l.includes('Deep nested bullet')); e.focus(); e.setCursor({ line: n, ch: 6 }); await sleep(300);",
-				);
-			},
-		},
 	],
 };
 
@@ -360,18 +364,6 @@ const recovery: Scene = {
 	},
 	items: [
 		{ id: "extra.file-recovery.modal", component: "modal", target: ".modal-container", full: true },
-		{
-			id: "extra.file-recovery.diff",
-			component: "diff",
-			target: ".modal-container",
-			state: "diff",
-			full: true,
-			before: async (ctx) => {
-				await ctx.js(
-					"const b = [...document.querySelectorAll('.modal button, .modal .clickable-icon')].find((e) => /diff|compare/i.test((e.getAttribute('aria-label') ?? '') + e.textContent)); b?.click(); await sleep(800);",
-				);
-			},
-		},
 	],
 };
 
@@ -391,13 +383,13 @@ const community: Scene = {
 			id: "extra.community.restricted",
 			component: "settings-page",
 			target: ".modal.mod-settings",
-			state: "restricted-mode",
+			state: "default",
 		},
 		{
 			id: "extra.community.enabled",
 			component: "settings-page",
 			target: ".modal.mod-settings",
-			state: "community-plugins-on",
+			state: "default",
 			before: async (ctx) => {
 				await ctx.js(
 					"const b = [...document.querySelectorAll('.modal.mod-settings button')].find((e) => /turn on|restricted/i.test(e.textContent ?? '')); b?.click(); await sleep(1200);",
@@ -416,46 +408,6 @@ const canvasExtras: Scene = {
 		await ctx.js("app.workspace.activeLeaf.view.canvas?.zoomToFit?.(); await sleep(600);");
 	},
 	items: [
-		{
-			id: "extra.canvas.node-hover",
-			component: "canvas-node",
-			target: { sel: ".canvas-node", text: "Colored card 2" },
-			state: "pointer-over",
-			before: async (ctx) => {
-				const b = await ctx.js<[number, number]>(
-					"const n = [...document.querySelectorAll('.canvas-node')].find((e) => e.textContent.includes('Colored card 2')); const r = n.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2];",
-				);
-				await ctx.page.mouse.move(b[0], b[1], { steps: 4 });
-				await ctx.sleep(400);
-			},
-		},
-		{
-			id: "extra.canvas.selection-box",
-			component: "canvas",
-			target: ".canvas-wrapper",
-			state: "drag-select",
-			full: true,
-			before: async (ctx) => {
-				const b = await ctx.js<[number, number]>(
-					"const r = cap.ROOTS.leaf().querySelector('.canvas-wrapper').getBoundingClientRect(); return [r.x + 30, r.bottom - 40];",
-				);
-				await ctx.page.mouse.move(b[0], b[1]);
-				await ctx.page.mouse.down();
-				await ctx.page.mouse.move(b[0] + 300, b[1] - 300, { steps: 8 });
-				await ctx.sleep(300);
-			},
-		},
-		{
-			id: "extra.canvas.after-select",
-			component: "canvas",
-			target: ".canvas-wrapper",
-			state: "multi-selected",
-			full: true,
-			before: async (ctx) => {
-				await ctx.page.mouse.up();
-				await ctx.sleep(400);
-			},
-		},
 		{
 			id: "extra.canvas.help",
 			component: "canvas",
@@ -506,10 +458,10 @@ const basesExtras: Scene = {
 		}),
 		{
 			id: "extra.bases.menu.keyboard-selected",
+			expect: ".is-selected",
 			component: "menu-item",
 			surface: "menu",
-			target:
-				".menu .bases-toolbar-menu-item.selected, .menu .menu-item.selected, .menu .is-selected",
+			target: ".menu .bases-toolbar-menu-item.is-selected",
 			state: "selected",
 			before: async (ctx) => {
 				await ctx.page.keyboard.press("Escape");
@@ -552,14 +504,25 @@ const pluginBrowser: Scene = {
 			id: "extra.community.plugin-browser",
 			component: "community-browser",
 			target: "body",
+			trim: {
+				sel: ".community-item",
+				keep: 6,
+				keepAlso: ".is-selected, .community-item-badge, .mod-unavailable, [data-capture-state]",
+			},
 			full: true,
 			note: "Loads the community plugin list over the network; opens in its own popout window.",
 		},
 		{
 			id: "extra.community.plugin-details",
+			expect: ":has(.community-modal-details)",
 			component: "community-browser",
 			target: "body",
 			state: "details",
+			trim: {
+				sel: ".community-item",
+				keep: 6,
+				keepAlso: ".is-selected, .community-item-badge, .mod-unavailable, [data-capture-state]",
+			},
 			full: true,
 			before: async (ctx) => {
 				await ctx.js("document.querySelector('.community-item')?.click(); await sleep(5000);");
@@ -581,9 +544,15 @@ const themeBrowser: Scene = {
 	items: [
 		{
 			id: "extra.community.theme-browser",
+			expect: ":has(.community-item)",
 			component: "community-browser",
 			target: "body",
 			state: "themes",
+			trim: {
+				sel: ".community-item",
+				keep: 6,
+				keepAlso: ".is-selected, .community-item-badge, .mod-unavailable, [data-capture-state]",
+			},
 			full: true,
 		},
 	],
@@ -616,7 +585,7 @@ const more: Scene = {
 			component: "search-result",
 			surface: "left-sidebar",
 			target: '.workspace-leaf-content[data-type="search"]',
-			state: "explain-search",
+			state: "default",
 			before: async (ctx) => {
 				await ctx.page.keyboard.press("Escape");
 				await ctx.js(
@@ -626,6 +595,7 @@ const more: Scene = {
 		},
 		{
 			id: "extra.graph-color-group",
+			expect: ":has(.graph-color-group)",
 			component: "graph-controls",
 			surface: "graph",
 			target: ".graph-controls",
@@ -667,6 +637,7 @@ const settingsPage: Scene = {
 	items: [
 		{
 			id: "extra.settings-subpage",
+			expect: ":has(.setting-page)",
 			component: "settings-page",
 			target: ".modal.mod-settings",
 			state: "sub-page",

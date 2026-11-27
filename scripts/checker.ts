@@ -21,6 +21,20 @@ paritySpanSelectors.add(
 	".markdown-source-view.mod-cm6 span.cm-inline-code.cm-hmd-footnote",
 );
 
+// Highlights must tie Obsidian 1.15.1's span rivals, including search matches.
+// Direct colors preserve magenta even when colored highlights shadow the variable.
+const highlightSpanSelectors = new Set([
+	".cm-s-obsidian span.cm-highlight",
+	".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
+	".cm-s-obsidian span.is-flashing:where(.cm-highlight)",
+	".cm-s-obsidian span.cm-hashtag.cm-hmd-escape-backslash:where(.cm-highlight)",
+	".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight)",
+	".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight):hover",
+	".markdown-source-view.mod-cm6 span.cm-highlight.cm-footref",
+	".markdown-source-view.mod-cm6 span.cm-highlight.cm-hmd-footnote",
+	".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)",
+]);
+
 function compoundDepth(selector: selectorParser.Selector): number {
 	const direct =
 		1 + selector.nodes.filter((node) => node.type === "combinator").length;
@@ -79,6 +93,13 @@ export function checkCss(legacyFile?: string): Plugin {
 						)
 							return;
 
+						if (
+							rule.source?.input.file ===
+								path.resolve("src/inline-marks.css") &&
+							highlightSpanSelectors.has(selector.toString().trim())
+						)
+							return;
+
 						const siblings = tag.parent?.nodes ?? [];
 						const index = siblings.indexOf(tag);
 						const before = siblings
@@ -103,7 +124,13 @@ export function checkCss(legacyFile?: string): Plugin {
 					const specificity = Specificity.calculate(selector.toString())[0];
 					if (
 						!specificity ||
-						Specificity.compare(specificity, { a: 0, b: 4, c: 1 }) > 0
+						(Specificity.compare(specificity, { a: 0, b: 4, c: 1 }) > 0 &&
+							!(
+								rule.source?.input.file ===
+									path.resolve("src/inline-marks.css") &&
+								selector.toString().trim() ===
+									".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)"
+							))
 					)
 						fail("Maximum specificity is 0,4,1");
 				});

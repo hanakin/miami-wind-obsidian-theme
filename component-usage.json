@@ -29,6 +29,55 @@
 				"properties": {
 					"--mw-surface-background": "var(--grey-10)"
 				}
+			},
+			{
+				"surface": "tables.css",
+				"selector": ".markdown-rendered th",
+				"properties": {
+					"--mw-surface-background": "var(--code-background)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout=\"note\"])",
+				"properties": {
+					"--mw-surface-background": "var(--blue-bright-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout=\"info\"])",
+				"properties": {
+					"--mw-surface-background": "var(--cyan-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout=\"todo\"])",
+				"properties": {
+					"--mw-surface-background": "var(--magenta-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout=\"warning\"])",
+				"properties": {
+					"--mw-surface-background": "var(--orange-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout=\"tip\"])",
+				"properties": {
+					"--mw-surface-background": "var(--green-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout=\"example\"])",
+				"properties": {
+					"--mw-surface-background": "var(--purple-transparent)"
+				}
 			}
 		]
 	}

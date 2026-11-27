@@ -15,7 +15,7 @@ export async function runtimeCss(): Promise<string> {
 	);
 	const session = await launch();
 	try {
-		verifyIsolation(session.proc.pid as number);
+		verifyIsolation(session.pid, session.windowed);
 		await session.page.evaluate(
 			`app.workspace.openLinkText("Markdown/Code.md", "", false)`,
 		);
