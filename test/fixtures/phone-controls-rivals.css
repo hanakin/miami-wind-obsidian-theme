@@ -26,3 +26,6 @@ body {--background-modifier-hover:#555; --tab-background-hover:transparent;}
 .xfaTextfield,.xfaSelect{background:transparent}
 
 .bases-group-page .bases-group-row.is-editing:focus-within{background-color:var(--background-modifier-hover)}
+
+.status-bar{color:var(--status-bar-text-color)}
+.status-bar-item.mod-clickable:hover{background-color:var(--background-modifier-hover);color:var(--text-normal)}

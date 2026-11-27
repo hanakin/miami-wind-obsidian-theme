@@ -64,6 +64,7 @@ async function compareStates(html: string, legacy: string, touch = false) {
 									background: s.backgroundColor,
 									stroke: s.stroke,
 									cursor: s.cursor,
+									statusBarText: s.getPropertyValue("--status-bar-text-color"),
 								};
 							}),
 						),
@@ -226,5 +227,12 @@ it("preserves editing Bases group-row hover and keyboard focus fills", async () 
 		`<div class="bases-group-page" style="--background-modifier-hover: rgba(255,255,255,.067)">${rows}</div>`,
 		`.bases-toolbar-menu-item:hover, .bases-toolbar-menu-item:focus, .bases-toolbar-menu-item:active, .bases-toolbar-menu-item.selected { background-color: var(--cyan-transparent) !important; color: var(--magenta); cursor: pointer; }
 		.bases-toolbar-menu-item.mod-hidden:hover { background-color: transparent !important; color: var(--text-disabled); cursor: default; }`,
+	);
+});
+
+it("preserves the raw status-bar text token alongside visible state colors", async () => {
+	await compareStates(
+		`<div style="--status-bar-text-color:#b3b3b3"><div class="status-bar" data-target><span class="status-bar-item">Status</span><span class="status-bar-item mod-clickable" data-target>Action</span></div></div>`,
+		`.status-bar { --status-bar-text-color:#b3b3b3 !important; color:var(--magenta) !important; }`,
 	);
 });
