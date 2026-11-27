@@ -177,9 +177,11 @@ export interface FixtureEntry {
 	 * Pixels of each painted <canvas>, by zero-based index in the saved fixture's canvas order:
 	 * a PNG under capture/fixtures/ to draw into it. source "canvas" is the canvas's own pixels;
 	 * "screen" is a crop of the window (WebGL canvases read back empty), so it also holds anything
-	 * drawn over the canvas.
+	 * drawn over the canvas. A canvas inside a frame names the frame by its path: the index of each
+	 * frame in its document's iframe order, outermost first ("0", "0/1"); index is then the canvas's
+	 * index in that frame's document.
 	 */
-	canvasPixels?: { index: number; file: string; source: "canvas" | "screen" }[];
+	canvasPixels?: { index: number; frame?: string; file: string; source: "canvas" | "screen" }[];
 	/** Size in CSS pixels of the window the target lived in (also data-capture-viewport on <html>). */
 	viewport?: [number, number];
 	/**
@@ -226,6 +228,12 @@ export interface Evidence {
 	expect?: string;
 	/** theme.css selector ids that hit a seen element in the off-page copy of the live document. */
 	live: string[];
+	/**
+	 * Font properties of the target's visible text runs (family, size, weight, style, stretch,
+	 * variant, features, variations, letter and word spacing, transform, decoration, stroke, shadow),
+	 * joined with "|", and how many runs have each. A replay must have the same.
+	 */
+	textStyles?: Record<string, number>;
 	/** Selector ids that only hit elements in the scope that were not visibly painted. */
 	domOnly?: string[];
 	/** Number of elements recorded as visibly painted inside the screenshot clip. */

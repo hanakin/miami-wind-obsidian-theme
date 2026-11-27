@@ -10,7 +10,7 @@
 // Pixels whose content cannot be replayed offline (images, media, frames without their styles,
 // canvases without saved pixels, floating stand-ins) are left out, but only where they are
 // visible: the check paints those elements in two flat colors and skips the pixels that change.
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import type { Browser, CDPSession, Page } from "playwright";
 import { replayCss } from "./css.ts";
 import { APP_CSS_MARK, RUNTIME_DIR } from "./engine.ts";
@@ -24,6 +24,16 @@ import type { FixtureEntry } from "./types.ts";
 export const REPLAY_MIN_MATCH = 0.97;
 /** Local contrast (luminance range over 3x3 pixels, of 255) that counts as a detail. */
 const EDGE = 40;
+/** Unmatched non-text pixels allowed in one 8 px cell (fail at this many). */
+const MAX_CELL = 4;
+/** Unmatched text pixels allowed in a fixture (glyph rendering between Chromium builds). */
+const MAX_TEXT = 100;
+/** Per-pixel color tolerance (of 255, per channel, within 1 px): shapes and fills, and text glyphs. */
+const TOLERANCE = {
+	solid: 24,
+	text: 64,
+	shift: Number(process.env.REPLAY_SHIFT ?? 0),
+};
 /** How much of a detail's contrast may be missing on the other side (within 2 px) before it counts as lost. */
 const EDGE_LOSS = 32;
 
@@ -58,6 +68,14 @@ export interface Result {
 	blocks?: number;
 	detailBad?: number;
 	replayShot?: string;
+	/** Per-pixel comparison: pixels compared, unmatched outside and inside text, most unmatched in one 8 px cell. */
+	pixels?: {
+		compared: number;
+		badSolid: number;
+		badText: number;
+		worstCell: number;
+		inkBad: number;
+	};
 }
 
 interface Stage {
@@ -269,10 +287,11 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 	}
 	const pixels = (f.canvasPixels ?? []).map((c) => ({
 		index: c.index,
+		frame: c.frame ?? null,
 		b64: readFileSync(`${CAPTURE}fixtures/${c.file}`).toString("base64"),
 	}));
 	const frames: Record<string, string> = {};
-	for (const m of html.matchAll(/data-capture-frame-styles="([^"]*)"/g))
+	for (const m of html.matchAll(/data-capture-frame-styles=(?:"|(?:&amp;)*&quot;)([^"&]*)/g))
 		frames[m[1] ?? ""] = frameCss(env, m[1] ?? "");
 	await page.evaluate(() => {
 		(document.getElementById("replay-mask") as HTMLStyleElement).textContent = "";
@@ -295,6 +314,25 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 		}, mutate.css);
 	if (mutate?.js) await page.evaluate(mutate.js);
 	if (process.env.REPLAY_DEBUG_JS) console.log(await page.evaluate(process.env.REPLAY_DEBUG_JS));
+	// Text is allowed to differ by anti-aliasing only while it is drawn with the same fonts: the
+	// font properties of the target's text runs must be those recorded live (a trimmed list keeps
+	// only some runs, so it may have fewer).
+	const liveText = f.evidence?.textStyles;
+	if (liveText) {
+		const now = (await page.evaluate(() =>
+			(
+				window as unknown as { cap: { textStyles(e: Element | null): Record<string, number> } }
+			).cap.textStyles(document.querySelector("[data-capture-target]")),
+		)) as Record<string, number>;
+		const differs =
+			Object.entries(now).find(([k, n]) => (f.trimmed ? !(k in liveText) : liveText[k] !== n)) ??
+			(f.trimmed ? undefined : Object.entries(liveText).find(([k]) => !(k in now)));
+		if (differs)
+			return {
+				status: "fail",
+				why: `text styles differ from live: ${differs[0].replaceAll("|", " ").slice(0, 160)} (${now[differs[0]] ?? 0} run(s) replayed, ${liveText[differs[0]] ?? 0} live)`,
+			};
+	}
 	const ev = f.evidence;
 	const shot = `${SCREENSHOTS}/${f.id}.png`;
 	if (!ev?.clip || !existsSync(shot))
@@ -341,6 +379,21 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 			lh + 2 * padY,
 		]);
 	}
+	// Pixel regions: the target with 8 px around it, like the screenshot (outlines and focus rings
+	// are part of it; parts of neighbors drawn there live are masked cell by cell); for trimmed
+	// lists each kept entry with 2 px around it.
+	const pixelRegions = f.trimmed
+		? (got.entries ?? []).map((e) => {
+				const [lx = 0, ly = 0, w = 0, h = 0] = e.live;
+				const [rx = 0, ry = 0] = e.now;
+				return [lx - cx - 2, ly - cy + liveDy - 2, rx - 2, ry - 2, w + 4, h + 4];
+			})
+		: (() => {
+				const [lx = 0, ly = 0, lw = 0, lh = 0] = ev.inView;
+				const [rx = 0, ry = 0] = got.inView ?? [];
+				return [[lx - cx - 8, ly - cy + liveDy - 8, rx - 8, ry - 8, lw + 16, lh + 16]];
+			})();
+	const forced = (f.evidence?.media ?? "").includes("forced-colors");
 	const replayShot = `${WORK}/replay/${f.id}.png`;
 	const full = await page.screenshot({ path: replayShot });
 	let maskA: Buffer | null = null;
@@ -374,46 +427,93 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 		EDGE,
 		EDGE_LOSS,
 		!!process.env.REPLAY_DEBUG,
+		got.text ?? [],
+		TOLERANCE,
+		pixelRegions,
+		forced,
 	] as const)) as {
 		blocks: number;
 		bad: number;
 		detailBad: number;
 		detailGone: number;
+		pxN: number;
+		badSolid: number;
+		badText: number;
+		worstCell: number;
+		firstBad: string;
+		badAt: number[][];
+		inkBad: number;
+		inkWhere: string;
 		where: string[];
 		detail: string[];
 	};
-	if (!res.blocks)
+	if (!res.blocks && res.pxN < 16)
 		return {
 			status: "limit",
 			why: "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
 		};
-	const share = 1 - res.bad / res.blocks;
-	const base = { share, blocks: res.blocks, detailBad: res.detailBad, replayShot };
+	const share = res.blocks ? 1 - res.bad / res.blocks : 1;
+	const base = {
+		share,
+		blocks: res.blocks,
+		detailBad: res.detailBad,
+		replayShot,
+		pixels: {
+			compared: res.pxN,
+			badSolid: res.badSolid,
+			badText: res.badText,
+			worstCell: res.worstCell,
+			inkBad: res.inkBad,
+		},
+	};
 	if (share < REPLAY_MIN_MATCH)
 		return {
 			...base,
 			status: "fail",
 			why: `replay differs from the live screenshot in ${Math.round((100 * res.bad) / res.blocks)}% of the target (16 px blocks; first at ${res.where.join(" ")} in ${replayShot})`,
 		};
-	// Forced colors take their palette from the browser build (Electron's and the replay's differ
-	// in border shades): detail is not judged there, and that is labeled.
-	if ((res.detailBad >= 3 || res.detailGone) && (f.evidence?.media ?? "").includes("forced-colors"))
-		return {
-			...base,
-			status: "limit",
-			why: "forced colors: the system palette differs between Electron's Chromium and the replay's, so only block colors are judged",
-		};
-	if (res.detailBad >= 3 || res.detailGone)
+	// Outside text, every pixel must find its color within 1 px on the other side: 4 or more
+	// unmatched pixels in one 8 px cell fail (a recolored or shifted icon, a missing border or
+	// focus ring). Measured on all fixtures: unchanged ones have at most 3.
+	if (process.env.REPLAY_DEBUG)
+		writeFileSync(`${WORK}/replay/${f.id}.bad.json`, JSON.stringify(res.badAt));
+	if (res.worstCell >= MAX_CELL)
 		return {
 			...base,
 			status: "fail",
-			why: `replay loses or adds detail (edges) in ${res.detailBad} block(s) of the target (first at ${res.detail.join(" ")} in ${replayShot})`,
+			why: `replay differs pixel by pixel: ${res.badSolid} unmatched pixels outside text, ${res.worstCell} in one 8 px cell at ${res.firstBad} (in ${replayShot})`,
+		};
+	// Text keeps its ink color (glyph edges may differ between builds, the glyph color may not).
+	if (res.inkBad)
+		return {
+			...base,
+			status: "fail",
+			why: `text color differs in ${res.inkBad} text run(s), first at ${res.inkWhere} (in ${replayShot})`,
+		};
+	if (res.badText >= MAX_TEXT)
+		return {
+			...base,
+			status: "fail",
+			why: `text differs: ${res.badText} unmatched text pixels (in ${replayShot})`,
 		};
 	return { ...base, status: "ok" };
 }
 
 /** Runs in the compare page: block colors and edges per region, masked pixels left out. */
-async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS, DEBUG]: readonly [
+async function compare([
+	live,
+	replay,
+	maskA,
+	maskB,
+	regions,
+	EDGE,
+	EDGE_LOSS,
+	DEBUG,
+	textBoxes,
+	TOL,
+	pixelRegions,
+	FORCED,
+]: readonly [
 	string,
 	string,
 	string | null,
@@ -421,6 +521,10 @@ async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS, DE
 	number[][],
 	number,
 	number,
+	boolean,
+	number[][],
+	{ solid: number; text: number; shift: number },
+	number[][],
 	boolean,
 ]) {
 	const data = async (b64: string) => {
@@ -436,7 +540,8 @@ async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS, DE
 	const m2 = maskB ? await data(maskB) : null;
 	const W = b.width;
 	const H = b.height;
-	// Masked replay pixels (where a masked element shows), grown by 1 px.
+	// Masked replay pixels: where a masked element shows, partly covered edge pixels included (an
+	// exact box; the replay grows the approximate ones, stand-in cells and animated parts, by 1 px).
 	const raw = new Uint8Array(W * H);
 	if (m1 && m2)
 		for (let i = 0; i < W * H; i++) {
@@ -445,22 +550,11 @@ async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS, DE
 				Math.abs((m1.data[p] ?? 0) - (m2.data[p] ?? 0)) +
 					Math.abs((m1.data[p + 1] ?? 0) - (m2.data[p + 1] ?? 0)) +
 					Math.abs((m1.data[p + 2] ?? 0) - (m2.data[p + 2] ?? 0)) >
-				96
+				24
 			)
 				raw[i] = 1;
 		}
-	const masked = new Uint8Array(W * H);
-	for (let y = 0; y < H; y++)
-		for (let x = 0; x < W; x++) {
-			let hit = 0;
-			for (let j = -1; j <= 1 && !hit; j++)
-				for (let i = -1; i <= 1 && !hit; i++) {
-					const xx = x + i;
-					const yy = y + j;
-					if (xx >= 0 && yy >= 0 && xx < W && yy < H && raw[yy * W + xx]) hit = 1;
-				}
-			masked[y * W + x] = hit;
-		}
+	const masked = raw;
 	// Local contrast: the luminance range over each pixel's 3x3 neighborhood (r3) and 5x5 (r5). A
 	// detail (an icon stroke, a 1 px border, text) shows as contrast; a sub-pixel shift between
 	// Chromium builds stays inside the larger window on the other side.
@@ -510,6 +604,219 @@ async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS, DE
 	};
 	const ea = ranges(a);
 	const eb = ranges(b);
+	// Where text is drawn in the replay (grown by 1 px): glyph edges differ slightly between
+	// Chromium builds there, so text pixels get the wider TOL.text.
+	const textMap = new Uint8Array(W * H);
+	for (const [tx = 0, ty = 0, tw = 0, th = 0] of textBoxes)
+		for (let y = Math.max(0, Math.floor(ty) - 1); y < Math.min(H, Math.ceil(ty + th) + 1); y++)
+			for (let x = Math.max(0, Math.floor(tx) - 1); x < Math.min(W, Math.ceil(tx + tw) + 1); x++)
+				textMap[y * W + x] = 1;
+	// Per pixel, both ways: a pixel matches when a pixel within 1 px on the other side has the
+	// same color (every channel within the tolerance). Counted apart for text and for the rest.
+	const near = (
+		src: ImageData,
+		x: number,
+		y: number,
+		dst: ImageData,
+		X: number,
+		Y: number,
+		tol: number,
+		rad: number,
+	) => {
+		const p = (y * src.width + x) * 4;
+		const r = src.data[p] ?? 0;
+		const g = src.data[p + 1] ?? 0;
+		const bl = src.data[p + 2] ?? 0;
+		for (let j = -rad; j <= rad; j++)
+			for (let i = -rad; i <= rad; i++) {
+				const xx = X + i;
+				const yy = Y + j;
+				if (xx < 0 || yy < 0 || xx >= dst.width || yy >= dst.height) continue;
+				const q = (yy * dst.width + xx) * 4;
+				if (
+					Math.abs((dst.data[q] ?? 0) - r) <= tol &&
+					Math.abs((dst.data[q + 1] ?? 0) - g) <= tol &&
+					Math.abs((dst.data[q + 2] ?? 0) - bl) <= tol
+				)
+					return true;
+			}
+		return false;
+	};
+	// Forced colors take their palette from the browser build: learn the color substitution from
+	// the pixels themselves (each live color to the replay color it most often lands on) and map
+	// the live shot through it; shapes are then compared like anywhere else.
+	let A = a;
+	if (FORCED) {
+		const key = (d: ImageData, p: number) =>
+			((d.data[p] ?? 0) >> 3) * 1024 +
+			((d.data[p + 1] ?? 0) >> 3) * 32 +
+			((d.data[p + 2] ?? 0) >> 3);
+		const exact = (d: ImageData, p: number) =>
+			(d.data[p] ?? 0) * 65536 + (d.data[p + 1] ?? 0) * 256 + (d.data[p + 2] ?? 0);
+		// A solid pixel (a line or fill: the same exact color on both sides of it, across or down)
+		// teaches its exact color; anti-aliased edges, which share coarse buckets with lines (a #333
+		// table border and text edges), teach only the coarse map.
+		const solid = (x: number, y: number) => {
+			const c = exact(a, (y * a.width + x) * 4);
+			const at = (i: number, j: number) =>
+				i >= 0 && j >= 0 && i < a.width && j < a.height && exact(a, (j * a.width + i) * 4) === c;
+			return (at(x - 1, y) && at(x + 1, y)) || (at(x, y - 1) && at(x, y + 1));
+		};
+		const pairsExact = new Map<number, Map<number, number>>();
+		const pairs = new Map<number, Map<number, number>>();
+		const sample = new Map<number, number>();
+		for (const [lx0 = 0, ly0 = 0, rx0 = 0, ry0 = 0, w0 = 0, h0 = 0] of pixelRegions)
+			for (let j = 0; j < Math.round(h0); j++)
+				for (let i = 0; i < Math.round(w0); i++) {
+					const X = Math.round(rx0) + i;
+					const Y = Math.round(ry0) + j;
+					const x = Math.round(lx0) + i;
+					const y = Math.round(ly0) + j;
+					if (X < 0 || Y < 0 || X >= W || Y >= H || x < 0 || y < 0 || x >= a.width || y >= a.height)
+						continue;
+					if (masked[Y * W + X]) continue;
+					const ka = key(a, (y * a.width + x) * 4);
+					const kb = key(b, (Y * W + X) * 4);
+					const m = pairs.get(ka) ?? new Map<number, number>();
+					m.set(kb, (m.get(kb) ?? 0) + 1);
+					pairs.set(ka, m);
+					sample.set(kb, (Y * W + X) * 4);
+					if (solid(x, y)) {
+						const ea = exact(a, (y * a.width + x) * 4);
+						const me = pairsExact.get(ea) ?? new Map<number, number>();
+						me.set(kb, (me.get(kb) ?? 0) + 1);
+						pairsExact.set(ea, me);
+					}
+				}
+		const most = (src: Map<number, Map<number, number>>) => {
+			const to = new Map<number, number>();
+			for (const [ka, m] of src) {
+				let best = -1;
+				let n = 0;
+				for (const [kb, c] of m) if (c > n) [best, n] = [kb, c];
+				to.set(ka, best);
+			}
+			return to;
+		};
+		const to = most(pairs);
+		const toExact = most(pairsExact);
+		const out = new ImageData(new Uint8ClampedArray(a.data), a.width, a.height);
+		for (let i = 0; i < a.width * a.height; i++) {
+			const kb = toExact.get(exact(a, i * 4)) ?? to.get(key(a, i * 4));
+			const src = kb === undefined ? undefined : sample.get(kb);
+			if (src === undefined) continue;
+			out.data[i * 4] = b.data[src] ?? 0;
+			out.data[i * 4 + 1] = b.data[src + 1] ?? 0;
+			out.data[i * 4 + 2] = b.data[src + 2] ?? 0;
+		}
+		A = out;
+	}
+	let pxN = 0;
+	let badSolid = 0;
+	let badText = 0;
+	let firstBad = "";
+	const badCells = new Map<string, number>();
+	const badAt: number[][] = [];
+	for (const [lx00 = 0, ly00 = 0, rx00 = 0, ry00 = 0, w00 = 0, h00 = 0] of pixelRegions) {
+		const lx = Math.round(lx00);
+		const ly = Math.round(ly00);
+		const rx = Math.round(rx00);
+		const ry = Math.round(ry00);
+		for (let j = 0; j < Math.round(h00); j++)
+			for (let i = 0; i < Math.round(w00); i++) {
+				const X = rx + i;
+				const Y = ry + j;
+				const x = lx + i;
+				const y = ly + j;
+				if (X < 0 || Y < 0 || X >= W || Y >= H || x < 0 || y < 0 || x >= a.width || y >= a.height)
+					continue;
+				if (masked[Y * W + X]) continue;
+				pxN++;
+				const isText = textMap[Y * W + X] === 1;
+				const tol = isText ? TOL.text : TOL.solid;
+				const rad = isText ? 1 : TOL.shift;
+				if (near(A, x, y, b, X, Y, tol, rad) && near(b, X, Y, A, x, y, tol, rad)) continue;
+				// Forced colors: the unmapped color matching as it is counts too (an anti-aliased
+				// edge the palette map sent elsewhere).
+				if (A !== a && near(a, x, y, b, X, Y, tol, rad) && near(b, X, Y, a, x, y, tol, rad))
+					continue;
+				if (DEBUG && badAt.length < 20000) badAt.push([x, y, isText ? 1 : 0]);
+				if (isText) badText++;
+				else {
+					badSolid++;
+					const k = `${x >> 3},${y >> 3}`;
+					badCells.set(k, (badCells.get(k) ?? 0) + 1);
+				}
+			}
+	}
+	let worstCell = 0;
+	for (const [k, n] of badCells)
+		if (n > worstCell) {
+			worstCell = n;
+			const [cx8 = 0, cy8 = 0] = k.split(",").map(Number);
+			firstBad = `${cx8 * 8},${cy8 * 8}`;
+		}
+	// Text: glyph edges may differ between builds, but not the ink. Per text box, the pixel
+	// farthest from the box's most common color is the glyph core; its color must match.
+	let inkBad = 0;
+	let inkWhere = "";
+	const [r0x = 0, r0y = 0, r0rx = 0, r0ry = 0] = pixelRegions[0] ?? [];
+	const offX = Math.round(r0x) - Math.round(r0rx);
+	const offY = Math.round(r0y) - Math.round(r0ry);
+	const ink = (d: ImageData, x0: number, y0: number, w: number, h: number) => {
+		const count = new Map<number, number>();
+		for (let y = y0; y < y0 + h; y++)
+			for (let x = x0; x < x0 + w; x++) {
+				const p = (y * d.width + x) * 4;
+				const k =
+					((d.data[p] ?? 0) >> 4) * 256 +
+					((d.data[p + 1] ?? 0) >> 4) * 16 +
+					((d.data[p + 2] ?? 0) >> 4);
+				count.set(k, (count.get(k) ?? 0) + 1);
+			}
+		let bgK = 0;
+		let bgN = -1;
+		for (const [k, c] of count) if (c > bgN) [bgK, bgN] = [k, c];
+		const bg = [((bgK >> 8) & 15) * 16 + 8, ((bgK >> 4) & 15) * 16 + 8, (bgK & 15) * 16 + 8];
+		let best = [0, 0, 0];
+		let far = -1;
+		for (let y = y0; y < y0 + h; y++)
+			for (let x = x0; x < x0 + w; x++) {
+				const p = (y * d.width + x) * 4;
+				const c = [d.data[p] ?? 0, d.data[p + 1] ?? 0, d.data[p + 2] ?? 0];
+				const dist =
+					(c[0] - (bg[0] ?? 0)) ** 2 + (c[1] - (bg[1] ?? 0)) ** 2 + (c[2] - (bg[2] ?? 0)) ** 2;
+				if (dist > far) [far, best] = [dist, c];
+			}
+		return { ink: best, far: Math.sqrt(far) };
+	};
+	for (const [tx = 0, ty = 0, tw = 0, th = 0] of textBoxes) {
+		const X0 = Math.round(tx);
+		const Y0 = Math.round(ty);
+		const w = Math.round(tw);
+		const h = Math.round(th);
+		if (w < 4 || h < 4 || X0 < 0 || Y0 < 0 || X0 + w > W || Y0 + h > H) continue;
+		const x0 = X0 + offX;
+		const y0 = Y0 + offY;
+		if (x0 < 0 || y0 < 0 || x0 + w > a.width || y0 + h > a.height) continue;
+		// Only boxes inside the compared region, not masked.
+		const inRegion = pixelRegions.some(
+			([, , rx = 0, ry = 0, rw = 0, rh = 0]) =>
+				X0 >= rx && Y0 >= ry && X0 + w <= rx + rw && Y0 + h <= ry + rh,
+		);
+		if (!inRegion || masked[(Y0 + (h >> 1)) * W + X0 + (w >> 1)]) continue;
+		const rp = ink(b, X0, Y0, w, h);
+		// Forced colors: the palette-mapped ink, or the ink as it is.
+		const diff = (src: ImageData) => {
+			const lv = ink(src, x0, y0, w, h);
+			if (lv.far < 30 && rp.far < 30) return 0;
+			return Math.max(...lv.ink.map((v, k) => Math.abs(v - (rp.ink[k] ?? 0))));
+		};
+		if (diff(A) > 40 && (A === a || diff(a) > 40)) {
+			inkBad++;
+			if (!inkWhere) inkWhere = `${x0},${y0}`;
+		}
+	}
 	const B = 16;
 	let blocks = 0;
 	let bad = 0;
@@ -583,7 +890,7 @@ async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS, DE
 						}
 					}
 				const area = (by1 - by0) * (bx1 - bx0);
-				if (n < area / 2) continue;
+				if (n < Math.min(8, area)) continue;
 				blocks++;
 				const diff = Math.max(...sa.map((v, k) => Math.abs(v - (sb[k] ?? 0)) / n));
 				if (diff > 24) {
@@ -606,5 +913,20 @@ async function compare([live, replay, maskA, maskB, regions, EDGE, EDGE_LOSS, DE
 				}
 			}
 	}
-	return { blocks, bad, detailBad, detailGone, where, detail };
+	return {
+		blocks,
+		bad,
+		detailBad,
+		detailGone,
+		where,
+		detail,
+		pxN,
+		badSolid,
+		badText,
+		worstCell,
+		firstBad,
+		inkBad,
+		inkWhere,
+		badAt,
+	};
 }

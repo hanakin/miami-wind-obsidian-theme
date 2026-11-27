@@ -233,7 +233,7 @@ const replayDir = `${WORK}/replay`;
 const renderOrder = [...valid.keys()].filter((id) => !byId.get(id)?.variantOf).sort();
 for (const id of renderOrder) {
 	const r = await checkFixture(env, byId.get(id) as FixtureEntry);
-	if (r.share !== undefined) replayMatch.set(id, r.share);
+	if (r.status === "ok" && r.share !== undefined) replayMatch.set(id, r.share);
 	if (r.status === "fail") {
 		valid.delete(id);
 		invalid.set(id, [r.why ?? "replay failed"]);
@@ -570,7 +570,7 @@ const lines = [
 	`theme.css selectors visibly matched (fixture and live agree, on painted elements): ${themeMatched.length}/${theme.length} (${pct(themeMatched.length, theme.length)}); excluded with reason: ${themeExcluded.length}; scripted only (labeled): ${themeScripted.length}; missing: ${themeMissing.length} (${themeDomOnly.length} only on hidden/clipped elements, ${themeSyntheticOnly.length} only in scripted fixtures); fixture/live disagreements: ${disagreements.length}`,
 	`App CSS classes visibly captured: ${appCovered.length} (${[...graphPainted.keys()].length} of them classes credited by screenshot pixels (graph probes)), excluded ${appExcluded.length}, not theme-affected (accepted gaps) ${appNotAffected.length}, theme-affected but out of scope (labeled) ${appOutOfScope.length}, theme-affected missing ${appMissing.length}, of ${app.length}; of the theme-affected missing: ${appDomOnly.length} in the DOM but never painted, ${appSyntheticOnly.length} only in scripted fixtures, ${appCensusOnly.length} seen in the runtime census only`,
 	`Screenshots: ${screenshotsHere ? "files re-checked against recorded hashes" : "files not on this machine; recorded evidence used"}; ${dupeReasons.length + dupeLimits.length + dupes.length} groups of identical screenshots (${dupeReasons.length} explained by their fixtures, ${dupeLimits.length} where a state applies but does not show (limitation), ${dupes.length} unexplained)`,
-	`Replay alone: ${replayMatch.size} fixtures rendered from their own files (recorded window size and stylesheets, canvas pixels, stand-in sizes, scroll offsets) matched their live screenshot in at least ${Math.round(100 * REPLAY_MIN_MATCH)}% of 16 px blocks (lowest ${pct(Math.round(1000 * Math.min(1, ...replayMatch.values())), 1000)}; images, media and iframes masked); replay limits (labeled, not compared): ${replayLimits.size}`,
+	`Replay alone: ${replayMatch.size} fixtures rendered from their own files (recorded window size and stylesheets, canvas pixels, stand-in sizes, scroll offsets) matched their live screenshot block by block (at least ${Math.round(100 * REPLAY_MIN_MATCH)}% of 16 px blocks, lowest ${pct(Math.round(1000 * Math.min(1, ...replayMatch.values())), 1000)}) and pixel by pixel; replay limits (labeled, not compared): ${replayLimits.size}; synthetic variants (no screenshot, not replayed): ${fx.fixtures.filter((f) => f.variantOf).length}`,
 	...crossCheck.map((c) => `Expert cross-check, ${c}`),
 ];
 console.log(lines.join("\n"));
@@ -746,7 +746,7 @@ function report(): string {
 		"",
 		"## Replay alone",
 		"",
-		`Every fixture is rendered from its own file in a plain Chromium page: app.css, Obsidian's runtime styles and theme.css as its window applied them (\`styles\`), at its window size (\`viewport\`), with canvas pixels drawn (\`canvasPixels\`), empty stand-ins given their live size, display and collapsed margins (\`data-capture-size\`, \`data-capture-display\`, \`data-capture-margin\`), and scroll offsets restored (\`data-capture-scroll\`). The target must sit where it sat live (within 4 px) and at least ${Math.round(100 * REPLAY_MIN_MATCH)}% of its 16 px blocks must match the live screenshot (mean color within 24 of 255 per channel). Images, media and iframes (which do not load offline, or lose their stylesheets) are masked out of the comparison.`,
+		`Every fixture is rendered from its own file in a plain Chromium page: app.css, Obsidian's runtime styles and theme.css as its window applied them (\`styles\`), at its window size (\`viewport\`), with canvas pixels drawn (\`canvasPixels\`), empty stand-ins given their live size, display and collapsed margins (\`data-capture-size\`, \`data-capture-display\`, \`data-capture-margin\`), and scroll offsets restored (\`data-capture-scroll\`). The target must sit where it sat live (within 4 px) and at least ${Math.round(100 * REPLAY_MIN_MATCH)}% of its 16 px blocks must match the live screenshot (mean color within 24 of 255 per channel). Then every pixel of the target and an 8 px ring around it (its borders, outline and focus ring; neighbors in the ring are replayed from the same file and compared too) is compared: outside text, a live pixel must match a replay pixel at the same spot within 24 per channel, both ways; at most 3 unmatched pixels may sit in any 8 px cell. Inside text boxes the match may come from 1 px away within 64 per channel (anti-aliasing between the capture's Electron and the replay's Chromium), at most 99 such pixels, and each text run's ink color (the pixel farthest from its background) must agree within 40. Forced colors: live colors are first mapped to the replay's system palette, one color for each, and shapes are compared as above. Images, media, iframes and animated parts are masked out pixel by pixel; any surviving region of 16 pixels or more is compared.`,
 		"",
 		...(replayLimits.size
 			? [

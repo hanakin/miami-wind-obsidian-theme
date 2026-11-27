@@ -338,7 +338,8 @@ interface Snap {
 	contains: string[];
 	seen: number;
 	imageSizes: { index: number; width: number; height: number }[];
-	canvasPixels: { index: number; url: string | null; rect: number[] }[];
+	canvasPixels: { index: number; frame?: string; url: string | null; rect: number[] }[];
+	textStyles: Record<string, number>;
 	viewport: [number, number];
 	styles: string[];
 	whole: "see-through" | null;
@@ -606,11 +607,12 @@ export async function captureItem(
 			? null
 			: ((await page.evaluate("cap.stackAt(window.__cap.target)")) as string[]);
 		const file = `${item.id}.${snap.format}`;
-		// Each frame names its own stylesheets, saved like the window's (local only).
+		// Each frame names its own stylesheets, saved like the window's (local only). Frames inside
+		// frames carry the mark escaped once more for each level.
 		const html = snap.html.replace(
-			/data-capture-frame="(\d+)"/g,
-			(_, k: string) =>
-				`data-capture-frame-styles="${saveSheets(snap.frameSheets[Number(k)] ?? []).join(" ")}"`,
+			/data-capture-frame=("|(?:&amp;)*&quot;)(\d+)\1/g,
+			(_, q: string, k: string) =>
+				`data-capture-frame-styles=${q}${saveSheets(snap.frameSheets[Number(k)] ?? []).join(" ")}${q}`,
 		);
 		writeFileSync(join(out.fixturesDir, file), html);
 		// Canvas pixels as PNG files named by content (PDF pages repeat across fixtures). WebGL
@@ -628,8 +630,11 @@ export async function captureItem(
 				y0 >= 0 &&
 				x0 + Math.round(cw) <= clip.width + 1 &&
 				y0 + Math.round(ch) <= clip.height + 1;
-			const png = c.url
-				? Buffer.from(c.url.slice(c.url.indexOf(",") + 1), "base64")
+			// A canvas inside a frame (the graph's renderer) keeps drawing after the shot: from the
+			// shot too.
+			const own = c.url && !(c.frame && inShot) ? c.url : null;
+			const png = own
+				? Buffer.from(own.slice(own.indexOf(",") + 1), "base64")
 				: inShot
 					? cropPng(shot, x0, y0, Math.round(cw), Math.round(ch))
 					: await page
@@ -639,7 +644,12 @@ export async function captureItem(
 			const name = `pixels/${new Bun.CryptoHasher("sha256").update(png).digest("hex").slice(0, 32)}.png`;
 			mkdirSync(join(out.fixturesDir, "pixels"), { recursive: true });
 			writeFileSync(join(out.fixturesDir, name), png);
-			canvasPixels.push({ index: c.index, file: name, source: c.url ? "canvas" : "screen" });
+			canvasPixels.push({
+				index: c.index,
+				...(c.frame ? { frame: c.frame } : {}),
+				file: name,
+				source: own ? "canvas" : "screen",
+			});
 		}
 		const entry: FixtureEntry = {
 			id: item.id,
@@ -689,6 +699,7 @@ export async function captureItem(
 				...(item.expect ? { expect: item.expect } : {}),
 				live: snap.live,
 				domOnly: snap.domOnly,
+				textStyles: snap.textStyles,
 				seen: snap.seen,
 				...(unseen ? { stackAtCenter: unseen } : {}),
 				clip: [clip.x, clip.y, clip.width, clip.height].map((v) => Math.round(v)),
