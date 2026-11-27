@@ -27,7 +27,7 @@ const { values } = parseArgs({
 	options: {
 		before: { type: "string" },
 		after: { type: "string" },
-		id: { type: "string" },
+		id: { type: "string", multiple: true },
 		component: { type: "string" },
 		surface: { type: "string" },
 		help: { type: "boolean" },
@@ -35,7 +35,7 @@ const { values } = parseArgs({
 });
 if (values.help) {
 	console.log(
-		"bun run compare [--before path] [--after path] [--id substring] [--component name] [--surface name]\nDefaults: b478dc8:theme.css vs freshly built theme.css. Outputs: workbench/out/{compare.json,compare.md,component-diffs.json,diffs/}.",
+		"bun run compare [--before path|none] [--after path|none] [--id substring|id,id...] [--component name] [--surface name]\nRepeat --id for an exact ID list. none means Default Obsidian with no theme CSS. Defaults: b478dc8:theme.css vs freshly built theme.css. Outputs: workbench/out/{compare.json,compare.md,component-diffs.json,diffs/}.",
 	);
 	process.exit(0);
 }
@@ -50,14 +50,39 @@ const registry = (await Bun.file("capture/fixtures.json").json()) as {
 	obsidianVersion: string;
 	fixtures: FixtureEntry[];
 };
-const fixtures = filterFixtures(registry.fixtures, values);
+const ids = values.id
+	?.flatMap((value) => value.split(","))
+	.map((id) => id.trim())
+	.filter(Boolean);
+const substring =
+	values.id?.length === 1 &&
+	!values.id[0]?.includes(",") &&
+	ids?.length === 1 &&
+	!registry.fixtures.some((fixture) => fixture.id === ids[0]);
+const filters = { ...values, id: substring ? ids?.[0] : ids };
+if (Array.isArray(filters.id)) {
+	const missing = filters.id.filter(
+		(id) => !registry.fixtures.some((fixture) => fixture.id === id),
+	);
+	if (missing.length)
+		throw new Error(`Unknown fixture IDs: ${missing.join(", ")}`);
+}
+const fixtures = filterFixtures(registry.fixtures, filters);
 if (!fixtures.length)
 	throw new Error("No fixtures match the requested filters");
 if (!values.after) execFileSync("bun", ["run", "build"], { stdio: "inherit" });
-const before = values.before
-	? await Bun.file(values.before).text()
-	: execFileSync("git", ["show", "b478dc8:theme.css"], { encoding: "utf8" });
-const after = await Bun.file(values.after ?? "theme.css").text();
+const before =
+	values.before === "none"
+		? ""
+		: values.before
+			? await Bun.file(values.before).text()
+			: execFileSync("git", ["show", "b478dc8:theme.css"], {
+					encoding: "utf8",
+				});
+const after =
+	values.after === "none"
+		? ""
+		: await Bun.file(values.after ?? "theme.css").text();
 mkdirSync(`${out}/themes`, { recursive: true });
 const snapshotTheme = async (
 	side: "before" | "after",
@@ -350,7 +375,7 @@ await Bun.write(
 			noise,
 			engine: `Playwright Chromium ${browser.version()}`,
 			obsidianVersion: registry.obsidianVersion,
-			filters: values,
+			filters,
 			summary,
 			topDifferences,
 			limitations,

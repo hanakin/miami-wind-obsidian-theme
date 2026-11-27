@@ -1,6 +1,19 @@
 import { expect, test } from "vitest";
 import { componentDiffs, filterFixtures, styleDiff } from "./model";
 
+test("ID lists select exact fixtures rather than expanding each ID as a substring", () => {
+	const fixtures = ["one", "two", "one.extra"].map((id) => ({
+		id,
+		component: "button",
+		contains: [],
+		surface: "test",
+	}));
+	expect(filterFixtures(fixtures, { id: ["one", "two"] })).toEqual(
+		fixtures.slice(0, 2),
+	);
+	expect(filterFixtures(fixtures, { id: [] })).toEqual([]);
+});
+
 test("finds longhand differences and missing elements", () => {
 	expect(
 		styleDiff(
