@@ -24,7 +24,6 @@ const MODES: [Mode, string][] = [
 const STATES: [Status, string][] = [
 	["different", "Differs"],
 	["not-proven", "Not proven"],
-	["accepted", "Accepted"],
 	["same", "Same"],
 ];
 const LABEL = Object.fromEntries(STATES) as Record<Status, string>;
@@ -212,7 +211,7 @@ function renderNav(): void {
 		h(
 			"div",
 			{ class: "nav-top" },
-			h("div", { class: "brand" }, "Miami Wind components"),
+			h("div", { class: "brand" }, "Miami Wind workbench"),
 			filter,
 			legend(),
 			untiedCount() > 0 &&
@@ -412,7 +411,6 @@ function changeLine(c: Change, component: string): HTMLElement {
 		" → ",
 		value(c.after),
 		` on ${where}`,
-		c.accepted && h("span", { class: "verdict accepted" }, ", accepted (intentional)"),
 	);
 }
 
@@ -477,12 +475,7 @@ function whatDiffers(
 /** A capture's verdict under its picture: the state, then each reason on its own line. */
 function verdictLines(verdict: CompareState): HTMLElement | false {
 	if (verdict.status === "same") return false;
-	const reasons =
-		verdict.status === "not-proven"
-			? verdict.reasons.map(why)
-			: verdict.status === "accepted"
-				? [`intentional: ${verdict.reason}`]
-				: [];
+	const reasons = verdict.status === "not-proven" ? verdict.reasons.map(why) : [];
 	return h(
 		"ul",
 		{ class: `reasons verdict ${verdict.status}` },
@@ -566,9 +559,6 @@ function sharedLookLine(component: string, surface: string): HTMLElement | false
 
 /** Each not-proven reason on its own line, with how many of the place's captures it applies to. */
 function reasonLines(place: PlaceVerdict): HTMLElement | false {
-	if (place.state.status === "accepted") {
-		return h("p", { class: "reason" }, `Intentional: ${place.state.reason}`);
-	}
 	if (place.state.status !== "not-proven") return false;
 	return h(
 		"ul",
@@ -706,7 +696,6 @@ function counts(name: string, places: number): string {
 		`${s.same} same`,
 		`${s.different} differ`,
 		`${s["not-proven"]} not proven`,
-		s.accepted > 0 && `${s.accepted} accepted`,
 		s.noCapture > 0 && `${s.noCapture} no capture`,
 	];
 	return `${places} ${places === 1 ? "place" : "places"}: ${parts.filter(Boolean).join(", ")}`;
@@ -884,7 +873,7 @@ function renderUntied(): void {
 				h(
 					"p",
 					{},
-					`${untiedCount()} ${untiedCount() === 1 ? "change" : "changes"} in ${untiedCaptures().length} ${untiedCaptures().length === 1 ? "capture" : "captures"}, on items that belong to no component the viewer knows.`,
+					`${untiedCount()} ${untiedCount() === 1 ? "change" : "changes"} in ${untiedCaptures().length} ${untiedCaptures().length === 1 ? "capture" : "captures"}, on items that belong to no component the workbench knows.`,
 				),
 				h("p", { class: "report" }, reportLine()),
 			),

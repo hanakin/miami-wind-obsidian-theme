@@ -20,13 +20,6 @@ it("reads the three statuses and keeps not-proven reasons", () => {
 				{ id: "a", status: "different", same: false },
 				{ id: "b", status: "same", same: true },
 				{ id: "c", status: "not-proven", same: false, notProvenReasons: ["canvas content"] },
-				{
-					id: "d",
-					status: "accepted",
-					comparisonStatus: "different",
-					same: false,
-					acceptanceReason: "new form field look",
-				},
 				{ id: "e", status: "something-new", same: true },
 			],
 		}),
@@ -34,7 +27,6 @@ it("reads the three statuses and keeps not-proven reasons", () => {
 		a: { status: "different" },
 		b: { status: "same" },
 		c: { status: "not-proven", reasons: ["canvas content"] },
-		d: { status: "accepted", reason: "new form field look" },
 		e: { status: "not-proven", reasons: ['unknown status "something-new"'] },
 	});
 });
@@ -54,14 +46,11 @@ it("rejects other schemas, error reports and reports without statuses", () => {
 const same: CompareState = { status: "same" };
 const different: CompareState = { status: "different" };
 const unproven: CompareState = { status: "not-proven", reasons: ["hidden target"] };
-const accepted: CompareState = { status: "accepted", reason: "intentional" };
 
 it("never calls a group the same unless every capture is proven the same", () => {
 	expect(combine([same, same])).toEqual(same);
 	expect(combine([same, unproven])).toEqual(unproven);
 	expect(combine([same, unproven, different])).toEqual(different);
-	expect(combine([same, accepted])).toEqual(accepted);
-	expect(combine([accepted, unproven])).toEqual(unproven);
 	expect(combine([])).toEqual({ status: "not-proven", reasons: ["not compared yet"] });
 });
 
@@ -114,12 +103,6 @@ it("uses one rule for own and larger captures: a change counts only on the compo
 			expect(rowState("button", place, list, compare, { [id]: ["button"] })?.state).toEqual(
 				different,
 			);
-			// An accepted change counts for the button only when it is surely on the button.
-			const oneAccepted = { ...compare, [id]: accepted };
-			expect(rowState("button", place, list, oneAccepted)?.state).toEqual(elsewhere);
-			expect(rowState("button", place, list, oneAccepted, { [id]: ["button"] })?.state).toEqual(
-				accepted,
-			);
 			// Every capture proven the same; then one of them not proven.
 			const allSame = { ...compare, [id]: same };
 			expect(rowState("button", place, list, allSame)?.state).toEqual(same);
@@ -143,14 +126,9 @@ it("counts a page's places, and its dot is the worst of them", () => {
 		same: 0,
 		different: 1,
 		"not-proven": 2,
-		accepted: 0,
 		noCapture: 1,
 		worst: "different",
 	});
-	expect(
-		pageSummary("button", ["mobile-phone"], fixtures, { phone: accepted }, { phone: ["button"] })
-			.worst,
-	).toBe("accepted");
 	expect(pageSummary("button", ["canvas"], fixtures, compare).worst).toBeUndefined();
 });
 
@@ -173,24 +151,21 @@ it("boils a capture's differences down to distinct changes, most common first", 
 			d("86:span.cm-underline", "border-block-start-color", "blue", "green"),
 			d("4:a.tag", "padding-left", "4px", "6px"),
 			d("5:a.tag", "padding-left", "4px", "6px"),
-			// The accepted element, apart from the same change elsewhere.
+			// The same change on a dropdown and on an item no component owns: kept apart.
 			d("9:select", "color", "red", "black"),
 			d("7:div.unknown-thing", "color", "red", "black"),
 			// An input the report cannot identify as the checkbox or not.
 			d("2:input.task-list-item-checkbox", "width", "1px", "2px"),
 		],
-		["9:select"],
 		{ tag: "a.tag, .cm-hashtag", dropdown: "select", checkbox: "input[type=checkbox]" },
 	);
 	expect(found.total).toBe(5);
-	expect(
-		found.list.map((c) => [c.what, c.items, c.components, c.maybe, c.count, c.accepted]),
-	).toEqual([
-		["Text color", "link", [], [], 4, false],
-		["Padding left", "tag", ["tag"], [], 2, false],
-		["Text color", "dropdown", ["dropdown"], [], 1, true],
-		["Text color", "div.unknown-thing", [], [], 1, false],
-		["Width", "input field", [], ["checkbox"], 1, false],
+	expect(found.list.map((c) => [c.what, c.items, c.components, c.maybe, c.count])).toEqual([
+		["Text color", "link", [], [], 4],
+		["Padding left", "tag", ["tag"], [], 2],
+		["Text color", "dropdown", ["dropdown"], [], 1],
+		["Text color", "div.unknown-thing", [], [], 1],
+		["Width", "input field", [], ["checkbox"], 1],
 	]);
 	expect(found.list[0]?.properties).toEqual(["color", "border-top-color", "outline-color"]);
 	expect(found.list[0]?.code).toEqual(["span.cm-underline"]);
@@ -200,7 +175,7 @@ it("returns every change, however many there are", () => {
 	const many = Array.from({ length: 31 }, (_, i) =>
 		d(`${i}:div.unowned`, "width", "1px", `${i + 2}px`),
 	);
-	const found = changes(many, [], { button: "button" });
+	const found = changes(many, { button: "button" });
 	expect(found.total).toBe(31);
 	expect(found.list).toHaveLength(31);
 	expect(found.list.every((c) => c.components.length === 0)).toBe(true);
@@ -209,7 +184,6 @@ it("returns every change, however many there are", () => {
 it("keeps an unowned item's change apart from a component's identical change", () => {
 	const found = changes(
 		[d("1:button", "color", "red", "blue"), d("2:div.unowned", "color", "red", "blue")],
-		[],
 		{ button: "button" },
 	);
 	// Same values, different owners: two changes, so the unowned one still reaches the untied list.
@@ -267,7 +241,7 @@ it("loses no difference: every one appears in some change", () => {
 			(i + j) % 3 === 0 ? [] : [d(element, property, `${j}px`, `${(i * j) % 4}px`)],
 		),
 	);
-	const found = changes(made, ["3:a.tag"], { button: "button", tag: "a.tag" });
+	const found = changes(made, { button: "button", tag: "a.tag" });
 	for (const x of made) expect(covered(found.list, x), JSON.stringify(x)).toBe(true);
 });
 
@@ -280,7 +254,7 @@ it.skipIf(!existsSync(REPORT))(
 		};
 		let checked = 0;
 		for (const f of report.fixtures ?? []) {
-			const found = changes(f.differences ?? [], [], {
+			const found = changes(f.differences ?? [], {
 				button: "button",
 				tag: "a.tag, .cm-hashtag",
 			});
@@ -310,7 +284,7 @@ it("counts each not-proven reason over the captures a place rests on", () => {
 	]);
 });
 
-it("never reads accepted or same when reasons are unresolved or the status is unknown", () => {
+it("never reads same when reasons are unresolved or the status is unknown", () => {
 	const read = (fixture: object) =>
 		(
 			compareStates({ schemaVersion: 1, fixtures: [{ id: "x", ...fixture }] }) as Record<
@@ -318,23 +292,22 @@ it("never reads accepted or same when reasons are unresolved or the status is un
 				CompareState
 			>
 		).x;
-	// Accepted with an unresolved reason is not proven (the compare tool exits 2 for it).
-	expect(read({ status: "accepted", notProvenReasons: ["canvas content"] })).toEqual({
+	expect(read({ status: "same", notProvenReasons: ["canvas content"] })).toEqual({
 		status: "not-proven",
 		reasons: ["canvas content"],
 	});
-	expect(read({ status: "same", notProvenReasons: ["canvas content"] })?.status).toBe("not-proven");
-	// `status` is authoritative: another field saying accepted changes nothing.
-	expect(read({ status: "new-unknown-status", comparisonStatus: "accepted" })).toEqual({
-		status: "not-proven",
-		reasons: ['unknown status "new-unknown-status"'],
-	});
+	// A status the workbench does not know (the retired "accepted" among them) is not proven.
+	for (const status of ["new-unknown-status", "accepted"]) {
+		expect(read({ status, comparisonStatus: "same" })).toEqual({
+			status: "not-proven",
+			reasons: [`unknown status "${status}"`],
+		});
+	}
 	// A proven difference stays a difference even with coverage limits.
 	expect(read({ status: "different", notProvenReasons: ["canvas content"] })).toEqual(different);
-	expect(read({ status: "accepted", acceptanceReason: "intentional" })).toEqual(accepted);
 });
 
-it("does not read a checkbox as same when an accepted change sits on an input the key cannot identify", () => {
+it("does not read a checkbox as same when a change sits on an input the key cannot identify", () => {
 	const captures = [{ id: "around", component: "task", surface: "editor-reading-view" }];
 	const touched = {
 		around: touchedComponents(
@@ -345,6 +318,6 @@ it("does not read a checkbox as same when an accepted change sits on an input th
 	};
 	expect(touched.around).toEqual([]);
 	expect(
-		rowState("checkbox", "editor-reading-view", captures, { around: accepted }, touched)?.state,
+		rowState("checkbox", "editor-reading-view", captures, { around: different }, touched)?.state,
 	).toEqual({ status: "not-proven", reasons: [changedElsewhere("checkbox")] });
 });

@@ -6,7 +6,6 @@ interface CompareFixture {
 	id: string;
 	status?: unknown;
 	notProvenReasons?: unknown;
-	acceptanceReason?: unknown;
 }
 
 /**
@@ -25,15 +24,12 @@ export function compareStates(json: unknown): Record<string, CompareState> | str
 	for (const f of report.fixtures as CompareFixture[]) {
 		const reasons = Array.isArray(f.notProvenReasons) ? f.notProvenReasons.map(String) : [];
 		// `status` alone decides. An unresolved reason outranks everything but a proven difference:
-		// a capture with one is never same or accepted.
+		// a capture with one is never same.
 		if (f.status === "different") out[f.id] = { status: "different" };
 		else if (reasons.length || f.status === "not-proven") {
 			out[f.id] = { status: "not-proven", reasons };
 		} else if (f.status === "same") out[f.id] = { status: "same" };
-		else if (f.status === "accepted") {
-			const reason = typeof f.acceptanceReason === "string" ? f.acceptanceReason : "";
-			out[f.id] = { status: "accepted", reason: reason || "no reason recorded" };
-		} else if (typeof f.status === "string") {
+		else if (typeof f.status === "string") {
 			// A status this viewer does not know yet is never read as "same".
 			out[f.id] = { status: "not-proven", reasons: [`unknown status "${f.status}"`] };
 		} else return `compare.json has no status for ${f.id}; rerun bun run compare.`;
@@ -80,7 +76,7 @@ export const captureState = (compare: Record<string, CompareState> | null, id: s
  * difference on their own elements.
  *
  * The component's own captures there decide, or, when it has none, every larger capture that
- * contains it. One rule for both: a capture counts as differing (or accepted) for this component
+ * contains it. One rule for both: a capture counts as differing for this component
  * only when its change lands on the component's own elements. A change elsewhere in the capture
  * is not proven, never same. Undefined only when no capture contains the component there.
  */
@@ -118,13 +114,12 @@ export function stateFor(
 }
 
 // Worst first: what a page's dot and a group of captures report.
-const SEVERITY = ["different", "not-proven", "accepted", "same"] as const;
+const SEVERITY = ["different", "not-proven", "same"] as const;
 
 export interface PageSummary {
 	same: number;
 	different: number;
 	"not-proven": number;
-	accepted: number;
 	/** Places no capture contains the component in. */
 	noCapture: number;
 	/** The worst verdict among the places that have one. */
@@ -143,7 +138,6 @@ export function pageSummary(
 		same: 0,
 		different: 0,
 		"not-proven": 0,
-		accepted: 0,
 		noCapture: 0,
 		worst: undefined,
 	};
@@ -157,18 +151,14 @@ export function pageSummary(
 }
 
 /**
- * One verdict for several captures: any proven difference wins, then anything not proven, then an
- * accepted change. Only when every capture is proven the same is the group the same.
+ * One verdict for several captures: any proven difference wins, then anything not proven. Only
+ * when every capture is proven the same is the group the same.
  */
 export function combine(states: CompareState[]): CompareState {
 	if (states.some((s) => s.status === "different")) return { status: "different" };
 	const reasons = [...new Set(states.flatMap((s) => (s.status === "not-proven" ? s.reasons : [])))];
 	if (states.some((s) => s.status === "not-proven") || states.length === 0) {
 		return { status: "not-proven", reasons: reasons.length ? reasons : ["not compared yet"] };
-	}
-	const accepted = states.filter((s) => s.status === "accepted");
-	if (accepted.length) {
-		return { status: "accepted", reason: [...new Set(accepted.map((s) => s.reason))].join("; ") };
 	}
 	return { status: "same" };
 }
@@ -199,8 +189,6 @@ export interface Change {
 	after: string | null;
 	/** How many element properties change this way. */
 	count: number;
-	/** True when it is on an element whose change was accepted as intentional. */
-	accepted: boolean;
 }
 
 // A logical property and the physical one it stands for in the captures' left-to-right pages.
@@ -244,16 +232,14 @@ function nameOf(properties: string[]): string {
  * change of value. Differences are grouped only when they also sit on items with the same owners,
  * so a change on an item no component owns is never folded into a component's change.
  *
- * `acceptedElements` are the element keys the compare tool accepted (its acceptanceScope),
- * pseudo-elements included. `selectors` maps the components found in the capture to their
+ * `selectors` maps the components found in the capture to their
  * selector lists, to say which component each change is on.
  */
 export function changes(
 	differences: Difference[],
-	acceptedElements: string[] = [],
 	selectors: Record<string, string> = {},
 ): { total: number; list: Change[] } {
-	type Group = Pick<Change, "before" | "after" | "count" | "accepted" | "components" | "maybe"> & {
+	type Group = Pick<Change, "before" | "after" | "count" | "components" | "maybe"> & {
 		seen: Map<string, number>;
 		on: Set<string>;
 	};
@@ -267,17 +253,15 @@ export function changes(
 		const twin = physicalOf(property);
 		if (twin && recorded.has(`${element}\n${twin}\n${before}\n${after}`)) continue;
 		const item = element?.split("::")[0] ?? "";
-		const accepted = acceptedElements.includes(item);
 		const components = names.filter((c) => matchesElement(selectors[c] ?? "", item));
 		const maybe = names.filter(
 			(c) => !components.includes(c) && mayMatchElement(selectors[c] ?? "", item),
 		);
-		const key = [before, after, accepted, components, maybe].join("\n");
+		const key = [before, after, components, maybe].join("\n");
 		const change = byChange.get(key) ?? {
 			before,
 			after,
 			count: 0,
-			accepted,
 			components,
 			maybe,
 			seen: new Map(),

@@ -1,4 +1,4 @@
-/* The viewer's own interface. Miami Wind palette (DESIGN.md): dark only, flat, no focus rings. */
+/* The workbench's own interface. Miami Wind palette (DESIGN.md): dark only, flat, no focus rings. */
 :root {
 	color-scheme: dark;
 	--crust: #09090b;
@@ -198,10 +198,6 @@ nav a[aria-current="page"] {
 	background: var(--red);
 }
 
-.dot.accepted {
-	background: var(--purple);
-}
-
 .dot.not-proven {
 	background: var(--yellow);
 }
@@ -331,17 +327,12 @@ main h2 {
 	color: var(--red);
 }
 
-.badge.accepted {
-	background: color-mix(in srgb, var(--purple) 14%, transparent);
-	color: var(--purple);
-}
-
 .badge.not-proven {
 	background: color-mix(in srgb, var(--yellow) 12%, transparent);
 	color: var(--yellow);
 }
 
-/* Why a place is not proven or accepted: one reason per line. */
+/* Why a place is not proven: one reason per line. */
 .reason {
 	margin: 8px 0 0;
 	padding: 0;
@@ -521,10 +512,6 @@ figcaption[title] {
 
 .verdict.not-proven {
 	color: var(--yellow);
-}
-
-.verdict.accepted {
-	color: var(--purple);
 }
 
 /* What differs in a capture: a few plain lines, the rest folded. */

@@ -112,8 +112,6 @@ interface ReportFixture {
 		after: string | null;
 	}[];
 	images?: { diff?: string };
-	/** Elements whose change was accepted as intentional. */
-	acceptanceScope?: { elements?: string[] };
 }
 
 type FixtureIndex = Pick<ViewerData, "components"> & {
@@ -186,7 +184,6 @@ function data(index: FixtureIndex): ViewerData {
 						...tied(
 							changes(
 								f.differences ?? [],
-								f.acceptanceScope?.elements,
 								Object.fromEntries(
 									(contains.get(f.id) ?? []).flatMap((c) =>
 										COMPONENTS[c] ? [[c, COMPONENTS[c]]] : [],
