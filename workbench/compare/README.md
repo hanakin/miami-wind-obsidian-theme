@@ -8,7 +8,7 @@ Run `bun run compare`.
 
 The default command builds the after theme first. It compares `b478dc8:theme.css` with the built root `theme.css`.
 Use `--before path` to select a baseline file.
-Use `--after path` to select an after file without building. Use `--before none` or `--after none` for Default Obsidian with empty theme CSS. The source label is `none`, the snapshot file is empty, and SHA-256 covers the empty string. `--after none` skips the build.
+Use `--after path` to select an after file without building. Pass an empty CSS file for Default Obsidian. The report records the file path, an empty snapshot, and the SHA-256 hash of the empty string.
 
 Use `--id substring` to search fixture IDs. A single exact fixture ID selects only that fixture. Use `--id id1,id2` or repeat `--id id1 --id id2` for an exact list. Unknown IDs in a list fail the run.
 Use `--component exact-name` to filter component tags, including nested tags.

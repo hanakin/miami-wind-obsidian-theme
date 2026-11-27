@@ -31,7 +31,7 @@ const { values } = parseArgs({
 });
 if (values.help) {
 	console.log(
-		"bun run compare [--before path|none] [--after path|none] [--id substring|id,id...] [--component name] [--surface name]\nRepeat --id for an exact ID list. none means Default Obsidian with no theme CSS. Defaults: b478dc8:theme.css vs freshly built theme.css. Outputs: workbench/out/{compare.json,compare.md,component-diffs.json,diffs/}.",
+		"bun run compare [--before path] [--after path] [--id substring|id,id...] [--component name] [--surface name]\nRepeat --id for an exact ID list. Pass an empty CSS file for Default Obsidian. Defaults: b478dc8:theme.css vs freshly built theme.css. Outputs: workbench/out/{compare.json,compare.md,component-diffs.json,diffs/}.",
 	);
 	process.exit(0);
 }
@@ -67,18 +67,10 @@ const fixtures = filterFixtures(registry.fixtures, filters);
 if (!fixtures.length)
 	throw new Error("No fixtures match the requested filters");
 if (!values.after) execFileSync("bun", ["run", "build"], { stdio: "inherit" });
-const before =
-	values.before === "none"
-		? ""
-		: values.before
-			? await Bun.file(values.before).text()
-			: execFileSync("git", ["show", "b478dc8:theme.css"], {
-					encoding: "utf8",
-				});
-const after =
-	values.after === "none"
-		? ""
-		: await Bun.file(values.after ?? "theme.css").text();
+const before = values.before
+	? await Bun.file(values.before).text()
+	: execFileSync("git", ["show", "b478dc8:theme.css"], { encoding: "utf8" });
+const after = await Bun.file(values.after ?? "theme.css").text();
 mkdirSync(`${out}/themes`, { recursive: true });
 const snapshotTheme = async (
 	side: "before" | "after",

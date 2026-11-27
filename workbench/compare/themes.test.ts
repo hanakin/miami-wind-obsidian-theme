@@ -106,11 +106,12 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 		writeFileSync(registryPath, JSON.stringify(registry));
 		for (const side of ["before", "after"] as const)
 			writeFileSync(join(cwd, `${side} theme.css`), inputs[side]);
+		writeFileSync(join(cwd, "empty theme.css"), "");
 		for (const [before, after, ids] of [
-			["none", "none", ["--id", "test,other"]],
-			["none", "none", ["--id", "test"]],
-			["none", "after theme.css", ["--id", "test", "--id", "other"]],
-			["before theme.css", "none", ["--id", "test,other"]],
+			["empty theme.css", "empty theme.css", ["--id", "test,other"]],
+			["empty theme.css", "empty theme.css", ["--id", "test"]],
+			["empty theme.css", "after theme.css", ["--id", "test", "--id", "other"]],
+			["before theme.css", "empty theme.css", ["--id", "test,other"]],
 		] as const) {
 			const child = spawnSync(
 				"bun",
@@ -125,7 +126,7 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 				{ cwd, encoding: "utf8" },
 			);
 			expect(child.status, child.stderr).toBe(
-				before === "none" && after === "none" ? 0 : 1,
+				before === "empty theme.css" && after === "empty theme.css" ? 0 : 1,
 			);
 			const current = JSON.parse(
 				readFileSync(join(cwd, "workbench/out/compare.json"), "utf8"),
@@ -134,7 +135,7 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 				ids.length === 2 && ids[1] === "test" ? ["test"] : ["other", "test"],
 			);
 			for (const side of ["before", "after"] as const)
-				if (current.themes[side].source === "none") {
+				if (current.themes[side].source === "empty theme.css") {
 					expect(current.themes[side].sha256).toBe(
 						createHash("sha256").update("").digest("hex"),
 					);
@@ -146,14 +147,34 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 					).toBe("");
 				}
 		}
+		for (const [before, after] of [
+			["none", "empty theme.css"],
+			["empty theme.css", "none"],
+		]) {
+			const invalid = spawnSync(
+				"bun",
+				[
+					resolve("workbench/compare/cli.ts"),
+					"--before",
+					before!,
+					"--after",
+					after!,
+					"--id",
+					"test",
+				],
+				{ cwd, encoding: "utf8" },
+			);
+			expect(invalid.status).not.toBe(0);
+			expect(invalid.stderr).toContain("ENOENT");
+		}
 		const missing = spawnSync(
 			"bun",
 			[
 				resolve("workbench/compare/cli.ts"),
 				"--before",
-				"none",
+				"empty theme.css",
 				"--after",
-				"none",
+				"empty theme.css",
 				"--id",
 				"test,missing",
 			],
