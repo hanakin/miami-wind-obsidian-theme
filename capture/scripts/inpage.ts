@@ -738,9 +738,9 @@ export const INPAGE = String.raw`
 		const format = same ? "html" : "xhtml";
 		const contains = Object.entries(opts.components).filter(([, sel]) => t.matches?.(sel) || t.querySelector(sel)).map(([k]) => k);
 		const fixture = same
-			? "<!doctype html>\n<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8">' + headExtra + "</head>\n<body" + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
+			? (doc.compatMode === "BackCompat" ? "" : "<!doctype html>\n") + "<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8">' + headExtra + "</head>\n<body" + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
 			: '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(out) + "\n";
-		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, sheets, whole: whole && opts.context !== "document" ? "see-through" : null };
+		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, sheets, quirks: doc.compatMode === "BackCompat", whole: whole && opts.context !== "document" ? "see-through" : null };
 	}
 	/** Painted style of the target and pseudo subtrees (colors, borders, shadows, decorations, ::before/::after), for a before/after state diff. */
 	const PAINT = ["color", "background-color", "background-image", "border-top-color", "border-right-color", "border-bottom-color", "border-left-color", "outline-color", "outline-style", "outline-width", "box-shadow", "text-decoration-line", "text-decoration-color", "opacity", "filter", "transform", "visibility", "fill", "stroke"];

@@ -332,6 +332,7 @@ interface Snap {
 	viewport: [number, number];
 	styles: string[];
 	whole: "see-through" | null;
+	quirks: boolean;
 	sheets: { kind: "app" | "theme" | "runtime"; text?: string }[];
 }
 
@@ -595,6 +596,7 @@ export async function captureItem(
 			viewport: snap.viewport,
 			styles: snap.styles,
 			runtimeStyles: saveSheets(snap.sheets),
+			...(snap.quirks ? { quirks: true } : {}),
 			...(item.context
 				? { context: item.context }
 				: snap.whole

@@ -2219,7 +2219,7 @@ const printExport: Scene = {
 			expect: "body.theme-light > .print",
 			full: true,
 			media: { media: "print" },
-			note: "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs.",
+			note: "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs. The window has no doctype (quirks mode), so the fixture has none either.",
 		},
 	],
 };

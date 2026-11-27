@@ -184,6 +184,11 @@ export interface FixtureEntry {
 	 */
 	runtimeStyles?: string[];
 	/**
+	 * The window had no doctype (quirks mode, like Obsidian's print window): the saved HTML has
+	 * none either, so a viewer lays it out the same way.
+	 */
+	quirks?: true;
+	/**
 	 * "document": the whole window was kept, not just the target's branch: overlays that show the
 	 * page under them (set on the item, or found: a positioned target without a solid background).
 	 */

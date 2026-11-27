@@ -294,18 +294,27 @@ const renderCss = (styles: string[], touch: boolean) => {
 	}
 	return css;
 };
-const render = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
-// Nothing loads from the network; Obsidian's bundled fonts and images come from capture/.app.
-await render.route("**", (r) => {
-	const url = r.request().url();
-	const file = `${CAPTURE}.app/assets/${url.slice(ASSETS.length).split("?")[0]}`;
-	if (url.startsWith(ASSETS) && existsSync(file)) return r.fulfill({ path: file });
-	return r.abort();
-});
-await render.setContent(
-	'<!doctype html><html><head><style id="replay"></style></head><body></body></html>',
-);
-await render.evaluate(INPAGE);
+/**
+ * A replay page. Standards mode, or quirks mode for fixtures from a window without a doctype
+ * (Obsidian's print window): line boxes lay out differently in the two.
+ */
+async function stage(quirks: boolean) {
+	const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+	// Nothing loads from the network; Obsidian's bundled fonts and images come from capture/.app.
+	await page.route("**", (r) => {
+		const url = r.request().url();
+		const file = `${CAPTURE}.app/assets/${url.slice(ASSETS.length).split("?")[0]}`;
+		if (url.startsWith(ASSETS) && existsSync(file)) return r.fulfill({ path: file });
+		return r.abort();
+	});
+	await page.setContent(
+		`${quirks ? "" : "<!doctype html>"}<html><head><style id="replay"></style></head><body></body></html>`,
+	);
+	await page.evaluate(INPAGE);
+	const cdp = await page.context().newCDPSession(page);
+	return { page, cdp, cssKey: "", mediaNow: "-", behindBlack: false };
+}
+const stages = { standards: await stage(false), quirks: await stage(true) };
 const cmp = await browser.newPage();
 /** Fixtures whose replay cannot be compared with the live screenshot, and why. */
 const replayLimits = new Map<string, string>();
@@ -313,7 +322,6 @@ const replayLimits = new Map<string, string>();
 const replayMatch = new Map<string, number>();
 const replayDir = `${WORK}/replay`;
 mkdirSync(replayDir, { recursive: true });
-let cssKey = "";
 const sheetTexts = new Map<string, string>();
 const sheetText = (t: string) => {
 	let v = sheetTexts.get(t);
@@ -326,12 +334,12 @@ const sheetText = (t: string) => {
 const glyphRules = new Set(
 	[...readFileSync(runtimePath, "utf8").matchAll(/mjx-c\.(mjx-c[0-9A-F]+)/g)].map((m) => m[1]),
 );
-const renderCdp = await render.context().newCDPSession(render);
-let mediaNow = "-";
-let behindBlack = false;
 const renderOrder = [...valid.keys()].filter((id) => !byId.get(id)?.variantOf).sort();
 for (const id of renderOrder) {
 	const f = byId.get(id) as FixtureEntry;
+	const st = f.quirks ? stages.quirks : stages.standards;
+	const render = st.page;
+	const renderCdp = st.cdp;
 	const touch = id.startsWith("mobile.");
 	const size =
 		f.viewport ??
@@ -351,20 +359,20 @@ for (const id of renderOrder) {
 		continue;
 	}
 	const key = `${(own ?? styles).join(" ")}|${own ? "own" : "shared"}|${touch}`;
-	if (key !== cssKey) {
+	if (key !== st.cssKey) {
 		await render.evaluate(
 			(css) => {
 				(document.getElementById("replay") as HTMLStyleElement).textContent = css;
 			},
 			own ? sheetCss(own, touch) : renderCss(styles, touch),
 		);
-		cssKey = key;
+		st.cssKey = key;
 	}
 	await render.setViewportSize({ width: size[0] ?? 1600, height: size[1] ?? 1000 });
 	// The media the item was captured under (print, forced colors), or none.
 	// The window's color scheme (forced colors picks its palette from it) plus any emulated media.
 	const media = `${f.evidence?.media ?? ""}|${f.evidence?.inputMedia?.dark ?? true}|${f.evidence?.inputMedia?.canvas ?? ""}`;
-	if (media !== mediaNow) {
+	if (media !== st.mediaNow) {
 		const m = (f.evidence?.media ? JSON.parse(f.evidence.media) : {}) as {
 			media?: string;
 			features?: { name: string; value: string }[];
@@ -384,7 +392,7 @@ for (const id of renderOrder) {
 			media: m.media ?? "",
 			features: [...(m.features ?? []), { name: "prefers-color-scheme", value: scheme }],
 		});
-		mediaNow = media;
+		st.mediaNow = media;
 	}
 	// MathJax draws each character through its own CSS rule, kept only while the character is on
 	// screen: every character in the fixture needs one, in the fixture's own <head> (or the
@@ -411,12 +419,12 @@ for (const id of renderOrder) {
 	}));
 	// A translucent window (body.is-translucent) shows what is behind it: the capture saw black.
 	const translucent = /<body[^>]*class="[^"]*\bis-translucent\b/.test(html);
-	if (translucent !== behindBlack) {
+	if (translucent !== st.behindBlack) {
 		await renderCdp.send(
 			"Emulation.setDefaultBackgroundColorOverride",
 			translucent ? { color: { r: 0, g: 0, b: 0, a: 1 } } : {},
 		);
-		behindBlack = translucent;
+		st.behindBlack = translucent;
 	}
 	const got = await replayFixture(render, html, f.imageSizes ?? [], pixels);
 	if (got.why) {
@@ -541,7 +549,7 @@ for (const id of renderOrder) {
 		]);
 	}
 }
-await render.close();
+for (const st of Object.values(stages)) await st.page.close();
 await cmp.close();
 writeFileSync(
 	`${replayDir}/match.json`,
