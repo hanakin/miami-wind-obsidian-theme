@@ -71,11 +71,26 @@ function hits(args: {
 					)
 				);
 			};
-			// The rule reaches an item only when it selects the item's own element; it names the
-			// item when its last part also carries the item's own class or element.
 			for (const el of matched) {
+				// Its last part selects the item's own element: it names the item when it also
+				// carries the item's own class or element (an attribute test alone never does).
 				for (const item of owners.get(el) ?? []) {
-					found.add(`${item}\n${index}\n${calls(item) ? "named" : "selected"}`);
+					found.add(`${item}\n${index}\n${!probe.weak && calls(item) ? "named" : "selected"}`);
+				}
+				if (owners.has(el) || probe.prefixes.length === 0) continue;
+				// It styles something inside an item and passes through the item to get there.
+				for (let up = el.parentElement; up; up = up.parentElement) {
+					const items = owners.get(up);
+					if (!items) continue;
+					const through = probe.prefixes.some((p) => {
+						try {
+							return up.matches(p);
+						} catch {
+							return false;
+						}
+					});
+					if (through) for (const item of items) found.add(`${item}\n${index}\nthrough`);
+					break;
 				}
 			}
 		}
@@ -140,21 +155,24 @@ export async function styledBy(files: { path: string; css: string }[]): Promise<
 	} finally {
 		await browser.close();
 	}
-	// One entry per item and rule; a rule that names the item wins over one that only selects it.
+	// One entry per item and rule, keeping the strongest way the rule reaches the item.
+	const strength = { named: 3, through: 2, selected: 1 };
 	const byRule = new Map<string, RuleHit>();
 	for (const pair of pairs) {
-		const [item = "", index = "0", how = ""] = pair.split("\n");
+		const [item = "", index = "0", how = "selected"] = pair.split("\n");
 		const probe = list[Number(index)];
 		if (!probe) continue;
 		const file = files[probe.file]?.path ?? "";
 		const key = `${item}\n${file}\n${probe.line}\n${probe.selector}`;
-		const named = how === "named" || byRule.get(key)?.named === true;
+		const had = byRule.get(key);
+		const way = how as RuleHit["how"];
+		if (had && strength[had.how] >= strength[way]) continue;
 		byRule.set(key, {
 			item,
 			file,
 			line: probe.line,
 			selector: probe.selector,
-			named,
+			how: way,
 			adjustment: probe.adjustment,
 		});
 	}
