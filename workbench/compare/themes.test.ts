@@ -69,6 +69,16 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 		);
 		expect(report.schemaVersion).toBe(1);
 		expect(report.status).toBe("different");
+		expect(report).not.toHaveProperty("accepted");
+		expect(report.summary).not.toHaveProperty("accepted");
+		for (const fixture of report.fixtures)
+			for (const key of [
+				"comparisonStatus",
+				"acceptanceReason",
+				"acceptanceScope",
+				"pixelsOutsideAcceptance",
+			])
+				expect(fixture).not.toHaveProperty(key);
 		expect(new Date(report.generated).toISOString()).toBe(report.generated);
 		expect(Date.parse(report.generated)).toBeGreaterThanOrEqual(started);
 		expect(Date.parse(report.generated)).toBeLessThanOrEqual(Date.now());

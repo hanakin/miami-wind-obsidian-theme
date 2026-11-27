@@ -2,6 +2,10 @@ export interface ElementStyle {
 	element: string;
 	props: Record<string, string>;
 }
+export function comparisonExitCode(results: readonly { status: string }[]) {
+	if (results.some((result) => result.status === "different")) return 1;
+	return results.some((result) => result.status === "not-proven") ? 2 : 0;
+}
 export interface Difference {
 	element: string;
 	property: string;

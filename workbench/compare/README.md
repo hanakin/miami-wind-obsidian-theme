@@ -32,9 +32,9 @@ Both same-CSS pairs must have zero style and pixel changes. A noisy fixture rece
 
 Exit codes:
 
-- `0`: every selected fixture is same or accepted, with no coverage limits on accepted results.
+- `0`: every selected fixture is proven same.
 - `1`: at least one fixture has proven `different` status, or setup fails.
-- `2`: no unaccepted differences, but at least one fixture is not proven or an accepted result has coverage limits.
+- `2`: no differences, but at least one fixture is not proven.
 
 Outputs are local and gitignored. Each run removes old reports and diff images before validation.
 
@@ -48,7 +48,7 @@ The JSON keeps `schemaVersion: 1` and the existing fields. Each fixture adds `st
 
 The top-level `notProven` list contains `{ id, reasons }` records. The top-level `noise` list contains the fixture ID and its style, union-pixel, before-pixel, and after-pixel noise counts. Summary additions are `notProven`, `notProvenOnly`, and `noise` counts.
 
-`summary.changed` counts proven differences. `summary.unchanged` counts proven same results. `summary.notProvenOnly` counts fixtures with not-proven status. These counts plus `summary.accepted` sum to `summary.checked`. `summary.notProven` includes every fixture with a coverage limit. It can overlap proven differences because a partial replay can still expose a genuine CSS difference.
+`summary.changed` counts proven differences. `summary.unchanged` counts proven same results. `summary.notProvenOnly` counts fixtures with not-proven status. These three counts sum to `summary.checked`. `summary.notProven` includes every fixture with a coverage limit. It can overlap proven differences because a partial replay can still expose a genuine CSS difference.
 
 The shared component look uses each property's most common after-theme value within the same interaction state. Ties select the first use in fixture ID order. The comparison excludes container dimensions: width, height, inline-size, block-size, transform-origin, and perspective-origin. Filtered runs describe only the selected uses. This output measures surface consistency independently of before/after parity.
 
@@ -61,7 +61,3 @@ Fixtures can provide `imageSizes: [{ index, width, height }]`. The index uses ze
 If `/tmp` is full, set `TMPDIR` to a directory under `~/Work` before running checks or comparisons.
 
 Diff images use red for stable changes and orange for unstable pixels. All unstable pixels remain visible in the evidence. Noisy fixtures also save all four screenshots for inspection.
-
-The accepted-difference list is `workbench/compare/accepted-differences.json`. Its single rule covers input, select, and textarea controls in pdf.js AcroForm text, checkbox, radio, and choice widgets inside `.annotationLayer`. Each control must have its own inline color property. The renderer normalizes those values and requires them to win in both after captures. Only pinned color properties are eligible. A currentColor consequence also requires an inline text color and must start at that control’s before text color. Border consequences remain limited to own pseudos unless the border property itself has an inline value. Typography, geometry, stacking, visibility, sibling or descendant style changes, outside pixels, repeat noise, and pixel-only results prevent acceptance. All pixel counts and evidence remain intact. `acceptanceScope` records eligible element keys, rectangles, `beforeColors`, and normalized `inlineColors` by element key. `pixelsOutsideAcceptance` records stable changes outside their rectangles.
-
-Matching and not-proven observations retain their measured status. Accepted results retain `same: false`, `comparisonStatus: different`, all measurements, coverage reasons, and evidence images. `acceptanceReason` records the decision. The top-level `accepted` list contains `{ id, reason }` records for accepted fixtures. `summary.accepted` counts them. Unaccepted differences fail with exit 1. Not-proven results, including accepted results with coverage limits, fail with exit 2 and give the report not-proven status when no unaccepted differences remain. The JSON keeps schema version 1. CodeMirror `.cm-tooltip` uses belong to the shared `tooltip` component.

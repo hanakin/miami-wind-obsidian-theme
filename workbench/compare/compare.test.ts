@@ -1,5 +1,20 @@
 import { expect, test } from "vitest";
-import { componentDiffs, filterFixtures, styleDiff } from "./model";
+import {
+	comparisonExitCode,
+	componentDiffs,
+	filterFixtures,
+	styleDiff,
+} from "./model";
+
+test("only same, different and not-proven determine exit status", () => {
+	expect(comparisonExitCode([{ status: "same" }])).toBe(0);
+	expect(
+		comparisonExitCode([{ status: "same" }, { status: "not-proven" }]),
+	).toBe(2);
+	expect(
+		comparisonExitCode([{ status: "different" }, { status: "not-proven" }]),
+	).toBe(1);
+});
 
 test("ID lists select exact fixtures rather than expanding each ID as a substring", () => {
 	const fixtures = ["one", "two", "one.extra"].map((id) => ({
