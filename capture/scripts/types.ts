@@ -138,7 +138,8 @@ export interface ChecklistItem {
  *   runtimeStyles below (its srcdoc holds the markup without them); data-capture-frame-empty: the
  *   frame showed nothing live (a resize helper), so it hides nothing.
  * - data-capture-animated="X,Y,W,H ..." on <html>: animated parts, the text caret and native
- *   text-area resize grips at the shot (not in the markup, or drawn by the browser itself); data-capture-select-none: a select with nothing chosen.
+ *   text-area resize grips at the shot (not in the markup, or drawn by the browser itself);
+ *   data-capture-animated-what names the animated parts.; data-capture-select-none: a select with nothing chosen.
  * - data-capture-viewport / data-capture-styles on <html>: as viewport and styles below.
  * - <style data-capture-runtime="mathjax"> in <head>: MathJax's rule for each character in the
  *   fixture (MathJax keeps them only while the character is on screen). Viewers apply it.

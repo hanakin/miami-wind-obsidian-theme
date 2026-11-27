@@ -653,6 +653,7 @@ export const INPAGE = String.raw`
 		// cursors: their state at the shot is not in the markup) and the native text caret.
 		const box = (r, pad = 0) => [r.x - pad, r.y, r.width + 2 * pad, r.height].map((v) => Math.round(v * 10) / 10).join(",");
 		const moving = new Set();
+		const movingWhat = [];
 		// The window's animations and those of its same-origin frames (the startup screen's
 		// loading bar), in window coordinates.
 		const anims = doc.getAnimations().map((an) => [an, 0, 0]);
@@ -677,9 +678,18 @@ export const INPAGE = String.raw`
 				const ar = a.getBoundingClientRect();
 				if ((cs.overflowX !== "visible" || cs.overflowY !== "visible") && ar.width * ar.height < 0.25 * ew.innerWidth * ew.innerHeight) { e = a; break; }
 			}
+			// A caret-color transition changes nothing but the text caret (masked on its own).
+			if (an.transitionProperty === "caret-color") continue;
+			// An animation nobody can see (a hidden loading icon's ::after) hides nothing.
+			const pseudo = an.effect?.pseudoElement ?? null;
+			const pcs = e.ownerDocument.defaultView.getComputedStyle(e, pseudo);
+			if (pcs.display === "none" || pcs.visibility !== "visible" || parseFloat(pcs.opacity) === 0 || (pseudo && /^(none|normal)$/.test(pcs.content))) continue;
 			const shift = (r) => ({ x: r.x + ox, y: r.y + oy, width: r.width, height: r.height });
 			const r = shift(e.getBoundingClientRect());
-			if (r.width * r.height >= 1) { if (moving.size < 60) moving.add(box(r, 1)); continue; }
+			if (r.width * r.height >= 1) {
+				if (moving.size < 60 && !moving.has(box(r, 1))) { moving.add(box(r, 1)); movingWhat.push(e.localName + "." + [...e.classList].slice(0, 2).join(".") + (pseudo ?? "") + " " + (an.animationName ?? an.transitionProperty ?? "animation")); }
+				continue;
+			}
 			// A zero-size layer (CodeMirror's cursor layer blinking its cursors): its children.
 			for (const c of [...e.children].slice(0, 20)) {
 				const cr = shift(c.getBoundingClientRect());
@@ -707,6 +717,7 @@ export const INPAGE = String.raw`
 			moving.add([x - 2, r.y, 4, r.height].map((v) => Math.round(v * 10) / 10).join(","));
 		}
 		if (moving.size) out.documentElement.setAttribute("data-capture-animated", [...moving].join(" "));
+		if (movingWhat.length) out.documentElement.setAttribute("data-capture-animated-what", movingWhat.join("; "));
 		out.documentElement.setAttribute("data-capture-styles", styles.join(" "));
 		// A see-through overlay shows the page under it: keep the whole window. That is a target in
 		// a positioned layer (a modal backdrop, a PDF highlight, a canvas handle, a code block's
@@ -785,6 +796,37 @@ export const INPAGE = String.raw`
 												const er = { x: Math.max(er0.x, zone.x), y: Math.max(er0.y, zone.y), right: Math.min(er0.right, zone.right), bottom: Math.min(er0.bottom, zone.bottom) };
 												if (er.right - er.x < 1 || er.bottom - er.y < 1 || (!svg && clear(win, e))) continue;
 												n++;
+												// A border-only frame (XFA field borders) paints just its border bands: sample along
+												// them (a grid point seldom lands on a 1 px line).
+												if (!svg && frameOnlyAt(win, e, (er0.left + er0.right) / 2, (er0.top + er0.bottom) / 2)) {
+													const fcs = win.getComputedStyle(e);
+													const bw = (k) => parseFloat(fcs["border" + k + "Width"]) || 0;
+													// Widened by 1 px on each side: a thin border under a scale (a PDF layer) draws wider
+													// than its computed width.
+													const bands = [
+														[er0.left, er0.top - 1, er0.width, bw("Top") + 2],
+														[er0.left, er0.bottom - bw("Bottom") - 1, er0.width, bw("Bottom") + 2],
+														[er0.left - 1, er0.top, bw("Left") + 2, er0.height],
+														[er0.right - bw("Right") - 1, er0.top, bw("Right") + 2, er0.height],
+													].filter((b) => b[2] > 2 && b[3] > 2);
+													for (const [bx, by, bwid, bhei] of bands) {
+														if (bwid <= 0 || bhei <= 0) continue;
+														const horiz = bwid >= bhei;
+														for (let t = 0; t < (horiz ? bwid : bhei); t += 8) {
+															const x0 = horiz ? bx + t : bx;
+															const y0 = horiz ? by : by + t;
+															const w0 = horiz ? Math.min(8, bwid - t) : bwid;
+															const h0 = horiz ? bhei : Math.min(8, bhei - t);
+															const c0 = [Math.max(x0, zone.x), Math.max(y0, zone.y), Math.min(x0 + w0, zone.right), Math.min(y0 + h0, zone.bottom)];
+															if (c0[2] - c0[0] <= 0 || c0[3] - c0[1] <= 0) continue;
+															const px = (c0[0] + c0[2]) / 2;
+															const py = (c0[1] + c0[3]) / 2;
+															if (px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e))
+																cells.set("band:" + c0.join(","), c0);
+														}
+													}
+													continue;
+												}
 												for (let y = Math.floor(er.y / 8) * 8; y < er.bottom && cells.size < 20000; y += 8)
 													for (let x = Math.floor(er.x / 8) * 8; x < er.right; x += 8) {
 														const k = x + "," + y;
@@ -793,6 +835,8 @@ export const INPAGE = String.raw`
 														if (had && had[0] <= c0[0] && had[1] <= c0[1] && had[2] >= c0[2] && had[3] >= c0[3]) continue;
 														const px = (c0[0] + c0[2]) / 2;
 														const py = (c0[1] + c0[3]) / 2;
+														// Inside a border-only frame (XFA field borders) it paints nothing.
+														if (!svg && frameOnlyAt(win, e, px, py)) continue;
 														if (px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e))
 															cells.set(k, had ? [Math.min(had[0], c0[0]), Math.min(had[1], c0[1]), Math.max(had[2], c0[2]), Math.max(had[3], c0[3])] : c0);
 													}
@@ -803,6 +847,7 @@ export const INPAGE = String.raw`
 										const byRow = new Map();
 										const fmt = (v) => Math.round(v * 10) / 10;
 										for (const [k, c] of cells) {
+											if (k.startsWith("band:")) { runs.push([c[0], c[1], c[2] - c[0], c[3] - c[1]].map(fmt).join(",")); continue; }
 											const [x, y] = k.split(",").map(Number);
 											if (c[0] === x && c[1] === y && c[2] === x + 8 && c[3] === y + 8) { if (!byRow.has(y)) byRow.set(y, []); byRow.get(y).push(x); }
 											else runs.push([c[0], c[1], c[2] - c[0], c[3] - c[1]].map(fmt).join(","));

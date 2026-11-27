@@ -902,7 +902,11 @@ const pdfQc: Scene = {
 			},
 			note: "xfa-form.pdf is a hand-written pure XFA form (template packet only); Obsidian's pdf.js has enableXfa on and draws it with its XFA layer.",
 		},
-		p("qc.pdf.xfa-text.focus", "text-input", leaf(".xfaLayer .xfaTextfield"), ["focus"]),
+		{
+			...p("qc.pdf.xfa-text.focus", "text-input", leaf(".xfaLayer .xfaTextfield"), ["focus"]),
+			// The field's XFA border frame (a sibling, drawn over it) stays in the fixture.
+			context: "document",
+		},
 	],
 };
 
