@@ -564,6 +564,22 @@ input[type] {
 	border-color: var(--mw-input-border);
 }
 
+/*
+ * The former modal hover color was hidden by the global important border; keep
+ * that paint.
+ */
+.modal input:hover {
+	border-color: var(--mw-input-border);
+}
+
+/*
+ * Phone prompt inputs set a separate border shorthand; preserve the shared
+ * field border paint.
+ */
+.is-phone .prompt-input[type='text'] {
+	border-color: var(--mw-input-border);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @global application: Multi Select
@@ -918,10 +934,6 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 .modal .setting-hotkey:hover {
 	background-color: var(--purple-transparent);
 	color: var(--purple);
-}
-
-.modal input:hover {
-	border-color: var(--cyan-transparent);
 }
 
 
