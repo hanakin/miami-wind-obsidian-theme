@@ -14,6 +14,8 @@ export interface Replayed {
 	moved?: string | null;
 	/** Boxes of visible text (glyphs differ slightly between Chromium builds): x, y, w, h. */
 	text?: number[][];
+	/** Edge bands the two builds anti-alias differently (selection edges, borders under a scale). */
+	soft?: number[][];
 	/**
 	 * Elements the replay would size from their recorded live size: media stand-ins
 	 * (data-capture-size) and absolutely placed ancestors of the target. natural is the replay's own
@@ -117,7 +119,7 @@ export async function replayFixture(
 				}
 				return Promise.all(loads);
 			};
-			await Promise.race([loadFrames(document), new Promise((ok) => setTimeout(ok, 3000))]);
+			await Promise.race([loadFrames(document), new Promise((ok) => setTimeout(ok, 10000))]);
 			// Images the fixture keeps are drawn as they were; other offline images get same-size
 			// stand-ins from the recorded imageSizes.
 			const decoding: Promise<unknown>[] = [];
@@ -143,6 +145,14 @@ export async function replayFixture(
 					d = d?.querySelectorAll("iframe")[Number(i)]?.contentDocument ?? null;
 				return d;
 			};
+			// A canvas that was blank live stays blank (transparent), as recorded.
+			const blank = (d: Document) => {
+				for (const c of d.querySelectorAll("canvas[data-capture-canvas-blank]"))
+					c.setAttribute("data-replay-pixels", "");
+				for (const f of d.querySelectorAll("iframe"))
+					if (f.contentDocument) blank(f.contentDocument);
+			};
+			blank(document);
 			for (const { index, frame, b64 } of canvases) {
 				const cv = docOf(frame)?.querySelectorAll("canvas")[index];
 				if (!cv) continue;
@@ -338,7 +348,10 @@ export async function replayFixture(
 				const cp = (window as unknown as { cap: { clear(w: Window, e: Element): boolean } }).cap;
 				const tr = t.getBoundingClientRect();
 				const hitStyle = document.createElement("style");
-				hitStyle.textContent = "*, *::before, *::after { pointer-events: auto !important; }";
+				// Empty stand-ins are hit too (sized like live, hidden): what one painted live there is
+				// not in the fixture.
+				hitStyle.textContent =
+					"*, *::before, *::after { pointer-events: auto !important; } [data-capture-placeholder] { visibility: visible !important; }";
 				document.head.appendChild(hitStyle);
 				const runs: number[][] = [];
 				const x0 = Math.max(0, Math.floor(tr.left) - 8);
@@ -356,14 +369,24 @@ export async function replayFixture(
 							x < Math.floor(tr.right) &&
 							y >= Math.ceil(tr.top) &&
 							y < Math.floor(tr.bottom);
+						// A box's hit area starts about a pixel before its top and left edges: a pixel
+						// a neighbor covers only in part is sampled half a pixel up and left, and near
+						// its far corner, too.
 						if (x < x1 && !inBox)
-							for (const h of document.elementsFromPoint(x, y)) {
-								if (h.hasAttribute("data-replay-mask")) continue;
-								if (h === t || t.contains(h) || h.contains(t)) break;
-								if (cp.clear(window, h)) continue;
-								hit = true;
-								break;
-							}
+							hit = [
+								[x, y],
+								[x - 0.5, y - 0.5],
+								[x + 0.9, y + 0.9],
+							].some(([px = 0, py = 0]) => {
+								for (const h of document.elementsFromPoint(px, py)) {
+									if (h.hasAttribute("data-replay-mask")) continue;
+									if (h === t || t.contains(h) || h.contains(t)) return false;
+									if (h.hasAttribute("data-capture-placeholder")) return true;
+									if (cp.clear(window, h)) continue;
+									return true;
+								}
+								return false;
+							});
 						if (hit && start < 0) start = x;
 						if (!hit && start >= 0) {
 							runs.push([start, y, x - start]);
@@ -433,41 +456,124 @@ export async function replayFixture(
 			const text: number[][] = [];
 			const vw = innerWidth;
 			const vh = innerHeight;
-			const keep = (r: DOMRect) => {
-				if (
-					text.length < 6000 &&
-					r.width >= 1 &&
-					r.height >= 1 &&
-					r.right > 0 &&
-					r.bottom > 0 &&
-					r.x < vw &&
-					r.y < vh
-				)
-					text.push([r.x, r.y, r.width, r.height]);
-			};
-			const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-			const range = document.createRange();
-			for (let n = walker.nextNode(); n && text.length < 6000; n = walker.nextNode()) {
-				if (!n.nodeValue?.trim() || !n.parentElement) continue;
-				const pcs = getComputedStyle(n.parentElement);
-				if (pcs.visibility !== "visible" || pcs.display === "none") continue;
-				range.selectNodeContents(n);
-				for (const r of range.getClientRects()) keep(r);
-			}
-			for (const e of document.querySelectorAll<HTMLElement>("input, textarea, select, mjx-c")) {
-				const r = e.getBoundingClientRect();
-				if (e.localName === "mjx-c") {
-					keep(r);
-					continue;
+			// In restored frames too, offset by the frame's content box.
+			const collect = (d: Document, ox: number, oy: number) => {
+				const win = d.defaultView ?? window;
+				const keep = (r: DOMRect) => {
+					const x = r.x + ox;
+					const y = r.y + oy;
+					if (
+						text.length < 6000 &&
+						r.width >= 1 &&
+						r.height >= 1 &&
+						x + r.width > 0 &&
+						y + r.height > 0 &&
+						x < vw &&
+						y < vh
+					)
+						text.push([x, y, r.width, r.height]);
+				};
+				if (!d.body) return;
+				const walker = d.createTreeWalker(d.body, NodeFilter.SHOW_TEXT);
+				const range = d.createRange();
+				for (let n = walker.nextNode(); n && text.length < 6000; n = walker.nextNode()) {
+					if (!n.nodeValue?.trim() || !n.parentElement) continue;
+					const pcs = win.getComputedStyle(n.parentElement);
+					if (pcs.visibility !== "visible" || pcs.display === "none") continue;
+					range.selectNodeContents(n);
+					for (const r of range.getClientRects()) keep(r);
 				}
-				const cs = getComputedStyle(e);
-				const l = (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.paddingLeft) || 0);
-				const tp = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.paddingTop) || 0);
-				const rr = (parseFloat(cs.borderRightWidth) || 0) + (parseFloat(cs.paddingRight) || 0);
-				const bt = (parseFloat(cs.borderBottomWidth) || 0) + (parseFloat(cs.paddingBottom) || 0);
-				keep(new DOMRect(r.x + l, r.y + tp, r.width - l - rr, r.height - tp - bt));
+				for (const e of d.querySelectorAll<HTMLElement>("input, textarea, select, mjx-c")) {
+					const r = e.getBoundingClientRect();
+					if (e.localName === "mjx-c") {
+						keep(r);
+						continue;
+					}
+					const cs = win.getComputedStyle(e);
+					const l = (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.paddingLeft) || 0);
+					const tp = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.paddingTop) || 0);
+					const rr = (parseFloat(cs.borderRightWidth) || 0) + (parseFloat(cs.paddingRight) || 0);
+					const bt = (parseFloat(cs.borderBottomWidth) || 0) + (parseFloat(cs.paddingBottom) || 0);
+					keep(new DOMRect(r.x + l, r.y + tp, r.width - l - rr, r.height - tp - bt));
+				}
+				for (const f of d.querySelectorAll<HTMLIFrameElement>("iframe[data-replay-frame]")) {
+					const fd = f.contentDocument;
+					if (!fd) continue;
+					const fr = f.getBoundingClientRect();
+					const fcs = win.getComputedStyle(f);
+					collect(
+						fd,
+						ox + fr.x + f.clientLeft + (parseFloat(fcs.paddingLeft) || 0),
+						oy + fr.y + f.clientTop + (parseFloat(fcs.paddingTop) || 0),
+					);
+				}
+			};
+			collect(document, 0, 0);
+			// Edges drawn differently by the two Chromium builds, though placed alike (measured: a
+			// 1 px border under a scale transform, 58 live and 84 replayed in one channel; CodeMirror's
+			// drawn selection): those edge bands get the text tolerance, not the ink check. (A native
+			// selection's edges are found from the pixels; see replay-check.ts.)
+			const soft: number[][] = [];
+			const band = (x: number, y: number, w: number, h: number) => {
+				if (soft.length < 6000 && w > 0 && h > 0) soft.push([x, y, w, h]);
+			};
+			const edges = (r: DOMRect) => {
+				band(r.x, r.y - 1, r.width, 2);
+				band(r.x, r.bottom - 1, r.width, 2);
+			};
+			for (const e of document.querySelectorAll(".cm-selectionBackground"))
+				edges(e.getBoundingClientRect());
+			// An icon drawn by a pseudo-element's image mask (a search field's magnifier) at a
+			// fractional position is resampled differently (measured: 142 replayed, 112 live, inside a
+			// settings modal at 51.2, 57.6): its box, when not on whole pixels.
+			for (const e of document.body.querySelectorAll<HTMLElement>("*")) {
+				if (getComputedStyle(e).position === "static") continue;
+				for (const pe of ["::before", "::after"]) {
+					const c = getComputedStyle(e, pe);
+					if (c.content === "none" || c.content === "normal" || !/^(absolute)$/.test(c.position))
+						continue;
+					const img = `${c.getPropertyValue("-webkit-mask-image")} ${c.maskImage} ${c.backgroundImage}`;
+					if (!img.includes("url(")) continue;
+					const r = e.getBoundingClientRect();
+					const x = r.x + e.clientLeft + parseFloat(c.left);
+					const y = r.y + e.clientTop + parseFloat(c.top);
+					const w = parseFloat(c.width);
+					const h = parseFloat(c.height);
+					if (!Number.isFinite(x + y + w + h) || (Number.isInteger(x) && Number.isInteger(y)))
+						continue;
+					band(x - 1, y - 1, w + 2, h + 2);
+				}
 			}
-			return { why: "", inView: cap.visibleRect(t), masked, entries, moved, text, geometry };
+			// Where two rounded inline backgrounds meet at a fractional pixel (a highlight's marks
+			// and its text), the notch they leave is drawn a pixel apart: their side edges.
+			for (const e of document.body.querySelectorAll<HTMLElement>(
+				"span, mark, code, a, em, strong",
+			)) {
+				const cs = getComputedStyle(e);
+				if (!cs.display.startsWith("inline") || cs.borderRadius === "0px") continue;
+				if (cs.backgroundColor === "rgba(0, 0, 0, 0)" && cs.backgroundImage === "none") continue;
+				for (const r of e.getClientRects()) {
+					if (Number.isInteger(r.x) && Number.isInteger(r.right)) continue;
+					band(r.x - 1.5, r.y - 2, 3, r.height + 4);
+					band(r.right - 1.5, r.y - 2, 3, r.height + 4);
+				}
+			}
+			const scaled = [...document.body.querySelectorAll<HTMLElement>("*")].filter((e) => {
+				const m = getComputedStyle(e).transform.match(/^matrix\(([^,]+),\s*([^,]+)/);
+				return !!m && Math.abs(Math.hypot(Number(m[1]), Number(m[2])) - 1) > 0.01;
+			});
+			for (const s of scaled)
+				for (const e of [s, ...s.querySelectorAll("*")].slice(0, 2000)) {
+					const cs = getComputedStyle(e);
+					const r = e.getBoundingClientRect();
+					const w = (k: string) =>
+						parseFloat(cs.getPropertyValue(`border-${k}-width`)) > 0 ? 3 : 0;
+					if (w("top")) band(r.x - 1, r.y - 1, r.width + 2, 3);
+					if (w("bottom")) band(r.x - 1, r.bottom - 2, r.width + 2, 3);
+					if (w("left")) band(r.x - 1, r.y - 1, 3, r.height + 2);
+					if (w("right")) band(r.right - 2, r.y - 1, 3, r.height + 2);
+				}
+			return { why: "", inView: cap.visibleRect(t), masked, entries, moved, text, soft, geometry };
 		},
 		[html, sizes, canvases, frames, trimSelector, force] as const,
 	)) as Replayed;

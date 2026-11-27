@@ -223,13 +223,14 @@ export const INPAGE = String.raw`
 	 * target itself is seen. Calls accumulate (scrolled screenshots).
 	 */
 	/** A layer that paints nothing: no background, border, shadow, outline or own text. */
-	function clear(win, e) {
+	function clear(win, e, tints = false) {
 		const cs = win.getComputedStyle(e);
 		// Fully transparent or hidden layers paint nothing (e.g. an opacity: 0 native <select> laid
 		// over a label to catch taps).
 		if (parseFloat(cs.opacity) === 0 || cs.visibility !== "visible") return true;
-		// A background under 50% alpha only tints what lies below (e.g. a canvas group's fill).
-		if (alphaOf(cs.backgroundColor) >= 0.5 || cs.backgroundImage !== "none" || cs.boxShadow !== "none") return false;
+		// A background under 50% alpha only tints what lies below (e.g. a canvas group's fill): it
+		// hides nothing, though it paints (tints true: a diff line's tint is still paint).
+		if (alphaOf(cs.backgroundColor) >= (tints ? 0.01 : 0.5) || cs.backgroundImage !== "none" || cs.boxShadow !== "none") return false;
 		if (["Top", "Right", "Bottom", "Left"].some((k) => parseFloat(cs["border" + k + "Width"]) > 0 && alphaOf(cs["border" + k + "Color"]) > 0)) return false;
 		if (cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0) return false;
 		for (const pe of ["::before", "::after"]) { const p = win.getComputedStyle(e, pe); if (p.content !== "none" && p.content !== "normal") return false; }
@@ -238,8 +239,9 @@ export const INPAGE = String.raw`
 		return ![...e.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) && !["img", "canvas", "video", "iframe", "input", "textarea", "select"].includes(e.localName);
 	}
 	/**
-	 * Font properties of each visible text run inside e, counted by signature: what draws the
-	 * glyphs (the replay's text allowance holds only while these are the same as live).
+	 * Font properties of each element inside e with visible text of its own, counted by signature:
+	 * what draws the glyphs (the replay's text allowance holds only while these are the same as
+	 * live). Counted per element, not per text node: saved markup merges adjacent text nodes.
 	 */
 	function textStyles(e) {
 		const out = {};
@@ -247,20 +249,45 @@ export const INPAGE = String.raw`
 		const win = d.defaultView;
 		const walk = d.createTreeWalker(e, NodeFilter.SHOW_TEXT);
 		const range = d.createRange();
+		const done = new Set();
 		let n = 0;
 		while (walk.nextNode() && n < 6000) {
 			const t = walk.currentNode;
 			const p = t.parentElement;
-			if (!p || !t.data.trim() || ["script", "style", "title"].includes(p.localName)) continue;
+			if (!p || done.has(p) || !t.data.trim() || ["script", "style", "title"].includes(p.localName)) continue;
 			range.selectNodeContents(t);
 			if (!range.getClientRects().length) continue;
 			const cs = win.getComputedStyle(p);
 			if (cs.visibility !== "visible") continue;
 			const sig = [cs.fontFamily, cs.fontSize, cs.fontWeight, cs.fontStyle, cs.fontStretch, cs.fontVariant, cs.fontFeatureSettings, cs.fontVariationSettings, cs.letterSpacing, cs.wordSpacing, cs.textTransform, cs.textDecorationLine, cs.webkitTextStrokeWidth, cs.textShadow === "none" ? "" : "shadow"].join("|");
 			out[sig] = (out[sig] ?? 0) + 1;
+			done.add(p);
 			n++;
 		}
 		return out;
+	}
+	/**
+	 * Waits until every shown canvas (in this document and its same-origin frames, at any depth)
+	 * has kept the same pixels for 400 ms, or the timeout passes. Returns whether they settled.
+	 */
+	async function canvasesStill(timeout) {
+		const all = (d) => {
+			const out = [...d.querySelectorAll("canvas")].filter((c) => c.width && c.height && c.getClientRects().length);
+			for (const f of d.querySelectorAll("iframe")) { let fd = null; try { fd = f.contentDocument; } catch {} if (fd) out.push(...all(fd)); }
+			return out;
+		};
+		const sig = () => all(document).map((c) => { try { const u = c.toDataURL("image/png"); let h = 0; for (let i = 0; i < u.length; i += 3) h = (h * 31 + u.charCodeAt(i)) | 0; return h; } catch { return 0; } }).join(",");
+		if (!all(document).length) return true;
+		const t0 = performance.now();
+		let last = sig();
+		let since = performance.now();
+		while (performance.now() - t0 < timeout) {
+			await sleep(100);
+			const now = sig();
+			if (now !== last) { last = now; since = performance.now(); }
+			else if (performance.now() - since >= 400) return true;
+		}
+		return false;
 	}
 	/** True when h paints a background (color with alpha, or an image) over its area. */
 	function paintsBackground(win, h) {
@@ -394,6 +421,9 @@ export const INPAGE = String.raw`
 		const st = window.__cap;
 		const scope = [el, ...el.querySelectorAll("*")];
 		for (let a = el.parentElement; a; a = a.parentElement) scope.push(a);
+		// Real focus and pointer on other elements (a focused search field beside the target) show
+		// in the shot too: their states are recorded as well.
+		for (const e of el.ownerDocument.querySelectorAll(":hover, :focus, :focus-within, :active")) if (!scope.includes(e)) scope.push(e);
 		const counts = {};
 		const add = (e, s) => {
 			const list = st.states.get(e) ?? [];
@@ -628,9 +658,8 @@ export const INPAGE = String.raw`
 		// so a replay can restore them. A frame that showed nothing is marked as such.
 		const frameSheets = [];
 		const canvases = [];
-		// Canvas pixels are not part of the markup either: keep each painted canvas as a PNG. WebGL
-		// canvases read back empty; the capture script takes those from the screen instead (rect in
-		// window coordinates). A canvas inside a frame is named by its frame path (the index of each
+		// Canvas pixels are not part of the markup either: keep each painted canvas as a PNG. One that
+		// cannot be read (tainted) is taken from the screen instead (rect in window coordinates). A canvas inside a frame is named by its frame path (the index of each
 		// frame in its document's iframe order, outermost first) and its index in that frame.
 		function keepCanvas(cc, co, ox, oy, path) {
 			if (!co || !co.width || !co.height || !co.getClientRects().length) return;
@@ -640,7 +669,10 @@ export const INPAGE = String.raw`
 				const empty = co.ownerDocument.createElement("canvas");
 				empty.width = co.width;
 				empty.height = co.height;
-				if (url === empty.toDataURL("image/png")) url = null;
+				// Blank (the graph keeps an unused canvas over its frame): replayed transparent, as it
+				// showed. Were it a WebGL canvas that reads back blank, the replay would show the
+				// difference.
+				if (url === empty.toDataURL("image/png")) { cc.setAttribute("data-capture-canvas-blank", ""); return; }
 			} catch {}
 			const r = co.getBoundingClientRect();
 			cc.setAttribute("data-capture-canvas", String(canvases.length));
@@ -871,8 +903,50 @@ export const INPAGE = String.raw`
 												done.add(e);
 												const er0 = e.getBoundingClientRect();
 												const er = { x: Math.max(er0.x, zone.x), y: Math.max(er0.y, zone.y), right: Math.min(er0.right, zone.right), bottom: Math.min(er0.bottom, zone.bottom) };
-												if (er.right - er.x < 1 || er.bottom - er.y < 1 || (!svg && clear(win, e))) continue;
+												if (er.right - er.x < 1 || er.bottom - er.y < 1 || (!svg && clear(win, e, true))) continue;
 												n++;
+												// Its box shadow and outline paint outside its box, where no hit test finds it: the
+												// parts of them in the ring around the target count too, and over the target as well
+												// when the part itself is drawn over the target (a popup's shadow).
+												const shadowOver = [];
+												let hitAny = false;
+												if (!svg) {
+													const scs = win.getComputedStyle(e);
+													const ext = [0, 0, 0, 0]; // top, right, bottom, left
+													if (scs.boxShadow !== "none")
+														for (const sh of scs.boxShadow.split(/,(?![^(]*\))/)) {
+															if (/\binset\b/.test(sh)) continue;
+															const [sx = 0, sy = 0, blur = 0, spread = 0] = (sh.replace(/rgba?\([^)]*\)|#[0-9a-f]+|[a-z]+\([^)]*\)/gi, "").match(/-?[\d.]+px/g) ?? []).map(parseFloat);
+															const r = blur + spread;
+															ext[0] = Math.max(ext[0], r - sy); ext[1] = Math.max(ext[1], r + sx); ext[2] = Math.max(ext[2], r + sy); ext[3] = Math.max(ext[3], r - sx);
+														}
+													if (scs.outlineStyle !== "none" && parseFloat(scs.outlineWidth) > 0) {
+														const o = parseFloat(scs.outlineWidth) + (parseFloat(scs.outlineOffset) || 0);
+														for (let k = 0; k < 4; k++) ext[k] = Math.max(ext[k], o);
+													}
+													const [et, eri, eb, el2] = ext.map((v) => Math.ceil(Math.max(0, v)));
+													if (et || eri || eb || el2) {
+														const bands = [
+															[er0.left - el2, er0.top - et, er0.right + eri, er0.top],
+															[er0.left - el2, er0.bottom, er0.right + eri, er0.bottom + eb],
+															[er0.left - el2, er0.top, er0.left, er0.bottom],
+															[er0.right, er0.top, er0.right + eri, er0.bottom],
+														];
+														for (const [bx0, by0, bx1, by1] of bands) {
+															// Clipped to the ring, the target's own box left out (pieces around it).
+															const c = [Math.max(bx0, zone.x), Math.max(by0, zone.y), Math.min(bx1, zone.right), Math.min(by1, zone.bottom)];
+															if (c[2] - c[0] <= 0 || c[3] - c[1] <= 0) continue;
+															shadowOver.push(c);
+															const pieces = [
+																[c[0], c[1], c[2], Math.min(c[3], tb.top)],
+																[c[0], Math.max(c[1], tb.bottom), c[2], c[3]],
+																[c[0], Math.max(c[1], tb.top), Math.min(c[2], tb.left), Math.min(c[3], tb.bottom)],
+																[Math.max(c[0], tb.right), Math.max(c[1], tb.top), c[2], Math.min(c[3], tb.bottom)],
+															];
+															for (const q of pieces) if (q[2] - q[0] > 0 && q[3] - q[1] > 0) cells.set("band:" + q.join(","), q);
+														}
+													}
+												}
 												// A border-only frame (XFA field borders) paints just its border bands: sample along
 												// them (a grid point seldom lands on a 1 px line).
 												if (!svg && frameOnlyAt(win, e, (er0.left + er0.right) / 2, (er0.top + er0.bottom) / 2)) {
@@ -928,9 +1002,10 @@ export const INPAGE = String.raw`
 																const hit = pts.some(([px, py]) =>
 																	// Inside a border-only frame (XFA field borders) it paints nothing.
 																	!(!svg && frameOnlyAt(win, e, px, py)) && px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e, dim));
-																if (hit) cells.set(k, had ? [Math.min(had[0], c0[0]), Math.min(had[1], c0[1]), Math.max(had[2], c0[2]), Math.max(had[3], c0[3])] : c0);
+																if (hit) { hitAny = true; cells.set(k, had ? [Math.min(had[0], c0[0]), Math.min(had[1], c0[1]), Math.max(had[2], c0[2]), Math.max(had[3], c0[3])] : c0); }
 															}
 													}
+												if (hitAny) for (const c of shadowOver) cells.set("band:" + c.join(","), c);
 											}
 										});
 										// Full cells merged into runs along each row; clipped cells kept as they are.
@@ -1131,6 +1206,6 @@ export const INPAGE = String.raw`
 		const r = scroller.getBoundingClientRect();
 		return scroller.scrollHeight > scroller.clientHeight && x > r.left + scroller.clientLeft + scroller.clientWidth && x < r.right && y > r.top && y < r.bottom;
 	}
-	window.cap = { clear, textStyles, sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges, candidates, stackAt };
+	window.cap = { clear, textStyles, canvasesStill, sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges, candidates, stackAt };
 })();
 `;
