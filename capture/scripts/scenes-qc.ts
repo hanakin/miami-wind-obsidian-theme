@@ -824,8 +824,24 @@ const pdfQc: Scene = {
 			note: "locked.pdf is sample.pdf encrypted with qpdf (password capture-user).",
 		},
 		{
-			// Fillable-PDF form boxes are out of scope (Mike, 2026-11-26): annotations.pdf has the
-			// non-form annotations only (sticky note, free text, highlight, link, attached file).
+			// Fillable-PDF form boxes (pdf.js AcroForm widgets) are out of scope: listed, never run.
+			id: "qc.pdf.forms",
+			component: "pdf",
+			target: leaf(".annotationLayer"),
+			excluded:
+				"Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)",
+		},
+		{
+			id: "qc.pdf.text-field.focus",
+			component: "text-input",
+			target: leaf(".annotationLayer .textWidgetAnnotation input"),
+			pseudo: ["focus"],
+			excluded:
+				"Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)",
+		},
+		{
+			// annotations.pdf has the non-form annotations only (sticky note, free text, highlight,
+			// link, attached file).
 			id: "qc.pdf.annotations",
 			component: "pdf",
 			target: leaf(".annotationLayer"),
@@ -850,6 +866,19 @@ const pdfQc: Scene = {
 			},
 			note: "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup (a PDF without form fields).",
 		},
+		{
+			id: "qc.pdf.xfa",
+			component: "pdf",
+			target: leaf(".xfaLayer"),
+			expect:
+				".xfaLayer:has(.xfaPage .xfaTextfield):has(.xfaCheckbox):has(.xfaSelect):has(.xfaButton)",
+			before: async (ctx) => {
+				await ctx.open("Attachments/xfa-form.pdf", "live");
+				await ctx.sleep(2500);
+			},
+			note: "xfa-form.pdf is a hand-written pure XFA form (template packet only); Obsidian's pdf.js has enableXfa on and draws it with its XFA layer.",
+		},
+		p("qc.pdf.xfa-text.focus", "text-input", leaf(".xfaLayer .xfaTextfield"), ["focus"]),
 	],
 };
 

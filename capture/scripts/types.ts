@@ -38,6 +38,8 @@ export interface ItemDef {
 	pseudoOn?: Target;
 	/** Runs before the element is looked up, after the scene setup and previous items. */
 	before?: (ctx: Ctx) => Promise<void>;
+	/** Listed in the checklist as excluded, with the reason; never run. */
+	excluded?: string;
 	/** "document": keep the whole window in the fixture (overlays that show the page under them). */
 	context?: "document";
 	/** Screenshot the whole window instead of the element. */

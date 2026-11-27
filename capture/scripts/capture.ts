@@ -111,7 +111,7 @@ try {
 			scene.mobile !== mobile
 		)
 			continue;
-		const items = scene.items.filter((i) => wanted(i.id));
+		const items = scene.items.filter((i) => wanted(i.id) && !i.excluded);
 		if (!items.length) continue;
 		await restoreLayout(main, layout).catch(() => undefined);
 		let results: Awaited<ReturnType<typeof runScene>>;

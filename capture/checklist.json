@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-27T13:15:36.611Z",
+	"generated": "2026-11-27T13:17:01.837Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
 		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/config/obsidian"
@@ -14341,6 +14341,35 @@
 			"note": "locked.pdf is sample.pdf encrypted with qpdf (password capture-user)."
 		},
 		{
+			"id": "qc.pdf.forms",
+			"scene": "qc.pdf",
+			"surface": "pdf",
+			"component": "pdf",
+			"state": "default",
+			"source": "catalog:pdf-qc",
+			"target": {
+				"sel": ".annotationLayer",
+				"in": "leaf"
+			},
+			"excluded": "Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)"
+		},
+		{
+			"id": "qc.pdf.text-field.focus",
+			"scene": "qc.pdf",
+			"surface": "pdf",
+			"component": "text-input",
+			"state": "focus",
+			"source": "catalog:pdf-qc",
+			"target": {
+				"sel": ".annotationLayer .textWidgetAnnotation input",
+				"in": "leaf"
+			},
+			"pseudo": [
+				"focus"
+			],
+			"excluded": "Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)"
+		},
+		{
 			"id": "qc.pdf.annotations",
 			"scene": "qc.pdf",
 			"surface": "pdf",
@@ -14366,6 +14395,35 @@
 			},
 			"note": "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup (a PDF without form fields).",
 			"expect": ".popupWrapper:not([hidden]):has(.popup:not([hidden]) .popupContent)"
+		},
+		{
+			"id": "qc.pdf.xfa",
+			"scene": "qc.pdf",
+			"surface": "pdf",
+			"component": "pdf",
+			"state": "default",
+			"source": "catalog:pdf-qc",
+			"target": {
+				"sel": ".xfaLayer",
+				"in": "leaf"
+			},
+			"note": "xfa-form.pdf is a hand-written pure XFA form (template packet only); Obsidian's pdf.js has enableXfa on and draws it with its XFA layer.",
+			"expect": ".xfaLayer:has(.xfaPage .xfaTextfield):has(.xfaCheckbox):has(.xfaSelect):has(.xfaButton)"
+		},
+		{
+			"id": "qc.pdf.xfa-text.focus",
+			"scene": "qc.pdf",
+			"surface": "pdf",
+			"component": "text-input",
+			"state": "focus",
+			"source": "catalog:pdf-qc",
+			"target": {
+				"sel": ".xfaLayer .xfaTextfield",
+				"in": "leaf"
+			},
+			"pseudo": [
+				"focus"
+			]
 		},
 		{
 			"id": "qc.file-recovery.diff",
