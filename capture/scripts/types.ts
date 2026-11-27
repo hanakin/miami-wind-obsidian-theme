@@ -134,6 +134,10 @@ export interface ChecklistItem {
  * - data-capture-input-selection="START END DIRECTION" on the focused field: its selected text.
  * - data-capture-cm-selection: CodeMirror's own selection ranges (reference only; the editor
  *   draws them as .cm-selectionBackground boxes, which are in the markup).
+ * - data-capture-ghost-of="PATH" on the copy a reorder drag's ghost holds (.drag-reorder-ghost >
+ *   .mod-dragged-item), and data-capture-drag-source="PATH" on its live source: the same live path
+ *   (nth-child steps from <html>), in whichever fixtures hold them. Written only when exactly one
+ *   .is-being-dragged element of the same tag and classes (state classes aside) exists.
  * - data-capture-frame-styles="TOKENS" on an iframe: its document's stylesheets in order, like
  *   runtimeStyles below (its srcdoc holds the markup without them); data-capture-frame-empty: the
  *   frame showed nothing live (a resize helper), so it hides nothing.
