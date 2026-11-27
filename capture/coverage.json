@@ -1,35 +1,15 @@
 {
 	"obsidianVersion": "1.15.1",
 	"summary": [
-		"Obsidian 1.15.1 · 1201 fixtures, 1199 with valid evidence (6 synthetic macOS/Windows variants)",
-		"Checklist items shown in their claimed state: 1212/1221 (99.3%); 29 of them scripted or synthetic (labeled); state applied but its change not visible (limitation, listed): 3; excluded with reason: 4; missing: 2",
-		"theme.css selectors visibly matched (fixture and live agree, on painted elements): 240/247 (97.2%); excluded with reason: 4; scripted only (labeled): 3; missing: 0 (0 only on hidden/clipped elements, 0 only in scripted fixtures); fixture/live disagreements: 3",
-		"App CSS classes visibly captured: 1188 (11 of them classes credited by screenshot pixels (graph probes)), excluded 226, not theme-affected (accepted gaps) 237, theme-affected but out of scope (labeled) 26, theme-affected missing 1, of 1678; of the theme-affected missing: 0 in the DOM but never painted, 0 only in scripted fixtures, 0 seen in the runtime census only",
-		"Screenshots: files re-checked against recorded hashes; 66 groups of identical screenshots (64 explained by their fixtures, 2 where a state applies but does not show (limitation), 0 unexplained)",
-		"Replay alone: 1173 fixtures rendered from their own files (recorded window size and stylesheets, canvas pixels, stand-in sizes, scroll offsets) matched their live screenshot in at least 97% of 16 px blocks (lowest 84.1%; images, media and iframes masked); replay limits (labeled, not compared): 21"
+		"Obsidian 1.15.1 · 1201 fixtures, 1201 with valid evidence (6 synthetic macOS/Windows variants)",
+		"Checklist items shown in their claimed state: 1214/1221 (99.4%); 29 of them scripted or synthetic (labeled); state applied but its change not visible (limitation, listed): 3; excluded with reason: 4; missing: 0",
+		"theme.css selectors visibly matched (fixture and live agree, on painted elements): 240/247 (97.2%); excluded with reason: 4; scripted only (labeled): 3; missing: 0 (0 only on hidden/clipped elements, 0 only in scripted fixtures); fixture/live disagreements: 2",
+		"App CSS classes visibly captured: 1190 (11 of them classes credited by screenshot pixels (graph probes)), excluded 226, not theme-affected (accepted gaps) 236, theme-affected but out of scope (labeled) 26, theme-affected missing 0, of 1678; of the theme-affected missing: 0 in the DOM but never painted, 0 only in scripted fixtures, 0 seen in the runtime census only",
+		"Screenshots: files re-checked against recorded hashes; 69 groups of identical screenshots (67 explained by their fixtures, 2 where a state applies but does not show (limitation), 0 unexplained)",
+		"Replay alone: 1174 fixtures rendered from their own files (recorded window size and stylesheets, canvas pixels, stand-in sizes, scroll offsets) matched their live screenshot in at least 97% of 16 px blocks (lowest 97.4%; images, media and iframes masked); replay limits (labeled, not compared): 21"
 	],
-	"missingItems": [
-		{
-			"id": "qc.print.export-window",
-			"why": [
-				"replay layout differs: target at 0,0,1024,667 live, 0,0,1024,679 replayed alone; first moved: div. inside the target at 32,523,960,24, live 32,520,960,16"
-			]
-		},
-		{
-			"id": "mobile.phone.file-menu",
-			"why": [
-				"replay differs from the live screenshot in 16% of the target (16 px blocks; first at 49,338 65,338 81,338 in /home/hanakin/Work/miami-wind-obsidian-capture/replay/mobile.phone.file-menu.png)"
-			]
-		}
-	],
-	"invalidFixtures": {
-		"mobile.phone.file-menu": [
-			"replay differs from the live screenshot in 16% of the target (16 px blocks; first at 49,338 65,338 81,338 in /home/hanakin/Work/miami-wind-obsidian-capture/replay/mobile.phone.file-menu.png)"
-		],
-		"qc.print.export-window": [
-			"replay layout differs: target at 0,0,1024,667 live, 0,0,1024,679 replayed alone; first moved: div. inside the target at 32,523,960,24, live 32,520,960,16"
-		]
-	},
+	"missingItems": [],
+	"invalidFixtures": {},
 	"themeSelectors": [
 		{
 			"id": "3:0",
@@ -870,6 +850,7 @@
 				"mobile.phone.confirm-modal",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -1267,7 +1248,8 @@
 				"command.workspaces:open-modal",
 				"command.workspaces:save",
 				"command.workspaces:save-and-load",
-				"light-mode.window"
+				"light-mode.window",
+				"qc.print.export-window"
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
@@ -2085,6 +2067,7 @@
 				"mobile.phone.confirm-modal",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -2682,6 +2665,7 @@
 				"md.task-star.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -2787,6 +2771,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading",
 				"view.type.canvas",
 				"view.type.release-notes"
@@ -2822,6 +2807,7 @@
 				"md.embed-pdf.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -3392,6 +3378,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading",
 				"view.type.release-notes"
 			],
@@ -3438,6 +3425,7 @@
 				"md.tags.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -3669,6 +3657,7 @@
 				"md.table.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -3764,6 +3753,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading"
 			],
 			"fixtureOnly": [],
@@ -3798,6 +3788,7 @@
 				"md.tags.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -3879,6 +3870,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading"
 			],
 			"fixtureOnly": [],
@@ -3913,6 +3905,7 @@
 				"md.tags.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -4106,6 +4099,7 @@
 				"md.property-url.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -4360,6 +4354,7 @@
 				"md.tab-character.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -4757,6 +4752,7 @@
 				"md.kitchen-sink.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -5045,6 +5041,7 @@
 				"md.property-url.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -5127,6 +5124,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading",
 				"view.type.canvas"
 			],
@@ -5166,6 +5164,7 @@
 				"md.table-wide.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -5333,6 +5332,7 @@
 				"md.table.source",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -5416,6 +5416,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading",
 				"view.type.canvas"
 			],
@@ -5458,6 +5459,7 @@
 				"md.table-wide.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -5796,6 +5798,7 @@
 				"qc.gaps2.restore",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-reading",
 				"view.type.canvas",
 				"view.type.release-notes"
@@ -5830,6 +5833,7 @@
 				"md.table-wide.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -6542,6 +6546,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -7889,6 +7894,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -8205,6 +8211,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -8394,6 +8401,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -8639,6 +8647,7 @@
 				"mobile.phone.command-palette",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -8811,12 +8820,11 @@
 			"context": "",
 			"matchable": ".bases-toolbar-item .text-icon-button[data-capture-state~=\"hover\"]",
 			"fixtures": [
-				"extra.bases.toolbar-button.hover"
-			],
-			"fixtureOnly": [],
-			"liveOnly": [
+				"extra.bases.toolbar-button.hover",
 				"md.embed-base-codeblock.reading"
 			],
+			"fixtureOnly": [],
+			"liveOnly": [],
 			"domOnly": [],
 			"synthetic": []
 		},
@@ -9138,6 +9146,7 @@
 				"qc.pdf.text-field.focus",
 				"qc.pdf.xfa",
 				"qc.pdf.xfa-text.focus",
+				"qc.print.export-window",
 				"qc.rtl",
 				"qc.rtl-language.restore",
 				"qc.rtl-language.window",
@@ -9294,6 +9303,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -10293,6 +10303,7 @@
 				"md.tags.source.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -10525,6 +10536,7 @@
 				"md.tags.source.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -10832,6 +10844,7 @@
 				"md.tags.source.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -11127,6 +11140,7 @@
 				"md.tags.source.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -12299,6 +12313,7 @@
 				"mobile.phone.command-palette",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -12610,6 +12625,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -12783,6 +12799,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -13828,6 +13845,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -13962,6 +13980,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14094,6 +14113,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14225,6 +14245,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14359,6 +14380,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14493,6 +14515,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14624,6 +14647,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -14756,6 +14780,7 @@
 				"md.task-star.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -15254,6 +15279,7 @@
 				"qc.media.forced-colors",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl",
 				"qc.rtl-language.restore",
 				"qc.rtl-language.window",
@@ -15326,6 +15352,7 @@
 				"md.inline-title.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -15410,6 +15437,7 @@
 				"qc.media.forced-colors",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl",
 				"qc.rtl-language.restore",
 				"qc.rtl-language.window",
@@ -15482,6 +15510,7 @@
 				"md.inline-title.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -15565,6 +15594,7 @@
 				"qc.media.forced-colors",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl",
 				"qc.rtl-language.restore",
 				"qc.rtl-language.window",
@@ -15637,6 +15667,7 @@
 				"md.inline-title.live",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -15758,6 +15789,7 @@
 				"md.kitchen-sink.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -15874,6 +15906,7 @@
 				"md.kitchen-sink.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -16766,6 +16799,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -17039,6 +17073,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -17287,6 +17322,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -17536,6 +17572,7 @@
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -17855,6 +17892,7 @@
 				"mobile.phone.bases-properties",
 				"mobile.phone.bases-settings-menu",
 				"mobile.phone.drawer-tab-list",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -18208,6 +18246,7 @@
 				"md.tags.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -18355,6 +18394,7 @@
 				"md.combo-bold-link.reading",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -18410,6 +18450,7 @@
 				"qc.media.forced-colors",
 				"qc.media.hover-none",
 				"qc.media.print",
+				"qc.print.export-window",
 				"qc.rtl-language.restore",
 				"qc.rtl-language.window",
 				"qc.rtl-reading",
@@ -19152,6 +19193,7 @@
 				"mobile.phone.command-palette",
 				"mobile.phone.drawer-tab-list",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.link-suggest",
 				"mobile.phone.menu",
@@ -19422,6 +19464,7 @@
 				"mobile.phone.bases-filter",
 				"mobile.phone.bases-properties",
 				"mobile.phone.bases-settings-menu",
+				"mobile.phone.file-menu",
 				"mobile.phone.menu",
 				"mobile.phone.menu-disabled",
 				"mobile.phone.menu-selected",
@@ -19689,6 +19732,7 @@
 				"menu.tab-list.item.hover",
 				"menu.tab.item.hover",
 				"menu.vault-switcher.item.hover",
+				"mobile.phone.file-menu",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
 				"mobile.phone.menu-disabled",
@@ -19735,6 +19779,7 @@
 				"menu.tab.item.hover",
 				"menu.vault-switcher",
 				"menu.vault-switcher.item.hover",
+				"mobile.phone.file-menu",
 				"mobile.phone.menu",
 				"mobile.phone.menu-disabled",
 				"mobile.phone.menu-selected",
@@ -20166,6 +20211,7 @@
 				"md.kitchen-sink.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -20304,6 +20350,7 @@
 				"md.mermaid.reading.view",
 				"mobile.phone.command-palette",
 				"mobile.phone.editor-toolbar",
+				"mobile.phone.file-menu",
 				"mobile.phone.left-drawer",
 				"mobile.phone.menu",
 				"mobile.phone.menu-backdrop",
@@ -20567,7 +20614,7 @@
 			"name": "bases-display-page",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope",
 			"fixture": "mobile.phone.bases-settings-menu",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "bases-embed",
@@ -21596,7 +21643,7 @@
 			"name": "close-button",
 			"excluded": "built only in the mobile tab switcher card (.mobile-tab-preview, app.js class for the mobile tab switcher)",
 			"dom": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "close-icon",
@@ -22793,7 +22840,7 @@
 		{
 			"name": "conjunction-chevron",
 			"fixture": "mobile.phone.bases-filter",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "connecting-line",
@@ -23173,31 +23220,31 @@
 			"name": "feedback-banner",
 			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone",
 			"dom": "mobile.phone.settings",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "feedback-banner-container",
 			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone",
 			"dom": "mobile.phone.settings",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "feedback-banner-content",
 			"excluded": "phone Settings rating banner: built hidden and shown only by a timed in-app rating prompt",
 			"dom": "mobile.phone.settings",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "feedback-banner-dismiss-button",
 			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone",
 			"dom": "mobile.phone.settings",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "feedback-banner-title",
 			"excluded": "phone only: Settings creates the rating banner only when Platform.isPhone",
 			"dom": "mobile.phone.settings",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "file-browser-description",
@@ -24321,7 +24368,7 @@
 			"name": "is-fullscreen",
 			"fixture": "qc.window.fullscreen",
 			"synthetic": "qc.window.fullscreen.macos",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "is-grabbing",
@@ -24378,6 +24425,7 @@
 		},
 		{
 			"name": "is-label",
+			"fixture": "mobile.phone.file-menu",
 			"census": true
 		},
 		{
@@ -24402,7 +24450,7 @@
 		{
 			"name": "is-maximized",
 			"fixture": "qc.edit-block-button.hover",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "is-measuring",
@@ -24479,7 +24527,7 @@
 		{
 			"name": "is-scrolled",
 			"fixture": "mobile.phone.menu-disabled",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "is-searching",
@@ -24525,7 +24573,7 @@
 			"name": "is-tablet",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope",
 			"fixture": "mobile.tablet.bases",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "is-text-garbled",
@@ -24917,6 +24965,7 @@
 		},
 		{
 			"name": "menu-item-desc",
+			"fixture": "mobile.phone.file-menu",
 			"census": true
 		},
 		{
@@ -25254,7 +25303,7 @@
 			"name": "mobile-tab",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-footer",
@@ -25265,73 +25314,73 @@
 			"name": "mobile-tab-group-container",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-pin",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-preview",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-preview-embed",
 			"excluded": "tab card preview image: the mobile app renders it from an on-device page screenshot (is-screenshotting runs only in the mobile app)",
 			"dom": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-preview-empty",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-inner-scroll",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-menu-button",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-menu-button-chevron",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-menu-spacer",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-menubar",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-scroll",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tab-switcher-search",
@@ -25342,21 +25391,21 @@
 			"name": "mobile-tab-title",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.tab-switcher",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-tap",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.bases-properties",
 			"dom": "mobile.tablet.bases-filter",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.editor-toolbar",
 			"dom": "mobile.phone.link-suggest",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar-floating-options",
@@ -25368,34 +25417,34 @@
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.editor-toolbar",
 			"dom": "mobile.phone.link-suggest",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar-options-container",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.editor-toolbar",
 			"dom": "mobile.phone.link-suggest",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar-options-list",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.editor-toolbar",
 			"dom": "mobile.phone.link-suggest",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar-options-list-container",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile app UI (navbar, toolbar, tab switcher, vault chooser, onboarding): what it cannot reach needs touch input or mobile-only code",
 			"fixture": "mobile.phone.editor-toolbar",
 			"dom": "mobile.phone.link-suggest",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mobile-toolbar-spacer",
 			"excluded": "zero-height spacer below the mobile toolbar; it never paints",
 			"dom": "mobile.phone.editor-toolbar",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mod-action",
@@ -26353,7 +26402,7 @@
 			"name": "mod-toolbar-open",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; these touch-gesture and mobile-toolbar states need touch input",
 			"fixture": "mobile.phone.editor-toolbar",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mod-top",
@@ -26446,7 +26495,7 @@
 		{
 			"name": "mod-working",
 			"excluded": "Sync status bar icon; Sync must be set up",
-			"census": false
+			"census": true
 		},
 		{
 			"name": "mod-zoomed-out",
@@ -27494,8 +27543,9 @@
 		},
 		{
 			"name": "search-empty-state",
-			"fixture": "qc.media.hover-none",
+			"fixture": "mobile.phone.right-drawer",
 			"dom": "chrome.resize-handle",
+			"synthetic": "qc.rtl-language.window.macos",
 			"census": true
 		},
 		{
@@ -27547,7 +27597,7 @@
 			"name": "search-result",
 			"fixture": "chrome.backlinks-pane",
 			"dom": "chrome.resize-handle",
-			"synthetic": "qc.rtl-language.window.macos",
+			"synthetic": "qc.window.fullscreen.macos",
 			"census": true
 		},
 		{
@@ -27605,7 +27655,7 @@
 			"name": "search-result-file-title",
 			"fixture": "chrome.backlinks-pane",
 			"dom": "chrome.resize-handle",
-			"synthetic": "qc.rtl-language.window.macos",
+			"synthetic": "qc.window.fullscreen.macos",
 			"census": true
 		},
 		{
@@ -29283,7 +29333,7 @@
 		{
 			"name": "workspace-drawer-backdrop",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input",
-			"dom": "mobile.phone.left-drawer",
+			"dom": "mobile.phone.file-menu",
 			"census": true
 		},
 		{
@@ -29357,6 +29407,7 @@
 		{
 			"name": "workspace-drawer-navbar-backdrop",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; mobile sidebar drawer: what it cannot reach needs touch input",
+			"dom": "mobile.phone.file-menu",
 			"census": true
 		},
 		{
@@ -29852,6 +29903,13 @@
 			},
 			{
 				"ids": [
+					"command.workspaces:open-modal",
+					"command.workspaces:save"
+				],
+				"reason": "identical fixture DOM"
+			},
+			{
+				"ids": [
 					"editor.link.hover",
 					"editor.link.hover-focus"
 				],
@@ -30036,8 +30094,22 @@
 			},
 			{
 				"ids": [
+					"md.highlight-blue.live",
+					"md.highlight-blue.reading"
+				],
+				"reason": "the same element in another editor mode"
+			},
+			{
+				"ids": [
 					"md.highlight-red.live",
 					"md.highlight-red.reading"
+				],
+				"reason": "the same element in another editor mode"
+			},
+			{
+				"ids": [
+					"md.highlight-yellow.live",
+					"md.highlight-yellow.reading"
 				],
 				"reason": "the same element in another editor mode"
 			},
@@ -30374,7 +30446,6 @@
 			"logo-wireframe",
 			"lucide-uppercase-lowercase-a",
 			"markdown-preview-pusher",
-			"menu-item-desc",
 			"menu-title",
 			"menu-title-inner",
 			"metadata-error-cta",
@@ -30514,6 +30585,7 @@
 		"outOfScope": [
 			"card",
 			"cm-completionInfo",
+			"cm-dropCursor",
 			"cm-hmd-orgmode-markup",
 			"cm-invalidchar",
 			"cm-positive",
@@ -30521,7 +30593,6 @@
 			"cm-selectionLayer",
 			"form-field-error",
 			"frontmatter",
-			"is-label",
 			"list-heading",
 			"mod-back",
 			"mod-completed",
@@ -30539,9 +30610,7 @@
 			"setting-progress-bar",
 			"style"
 		],
-		"missing": [
-			"cm-dropCursor"
-		]
+		"missing": []
 	},
 	"themeScripted": [
 		".modal .dropdown option:hover",
@@ -30704,9 +30773,9 @@
 			"command.workspace:copy-path": 1,
 			"command.workspace:copy-url": 1,
 			"command.workspace:export-pdf": 1,
-			"command.workspace:move-to-new-window": 0.997,
+			"command.workspace:move-to-new-window": 1,
 			"command.workspace:new-window": 1,
-			"command.workspace:open-in-new-window": 0.998,
+			"command.workspace:open-in-new-window": 1,
 			"command.workspaces:load": 1,
 			"command.workspaces:open-modal": 1,
 			"command.workspaces:save": 1,
@@ -31054,7 +31123,7 @@
 			"md.comment-block.live": 1,
 			"md.comment-block.source": 1,
 			"md.embed-base-codeblock.live": 1,
-			"md.embed-base-codeblock.reading": 0.997,
+			"md.embed-base-codeblock.reading": 1,
 			"md.embed-base.live": 1,
 			"md.embed-base.reading": 1,
 			"md.embed-block.live": 1,
@@ -31388,7 +31457,7 @@
 			"mobile.phone.confirm-modal": 1,
 			"mobile.phone.drawer-tab-list": 1,
 			"mobile.phone.editor-toolbar": 1,
-			"mobile.phone.file-menu": 0.841,
+			"mobile.phone.file-menu": 1,
 			"mobile.phone.left-drawer": 1,
 			"mobile.phone.link-suggest": 1,
 			"mobile.phone.menu": 1,
@@ -31515,7 +31584,7 @@
 			"qc.canvas.node-placeholder": 1,
 			"qc.canvas.resizer": 1,
 			"qc.canvas.selection-box": 1,
-			"qc.canvas.snaps": 0.977,
+			"qc.canvas.snaps": 0.98,
 			"qc.canvas.zoomed-out": 1,
 			"qc.combo.external-code-link.focus": 1,
 			"qc.combo.external-code-link.hover": 1,
@@ -31618,6 +31687,7 @@
 			"qc.pdf.wrapped": 1,
 			"qc.pdf.xfa": 1,
 			"qc.pdf.xfa-text.focus": 0.989,
+			"qc.print.export-window": 1,
 			"qc.rtl": 1,
 			"qc.rtl-language.restore": 1,
 			"qc.rtl-language.window": 1,

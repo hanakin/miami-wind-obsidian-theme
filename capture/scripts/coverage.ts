@@ -902,9 +902,10 @@ list(
 			`${r.id} ${r.selector}${r.fixtureOnly.length ? ` (fixture-only: ${r.fixtureOnly.slice(0, 2).join(", ")})` : ""}${r.liveOnly.length ? ` (live-only: ${r.liveOnly.slice(0, 2).join(", ")})` : ""}`,
 	),
 );
-list("App classes neither captured nor excluded", [
-	appMissing.map((c) => `${c.name}${c.census ? "*" : ""}`).join(" "),
-]);
+list(
+	"App classes neither captured nor excluded",
+	appMissing.length ? [appMissing.map((c) => `${c.name}${c.census ? "*" : ""}`).join(" ")] : [],
+);
 list(
 	"Unexplained identical screenshots",
 	dupes.map((d) => d.join(" = ")),

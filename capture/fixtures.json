@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-26T05:06:08.995Z",
+	"generated": "2026-11-27T01:01:53.312Z",
 	"fixtures": [
 		{
 			"id": "bases.cards",
@@ -626,10 +626,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "6cdb4bccf0636c79f1db742cd9eb70eb932d9b10109fc4f2e35f20c541347339",
+					"sha256": "97cd17ab20f8c5db7ceddfe6958b5dd703030a0b95360f8dda63b9f205e4fd02",
 					"width": 536,
 					"height": 208,
-					"colors": 1402
+					"colors": 1417
 				}
 			}
 		},
@@ -1978,10 +1978,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "357b9a4ac12a0c701223bc5d1ef6bd452866891b42b1fe514e6333d5becf6ecc",
+					"sha256": "d23f4a28b4e4d10ddfb3d91992c04a0a4a6ce5a829e1b5cc3d069e275c294c90",
 					"width": 1260,
 					"height": 556,
-					"colors": 990
+					"colors": 993
 				}
 			}
 		},
@@ -2407,10 +2407,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "da6fcc5d22aa4314c908494246513182f0977af86b9cd34fd85f15b8f73b4412",
+					"sha256": "ff913d137e279d8d7133c3724c500cc244002232018394794e71eec4b0a7015b",
 					"width": 1260,
 					"height": 46,
-					"colors": 583
+					"colors": 586
 				}
 			}
 		},
@@ -2580,10 +2580,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "2ffc0c8c17ba5195f7f516dc21501f1ad45bad29380aa65201aab11aa1d20287",
+					"sha256": "994e8e23fc8a3e4aa5ee1d0bbf464dd89a9ad7494f89a59fa8e3a6f4f7023020",
 					"width": 1600,
 					"height": 1000,
-					"colors": 2749
+					"colors": 2750
 				}
 			}
 		},
@@ -7150,10 +7150,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "09abf01ccff9892613638a329a4207dabfdea0db4de02e0231e2fd62877a1202",
+					"sha256": "b9ee489e8a33af7619ed5c1a7a72c0c846c10c8c794d9d162c8899beab8c43e9",
 					"width": 972,
 					"height": 1000,
-					"colors": 2900
+					"colors": 2911
 				}
 			}
 		},
@@ -10202,6 +10202,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Opened by the command \"Open settings\" (app:open-settings)",
 			"evidence": {
 				"box": [
@@ -11241,7 +11242,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "19bf029b1a09975de6d570c6574daa233ca189f9b85705bda68df938feaf0417",
+					"sha256": "4083c8f97fb4a244f3b22e3ad2ee9d234b51c556e92c29c8b9f360ad38053c8b",
 					"width": 1600,
 					"height": 1000,
 					"colors": 3722
@@ -11541,10 +11542,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "eaea95855d170908111435143082e6041559c89cfa9f5df18b3868a8779b8dbb",
+					"sha256": "0506971864c387c513dcfb3f228d89fac00f6f0dfbcc8e5bc1aedabc4a684e5f",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3710
+					"colors": 3709
 				}
 			}
 		},
@@ -12452,6 +12453,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Opened by the command \"Open link under cursor in new window\" (editor:open-link-in-new-window)",
 			"evidence": {
 				"box": [
@@ -12803,10 +12805,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "430260fe73e81912243542faf988236000997c21f52f41d77e217423fb9eef3e",
+					"sha256": "ca9d30b876c9eb3cb01989a301e06b9fb57c35068746401b955a2f4eb1012308",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3358
+					"colors": 3352
 				}
 			}
 		},
@@ -12837,7 +12839,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/8adba9c47e1fb0d9099138c41c5c70c0.png",
+					"file": "pixels/7865bb3257e3a3de091077bb9a8baafd.png",
 					"source": "screen"
 				}
 			],
@@ -12903,10 +12905,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "fe6b7b10d7068f4ef1b6c65232240cbe9110d47f42bba6e4559c8094401309f1",
+					"sha256": "82692304e3dff05425de66aba98ed33b0ecac501449cc4aa624d817f2de2ea62",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3917
+					"colors": 3795
 				}
 			}
 		},
@@ -13516,6 +13518,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Opened by the command \"Sync: Set up Sync\" (sync:setup)",
 			"evidence": {
 				"box": [
@@ -14667,10 +14670,10 @@
 					"canvas": "rgb(255, 255, 255)"
 				},
 				"screenshot": {
-					"sha256": "5574ace4980d90937f73cdb00dadcc7720ee391d67867b660bc79c92dc332514",
+					"sha256": "5f157113f625960d13f9b80d0d48c6cc1e23c0ae2cb501039302aa69aca12714",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3740
+					"colors": 3739
 				}
 			}
 		},
@@ -14727,6 +14730,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Opened by the command \"Move current tab to new window\" (workspace:move-to-new-window)",
 			"evidence": {
 				"box": [
@@ -14843,6 +14847,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Opened by the command \"New window\" (workspace:new-window)",
 			"evidence": {
 				"box": [
@@ -14945,6 +14950,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Opened by the command \"Open current tab in new window\" (workspace:open-in-new-window)",
 			"evidence": {
 				"box": [
@@ -15205,10 +15211,10 @@
 					"canvas": "rgb(255, 255, 255)"
 				},
 				"screenshot": {
-					"sha256": "a981516616d9656a9f688d91c0d1dcd3b539e0766a37ceabf32b98ab9ef7f998",
+					"sha256": "844082fbb0c08cedac912c4864754abe7ab0aae242bedf38776177e6c7279952",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3540
+					"colors": 3545
 				}
 			}
 		},
@@ -17973,6 +17979,7 @@
 				"app",
 				"theme"
 			],
+			"quirks": true,
 			"note": "Restricted mode with Style Settings enabled in the vault: the info button of 'Re-enable plugins' lists it.",
 			"evidence": {
 				"box": [
@@ -18064,6 +18071,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					0,
@@ -18152,6 +18160,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					12,
@@ -18252,8 +18261,9 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Loads the community plugin list over the network; opens in its own popout window.",
-			"trimmed": "kept 6 of 10913 .community-item elements (the first 6 plus one per distinct state matching .is-selected, .community-item-badge, .mod-unavailable, [data-capture-state]); the screenshot shows the untrimmed window",
+			"trimmed": "kept 6 of 10954 .community-item elements (the first 6 plus one per distinct state matching .is-selected, .community-item-badge, .mod-unavailable, [data-capture-state]); the screenshot shows the untrimmed window",
 			"evidence": {
 				"box": [
 					0,
@@ -18300,7 +18310,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "0cc79f39dddf2d3b0e1cdfc00bc10d8abd44343d65a8d2ca52bcd33bd47f7937",
+					"sha256": "e7b080b22aa59b80eefd2b0225f4cfa14d353379dd8b98915f0b58b76d5e8472",
 					"width": 1100,
 					"height": 800,
 					"colors": 1054
@@ -18595,7 +18605,8 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
-			"trimmed": "kept 6 of 10913 .community-item elements (the first 6 plus one per distinct state matching .is-selected, .community-item-badge, .mod-unavailable, [data-capture-state]); the screenshot shows the untrimmed window",
+			"quirks": true,
+			"trimmed": "kept 6 of 10954 .community-item elements (the first 6 plus one per distinct state matching .is-selected, .community-item-badge, .mod-unavailable, [data-capture-state]); the screenshot shows the untrimmed window",
 			"evidence": {
 				"box": [
 					0,
@@ -18648,7 +18659,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "10e419a3af1e78dc70ffd6fab295844a80b216eaa4383720d6e0e4a845402a73",
+					"sha256": "a832923141d946ca71d0e79a995bac392a7e1a3b34da5e8f41f2c52e8a9d05e7",
 					"width": 1100,
 					"height": 800,
 					"colors": 8308
@@ -18691,6 +18702,7 @@
 				"app",
 				"theme"
 			],
+			"quirks": true,
 			"note": "Restricted mode, turned on with the Community plugins tab's own button (the app reloads).",
 			"evidence": {
 				"box": [
@@ -18799,7 +18811,8 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
-			"trimmed": "kept 7 of 1042 .community-item elements (the first 6 plus one per distinct state matching .is-selected, .community-item-badge, .mod-unavailable, [data-capture-state]); the screenshot shows the untrimmed window",
+			"quirks": true,
+			"trimmed": "kept 7 of 1048 .community-item elements (the first 6 plus one per distinct state matching .is-selected, .community-item-badge, .mod-unavailable, [data-capture-state]); the screenshot shows the untrimmed window",
 			"evidence": {
 				"box": [
 					0,
@@ -18847,7 +18860,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "5672b573b3a785375a56b7ef2a7dd7b240958e078017ec7ca913d6e0d7d9bc97",
+					"sha256": "17629023efa839631a814cc5f8b3e860bf7093a70b93c4e19831ad435bc037f9",
 					"width": 1100,
 					"height": 800,
 					"colors": 41206
@@ -18885,6 +18898,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "The theme list download fails (the app's network goes through a dead proxy for this scene): the browser shows its load error and Retry.",
 			"evidence": {
 				"box": [
@@ -19149,7 +19163,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/7dc0c0d06e9fbf3ce111768955dff434.png",
+					"file": "pixels/d4d91ed858665a7d8dd5f0e1be7f3cac.png",
 					"source": "screen"
 				}
 			],
@@ -19213,10 +19227,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "e510b83247ab3acd6a4bbc2ca169e6a55c283ce1592f5f7e454cbf9713855766",
+					"sha256": "b54da7fc7c927ad943f93a226b30414133c111fc00383e81c3e181bd8ced55e6",
 					"width": 256,
 					"height": 922,
-					"colors": 1145
+					"colors": 1406
 				}
 			}
 		},
@@ -19409,10 +19423,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "3ffca3814a23df97ee64797cc20e76bfa7d82a45f7fe0efa46802e1763482bfe",
+					"sha256": "34192acc6b221287501a9fb4a819e9efb91a791c9bc9cffe96e541c0306316f6",
 					"width": 1196,
 					"height": 48,
-					"colors": 664
+					"colors": 670
 				}
 			}
 		},
@@ -21921,6 +21935,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"synthetic": "size=6 set on the <select> so Chromium draws its options in the page",
 			"evidence": {
@@ -22026,6 +22041,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"synthetic": "size=6 set on the <select> so Chromium draws its options in the page (the real dropdown list is a native popup outside the page)",
 			"evidence": {
@@ -22134,6 +22150,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					724,
@@ -22241,6 +22258,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					724,
@@ -22354,6 +22372,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					0,
@@ -22469,6 +22488,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					0,
@@ -22579,6 +22599,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "A navigable setting row (chevron) opens a sub-page inside the settings window.",
 			"evidence": {
 				"box": [
@@ -22864,6 +22885,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"note": "Style Settings marks the body with css-settings-manager while it runs (every window).",
 			"evidence": {
 				"box": [
@@ -22955,6 +22977,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"note": "Style Settings' own settings tab. Miami Wind declares no @settings block, so it shows its empty state.",
 			"evidence": {
 				"box": [
@@ -23597,7 +23620,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/6e90446653a8c2c111d2701ccf207bad.png",
+					"file": "pixels/3afc4aea246f1730842111bc88d8df3f.png",
 					"source": "screen"
 				}
 			],
@@ -23661,10 +23684,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "07e1f113668ea5c52e9c6d94b1669d1ec48c419fb4e9f066cf6782ca6ecee3c9",
+					"sha256": "03eee400993c3c9fb1c5530fb1831ca31da0c844f0f5fb8b4685cafb55211a93",
 					"width": 256,
 					"height": 922,
-					"colors": 1431
+					"colors": 1316
 				}
 			}
 		},
@@ -23685,7 +23708,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/7ba7a3a93afc34c2be8b515fb6d248ca.png",
+					"file": "pixels/ae554c8632da693771e99d920091e69d.png",
 					"source": "screen"
 				}
 			],
@@ -23758,10 +23781,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "6ca750da4a9539080be2509defbe36bc770438d529b6843d10917e6ee58bf686",
+					"sha256": "baa089e74e7e73ac70fb9912cfc358b6ff9d707f8d777d207a187fba44ebc1f4",
 					"width": 230,
 					"height": 41,
-					"colors": 174
+					"colors": 178
 				}
 			}
 		},
@@ -23786,7 +23809,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/89d70838085a5f42373a32e8874ea8ee.png",
+					"file": "pixels/d8dede36a7cc960c918b65e5bd29f916.png",
 					"source": "screen"
 				}
 			],
@@ -23848,10 +23871,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b7915632b98b3f74139dd9e7d0ba2091bb6ee810c260a0a1ea69ff564b0764cb",
+					"sha256": "d46b5827ab636c37b0c3be2099eacea23dd5899373014f2a21093b64777b5f8d",
 					"width": 636,
 					"height": 968,
-					"colors": 1848
+					"colors": 1862
 				}
 			}
 		},
@@ -23876,7 +23899,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/27a1f94de1fa19eabf82fa92e2c02e4b.png",
+					"file": "pixels/307b8312b9e2466a3e9f7d0f01d77de8.png",
 					"source": "screen"
 				}
 			],
@@ -23939,10 +23962,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "ec35962a0c25d6e08a34a552bf6ae7e5de16ec1a6e37064dc4b4dcbfcea9999f",
+					"sha256": "2ea885cf9882ca0609e040a01f02fb65db3c08c76b1439d11a03dd7b94a87d30",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3254
+					"colors": 3217
 				}
 			}
 		},
@@ -45164,7 +45187,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "f201f7e88e7c6b744f1d42d582fa0057a62fa9f5f0b603fa557a784b9c201ae7",
+					"sha256": "42c8dee6e039056f962f265f90c429bbd8aaa039512dae146b5ea00f5e812b86",
 					"width": 716,
 					"height": 40,
 					"colors": 401
@@ -46818,7 +46841,7 @@
 				],
 				"unobscured": 1,
 				"marks": {
-					"hover": 19,
+					"hover": 20,
 					"focus": 1,
 					"focus-visible": 1,
 					"focus-within": 13
@@ -47618,10 +47641,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "6254a266cd81b210b34fff2184e0a4675a1e6628917f3818ea1c4480e15e1bfd",
+					"sha256": "04027263a71ff5537976bf31bc0d8902dabb0e3a07f7f6e846ac99099d6ff87d",
 					"width": 716,
 					"height": 445,
-					"colors": 722
+					"colors": 723
 				}
 			}
 		},
@@ -53135,10 +53158,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "742518b0d836472316a2735447bfee22f4a57e24294aa41afe33f1a7698f40de",
+					"sha256": "54e86dbc366c2c8cf7f7eadaaa4fa1277f52260f9e0db53ed6f2a193080851e1",
 					"width": 54,
 					"height": 37,
-					"colors": 89
+					"colors": 88
 				}
 			}
 		},
@@ -54340,7 +54363,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "664fe453c97ac86c63f8ea8d2c8e12b4afd5efa7d579b1cce45773acfd989feb",
+					"sha256": "4243c2551c234ca95f9e170e9771d7105b619fea623e3d8d03b3b947f8adb22f",
 					"width": 68,
 					"height": 37,
 					"colors": 139
@@ -54501,10 +54524,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "c151229ca246767fe8a13087d68a81f752d5286f2bc04a2f78b896690c89da97",
+					"sha256": "f2df4593e1c6472090e98ffb5bfa7a8e8eeafb8bb6612a75fb3778f57cf8b48b",
 					"width": 63,
 					"height": 37,
-					"colors": 154
+					"colors": 155
 				}
 			}
 		},
@@ -60587,7 +60610,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b131e96bffa579130068ff72ff041ee2d56c1d9deaae8a4a5ea7a6d3fa01c6ab",
+					"sha256": "381a4ac4472d3f3adae15f1ddfa5fca69a6de7d8f25bab64ff5da3e06e1b84da",
 					"width": 1600,
 					"height": 1000,
 					"colors": 3296
@@ -62506,7 +62529,7 @@
 					"3:0"
 				],
 				"domOnly": [],
-				"seen": 42,
+				"seen": 40,
 				"clip": [
 					608,
 					460,
@@ -62520,10 +62543,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "f74968b5cc67e5b198e8534020ead29f8baf8b423e1feebae1c7bcb47f00d0f3",
+					"sha256": "c1ea0bfe1dee81912d48b18f0a345befff07d591396322c105dbe5ef5ab86640",
 					"width": 716,
 					"height": 160,
-					"colors": 537
+					"colors": 528
 				}
 			}
 		},
@@ -62585,7 +62608,7 @@
 					"3:0"
 				],
 				"domOnly": [],
-				"seen": 39,
+				"seen": 37,
 				"clip": [
 					608,
 					460,
@@ -62599,10 +62622,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "52dd2d56fef2a6eb32ed620e3da2c1fc94c4dfe0ff31bb0e4240568c71192b05",
+					"sha256": "b3608fb607fb027e109bd4f91546ba57f073c004c078096d64a9c7990f393314",
 					"width": 716,
 					"height": 160,
-					"colors": 539
+					"colors": 531
 				}
 			}
 		},
@@ -64747,10 +64770,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "01b66fef284b7673ee3878224610751a392c2903a66f7d77f0273e784bee002e",
+					"sha256": "6bafc3816c0c4ad3a80cad4053f15598421c9a71d6a5464a5dc18baf646e6b4e",
 					"width": 716,
 					"height": 44,
-					"colors": 392
+					"colors": 393
 				}
 			}
 		},
@@ -64832,10 +64855,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "6bafc3816c0c4ad3a80cad4053f15598421c9a71d6a5464a5dc18baf646e6b4e",
+					"sha256": "01b66fef284b7673ee3878224610751a392c2903a66f7d77f0273e784bee002e",
 					"width": 716,
 					"height": 44,
-					"colors": 393
+					"colors": 392
 				}
 			}
 		},
@@ -73036,14 +73059,14 @@
 				"box": [
 					398,
 					424,
-					160,
-					289
+					197,
+					377
 				],
 				"inView": [
 					398,
 					424,
-					160,
-					289
+					197,
+					377
 				],
 				"unobscured": 1,
 				"marks": {
@@ -73058,12 +73081,12 @@
 					"967:0"
 				],
 				"domOnly": [],
-				"seen": 74,
+				"seen": 91,
 				"clip": [
 					390,
 					416,
-					176,
-					305
+					213,
+					393
 				],
 				"inputMedia": {
 					"hover": true,
@@ -73072,10 +73095,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "226977c997d3d2a8398df43babdca707ee22f0f39cf0088b4fad62ef8fe01bd7",
-					"width": 176,
-					"height": 305,
-					"colors": 1088
+					"sha256": "0c7d62d16a7f48a92416a1cf85d4b7802cb5aaf1749a3b9bb2f3681f07fe86f0",
+					"width": 213,
+					"height": 393,
+					"colors": 1385
 				}
 			}
 		},
@@ -73299,13 +73322,13 @@
 				"box": [
 					405,
 					431,
-					146,
+					183,
 					25
 				],
 				"inView": [
 					405,
 					431,
-					146,
+					183,
 					25
 				],
 				"unobscured": 1,
@@ -73340,7 +73363,7 @@
 				"clip": [
 					397,
 					423,
-					162,
+					199,
 					41
 				],
 				"inputMedia": {
@@ -73350,10 +73373,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "508298863380466d4ac88f616fe92e8195eb9385fbdea282cfa1c5a94f19cdef",
-					"width": 162,
+					"sha256": "3dc35bd0b4ad32777eb12cda4c0b819e7d529408b53ef1985af36b29d734acbb",
+					"width": 199,
 					"height": 41,
-					"colors": 309
+					"colors": 323
 				}
 			}
 		},
@@ -75134,7 +75157,6 @@
 				"status-bar-item",
 				"multi-select-pill",
 				"internal-link",
-				"search-result",
 				"bases-toolbar",
 				"collapse-icon"
 			],
@@ -75865,15 +75887,21 @@
 				844
 			],
 			"styles": [
-				"app",
 				"runtime",
+				"app",
 				"theme"
 			],
 			"runtimeStyles": [
+				"d6b3fa4b76551e354f87",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
-				"8fd76dc226b0513a11f8"
+				"8fd76dc226b0513a11f8",
+				"37a9e3445bc44d57b671",
+				"4347ae04f06b178136ec",
+				"2c11858cea6dd48ac24b",
+				"aa98560f1d348c2fb999",
+				"0ac92200de440ef61394"
 			],
 			"context": "document",
 			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A file's context menu from the file explorer drawer, with the destructive Delete item.",
@@ -75899,9 +75927,7 @@
 				"live": [
 					"3:0",
 					"927:0",
-					"967:0",
-					"971:0",
-					"971:3"
+					"967:0"
 				],
 				"domOnly": [
 					"963:0"
@@ -75920,10 +75946,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "0fdf04c465bd6d23e680a01c268a073d56592f7b86da6e9812d4764c78e0d175",
+					"sha256": "f54ee541f9afcb56b2a869b58bc1e9cb6e1766964e535823f7ccb6383753e029",
 					"width": 390,
 					"height": 844,
-					"colors": 1450
+					"colors": 1753
 				}
 			}
 		},
@@ -76693,7 +76719,7 @@
 				"domOnly": [
 					"879:0"
 				],
-				"seen": 41,
+				"seen": 48,
 				"clip": [
 					0,
 					0,
@@ -76707,10 +76733,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "f1655bede6afb57c4ec58c166f19e3a6c08a621d7646dab49775462a225fc6bd",
+					"sha256": "db4c51307f2be48c5a1ab9701101f5d49b771863902cd1b66e3d4c9ec8252cbc",
 					"width": 390,
 					"height": 844,
-					"colors": 2767
+					"colors": 3004
 				}
 			}
 		},
@@ -76730,10 +76756,8 @@
 				"button",
 				"text-input",
 				"search-input",
-				"tree-item",
 				"tab-header",
 				"view-header",
-				"search-result",
 				"collapse-icon"
 			],
 			"viewport": [
@@ -76787,7 +76811,7 @@
 					"886:0",
 					"921:0"
 				],
-				"seen": 59,
+				"seen": 55,
 				"clip": [
 					0,
 					0,
@@ -76801,10 +76825,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "fac7e556133b83db90eabaedb869cd74e3b6877dfdc5a117b1eb71e4aa1aa830",
+					"sha256": "ed5937f96790c8759e4ca5bb65937db9b0b1afa150f3bf2fc2b9bde23362546f",
 					"width": 390,
 					"height": 844,
-					"colors": 887
+					"colors": 877
 				}
 			}
 		},
@@ -77345,7 +77369,6 @@
 				"status-bar-item",
 				"multi-select-pill",
 				"internal-link",
-				"search-result",
 				"bases-toolbar",
 				"collapse-icon"
 			],
@@ -77429,10 +77452,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "31ad3d3341f465a6f13518619f1fd9b496ef9c184918f4657edce368fc33d8ec",
+					"sha256": "e1c1b3a53d16cbeee9a0ecf99e2fc5839096ed95bcd63b8b81424981a5cdf7aa",
 					"width": 1024,
 					"height": 768,
-					"colors": 1760
+					"colors": 1759
 				}
 			}
 		},
@@ -77535,10 +77558,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "f44a0eacf3731fd604dfd696b10f4954358b84d1d48e53596a692ac71808225f",
+					"sha256": "5d7cd28f9796dc1b5cbc55a9873340a8fcee57268462ffcf7fa4d8029f9990e1",
 					"width": 1024,
 					"height": 768,
-					"colors": 4133
+					"colors": 4131
 				}
 			}
 		},
@@ -77630,10 +77653,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "6292b64b1b79091b3bbe6aebdced6c1225b06d4fabefd93968e71c90978d8913",
+					"sha256": "da616279503dc4dc6e366651889c7c4a998c4526a198f025347f0401ce36645b",
 					"width": 1024,
 					"height": 768,
-					"colors": 4328
+					"colors": 4326
 				}
 			}
 		},
@@ -78059,10 +78082,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "2a9f04490db643c2ac63eb29be7c6be2099eecbdaf2258f8a3046e6db769ab31",
+					"sha256": "1476412eec86b7e72850a97a516f605a8c91102162c7c5d29f106a0d8c3c5fde",
 					"width": 244,
 					"height": 410,
-					"colors": 1703
+					"colors": 1551
 				}
 			}
 		},
@@ -78637,13 +78660,13 @@
 					162,
 					115,
 					700,
-					337
+					375
 				],
 				"inView": [
 					162,
 					115,
 					700,
-					337
+					375
 				],
 				"unobscured": 1,
 				"marks": {
@@ -78669,12 +78692,12 @@
 					"895:2"
 				],
 				"domOnly": [],
-				"seen": 51,
+				"seen": 58,
 				"clip": [
 					154,
 					107,
 					716,
-					353
+					391
 				],
 				"inputMedia": {
 					"hover": false,
@@ -78683,10 +78706,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "ce540380c9b75396535a78c433f7f99298ddadc59e6134f614bec4dbf53acbd4",
+					"sha256": "dd9eec78f49a0fb7393022cca3555d94f7e8968fe1009c4e9e1fa99d6db22ffb",
 					"width": 716,
-					"height": 353,
-					"colors": 2577
+					"height": 391,
+					"colors": 3236
 				}
 			}
 		},
@@ -78706,10 +78729,8 @@
 				"button",
 				"text-input",
 				"search-input",
-				"tree-item",
 				"tab-header",
 				"view-header",
-				"search-result",
 				"collapse-icon"
 			],
 			"viewport": [
@@ -78763,7 +78784,7 @@
 					"886:0",
 					"921:0"
 				],
-				"seen": 62,
+				"seen": 58,
 				"clip": [
 					0,
 					0,
@@ -78777,10 +78798,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "63dd825e068a8194810fd163612f6179aefbfb65b918bedd0d2e2810ff66aee8",
+					"sha256": "8a12921086ed1b5f3e4190845a2439f2216456feb84c98d59eb34a89ae221d8e",
 					"width": 1024,
 					"height": 768,
-					"colors": 2746
+					"colors": 2739
 				}
 			}
 		},
@@ -79322,7 +79343,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "93199d1ece3e9833c66a7a81e7293ed2e8b3d5faa1dd668f80a70cf213c16fb0",
+					"sha256": "a4d7b70fc628eaeab429d6229d6c2069d8fac946d5b811a3ec7fb85fe3904212",
 					"width": 1024,
 					"height": 768,
 					"colors": 2515
@@ -79363,6 +79384,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					706,
@@ -79443,6 +79465,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					732,
@@ -79523,6 +79546,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"evidence": {
 				"box": [
@@ -79620,6 +79644,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"evidence": {
 				"box": [
@@ -79715,6 +79740,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"context": "document",
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"evidence": {
@@ -79815,6 +79841,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					724,
@@ -79904,6 +79931,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"synthetic": "size=6 set on the <select> so Chromium draws its options in the page (the real dropdown list is a native popup outside the page)",
 			"evidence": {
 				"box": [
@@ -79994,6 +80022,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"evidence": {
 				"box": [
@@ -80100,6 +80129,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					724,
@@ -80204,6 +80234,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"evidence": {
 				"box": [
@@ -80310,6 +80341,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					762,
@@ -80386,6 +80418,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"evidence": {
 				"box": [
@@ -80479,6 +80512,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"context": "document",
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"evidence": {
@@ -80578,6 +80612,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					12,
@@ -80623,10 +80658,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "62fe81d96e489ae73f0df83133d4cb70a2ce2f2cc399a62a7f030cfbff97c0b3",
+					"sha256": "936ea09339ab5cabb4baf5cd338182465056e3cf917b3a78d1ef454a484d61b7",
 					"width": 216,
 					"height": 46,
-					"colors": 233
+					"colors": 234
 				}
 			}
 		},
@@ -80664,6 +80699,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					257,
@@ -80743,6 +80779,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					257,
@@ -80843,6 +80880,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"note": "Settings open in their own popout window (body.is-popout-modal) in Obsidian 1.14.",
 			"evidence": {
 				"box": [
@@ -80949,6 +80987,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					734,
@@ -81027,6 +81066,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"evidence": {
 				"box": [
@@ -81121,6 +81161,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					642,
@@ -81200,6 +81241,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					642,
@@ -81294,6 +81336,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"evidence": {
 				"box": [
@@ -81389,6 +81432,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					796,
@@ -81486,6 +81530,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					796,
@@ -81568,6 +81613,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					796,
@@ -81648,6 +81694,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					12,
@@ -81727,6 +81774,7 @@
 				"aa98560f1d348c2fb999",
 				"9b4b20bf3fc7e975cc8b"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					12,
@@ -81807,6 +81855,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"evidence": {
 				"box": [
@@ -81902,6 +81951,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "In the real Settings popout. The state is held through DevTools and verified with CSS.getMatchedStylesForNode (Element.matches() does not report forced states inside popout windows)",
 			"evidence": {
 				"box": [
@@ -81998,15 +82048,21 @@
 				1000
 			],
 			"styles": [
-				"app",
 				"runtime",
+				"app",
 				"theme"
 			],
 			"runtimeStyles": [
+				"3932aecc178042804c34",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
-				"8fd76dc226b0513a11f8"
+				"8fd76dc226b0513a11f8",
+				"37a9e3445bc44d57b671",
+				"4347ae04f06b178136ec",
+				"2c11858cea6dd48ac24b",
+				"aa98560f1d348c2fb999",
+				"9b4b20bf3fc7e975cc8b"
 			],
 			"evidence": {
 				"box": [
@@ -82088,15 +82144,21 @@
 				1000
 			],
 			"styles": [
-				"app",
 				"runtime",
+				"app",
 				"theme"
 			],
 			"runtimeStyles": [
+				"3932aecc178042804c34",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
-				"8fd76dc226b0513a11f8"
+				"8fd76dc226b0513a11f8",
+				"37a9e3445bc44d57b671",
+				"4347ae04f06b178136ec",
+				"2c11858cea6dd48ac24b",
+				"aa98560f1d348c2fb999",
+				"9b4b20bf3fc7e975cc8b"
 			],
 			"context": "document",
 			"evidence": {
@@ -82173,15 +82235,21 @@
 				1000
 			],
 			"styles": [
-				"app",
 				"runtime",
+				"app",
 				"theme"
 			],
 			"runtimeStyles": [
+				"3932aecc178042804c34",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
-				"8fd76dc226b0513a11f8"
+				"8fd76dc226b0513a11f8",
+				"37a9e3445bc44d57b671",
+				"4347ae04f06b178136ec",
+				"2c11858cea6dd48ac24b",
+				"aa98560f1d348c2fb999",
+				"9b4b20bf3fc7e975cc8b"
 			],
 			"context": "document",
 			"evidence": {
@@ -82201,7 +82269,8 @@
 				"marks": {
 					"focus": 1,
 					"focus-visible": 1,
-					"focus-within": 14
+					"focus-within": 14,
+					"hover": 7
 				},
 				"forced": [],
 				"live": [
@@ -82261,15 +82330,21 @@
 				1000
 			],
 			"styles": [
-				"app",
 				"runtime",
+				"app",
 				"theme"
 			],
 			"runtimeStyles": [
+				"3932aecc178042804c34",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
-				"8fd76dc226b0513a11f8"
+				"8fd76dc226b0513a11f8",
+				"37a9e3445bc44d57b671",
+				"4347ae04f06b178136ec",
+				"2c11858cea6dd48ac24b",
+				"aa98560f1d348c2fb999",
+				"9b4b20bf3fc7e975cc8b"
 			],
 			"evidence": {
 				"box": [
@@ -82347,15 +82422,21 @@
 				1000
 			],
 			"styles": [
-				"app",
 				"runtime",
+				"app",
 				"theme"
 			],
 			"runtimeStyles": [
+				"3932aecc178042804c34",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
-				"8fd76dc226b0513a11f8"
+				"8fd76dc226b0513a11f8",
+				"37a9e3445bc44d57b671",
+				"4347ae04f06b178136ec",
+				"2c11858cea6dd48ac24b",
+				"aa98560f1d348c2fb999",
+				"9b4b20bf3fc7e975cc8b"
 			],
 			"evidence": {
 				"box": [
@@ -82372,7 +82453,8 @@
 				],
 				"unobscured": 1,
 				"marks": {
-					"focus-within": 11
+					"focus-within": 11,
+					"hover": 7
 				},
 				"forced": [],
 				"live": [
@@ -82420,15 +82502,21 @@
 				1000
 			],
 			"styles": [
-				"app",
 				"runtime",
+				"app",
 				"theme"
 			],
 			"runtimeStyles": [
+				"3932aecc178042804c34",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
-				"8fd76dc226b0513a11f8"
+				"8fd76dc226b0513a11f8",
+				"37a9e3445bc44d57b671",
+				"4347ae04f06b178136ec",
+				"2c11858cea6dd48ac24b",
+				"aa98560f1d348c2fb999",
+				"9b4b20bf3fc7e975cc8b"
 			],
 			"evidence": {
 				"box": [
@@ -82445,7 +82533,7 @@
 				],
 				"unobscured": 1,
 				"marks": {
-					"hover": 1,
+					"hover": 8,
 					"focus-within": 11
 				},
 				"forced": [
@@ -82530,15 +82618,21 @@
 				1000
 			],
 			"styles": [
-				"app",
 				"runtime",
+				"app",
 				"theme"
 			],
 			"runtimeStyles": [
+				"3932aecc178042804c34",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
-				"8fd76dc226b0513a11f8"
+				"8fd76dc226b0513a11f8",
+				"37a9e3445bc44d57b671",
+				"4347ae04f06b178136ec",
+				"2c11858cea6dd48ac24b",
+				"aa98560f1d348c2fb999",
+				"9b4b20bf3fc7e975cc8b"
 			],
 			"evidence": {
 				"box": [
@@ -82557,7 +82651,8 @@
 				"marks": {
 					"focus-within": 14,
 					"focus": 1,
-					"focus-visible": 1
+					"focus-visible": 1,
+					"hover": 7
 				},
 				"forced": [],
 				"live": [
@@ -82582,10 +82677,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "a5b04626e0f1eafe891e0a297647284bbce179f066865c2231992ecf7a9eb8e8",
+					"sha256": "3139af65391f7a0953c7e4b63cf91f32ede7ba99a281cf496b7aa7716a97579d",
 					"width": 1600,
 					"height": 1000,
-					"colors": 2056
+					"colors": 2066
 				}
 			}
 		},
@@ -84123,10 +84218,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "d007f2161aa7a091a90dfd9da08775cab03fdcc7aaf20439420bfac245bfa884",
+					"sha256": "dba51562507031973e4dfa912d4815d336aa8f0cacafa9d5a319ec33128da321",
 					"width": 32,
 					"height": 32,
-					"colors": 24
+					"colors": 25
 				}
 			}
 		},
@@ -84480,7 +84575,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "eafefca051d7c6fbe5b430eadfa5ae2544a8352346c982f82e3e83b5378556fa",
+					"sha256": "29a801c57840329e5e8159152065cf97178853bb314d498a27fe6af6f652731b",
 					"width": 142,
 					"height": 314,
 					"colors": 922
@@ -85198,10 +85293,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "fc0f4e9d566d2d812d56b2868e968fc0f80e0830963f4d9ce5273bff74c99e38",
+					"sha256": "f20fd3b912149260b0ff8c7ac8a9d0959b51444748dbb5d106ea9656c108d1af",
 					"width": 86,
 					"height": 37,
-					"colors": 160
+					"colors": 162
 				}
 			}
 		},
@@ -85800,10 +85895,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "ac4f2f0bdea951b2972d89f877be85deb8deed2aeb786ff4d61a0f5a5961acb1",
+					"sha256": "765db73e32b4f0d07fbb5ff622f088cf926ee9801dfa72dc71b69d5909420040",
 					"width": 536,
 					"height": 208,
-					"colors": 1169
+					"colors": 1174
 				}
 			}
 		},
@@ -85900,10 +85995,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "fbd694acf69257248e24b4d05b7cfc28ec5a676b1dd9f7ef1dedbae29f7ced9f",
+					"sha256": "3dcfb951d3f5d8fbf524b801895bdd168f753a71d50bbc17e4e639fabc0cc9a3",
 					"width": 530,
 					"height": 131,
-					"colors": 802
+					"colors": 821
 				}
 			}
 		},
@@ -86324,10 +86419,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "5ca183c826275be8f3f7732c3417ba183be29332ea62b53053f875d1b873b554",
+					"sha256": "97f95ef12b7040fd09cc16031fdb574e47084ecb9b77fa1cab5494be34816718",
 					"width": 536,
 					"height": 208,
-					"colors": 1638
+					"colors": 1668
 				}
 			}
 		},
@@ -86417,10 +86512,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "e5bd05f9f21ab0cdf2ef76daf6748073ecf05bdf9d9223544b42164055d974c0",
+					"sha256": "9c3e66772e7b53999112775fc278c66ccf77e10e1827b4861f2e0fb5a1f9a000",
 					"width": 468,
 					"height": 233,
-					"colors": 883
+					"colors": 900
 				}
 			}
 		},
@@ -87208,13 +87303,13 @@
 			"evidence": {
 				"box": [
 					975,
-					585,
+					586,
 					12,
 					5
 				],
 				"inView": [
 					975,
-					585,
+					586,
 					12,
 					5
 				],
@@ -87233,7 +87328,7 @@
 				"seen": 18,
 				"clip": [
 					967,
-					577,
+					578,
 					28,
 					21
 				],
@@ -87244,10 +87339,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "75add2cc2cb32f6308bbfcc2f7c1098b8eb736ea2366b6e1e03585f10105fca6",
+					"sha256": "4f16d71df747972bb9bbbe27b7b8ce616612b40fd8e61f0709d9fadfad5f9fc4",
 					"width": 28,
 					"height": 21,
-					"colors": 144
+					"colors": 160
 				}
 			}
 		},
@@ -87506,10 +87601,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "f8abdc755fa30871f7eca0de260daf02d4ff41c371766aad88c796289867f695",
+					"sha256": "aa4a7c30882ac3ec07dc1e340315021e8c5b73200acef1a5c9e906de614a3c02",
 					"width": 1600,
 					"height": 1000,
-					"colors": 2316
+					"colors": 2323
 				}
 			}
 		},
@@ -87597,7 +87692,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "7c852e66da27f0cdf61b66ec71da13ec85ff90e9c8ae4065c41d78626fec98e1",
+					"sha256": "e81999ea7dc7eb8dd44bc9c53e30e185948e1896aaab21a9882cc5195ab4fc06",
 					"width": 1600,
 					"height": 1000,
 					"colors": 2086
@@ -88788,6 +88883,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings > Keychain shows a warning when the OS keyring is missing (the isolated session has none); its link opens this explanation.",
 			"evidence": {
 				"box": [
@@ -88910,7 +89006,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "e8ae5181727ac1166b5bbb3cfce656388e3583ec4d9eb69d19c85fa4fc0d47a3",
+					"sha256": "cfb0e94fb5de3a7e739ba926787b3c7dabe096be2a0594682998bc5a289a369b",
 					"width": 1600,
 					"height": 1000,
 					"colors": 153
@@ -89046,6 +89142,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings > About > Check startup time: the startup timing breakdown.",
 			"evidence": {
 				"box": [
@@ -89088,10 +89185,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "aa896c67fff1b7739ff18fe535bf09bcada0baa59b97a7dab2550bea6bbb1990",
+					"sha256": "9d5827afd09b1acf2d75318171205f8863c2eab0f4c1f57e8c12885ea327a17a",
 					"width": 516,
 					"height": 391,
-					"colors": 1005
+					"colors": 1013
 				}
 			}
 		},
@@ -89335,7 +89432,6 @@
 				"task",
 				"metadata-container",
 				"metadata-property",
-				"search-result",
 				"collapse-icon"
 			],
 			"viewport": [
@@ -89436,7 +89532,7 @@
 					"1002:0",
 					"1002:1"
 				],
-				"seen": 444,
+				"seen": 440,
 				"clip": [
 					0,
 					0,
@@ -89450,10 +89546,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "6b146c7f5abc9b887661de24f3ed2489ca1950ed95cc724b350cfc247d70e377",
+					"sha256": "5cf4ea3297055ad056f9ea382a53fd6ecdd3dc06b6c96a7b7a9da45f940638b8",
 					"width": 1600,
 					"height": 1000,
-					"colors": 4151
+					"colors": 4154
 				}
 			}
 		},
@@ -90323,10 +90419,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "fd4d4efee1263cbce84cbefb9606356fe245bca2331c47b6648c6cbcbf28a5d0",
+					"sha256": "55512f70d04519d02bb48f925f454ece7759329b239eef15295e963bcd4305db",
 					"width": 653,
 					"height": 1000,
-					"colors": 1373
+					"colors": 1374
 				},
 				"record": {
 					"overlay": [
@@ -90361,7 +90457,7 @@
 			"obsidianVersion": "1.15.1",
 			"contains": [],
 			"viewport": [
-				3416,
+				2536,
 				1381
 			],
 			"styles": [
@@ -90385,13 +90481,13 @@
 			"note": "Real pointer in a real window: over the callout block, then onto its edit button.",
 			"evidence": {
 				"box": [
-					2192,
+					1752,
 					567,
 					28,
 					24
 				],
 				"inView": [
-					2192,
+					1752,
 					567,
 					28,
 					24
@@ -90422,7 +90518,7 @@
 				"domOnly": [],
 				"seen": 24,
 				"clip": [
-					2184,
+					1744,
 					559,
 					44,
 					40
@@ -90434,10 +90530,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "341043b4b1fc3aa23560612ca069d8b09f1ea076de38c4d7d7bd30790483695e",
+					"sha256": "e7e0104fe3cf97dca575402d0a87b78f6351aa0ed59bc9bb520f3f25e30fabd2",
 					"width": 44,
 					"height": 40,
-					"colors": 75
+					"colors": 76
 				}
 			}
 		},
@@ -90564,15 +90660,15 @@
 			"evidence": {
 				"box": [
 					376,
-					320,
+					389,
 					1180,
-					649
+					579
 				],
 				"inView": [
 					376,
-					320,
+					389,
 					1180,
-					649
+					579
 				],
 				"unobscured": 1,
 				"marks": {
@@ -90587,12 +90683,12 @@
 					"426:0",
 					"886:0"
 				],
-				"seen": 133,
+				"seen": 120,
 				"clip": [
 					368,
-					312,
+					381,
 					1196,
-					665
+					595
 				],
 				"inputMedia": {
 					"hover": true,
@@ -90601,10 +90697,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "d8ef1d9862b0c12de65e036cbec912ad60cea48b5eabdaebd06d87cc7be4dd59",
+					"sha256": "fa0a835ba9e3155e5c7d51721c4bbb3508e98b2a966025cf87c0239601502814",
 					"width": 1196,
-					"height": 665,
-					"colors": 877
+					"height": 595,
+					"colors": 876
 				}
 			}
 		},
@@ -90692,10 +90788,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "4a9753b97a72c7ac65657ed3660935b8a64e5a49bcaf89a14fdc6f57164da721",
+					"sha256": "175e24dfdaa57585d929a041662826e40d17ba29d0fb4e22cddde750f83b2a6a",
 					"width": 1600,
 					"height": 1000,
-					"colors": 2082
+					"colors": 2083
 				}
 			}
 		},
@@ -90741,15 +90837,15 @@
 			"evidence": {
 				"box": [
 					376,
-					215,
+					250,
 					1180,
-					649
+					579
 				],
 				"inView": [
 					376,
-					215,
+					250,
 					1180,
-					649
+					579
 				],
 				"unobscured": 1,
 				"marks": {
@@ -90766,12 +90862,12 @@
 					"426:0",
 					"886:0"
 				],
-				"seen": 133,
+				"seen": 121,
 				"clip": [
 					368,
-					207,
+					242,
 					1196,
-					665
+					595
 				],
 				"inputMedia": {
 					"hover": true,
@@ -90780,9 +90876,9 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "12b44d9cec2f7560a53d593e028e337efd360cc666def8be491d751d30f3c3e7",
+					"sha256": "4a8a5b56ac2a73fdbd08fb3dead0def8f3f6b0552ecfe44a65fa3dfaf191ae57",
 					"width": 1196,
-					"height": 665,
+					"height": 595,
 					"colors": 876
 				}
 			}
@@ -91806,7 +91902,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "d5eefe8162cfd48e00fe43bfc1192bc0297982db07c018ede58cda5bd05deeaf",
+					"sha256": "b02d0b756b35b648bc6ef7ad14e26a0321155072227167bdd0fc532779518f19",
 					"width": 122,
 					"height": 46,
 					"colors": 231
@@ -92146,10 +92242,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "1a98cebfc6a12bb21bdcb862af0ced5df2e683ec1e1d7655ffd0bea1f7fdc44d",
+					"sha256": "cb4be40ad198cb80db2c1b00f4d2ff0f483d41e150bf9673d06a107ff9d0521b",
 					"width": 972,
 					"height": 930,
-					"colors": 2500
+					"colors": 2509
 				}
 			}
 		},
@@ -92191,6 +92287,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Files and links > Excluded files > Add exclusion: a form field with help text.",
 			"evidence": {
 				"box": [
@@ -92622,7 +92719,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/1eb047a14e960e60167d2f3899d8e946.png",
+					"file": "pixels/be9f2f59f58e820343e9709eae215239.png",
 					"source": "screen"
 				}
 			],
@@ -92686,10 +92783,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "4ccd6a0fd3353f1417ed11eac84e337ca2bcbcd4d11ab806033e8b8d9866a28a",
+					"sha256": "1d28ff9826f63246de00d466d0bfb8d51a5d3ed2bd417ecc08efdc8467b2a722",
 					"width": 58,
 					"height": 86,
-					"colors": 115
+					"colors": 123
 				}
 			}
 		},
@@ -92724,6 +92821,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Italic is given Ctrl/Cmd+B, which Bold already uses; the conflict filter shows a count.",
 			"evidence": {
 				"box": [
@@ -93097,10 +93195,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "ad4076a964c03982b9b416d65eca03e5e91cdc8e55c791f35289834bb8304aa8",
+					"sha256": "6db6131e096a86432dc48c18065fc114efe4a1ee62be754433c20c437cf2d2b9",
 					"width": 576,
 					"height": 193,
-					"colors": 1044
+					"colors": 1293
 				}
 			}
 		},
@@ -93900,10 +93998,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "e77e9f48eaae805e8741d7eb72e60279a020a557a0f5aece816710e86b5d58fe",
+					"sha256": "14ae50b54179e84999fd7e82e116e45f52a5e62decd93a8261bb338793ec4345",
 					"width": 1600,
 					"height": 1000,
-					"colors": 2414
+					"colors": 2418
 				}
 			}
 		},
@@ -94014,10 +94112,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "f71e1721c5634660f99cbc476af1264aa64067f7f9796daf1c539888738b4d35",
+					"sha256": "bd5576b906540a4d36814555640d971c693e739983fb7a2a1e1ebf75cd778c10",
 					"width": 896,
 					"height": 884,
-					"colors": 2078
+					"colors": 2101
 				}
 			}
 		},
@@ -94218,13 +94316,13 @@
 			"evidence": {
 				"box": [
 					1313,
-					218,
+					220,
 					274,
 					47
 				],
 				"inView": [
 					1313,
-					218,
+					220,
 					274,
 					47
 				],
@@ -94242,7 +94340,7 @@
 				"seen": 20,
 				"clip": [
 					1305,
-					210,
+					212,
 					290,
 					63
 				],
@@ -94298,13 +94396,13 @@
 			"evidence": {
 				"box": [
 					1525,
-					238,
+					240,
 					38,
 					22
 				],
 				"inView": [
 					1525,
-					238,
+					240,
 					38,
 					22
 				],
@@ -94331,7 +94429,7 @@
 				"seen": 18,
 				"clip": [
 					1517,
-					230,
+					232,
 					54,
 					38
 				],
@@ -94342,10 +94440,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "155ccd661c6ed25dcb435fd9726c125177a5c61279e5b0d47db371c589a582a3",
+					"sha256": "63709b49bd0cd8adbb9bff920e16a3f7ff1ead751137f2240846953be0d2b221",
 					"width": 54,
 					"height": 38,
-					"colors": 147
+					"colors": 148
 				}
 			}
 		},
@@ -94386,6 +94484,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Turning on Vim key bindings asks a question in a form field first.",
 			"evidence": {
 				"box": [
@@ -94553,7 +94652,6 @@
 				"task",
 				"metadata-container",
 				"metadata-property",
-				"search-result",
 				"collapse-icon"
 			],
 			"viewport": [
@@ -94656,7 +94754,7 @@
 					"1002:0",
 					"1002:1"
 				],
-				"seen": 461,
+				"seen": 457,
 				"clip": [
 					0,
 					0,
@@ -94670,10 +94768,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "2f06be48ddc3872eb5097ac83cea4b51d7b7b0aba2dbb70c077c83ce95738be0",
+					"sha256": "01ebd9804e3f862bd19246bdac1e058d5b5620f9ad211af428f3c199834f79c5",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3828
+					"colors": 3832
 				}
 			}
 		},
@@ -94704,7 +94802,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/b57fcce8444b912399a1c186f770ebf6.png",
+					"file": "pixels/2eeeb44ad3fc06bf3169d34c9cf29f10.png",
 					"source": "screen"
 				}
 			],
@@ -94769,10 +94867,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "1701c41e476c632f029569030c9fce17364dca7a21e6b2564283979ff26d404e",
+					"sha256": "43dce6b756e26d623794bbc5dd6d44154c53630799bbccb43288d26a83ba368c",
 					"width": 1600,
 					"height": 1000,
-					"colors": 4064
+					"colors": 4168
 				},
 				"record": {
 					"graphColors": {
@@ -94838,15 +94936,15 @@
 						"hideUnresolved": false
 					},
 					"graphPixels": {
-						"color-fill": 2892,
+						"color-fill": 2369,
 						"color-fill-focused": 0,
-						"color-fill-tag": 1840,
-						"color-fill-unresolved": 175,
-						"color-fill-attachment": 1840,
-						"color-arrow": 315,
+						"color-fill-tag": 1799,
+						"color-fill-unresolved": 693,
+						"color-fill-attachment": 1799,
+						"color-arrow": 300,
 						"color-circle": 0,
-						"color-line": 115,
-						"color-text": 1816,
+						"color-line": 118,
+						"color-text": 1517,
 						"color-fill-highlight": 0,
 						"color-line-highlight": 0
 					}
@@ -94880,7 +94978,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/3b9cda793701c2fae068e1a9b04c2a31.png",
+					"file": "pixels/b7f746a28fc495c701d983dad2a8a6a0.png",
 					"source": "screen"
 				}
 			],
@@ -94945,10 +95043,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "56784d767d0882ddae7f3b03c031d9f45dffa15f42991dcf999b882a43cef433",
+					"sha256": "1f2f16d0c71a2e8fae1939456a832ddfed6efd26be7be0cd4c8a88883f87c16f",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3622
+					"colors": 3610
 				},
 				"record": {
 					"graphColors": {
@@ -95014,14 +95112,14 @@
 						"hideUnresolved": false
 					},
 					"graphPixels": {
-						"color-fill": 2892,
+						"color-fill": 2369,
 						"color-fill-focused": 0,
-						"color-fill-tag": 1840,
-						"color-fill-unresolved": 175,
-						"color-fill-attachment": 1840,
-						"color-arrow": 393,
+						"color-fill-tag": 1799,
+						"color-fill-unresolved": 693,
+						"color-fill-attachment": 1799,
+						"color-arrow": 367,
 						"color-circle": 0,
-						"color-line": 112,
+						"color-line": 108,
 						"color-text": 0,
 						"color-fill-highlight": 0,
 						"color-line-highlight": 0
@@ -95056,7 +95154,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/5a1c204218f6e594be73f079393ca52b.png",
+					"file": "pixels/8051832f35f3ea9e52b98c8d2221c2b1.png",
 					"source": "screen"
 				}
 			],
@@ -95121,10 +95219,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "905308c236e7d279289f8e666c6cdf6e3ee549673429a3ddd8caba7fb52615c7",
+					"sha256": "0b6ae0990261923ddb3ce1bf04c0566f7b74d6fa5f649de3f447483b90056c14",
 					"width": 1600,
 					"height": 1000,
-					"colors": 4077
+					"colors": 4433
 				},
 				"record": {
 					"graphColors": {
@@ -95183,7 +95281,7 @@
 					"classRegions": {
 						"color-fill-focused": [
 							963.9646824497844,
-							531.4021824497844,
+							531.4021824497845,
 							16.07063510043122,
 							16.07063510043116
 						]
@@ -95197,15 +95295,15 @@
 						"hideUnresolved": false
 					},
 					"graphPixels": {
-						"color-fill": 861,
+						"color-fill": 878,
 						"color-fill-focused": 170,
-						"color-fill-tag": 1499,
-						"color-fill-unresolved": 874,
-						"color-fill-attachment": 1499,
-						"color-arrow": 279,
+						"color-fill-tag": 1690,
+						"color-fill-unresolved": 1510,
+						"color-fill-attachment": 1690,
+						"color-arrow": 265,
 						"color-circle": 0,
-						"color-line": 75,
-						"color-text": 1608,
+						"color-line": 49,
+						"color-text": 1947,
 						"color-fill-highlight": 0,
 						"color-line-highlight": 0
 					}
@@ -95239,7 +95337,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/3f21103fe80c0d91f630526a975899a2.png",
+					"file": "pixels/333867553a4365792152c89411588503.png",
 					"source": "screen"
 				}
 			],
@@ -95304,10 +95402,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "0c7bc33ac06a155eba5a4303b1e5e21d18cba69d46cf85307f089676908185d4",
+					"sha256": "0c112adf51c9235b643a7adfa4c750113c3ee324ebfc1f5405dac74a9cc3a63f",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3037
+					"colors": 2959
 				},
 				"record": {
 					"graphColors": {
@@ -95366,13 +95464,13 @@
 					"classRegions": {
 						"color-fill-highlight": [
 							949.472272039473,
-							516.9097720394727,
+							516.9097720394725,
 							45.05545592105443,
 							45.05545592105443
 						],
 						"color-circle": [
 							941.472272039473,
-							508.9097720394727,
+							508.9097720394725,
 							61.05545592105443,
 							61.05545592105443
 						]
@@ -95389,10 +95487,10 @@
 						"color-fill": 0,
 						"color-fill-focused": 258,
 						"color-fill-tag": 11,
-						"color-fill-unresolved": 3,
+						"color-fill-unresolved": 2,
 						"color-fill-attachment": 11,
 						"color-arrow": 63,
-						"color-circle": 297,
+						"color-circle": 296,
 						"color-line": 0,
 						"color-text": 474,
 						"color-fill-highlight": 1512,
@@ -95588,6 +95686,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					0,
@@ -95675,6 +95774,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					712,
@@ -95751,6 +95851,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"context": "document",
 			"evidence": {
 				"box": [
@@ -95829,6 +95930,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					796,
@@ -95906,7 +96008,6 @@
 				"task",
 				"metadata-container",
 				"metadata-property",
-				"search-result",
 				"collapse-icon"
 			],
 			"viewport": [
@@ -96004,7 +96105,7 @@
 					"915:0",
 					"1002:1"
 				],
-				"seen": 484,
+				"seen": 480,
 				"clip": [
 					0,
 					0,
@@ -96019,7 +96120,7 @@
 					"canvas": "rgb(0, 0, 0)"
 				},
 				"screenshot": {
-					"sha256": "71cea8498524a82a9897e103f7f55743a8c7ad213f4ece2df4ec36789b04f72f",
+					"sha256": "17aac80bfc43105dda708448ea5a5442c68243473a3a50703e97bce97f5bb497",
 					"width": 1600,
 					"height": 1000,
 					"colors": 362
@@ -96059,6 +96160,7 @@
 				"task",
 				"metadata-container",
 				"metadata-property",
+				"search-result",
 				"collapse-icon"
 			],
 			"viewport": [
@@ -96161,7 +96263,7 @@
 					"1002:0",
 					"1002:1"
 				],
-				"seen": 387,
+				"seen": 391,
 				"clip": [
 					0,
 					0,
@@ -96175,10 +96277,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "0b6f63e4de4b910fa9ad1e777a4f5800e47f96bc1aa2d3312df3e53806759880",
+					"sha256": "215e364d9b93c6db77e16d13c0480596f47a6eee67ac547bb49be57da0019056",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3657
+					"colors": 3653
 				}
 			}
 		},
@@ -97534,7 +97636,8 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
-			"note": "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs.",
+			"quirks": true,
+			"note": "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs. The window has no doctype (quirks mode), so the fixture has none either.",
 			"evidence": {
 				"box": [
 					0,
@@ -97710,10 +97813,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "cf625d8e931b34b27121edf70741a0ed85e001c55cef033fb13c6e97486c7f29",
+					"sha256": "ef04821dd63c4b44d8d6ef0f2438a796e5b9c8fcae2c59cad6229e3d8b9bd81f",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3760
+					"colors": 3764
 				}
 			}
 		},
@@ -97896,7 +97999,6 @@
 				"task",
 				"metadata-container",
 				"metadata-property",
-				"search-result",
 				"collapse-icon"
 			],
 			"viewport": [
@@ -97990,7 +98092,7 @@
 					"886:0",
 					"1002:1"
 				],
-				"seen": 493,
+				"seen": 489,
 				"clip": [
 					0,
 					0,
@@ -98004,10 +98106,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b6b541607f846727bbed852652b3f19ebf375db6379479237c9b2c0c64c30411",
+					"sha256": "db1cabbdea6cb81d263e5d368e3eb8209ad1201f5a623caff5f20946f3b97e86",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3750
+					"colors": 3757
 				}
 			}
 		},
@@ -98050,7 +98152,6 @@
 				"task",
 				"metadata-container",
 				"metadata-property",
-				"search-result",
 				"collapse-icon"
 			],
 			"viewport": [
@@ -98144,7 +98245,7 @@
 					"886:0",
 					"1002:1"
 				],
-				"seen": 493,
+				"seen": 489,
 				"clip": [
 					0,
 					0,
@@ -98158,10 +98259,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b6b541607f846727bbed852652b3f19ebf375db6379479237c9b2c0c64c30411",
+					"sha256": "db1cabbdea6cb81d263e5d368e3eb8209ad1201f5a623caff5f20946f3b97e86",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3750
+					"colors": 3757
 				}
 			},
 			"variantOf": "qc.rtl-language.window",
@@ -98295,10 +98396,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "11c910dd8af1fe5818f4bc50cd9e0c249c0d28c51d61991f872d92663e44a6f9",
+					"sha256": "ffca1b380864690562f8d4089d11e2c5eaafd5e24dc42859ccb8a0954f0349f1",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3759
+					"colors": 3763
 				}
 			}
 		},
@@ -98431,10 +98532,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "52748765e045dae6853a19855a5f55631ed05abd7526f6bbaf857418d969e8c7",
+					"sha256": "5f2efd5dfa0d2a0698e2a98dc313904cf0527f8f395d46dac5b47e6d2ca29b8f",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3798
+					"colors": 3803
 				}
 			}
 		},
@@ -98757,10 +98858,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "8051d605354cdbe65ea35440bb7e3b7317d88656f9ad54811390696f62b37a23",
+					"sha256": "0d0a5cb8f3b61323f72a2daac8041ee57d4c5717703f6aa83b3d46486da34c29",
 					"width": 972,
 					"height": 930,
-					"colors": 2066
+					"colors": 2084
 				}
 			}
 		},
@@ -98900,6 +99001,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"evidence": {
 				"box": [
 					188,
@@ -99001,10 +99103,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "567370ab563a6c0c7eee24bba4e48e1e165996f2351d97b81aa23b6093a1ca5f",
+					"sha256": "95228094018e1676ecc2d000fa4846a51b6614db64b227d9058c320dc33cdeb5",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3669
+					"colors": 3668
 				}
 			}
 		},
@@ -99283,7 +99385,6 @@
 				"task",
 				"metadata-container",
 				"metadata-property",
-				"search-result",
 				"collapse-icon"
 			],
 			"viewport": [
@@ -99382,7 +99483,7 @@
 					"915:0",
 					"1002:1"
 				],
-				"seen": 484,
+				"seen": 480,
 				"clip": [
 					0,
 					0,
@@ -99396,10 +99497,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "047c2771993552028a2b9f5d1c5c717f01bf7d154b4a5ca484235cebeecec372",
+					"sha256": "1c8f84d8397689d7eb9addaa9eb8437a17fcd1ed617ff4f6f750d12fb7be99bc",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3701
+					"colors": 3702
 				}
 			}
 		},
@@ -99436,7 +99537,6 @@
 				"task",
 				"metadata-container",
 				"metadata-property",
-				"search-result",
 				"collapse-icon"
 			],
 			"viewport": [
@@ -99534,7 +99634,7 @@
 					"915:0",
 					"1002:1"
 				],
-				"seen": 484,
+				"seen": 480,
 				"clip": [
 					0,
 					0,
@@ -99548,10 +99648,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "047ffbdf9d0e3edbcb0ebc7e7aa72449f5b7e24f20006923aa7918612f21fdcb",
+					"sha256": "d651e1faa31c60622045e0b3aac3459a3411cb05c5db46d2513d5e86739508ed",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3765
+					"colors": 3768
 				}
 			}
 		},
@@ -99592,7 +99692,7 @@
 				"collapse-icon"
 			],
 			"viewport": [
-				3440,
+				2560,
 				1440
 			],
 			"styles": [
@@ -99616,13 +99716,13 @@
 				"box": [
 					0,
 					0,
-					3440,
+					2560,
 					1440
 				],
 				"inView": [
 					0,
 					0,
-					3440,
+					2560,
 					1440
 				],
 				"unobscured": 1,
@@ -99686,7 +99786,7 @@
 				"clip": [
 					0,
 					0,
-					3440,
+					2560,
 					1440
 				],
 				"inputMedia": {
@@ -99696,10 +99796,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b47ae814c1683092d05803940d2931ae9f57885979a9f21c1496751b03eeea2f",
-					"width": 3440,
+					"sha256": "baea87460a7f4f12bd5c459d357d816242c3a5c117d61d6346117843c6538f5e",
+					"width": 2560,
 					"height": 1440,
-					"colors": 3608
+					"colors": 3599
 				}
 			}
 		},
@@ -99746,7 +99846,7 @@
 				"collapse-icon"
 			],
 			"viewport": [
-				3440,
+				2560,
 				1440
 			],
 			"styles": [
@@ -99770,13 +99870,13 @@
 				"box": [
 					0,
 					0,
-					3440,
+					2560,
 					1440
 				],
 				"inView": [
 					0,
 					0,
-					3440,
+					2560,
 					1440
 				],
 				"unobscured": 1,
@@ -99840,7 +99940,7 @@
 				"clip": [
 					0,
 					0,
-					3440,
+					2560,
 					1440
 				],
 				"inputMedia": {
@@ -99850,10 +99950,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b47ae814c1683092d05803940d2931ae9f57885979a9f21c1496751b03eeea2f",
-					"width": 3440,
+					"sha256": "baea87460a7f4f12bd5c459d357d816242c3a5c117d61d6346117843c6538f5e",
+					"width": 2560,
 					"height": 1440,
-					"colors": 3608
+					"colors": 3599
 				}
 			},
 			"variantOf": "qc.window.fullscreen",
@@ -99899,7 +99999,7 @@
 				"collapse-icon"
 			],
 			"viewport": [
-				3440,
+				2560,
 				1440
 			],
 			"styles": [
@@ -99923,13 +100023,13 @@
 				"box": [
 					0,
 					0,
-					3440,
+					2560,
 					1440
 				],
 				"inView": [
 					0,
 					0,
-					3440,
+					2560,
 					1440
 				],
 				"unobscured": 1,
@@ -99993,7 +100093,7 @@
 				"clip": [
 					0,
 					0,
-					3440,
+					2560,
 					1440
 				],
 				"inputMedia": {
@@ -100003,10 +100103,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b47ae814c1683092d05803940d2931ae9f57885979a9f21c1496751b03eeea2f",
-					"width": 3440,
+					"sha256": "baea87460a7f4f12bd5c459d357d816242c3a5c117d61d6346117843c6538f5e",
+					"width": 2560,
 					"height": 1440,
-					"colors": 3608
+					"colors": 3599
 				}
 			},
 			"variantOf": "qc.window.fullscreen",
@@ -100050,7 +100150,7 @@
 				"collapse-icon"
 			],
 			"viewport": [
-				3416,
+				2536,
 				1381
 			],
 			"styles": [
@@ -100074,13 +100174,13 @@
 				"box": [
 					0,
 					0,
-					3416,
+					2536,
 					1381
 				],
 				"inView": [
 					0,
 					0,
-					3416,
+					2536,
 					1381
 				],
 				"unobscured": 1,
@@ -100144,7 +100244,7 @@
 				"clip": [
 					0,
 					0,
-					3416,
+					2536,
 					1381
 				],
 				"inputMedia": {
@@ -100154,10 +100254,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "f4a7c72a6f79a14b38654076559f6a2beebd18f8a6d19804a09c83175d5dfdcc",
-					"width": 3416,
+					"sha256": "673e1a931e33532db4a5ca2f88a128358e8a9a97f7c42e964849e8f0bcbc44d2",
+					"width": 2536,
 					"height": 1381,
-					"colors": 3629
+					"colors": 3628
 				}
 			}
 		},
@@ -100174,7 +100274,7 @@
 			"obsidianVersion": "1.15.1",
 			"contains": [],
 			"viewport": [
-				3416,
+				2536,
 				1381
 			],
 			"styles": [
@@ -100199,13 +100299,13 @@
 				"box": [
 					0,
 					0,
-					3416,
+					2536,
 					39
 				],
 				"inView": [
 					0,
 					0,
-					3416,
+					2536,
 					39
 				],
 				"unobscured": 1,
@@ -100223,7 +100323,7 @@
 				"clip": [
 					0,
 					0,
-					3416,
+					2536,
 					47
 				],
 				"inputMedia": {
@@ -100233,10 +100333,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b090b81bc233b92b13dce876d3a5bb11e771975c10e759bd9fc0c79f45ad0030",
-					"width": 3416,
+					"sha256": "808b4cb9801d1b6500b26c053e7301a3a63c59bc0ffa5109c13d9b34496d08fe",
+					"width": 2536,
 					"height": 47,
-					"colors": 514
+					"colors": 515
 				}
 			}
 		},
@@ -100284,6 +100384,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"General\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -100356,10 +100457,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b2d7e7a132e112467a6573081ee0b0c09326d053f7b088dcd82b65abe454285a",
+					"sha256": "1655c82461379188528f94cba0e351821814ee068b33a8b773865cc91d8906b8",
 					"width": 900,
 					"height": 1356,
-					"colors": 2268
+					"colors": 2271
 				}
 			}
 		},
@@ -100408,6 +100509,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Appearance\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -100480,7 +100582,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b8a42630f429bb43deb94da049fd497bf2cc5cb4ba10692522ef7e680405b3f9",
+					"sha256": "e3cf4220a124a4f2ddb61d804168b16c6e35f98417843bdd314a434cd9b807ee",
 					"width": 900,
 					"height": 1356,
 					"colors": 2161
@@ -100528,6 +100630,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Backlinks\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -100584,7 +100687,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b8600ed4548c023122681316dbe3e8db86aa257cc62444e5d7769369992c25bf",
+					"sha256": "0d12a15c9179895799dfc16e6057dd15e24f845021890855c2107036d127f140",
 					"width": 900,
 					"height": 678,
 					"colors": 1430
@@ -100634,6 +100737,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Canvas\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -100704,7 +100808,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "39a65a35b1752b9c3630d485169b401c5cc6a24f600cf046cd9f76afa17374c7",
+					"sha256": "454e4eb57a18af4adbf3ab922b0f30ef6092be211148953bcd0fe5100be64b59",
 					"width": 900,
 					"height": 678,
 					"colors": 1847
@@ -100750,6 +100854,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Command palette\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -100806,7 +100911,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "dc4168d290460570cea8c01021590530ddb17d412243a1a04b41bc1fb1f4a520",
+					"sha256": "5be60ffad1ee496011fec5ee65edea3ccd66e2a0c8275986b53bb20c0cd33d8a",
 					"width": 900,
 					"height": 678,
 					"colors": 1176
@@ -100855,6 +100960,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Community plugins\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -100913,7 +101019,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "46fa6c9d31e8cd94cd5212fe2f3d7f77cc8f041a142fa75c2040022da5c85c7e",
+					"sha256": "e1bc41de81be16e6bbdee4018ed7788a146e5999b4067fb640f00b80043aba58",
 					"width": 900,
 					"height": 678,
 					"colors": 2010
@@ -100961,6 +101067,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Daily notes\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -101030,7 +101137,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "ee1f938a5183953c127f1a4ddc07169abab75ff04bddc0e97852b3fe0dfb500d",
+					"sha256": "bfb2fe5f24a8e998abc374eefbb3b1d67cb0d194155553e32964cab8b7f9fbc4",
 					"width": 900,
 					"height": 678,
 					"colors": 1989
@@ -101080,6 +101187,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Editor\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -101154,7 +101262,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "6b86e76d49e625c03f6f7d3a5409fc4d31b900994c9a2f12c1b821266bf9a943",
+					"sha256": "1538a19021c9e05273b1f11e35482566db810f0fa3f4e3da2d562cfe92e02240",
 					"width": 900,
 					"height": 2712,
 					"colors": 2145
@@ -101206,6 +101314,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Files and links\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -101280,7 +101389,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "d8051d84b4c0f808e11af88af47aec725f6263ccb66feee08c9100785fcf055b",
+					"sha256": "a9966fc5dda072d5d5e55533de8893c7920dde524b2d88e7e32c39946a897212",
 					"width": 900,
 					"height": 2034,
 					"colors": 2240
@@ -101327,6 +101436,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"File recovery\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -101384,7 +101494,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "7bbe551dcd83bd6b483e4561b698bef4fa208ae5a406c707e7c57edd0429f5a8",
+					"sha256": "d13f96da7a0dee2dffd0c2eb1230fc019da53437497a668a74fd8b2081be0731",
 					"width": 900,
 					"height": 678,
 					"colors": 1583
@@ -101430,6 +101540,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Hotkeys\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -101503,7 +101614,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "f4dc4b28d9e61ae232c52e0bf32b7101a814cd667b25f96d3858e290ee29e199",
+					"sha256": "0939e2f4f601487081638a4350e5ad4a1ec36af7f49ca8fb8fbb3f59c2d48a05",
 					"width": 900,
 					"height": 11526,
 					"colors": 1998
@@ -101555,6 +101666,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Interface\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -101628,7 +101740,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "6d003145d3b9b783d9f7977b9281202f0b0c6d88774c2bb785b0ae28971eee53",
+					"sha256": "d27babe8e5a1bd7a72b57a8d2eec4264d7b6311966f42bf9ab671b15fdbd602f",
 					"width": 900,
 					"height": 1356,
 					"colors": 1858
@@ -101675,6 +101787,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Keychain\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -101731,7 +101844,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "ac670b247e771822974277d01f6df180671b0f69441423d8c4904e016b429c78",
+					"sha256": "497469d725fea11bb65235d042bd5541fc768b48ca43303f099e90aeec960c1a",
 					"width": 900,
 					"height": 678,
 					"colors": 1643
@@ -101781,6 +101894,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Note composer\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -101851,7 +101965,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "b641972fe04c179ac631e31253730b0cb4444679ad350fdcfcd92b19a942413e",
+					"sha256": "e8374874ad54e9723b9cdde81a8163871563f4ca1f6ed449603106a41ae6de09",
 					"width": 900,
 					"height": 678,
 					"colors": 1744
@@ -101899,6 +102013,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Page preview\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -101956,7 +102071,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "e29b7cc414bdacbf99404478f61a9c4f284c8463dbc8c505c22b32dbdd8ac4e4",
+					"sha256": "79c0c935a0c70b87126d92cd51ce31dc111e5334c53194f22cbb36ba1aecb54d",
 					"width": 900,
 					"height": 678,
 					"colors": 1470
@@ -102004,6 +102119,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Core plugins\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -102063,7 +102179,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "65026a6f37849b3be7fa5a4a7f3f01fa385705cf4d40622b6a3d745c6b6ee43d",
+					"sha256": "37d30d604bf3891808a1cd02c33cc76d9fa335acb37d9a36bce64967d3ac12db",
 					"width": 900,
 					"height": 2034,
 					"colors": 1630
@@ -102111,6 +102227,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Quick switcher\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -102168,7 +102285,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "23668daea354cedefa83e87596babbecbda5871a4c6625d358fb90522d8e60cc",
+					"sha256": "5d48eaa630abb4c8675d5c19093af9efc4ca18e193337434b0a006e83c51768b",
 					"width": 900,
 					"height": 678,
 					"colors": 1600
@@ -102215,6 +102332,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Sync\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -102273,7 +102391,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "3cc74c4a483dfc277c68c58fbe0ef4d895aff5a50f2e7b792db637d759120302",
+					"sha256": "81a022c339bfb7421ec1780ae5733da0ecb0ef068a6a9de84d2d6648590a2073",
 					"width": 900,
 					"height": 678,
 					"colors": 1250
@@ -102319,6 +102437,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Templates\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -102375,10 +102494,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "8dd7324d04debbaf4c907f5518a5e97851a286e901c87109447e1f08065ad172",
+					"sha256": "04f3d0894103042d286c9990120862706d20caebbae58e79c9b55c0f252adf0d",
 					"width": 900,
 					"height": 678,
-					"colors": 1593
+					"colors": 1584
 				}
 			}
 		},
@@ -102427,6 +102546,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Web viewer\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -102498,7 +102618,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "fb7e87542d2b5a07f654f240d329b7c4b24e7c53e84b94530902f9550bf066e6",
+					"sha256": "5fa73ce88fbe5a2f6292332566bc2b3b1d85255712a869e57a2321757c50be15",
 					"width": 900,
 					"height": 1356,
 					"colors": 2145
@@ -102545,6 +102665,7 @@
 				"aa98560f1d348c2fb999",
 				"0ac92200de440ef61394"
 			],
+			"quirks": true,
 			"note": "Settings tab \"Unique note creator\", scrolled top to bottom; the screenshot stacks every position",
 			"evidence": {
 				"box": [
@@ -102602,10 +102723,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "3fa7710836c0c00d027a6b518b7c6a77634b697df3f2ecf19196e0819a548c75",
+					"sha256": "5b89c70b3d1967c4b6b942d12edb08707ed4543d484f434ae7d0c3dfcaf5b87a",
 					"width": 900,
 					"height": 678,
-					"colors": 1618
+					"colors": 1595
 				}
 			}
 		},
@@ -105638,10 +105759,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "bb44a6575907490cc24300ea220efef02e27924ab5fbfd7779dbf0aedaa38d05",
+					"sha256": "033667c405cc1b5b2af1372dafd52043426481e852c2fdf7e7444113555bbd6d",
 					"width": 1600,
 					"height": 1000,
-					"colors": 1814
+					"colors": 1812
 				}
 			}
 		},
@@ -106887,10 +107008,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "aa0ca97e2d8cdadb014d6ba1441c54b5b9811b784fbae51e71814601d7e65c9b",
+					"sha256": "539f91d7e86924952bacfefc7b7512e5470997c38433a7e681939367bf9732c1",
 					"width": 1600,
 					"height": 1000,
-					"colors": 6078
+					"colors": 6077
 				}
 			}
 		},
@@ -107182,7 +107303,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/a3e883897e3cd845fb9b75e83fd2b103.png",
+					"file": "pixels/2101c3726501772cd7019fe308580170.png",
 					"source": "screen"
 				}
 			],
@@ -107247,10 +107368,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "dcd480bd5db62d76976ebb09d2623e58cb5fa5f6fabc9278c38d4082db4fb9f8",
+					"sha256": "2378b6cec5a679eb40a912d0cff4bf56c18100d1de7d5150b68abceac8a54506",
 					"width": 1600,
 					"height": 1000,
-					"colors": 4492
+					"colors": 4029
 				}
 			}
 		},
@@ -107363,7 +107484,7 @@
 			"canvasPixels": [
 				{
 					"index": 0,
-					"file": "pixels/da50276acec1ab5732a63648117bd80e.png",
+					"file": "pixels/605540ab374a505eba509462311eec4f.png",
 					"source": "screen"
 				}
 			],
@@ -107425,10 +107546,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "3483d7a83446397ac61399fc297666c6371bb8a5256e7bb2f9fc45d48a7b6881",
+					"sha256": "8e504e74adcb810ec078f4bde9b8e85950b29eb007c781993bc5baa0d60f97d1",
 					"width": 1600,
 					"height": 1000,
-					"colors": 2204
+					"colors": 2183
 				}
 			}
 		},
@@ -108269,10 +108390,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "186fb3f9d9401cac1e79bad2cb5cddec323567929c0bcd7954414773a5fb7886",
+					"sha256": "9c73607693ec7a2b1546248a14d57c378eb711698af78661397f55ca579f7dae",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3689
+					"colors": 3692
 				}
 			}
 		},
@@ -108359,7 +108480,7 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "a9d297bde8d393ef5d43966914d162ce77d9f4ce6ce2d87209db7dd25dfa1e73",
+					"sha256": "f7530fbc77bc6de2e7405d9ae6c7521439ef4ebcafaacac57a91f3f914c1eb4b",
 					"width": 1600,
 					"height": 1000,
 					"colors": 1673
@@ -108522,10 +108643,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "6141aaf215aa209ce85c8eae3a042680ed5f4d6f21847809a3556c5c01ea52cd",
+					"sha256": "be0d3254a86045dad22d2538e0ab8f57ed4e19b6a7fac44d3ea6ee2322a33a76",
 					"width": 1600,
 					"height": 1000,
-					"colors": 3568
+					"colors": 3557
 				}
 			}
 		},
@@ -112757,9 +112878,6 @@
 				"editor-live-preview",
 				"editor-reading-view",
 				"left-sidebar",
-				"mobile-phone",
-				"mobile-tablet",
-				"modal",
 				"right-sidebar",
 				"view",
 				"workspace"
@@ -112774,22 +112892,12 @@
 				"light-mode.window",
 				"md.embed-query.live",
 				"md.embed-query.reading",
-				"mobile.phone.bases",
-				"mobile.phone.right-drawer",
-				"mobile.tablet.bases",
-				"mobile.tablet.right-drawer",
-				"qc.dialogs.restore",
 				"qc.drag.done",
 				"qc.embedded-backlinks.live",
 				"qc.embedded-backlinks.reading",
 				"qc.gap.outgoing-unlinked",
 				"qc.gap.unlinked-mention",
-				"qc.gaps2.restore",
-				"qc.media.forced-colors",
-				"qc.rtl-language.window",
-				"qc.rtl-language.window.macos",
-				"qc.translucent",
-				"qc.translucent-off",
+				"qc.media.hover-none",
 				"qc.window.fullscreen",
 				"qc.window.fullscreen.macos",
 				"qc.window.fullscreen.windows",
@@ -113954,10 +114062,8 @@
 				"md.embed-query.reading",
 				"mobile.phone.bases",
 				"mobile.phone.left-drawer",
-				"mobile.phone.right-drawer",
 				"mobile.tablet.bases",
 				"mobile.tablet.left-drawer",
-				"mobile.tablet.right-drawer",
 				"pdf.sidebar",
 				"pdf.view",
 				"qc.dialog.startup-time",
