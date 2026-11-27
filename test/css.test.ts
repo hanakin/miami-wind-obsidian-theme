@@ -421,3 +421,18 @@ it("requires blank lines exactly between settings variable families", async () =
 		else await expect(result).rejects.toThrow("Separate variable families");
 	}
 });
+
+it("allows only the exact Obsidian Vim-panel input focus tie in global inputs", async () => {
+	const selector =
+		".markdown-source-view.mod-cm6 .cm-panels.cm-panels-bottom input[type='text']:focus";
+	const css = `${selector} { background-color: var(--grey-11) }`;
+	await expect(
+		postcss([checkCss()]).process(css, { from: "src/global/inputs.css" }),
+	).resolves.toBeDefined();
+	await expect(check(css)).rejects.toThrow();
+	await expect(
+		postcss([checkCss()]).process(css.replace("type='text'", "type='search'"), {
+			from: "src/global/inputs.css",
+		}),
+	).rejects.toThrow();
+});

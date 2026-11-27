@@ -598,6 +598,13 @@ input[type] {
 	--background-modifier-border: var(--mw-input-border);
 }
 
+/*
+ * Tie the app’s literal transparent Vim command-line focus fill at 0,6,1.
+ */
+.markdown-source-view.mod-cm6 .cm-panels.cm-panels-bottom input[type='text']:focus {
+	background-color: var(--grey-11);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @global application: Task Inputs

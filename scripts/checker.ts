@@ -170,6 +170,14 @@ export function checkCss(): Plugin {
 						].includes(selector.toString().trim())
 					)
 						return;
+					// Obsidian's Vim command input paints transparent at 0,6,1.
+					// Its exact three-compound selector needs the same weight to keep the 1.x fill.
+					if (
+						rule.source?.input.file === path.resolve("src/global/inputs.css") &&
+						selector.toString().trim() ===
+							".markdown-source-view.mod-cm6 .cm-panels.cm-panels-bottom input[type='text']:focus"
+					)
+						return;
 					const specificity = Specificity.calculate(selector.toString())[0];
 					if (
 						!specificity ||
