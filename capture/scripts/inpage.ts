@@ -1011,7 +1011,7 @@ export const INPAGE = String.raw`
 		const imageSizes = [];
 		[...out.images].forEach((im, index) => {
 			const k = im.getAttribute("data-capture-img");
-			if (k !== null) { imageSizes.push({ index, width: sizes[+k][0], height: sizes[+k][1] }); im.removeAttribute("data-capture-img"); }
+			if (k !== null) { imageSizes.push({ index, width: sizes[+k][0], height: sizes[+k][1], src: im.getAttribute("src") }); im.removeAttribute("data-capture-img"); }
 		});
 		// MathJax keeps a CSS rule per character, only for what is on screen now (it drops the rest
 		// on the next render). Keep the fixture's own glyph rules in its <head>.

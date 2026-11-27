@@ -21,6 +21,18 @@ import { replayFixture } from "./replay.ts";
 import type { FixtureEntry } from "./types.ts";
 
 /** Share of blocks whose mean color must match. */
+/** Media types of the image files a fixture keeps. */
+const IMAGE_TYPES: Record<string, string> = {
+	png: "image/png",
+	jpg: "image/jpeg",
+	jpeg: "image/jpeg",
+	gif: "image/gif",
+	svg: "image/svg+xml",
+	webp: "image/webp",
+	avif: "image/avif",
+	bmp: "image/bmp",
+};
+
 export const REPLAY_MIN_MATCH = 0.97;
 /** Local contrast (luminance range over 3x3 pixels, of 255) that counts as a detail. */
 const EDGE = 40;
@@ -299,7 +311,12 @@ export async function checkFixture(env: Env, f: FixtureEntry, mutate?: Mutation)
 	const got = await replayFixture(
 		page,
 		html,
-		f.imageSizes ?? [],
+		(f.imageSizes ?? []).map((im) => ({
+			...im,
+			url: im.file
+				? `data:${IMAGE_TYPES[im.file.split(".").pop() ?? ""] ?? "image/png"};base64,${readFileSync(`${CAPTURE}fixtures/${im.file}`).toString("base64")}`
+				: null,
+		})),
 		pixels,
 		frames,
 		f.trimSelector ?? null,
