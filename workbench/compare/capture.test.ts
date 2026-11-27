@@ -223,7 +223,7 @@ test("attributes the inline PDF select decision without accepting a sibling popu
 	};
 	const a = await render(page, cdp, html, css, fixture);
 	const b = await render(page, cdp, html, { ...css, theme: "" }, fixture);
-	expect(a.acceptanceMatches).toHaveLength(1);
+	expect(a.acceptanceMatches).toHaveLength(2);
 	expect(a.acceptanceMatches[0]?.element).toMatch(/:select$/);
 	const scope = acceptanceScope([
 		a.acceptanceMatches,
@@ -262,7 +262,7 @@ test("attributes the inline PDF select decision without accepting a sibling popu
 				overridden.acceptanceMatches,
 				overridden.acceptanceMatches,
 			]).elements,
-		).toEqual([]);
+		).not.toContain(a.acceptanceMatches[0]?.element);
 	}
 	const sibling = await render(
 		page,
@@ -293,6 +293,65 @@ test("attributes the inline PDF select decision without accepting a sibling popu
 		css,
 		fixture,
 	);
-	expect(wrongInline.acceptanceMatches).toEqual([]);
+	expect(wrongInline.acceptanceMatches).toHaveLength(2);
 	await page.close();
 });
+
+test.each([
+	["textWidgetAnnotation", "input"],
+	["textWidgetAnnotation", "textarea"],
+	["checkBoxWidgetAnnotation", 'input type="checkbox"'],
+	["radioButtonWidgetAnnotation", 'input type="radio"'],
+	["choiceWidgetAnnotation", "select"],
+	["buttonWidgetAnnotation checkBox", 'input type="checkbox"'],
+	["buttonWidgetAnnotation radioButton", 'input type="radio"'],
+])(
+	"accepts own inline backgrounds for %s %s while excluding non-PDF inputs",
+	async (widget, tag) => {
+		const { page, cdp } = await setup();
+		const name = tag.split(" ")[0];
+		const control = `<${tag} style="background-color:rgb(255,255,255)" data-capture-target>${name === "input" ? "" : "</" + name + ">"}`;
+		const html = `<div class="annotationLayer"><section class="${widget}">${control}</section></div>`;
+		const css = {
+			cm: "",
+			app: "",
+			theme: "input,select,textarea {background-color:magenta!important}",
+		};
+		const a = await render(page, cdp, html, css, fixture);
+		const b = await render(page, cdp, html, { ...css, theme: "" }, fixture);
+		const scope = acceptanceScope([
+			a.acceptanceMatches,
+			a.acceptanceMatches,
+			b.acceptanceMatches,
+			b.acceptanceMatches,
+		]);
+		const differences = styleDiff(a.styles, b.styles);
+		expect(
+			acceptedOutcome(changed(differences.length), {
+				scope,
+				differences,
+				outsidePixels: 0,
+				noise: false,
+			}).status,
+		).toBe("accepted");
+		const outside = await render(page, cdp, control, css, fixture);
+		const outsideAfter = await render(
+			page,
+			cdp,
+			control,
+			{ ...css, theme: "" },
+			fixture,
+		);
+		const outsideDiff = styleDiff(outside.styles, outsideAfter.styles);
+		expect(outside.acceptanceMatches).toEqual([]);
+		expect(
+			acceptedOutcome(changed(outsideDiff.length), {
+				scope: acceptanceScope([[], [], [], []]),
+				differences: outsideDiff,
+				outsidePixels: 0,
+				noise: false,
+			}).status,
+		).toBe("different");
+		await page.close();
+	},
+);

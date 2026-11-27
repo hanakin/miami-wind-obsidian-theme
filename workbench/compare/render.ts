@@ -337,23 +337,49 @@ export async function render(
 			const elements = Array.from(
 				document.querySelectorAll("html, body, body *"),
 			).filter((el) => !el.closest("[data-capture-placeholder]"));
+			const colorProbe = document.createElementNS(
+				"http://www.w3.org/1999/xhtml",
+				"span",
+			);
+			colorProbe.style.cssText =
+				"position:fixed;visibility:hidden;pointer-events:none";
 			for (const [i, el] of elements.entries()) {
 				const element = `${i}:${el.localName}${el.getAttribute("class") ? `.${el.getAttribute("class")?.trim().replace(/\s+/g, ".")}` : ""}`;
 				const props = read(el);
 				if (
-					el instanceof HTMLSelectElement &&
-					el.matches(acceptance.selector) &&
-					Object.entries(acceptance.inlineStyles).every(
-						([property, value]) =>
-							el.style.getPropertyValue(property) === value,
-					)
+					(el instanceof HTMLInputElement ||
+						el instanceof HTMLSelectElement ||
+						el instanceof HTMLTextAreaElement) &&
+					el.matches(acceptance.selector)
 				) {
+					const inlineColors: Record<string, string> = {};
+					document.body.append(colorProbe);
+					for (const property of acceptance.properties) {
+						const value = el.style.getPropertyValue(property);
+						if (
+							!value ||
+							/var\(|currentcolor|inherit|initial|unset|revert/i.test(value)
+						)
+							continue;
+						colorProbe.style.color = "";
+						colorProbe.style.setProperty("color", value, "important");
+						if (colorProbe.style.color)
+							inlineColors[property] = getComputedStyle(colorProbe).color;
+					}
+					colorProbe.remove();
 					const { x, y, width, height } = el.getBoundingClientRect();
 					acceptanceMatches.push({
 						element,
 						rect: { x, y, width, height },
 						color: props.color ?? "",
 						backgroundColor: props["background-color"] ?? "",
+						inlineColors,
+						computedColors: Object.fromEntries(
+							acceptance.properties.map((property) => [
+								property,
+								props[property] ?? "",
+							]),
+						),
 					});
 				}
 				styles.push({ element, props });

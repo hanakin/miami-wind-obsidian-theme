@@ -23,6 +23,11 @@ const match = {
 	rect: { x: 10, y: 20, width: 30, height: 40 },
 	color: "rgb(0, 0, 0)",
 	backgroundColor: "rgba(0, 0, 0, 0)",
+	inlineColors: {
+		color: "rgb(0, 0, 0)",
+		"background-color": "rgba(0, 0, 0, 0)",
+	},
+	computedColors: {},
 };
 const beforeMatch = { ...match, color: "magenta", backgroundColor: "magenta" };
 const scope = acceptanceScope([[beforeMatch], [beforeMatch], [match], [match]]);
@@ -38,15 +43,43 @@ const evidence = {
 	outsidePixels: 0,
 	noise: false,
 };
+test("accepts each widget's own inline colors, not defaults of properties without inline values", () => {
+	const white = {
+		...match,
+		inlineColors: { "background-color": "rgb(255, 255, 255)" },
+		backgroundColor: "rgb(255, 255, 255)",
+	};
+	const localScope = acceptanceScope([[white], [white], [white], [white]]);
+	expect(
+		acceptedOutcome(verdict(), {
+			...evidence,
+			scope: localScope,
+			differences: [
+				{
+					...difference(),
+					property: "background-color",
+					after: "rgb(255, 255, 255)",
+				},
+			],
+		}).status,
+	).toBe("accepted");
+	expect(
+		acceptedOutcome(verdict(), { ...evidence, scope: localScope }).status,
+	).toBe("different");
+	expect(
+		acceptedOutcome(verdict(), {
+			...evidence,
+			scope: localScope,
+			differences: [{ ...difference(), property: "outline-color" }],
+		}).status,
+	).toBe("different");
+});
 
 test("pins exactly one element-scoped intentional PDF form decision", () => {
 	expect(entries).toEqual([
 		{
-			selector: ".annotationLayer .choiceWidgetAnnotation select",
-			inlineStyles: {
-				color: "rgb(0, 0, 0)",
-				"background-color": "transparent",
-			},
+			selector:
+				".annotationLayer :is(.textWidgetAnnotation, .checkBoxWidgetAnnotation, .radioButtonWidgetAnnotation, .choiceWidgetAnnotation, .buttonWidgetAnnotation.checkBox, .buttonWidgetAnnotation.radioButton) :is(input, select, textarea)",
 			properties: [
 				"color",
 				"background-color",
@@ -67,7 +100,7 @@ test("pins exactly one element-scoped intentional PDF form decision", () => {
 				"border-top-color",
 			],
 			reason:
-				"intentional 2.0 change, Mike decision 2026-11-25, inline pdf.js styles beat non-!important rules",
+				"Fillable PDF form fields show the PDF's own inline colors (pdf.js). Mike decision 2026-11-25/26: no !important.",
 		},
 	]);
 });
@@ -190,11 +223,12 @@ test("requires the same matching element in all four captures and retains their 
 		elements: ["4:select"],
 		rects: Array(4).fill(match.rect),
 		beforeColors: { "4:select": "magenta" },
+		inlineColors: { "4:select": match.inlineColors },
 	});
 	expect(
 		acceptedOutcome(verdict(), {
 			...evidence,
-			scope: { elements: [], rects: [], beforeColors: {} },
+			scope: { elements: [], rects: [], beforeColors: {}, inlineColors: {} },
 		}).status,
 	).toBe("different");
 });

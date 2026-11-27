@@ -5,13 +5,13 @@ import type { PixelRect } from "./pixels";
 // One intentional decision, pinned in accepted.test.ts. Match it in the DOM,
 // not by fixture name or by inferring selectors from computed-style keys.
 export const acceptanceRule = entries[0];
-// The CSSOM serializes the rule's transparent inline background in this form.
-const transparentColor = "rgba(0, 0, 0, 0)";
 export interface AcceptanceMatch {
 	element: string;
 	rect: PixelRect;
 	color: string;
 	backgroundColor: string;
+	inlineColors: Record<string, string>;
+	computedColors: Record<string, string>;
 }
 export function acceptanceScope(
 	captures: readonly (readonly AcceptanceMatch[])[],
@@ -21,6 +21,7 @@ export function acceptanceScope(
 			elements: [],
 			rects: [],
 			beforeColors: {} as Record<string, string>,
+			inlineColors: {} as Record<string, Record<string, string>>,
 		};
 	const elements = (captures[0] ?? [])
 		.map((match) => match.element)
@@ -29,15 +30,31 @@ export function acceptanceScope(
 				capture.some(
 					(match) =>
 						match.element === element &&
-						// Both after captures must actually show the inline colors, even if one color did not change.
+						Object.keys(match.inlineColors).length > 0 &&
+						JSON.stringify(match.inlineColors) ===
+							JSON.stringify(
+								captures[0]?.find((first) => first.element === element)
+									?.inlineColors,
+							) &&
 						(index < 2 ||
-							(match.color === acceptanceRule.inlineStyles.color &&
-								match.backgroundColor === transparentColor)),
+							Object.entries(match.inlineColors).every(
+								([property, value]) =>
+									(property === "color"
+										? match.color
+										: property === "background-color"
+											? match.backgroundColor
+											: match.computedColors[property]) === value,
+							)),
 				),
 			),
 		);
 	return {
 		elements,
+		inlineColors: Object.fromEntries(
+			(captures[0] ?? [])
+				.filter((match) => elements.includes(match.element))
+				.map((match) => [match.element, match.inlineColors]),
+		),
 		beforeColors: Object.fromEntries(
 			(captures[0] ?? [])
 				.filter((match) => elements.includes(match.element))
@@ -67,19 +84,20 @@ export function acceptedOutcome(
 		evidence.differences.length > 0 &&
 		evidence.differences.every((difference) => {
 			const [element, pseudo] = difference.element.split("::");
+			const inline = evidence.scope.inlineColors[element!] ?? {};
+			const own = !pseudo ? inline[difference.property] : undefined;
+			const followsText =
+				difference.property !== "background-color" &&
+				(!difference.property.startsWith("border-") || !!pseudo) &&
+				difference.before === evidence.scope.beforeColors[element!] &&
+				inline.color !== undefined;
 			return (
 				evidence.scope.elements.includes(element!) &&
 				(!pseudo || ["before", "after", "marker"].includes(pseudo)) &&
 				acceptanceRule.properties.includes(difference.property) &&
-				// Only pseudo borders follow currentColor here; the select's own border is not an inline color decision.
-				(!difference.property.startsWith("border-") || !!pseudo) &&
-				(difference.property !== "background-color" || !pseudo) &&
-				(["color", "background-color"].includes(difference.property) ||
-					difference.before === evidence.scope.beforeColors[element!]) &&
-				difference.after ===
-					(difference.property === "background-color"
-						? transparentColor
-						: acceptanceRule.inlineStyles.color)
+				(own !== undefined
+					? difference.after === own
+					: followsText && difference.after === inline.color)
 			);
 		});
 	return accepted
