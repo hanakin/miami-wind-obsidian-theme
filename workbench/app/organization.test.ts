@@ -5,6 +5,7 @@ const paths = [
 	"components/action-button.css",
 	"global/inputs.css",
 	"global/menus.css",
+	"markdown/callouts.css",
 	"markdown/tags.css",
 	"sections/canvas.css",
 	"sections/pdf.css",
@@ -15,14 +16,14 @@ const paths = [
 const hit = (
 	item: string,
 	file: string,
-	how: "named" | "selected" | "adjustment" = "named",
+	how: "named" | "through" | "selected" | "adjustment" = "named",
 	line = 1,
 ) => ({
 	item,
 	file,
 	line,
 	selector: `.${item}`,
-	named: how !== "selected",
+	how: how === "adjustment" ? ("named" as const) : how,
 	adjustment: how === "adjustment",
 });
 
@@ -49,12 +50,17 @@ it("gives every item one place, and sends overlaps to Global", () => {
 			// A section's labeled, scoped adjustment of a shared item: allowed, and noted.
 			hit("clickable-icon", "global/menus.css"),
 			hit("clickable-icon", "sections/canvas.css", "adjustment"),
-			// Reached by rules in two places that do not name it (.xfaSelect on a select): no
-			// overlap. It is listed under Global because Global is one of them.
-			hit("dropdown", "global/inputs.css", "selected"),
+			// Selected from two places that do not name it (.xfaSelect on a select): no overlap.
+			// It is listed with the file that has more rules for it.
+			hit("dropdown", "global/inputs.css", "selected", 1),
+			hit("dropdown", "global/inputs.css", "selected", 2),
 			hit("dropdown", "sections/pdf-xfa.css", "selected"),
-			// Reached, never named, from one place: listed there.
-			hit("callout", "markdown/tags.css", "selected"),
+			// A rule that passes through the item beats one that only selects its element, and a
+			// file named after the item beats one with more rules.
+			hit("callout", "markdown/callouts.css", "through"),
+			hit("callout", "markdown/tags.css", "through", 1),
+			hit("callout", "markdown/tags.css", "through", 2),
+			hit("callout", "global/menus.css", "selected"),
 		],
 		[
 			"tag",
@@ -82,10 +88,10 @@ it("gives every item one place, and sends overlaps to Global", () => {
 		"clickable-icon": "global global/menus.css",
 		"text-input": "global global/inputs.css",
 		checkbox: "global markdown/tags.css",
-		pdf: "sections/pdf sections/pdf-xfa.css",
+		pdf: "sections/pdf sections/pdf.css",
 		gutter: "other ",
 		dropdown: "global global/inputs.css",
-		callout: "markdown markdown/tags.css",
+		callout: "markdown markdown/callouts.css",
 	});
 	expect(o.sections.map((s) => s.id)).toEqual(["global", "markdown", "sections/pdf", "other"]);
 	expect(o.overlaps).toEqual([
@@ -141,4 +147,11 @@ it("reads the selectors that can own an item, and leaves out states, context and
 		[".canvas-wrapper .tree-item.is-active", 11, false, ".canvas-wrapper .tree-item.is-active"],
 	]);
 	expect(found[4]?.last).toEqual({ classes: ["tree-item", "is-active"], attributes: [] });
+	expect(found[0]?.prefixes).toEqual([".canvas-control-item[data-hover]"]);
+	// An attribute test alone can select an item; it never names one.
+	const [weak] = probes(
+		[{ path: "markdown/callouts.css", css: ".cm-callout [data-callout='note'] { color: red }" }],
+		(s) => s,
+	);
+	expect(weak?.weak).toBe(true);
 });

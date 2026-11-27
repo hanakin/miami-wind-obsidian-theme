@@ -12,6 +12,13 @@ export interface Probe {
 	full: string;
 	/** What the selector's last part is written with: the names a rule calls its element by. */
 	last: Compound;
+	/**
+	 * The selector cut before each of its later parts: `.a .b > .c` gives `.a` and `.a .b`. A rule
+	 * that styles something inside an item goes through the item when one of these is the item.
+	 */
+	prefixes: string[];
+	/** True when the last part is only an attribute test: it can select an item, never name it. */
+	weak: boolean;
 	/** The selector as written, and the line its rule starts on. */
 	selector: string;
 	line: number;
@@ -61,19 +68,24 @@ export const RULES = [
 	'A section may adjust a shared item: a rule under a "Shared component adjustment" comment that reaches the item through a container (.bases-view .clickable-icon) is allowed and is not an overlap.',
 ];
 
-/** True when a selector's last compound names something: a tag, or a class that is not a state. */
-function namesSomething(selector: selectorParser.Selector): boolean {
+/**
+ * What a selector's last compound is written with: "name" for a tag or a class that is not a
+ * state, "attribute" for attribute tests only, undefined for states and context alone.
+ */
+function lastPart(selector: selectorParser.Selector): "name" | "attribute" | undefined {
 	const last: selectorParser.Node[] = [];
 	for (const node of selector.nodes) {
 		if (node.type === "combinator") last.length = 0;
 		else last.push(node);
 	}
-	return last.some(
+	const named = last.some(
 		(node) =>
 			(node.type === "tag" && !/^(body|html)$/i.test(node.value)) ||
 			(node.type === "class" && !STATE_OR_CONTEXT.test(node.value)) ||
 			node.type === "id",
 	);
+	if (named) return "name";
+	return last.some((node) => node.type === "attribute") ? "attribute" : undefined;
 }
 
 const ADJUSTMENT = /shared component adjustment/i;
@@ -108,13 +120,22 @@ export function probes(
 				for (const selector of root.nodes) {
 					const text = selector.toString().trim();
 					// `.view ::selection` styles selected text anywhere inside: it names no item.
-					if (/(^|[\s>+~])::[\w-]+$/.test(text) || !namesSomething(selector)) continue;
+					const part = lastPart(selector);
+					if (/(^|[\s>+~])::[\w-]+$/.test(text) || !part) continue;
 					const scoped = selector.nodes.some((n) => n.type === "combinator");
+					const prefixes: string[] = [];
+					let sofar = "";
+					for (const node of selector.nodes) {
+						if (node.type === "combinator" && sofar.trim()) prefixes.push(sofar.trim());
+						sofar += node.toString();
+					}
 					try {
 						out.push({
 							file,
 							full: rewrite(text),
 							last: lastCompounds(text)[0] as Compound,
+							prefixes: prefixes.map(rewrite),
+							weak: part === "attribute",
 							selector: text,
 							line: rule.source?.start?.line ?? 0,
 							adjustment: scoped && ADJUSTMENT.test(label),
@@ -149,8 +170,13 @@ export interface RuleHit {
 	file: string;
 	line: number;
 	selector: string;
-	/** True when the rule's last part names the item itself; false when it only selects its element. */
-	named: boolean;
+	/**
+	 * How the rule reaches the item. "named": its last part selects the item's element and names
+	 * the item itself (what the overlap check judges). "through": it styles something inside the
+	 * item and passes through the item to get there. "selected": its last part selects the item's
+	 * element without naming it.
+	 */
+	how: "named" | "through" | "selected";
 	adjustment: boolean;
 }
 
@@ -174,14 +200,22 @@ export interface Organization {
 	adjusted: Record<string, string[]>;
 }
 
+/** True when a file is named after an item: callouts.css for callout, tags.css for tag. */
+function namedAfter(file: string, item: string): boolean {
+	const name = (file.split("/").pop() ?? "").replace(/\.css$/, "");
+	return name === item || name === `${item}s` || name === `${item}es` || item.startsWith(name);
+}
+
 /**
- * One place for every item, from the rules that reach it.
+ * One place for every item, from the rules that reach it. Two separate questions:
  *
- * An item named from more than one top-level place is an overlap: it is listed under Global,
- * where its rules belong. A section's labeled, scoped adjustment of a shared item is not an
- * overlap; it is noted. Otherwise an item sits in the place that names it, or failing that the
- * place whose rules select its element (Global first when several do). An item no rule reaches
- * goes under "other".
+ * Overlap (strict): an item named from more than one top-level place has its base styling split.
+ * A section's labeled, scoped adjustment of a shared item is not an overlap; it is noted.
+ *
+ * Home (generous): the item is listed under the file whose rules name it or pass through it;
+ * failing that the file whose last part selects its element; and under "other" only when no rule
+ * reaches it at all. Between several files, the one named after the item wins, then the one with
+ * more rules. An overlap is listed under Global, where its rules belong.
  */
 export function organize(hits: RuleHit[], items: string[], paths: string[]): Organization {
 	// Only folders whose files style elements own items; settings and components hold no rules of their own.
@@ -193,7 +227,7 @@ export function organize(hits: RuleHit[], items: string[], paths: string[]): Org
 	const placed = new Map<string, Map<string, string[]>>();
 	for (const item of [...items].sort()) {
 		const mine = owning.filter((h) => h.item === item);
-		const base = mine.filter((h) => h.named && !h.adjustment);
+		const base = mine.filter((h) => h.how === "named" && !h.adjustment);
 		const named = filesOf(base);
 		const overlap = placesOf(named).length > 1;
 		if (overlap) {
@@ -205,26 +239,34 @@ export function organize(hits: RuleHit[], items: string[], paths: string[]): Org
 					.map((h) => `src/${h.file}:${h.line}  ${h.selector}`),
 			});
 		}
-		const adjustments = filesOf(mine.filter((h) => h.named && h.adjustment));
-		// Listed by the rules that name it; failing that by any rule that reaches it, and only
-		// then by an adjustment (an item with nothing but adjustments still needs a home).
-		const reached = filesOf(mine.filter((h) => !h.adjustment));
-		const files = named.length ? named : reached.length ? reached : adjustments;
-		const places = placesOf(files);
-		const section =
-			places.length === 0
-				? "other"
-				: overlap || places.includes("global")
-					? "global"
-					: (places[0] as string);
+		// The first of these that has any rule decides the home.
+		const levels = [
+			mine.filter((h) => h.how !== "selected" && !h.adjustment),
+			mine.filter((h) => h.how === "selected" && !h.adjustment),
+			mine.filter((h) => h.adjustment),
+		];
+		const level = levels.find((l) => l.length > 0) ?? [];
+		const count = (file: string) => level.filter((h) => h.file === file).length;
+		const [home = ""] = filesOf(level)
+			// An overlap belongs in Global: among its files, a Global one is its home.
+			.filter(
+				(f) => !overlap || !named.some((n) => n.startsWith("global/")) || f.startsWith("global/"),
+			)
+			.sort(
+				(a, b) =>
+					Number(namedAfter(b, item)) - Number(namedAfter(a, item)) ||
+					count(b) - count(a) ||
+					a.localeCompare(b),
+			);
+		const section = !home ? "other" : overlap ? "global" : placeOf(home, paths);
 		// An adjustment made in the item's own place is just part of its styling.
-		const elsewhere = adjustments.filter((f) => placeOf(f, paths) !== section);
+		const elsewhere = filesOf(mine.filter((h) => h.how === "named" && h.adjustment)).filter(
+			(f) => placeOf(f, paths) !== section,
+		);
 		if (elsewhere.length) adjusted[item] = elsewhere;
-		// Listed under a file of its own section.
-		const file = files.find((f) => placeOf(f, paths) === section) ?? files[0] ?? "";
 		const groups = placed.get(section) ?? new Map<string, string[]>();
 		placed.set(section, groups);
-		groups.set(file, [...(groups.get(file) ?? []), item]);
+		groups.set(home, [...(groups.get(home) ?? []), item]);
 	}
 	const order = (id: string) => ["global", "markdown"].indexOf(id) + (id === "other" ? 99 : 0);
 	const rank = (id: string) => (order(id) === -1 ? 50 : order(id));
