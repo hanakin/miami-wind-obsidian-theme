@@ -191,7 +191,9 @@ const sheetsUsed = new Set(fixtures.flatMap((f) => f.runtimeStyles ?? []));
 for (const f of fixtures) {
 	const path = `${FIXTURES}${f.file}`;
 	if (!existsSync(path)) continue;
-	for (const m of readFileSync(path, "utf8").matchAll(/data-capture-frame-styles="([^"]*)"/g))
+	for (const m of readFileSync(path, "utf8").matchAll(
+		/data-capture-frame-styles=(?:"|(?:&amp;)*&quot;)([^"&]*)/g,
+	))
 		for (const t of (m[1] ?? "").split(" ")) sheetsUsed.add(t);
 }
 if (existsSync(RUNTIME_DIR))

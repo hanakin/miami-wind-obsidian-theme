@@ -237,6 +237,31 @@ export const INPAGE = String.raw`
 		if (e.namespaceURI === "http://www.w3.org/2000/svg" && !["svg", "g", "defs", "symbol"].includes(e.localName)) return false;
 		return ![...e.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()) && !["img", "canvas", "video", "iframe", "input", "textarea", "select"].includes(e.localName);
 	}
+	/**
+	 * Font properties of each visible text run inside e, counted by signature: what draws the
+	 * glyphs (the replay's text allowance holds only while these are the same as live).
+	 */
+	function textStyles(e) {
+		const out = {};
+		const d = e.ownerDocument;
+		const win = d.defaultView;
+		const walk = d.createTreeWalker(e, NodeFilter.SHOW_TEXT);
+		const range = d.createRange();
+		let n = 0;
+		while (walk.nextNode() && n < 6000) {
+			const t = walk.currentNode;
+			const p = t.parentElement;
+			if (!p || !t.data.trim() || ["script", "style", "title"].includes(p.localName)) continue;
+			range.selectNodeContents(t);
+			if (!range.getClientRects().length) continue;
+			const cs = win.getComputedStyle(p);
+			if (cs.visibility !== "visible") continue;
+			const sig = [cs.fontFamily, cs.fontSize, cs.fontWeight, cs.fontStyle, cs.fontStretch, cs.fontVariant, cs.fontFeatureSettings, cs.fontVariationSettings, cs.letterSpacing, cs.wordSpacing, cs.textTransform, cs.textDecorationLine, cs.webkitTextStrokeWidth, cs.textShadow === "none" ? "" : "shadow"].join("|");
+			out[sig] = (out[sig] ?? 0) + 1;
+			n++;
+		}
+		return out;
+	}
 	/** True when h paints a background (color with alpha, or an image) over its area. */
 	function paintsBackground(win, h) {
 		const cs = win.getComputedStyle(h);
@@ -252,7 +277,7 @@ export const INPAGE = String.raw`
 		return false;
 	}
 	/** True when e (or its subtree) is the topmost painted thing at x,y: layers above it must be clear. */
-	function topmost(doc, win, x, y, e) {
+	function topmost(doc, win, x, y, e, seeThrough = null) {
 		for (const h of doc.elementsFromPoint(x, y)) {
 			if (h === e || e.contains(h)) return true;
 			if (h.contains(e)) {
@@ -276,9 +301,23 @@ export const INPAGE = String.raw`
 			}
 			// Anything else above e (an ancestor included: a child with a negative z-index paints
 			// under its parent) hides it unless it paints nothing.
-			if (!clear(win, h) && !frameOnlyAt(win, h, x, y)) return false;
+			if (!clear(win, h) && !frameOnlyAt(win, h, x, y) && !seeThrough?.(h)) return false;
 		}
 		return false;
+	}
+	/**
+	 * A layer that only dims what lies below it (a modal's backdrop): translucent (opacity or
+	 * background alpha under 1), no image, text, border, shadow or pseudo-element, and not the
+	 * target, inside it or around it.
+	 */
+	function dimmer(win, target, h) {
+		if (h === target || target.contains(h) || h.contains(target)) return false;
+		const cs = win.getComputedStyle(h);
+		if (cs.backgroundImage !== "none" || cs.boxShadow !== "none") return false;
+		if (!(parseFloat(cs.opacity) < 1 || alphaOf(cs.backgroundColor) < 1)) return false;
+		if (["Top", "Right", "Bottom", "Left"].some((k) => parseFloat(cs["border" + k + "Width"]) > 0 && alphaOf(cs["border" + k + "Color"]) > 0)) return false;
+		for (const pe of ["::before", "::after"]) { const p = win.getComputedStyle(h, pe); if (p.content !== "none" && p.content !== "normal") return false; }
+		return !h.children.length && !h.textContent.trim() && !["img", "svg", "canvas", "video", "iframe", "input", "textarea", "select"].includes(h.localName);
 	}
 	/** True when h paints only a border/outline (no fill, shadow, pseudo-element or text) and x,y lies inside that frame. */
 	function frameOnlyAt(win, h, x, y) {
@@ -571,20 +610,49 @@ export const INPAGE = String.raw`
 		// the stylesheets are returned like the window's own (frameSheets, by data-capture-frame)
 		// so a replay can restore them. A frame that showed nothing is marked as such.
 		const frameSheets = [];
-		for (const fc of copy.querySelectorAll("iframe")) {
-			const fo = back.get(fc);
+		const canvases = [];
+		// Canvas pixels are not part of the markup either: keep each painted canvas as a PNG. WebGL
+		// canvases read back empty; the capture script takes those from the screen instead (rect in
+		// window coordinates). A canvas inside a frame is named by its frame path (the index of each
+		// frame in its document's iframe order, outermost first) and its index in that frame.
+		function keepCanvas(cc, co, ox, oy, path) {
+			if (!co || !co.width || !co.height || !co.getClientRects().length) return;
+			let url = null;
+			try {
+				url = co.toDataURL("image/png");
+				const empty = co.ownerDocument.createElement("canvas");
+				empty.width = co.width;
+				empty.height = co.height;
+				if (url === empty.toDataURL("image/png")) url = null;
+			} catch {}
+			const r = co.getBoundingClientRect();
+			cc.setAttribute("data-capture-canvas", String(canvases.length));
+			canvases.push({ url, rect: [r.x + ox, r.y + oy, r.width, r.height], frame: path });
+		}
+		/** One frame: its live document into srcdoc, its canvases and frames handled, at any depth. */
+		function keepFrame(fc, fo, ox, oy, path) {
 			let idoc = null;
 			try { idoc = fo?.contentDocument; } catch {}
 			if (idoc?.body && ![...idoc.body.querySelectorAll("*")].some((e) => e.getClientRects().length) && !idoc.body.innerText?.trim()) {
 				fc.setAttribute("data-capture-frame-empty", "");
-				continue;
+				return;
 			}
 			const own = fc.hasAttribute("srcdoc");
 			const scripted = !own && idoc?.documentElement && !(fc.getAttribute("src") && fc.getAttribute("src") !== "about:blank");
-			if (!idoc?.documentElement || !(own || scripted)) continue;
+			if (!idoc?.documentElement || !(own || scripted)) return;
 			// The live frame document, with whatever scripts changed after it loaded (the startup
 			// screen hides the status bar and adds its loading item).
 			const ir = idoc.documentElement.cloneNode(true);
+			const pairs = new Map();
+			const os = [...idoc.documentElement.querySelectorAll("*")];
+			[...ir.querySelectorAll("*")].forEach((c, i) => pairs.set(c, os[i]));
+			// Frame content is offset by the frame's box, border and padding.
+			const fr = fo.getBoundingClientRect();
+			const fs = getComputedStyle(fo);
+			const fx = ox + fr.x + fo.clientLeft + parseFloat(fs.paddingLeft);
+			const fy = oy + fr.y + fo.clientTop + parseFloat(fs.paddingTop);
+			[...ir.querySelectorAll("canvas")].forEach((cc) => keepCanvas(cc, pairs.get(cc), fx, fy, path));
+			[...ir.querySelectorAll("iframe")].forEach((c, i) => keepFrame(c, pairs.get(c), fx, fy, path + (path ? "/" : "") + i));
 			const dropped = [];
 			for (const st of ir.querySelectorAll("style, link[rel=stylesheet]")) {
 				dropped.push(st.localName === "link" ? "link " + st.getAttribute("href") : "style" + (st.id ? "#" + st.id : "") + " (" + st.textContent.length + " chars)");
@@ -595,25 +663,13 @@ export const INPAGE = String.raw`
 			fc.setAttribute("data-capture-frame", String(frameSheets.length));
 			frameSheets.push(collectSheets(idoc));
 		}
-		// Canvas pixels are not part of the markup either: keep each painted canvas as a PNG (by index
-		// in the fixture's canvas order). WebGL canvases read back empty; the capture script takes
-		// those from the screen instead (rect in window coordinates).
-		const canvases = [];
-		for (const cc of copy.querySelectorAll("canvas")) {
-			const co = back.get(cc);
-			if (!co || !co.width || !co.height || !co.getClientRects().length) continue;
-			let url = null;
-			try {
-				url = co.toDataURL("image/png");
-				const empty = doc.createElement("canvas");
-				empty.width = co.width;
-				empty.height = co.height;
-				if (url === empty.toDataURL("image/png")) url = null;
-			} catch {}
-			const r = co.getBoundingClientRect();
-			cc.setAttribute("data-capture-canvas", String(canvases.length));
-			canvases.push({ url, rect: [r.x, r.y, r.width, r.height] });
+		// Frame paths are finished on the saved fixture (its iframe order); mark them here.
+		for (const fc of copy.querySelectorAll("iframe")) {
+			const k = String(canvases.length);
+			fc.setAttribute("data-capture-frame-canvas", k);
+			keepFrame(fc, back.get(fc), 0, 0, "@" + k);
 		}
+		for (const cc of copy.querySelectorAll("canvas")) keepCanvas(cc, back.get(cc), 0, 0, null);
 		// Intrinsic sizes of images that will not load offline (app:, https:, file:), by index in
 		// the fixture's document.images order, so a viewer can stand in same-size placeholders.
 		// Tag every image of the copy with its live size, so indexes can be taken on the final document.
@@ -776,11 +832,15 @@ export const INPAGE = String.raw`
 									// a hit test finds one of its painting elements on top, so a replay leaves those
 									// out (a popover under a menu hides nothing of the menu).
 									const tb = el.getBoundingClientRect();
-									const zone = { x: tb.x - 8, y: tb.y - 8, right: tb.right + 8, bottom: tb.bottom + 8 };
+									// The compared ring is 8 px; 2 px more, so a pixel at its edge has a sampled neighbor (hit
+									// tests reach about 1 px past a box's top and left edges; the check grows masks by 1 px).
+									const zone = { x: tb.x - 10, y: tb.y - 10, right: tb.right + 10, bottom: tb.bottom + 10 };
 									{
 										// Cell key -> [x0, y0, x1, y1]: the 8 px cell clipped to the painting part's box (a
 										// neighbor's corner must not cover a tiny target), widened when several parts paint it.
 										const cells = new Map();
+										// The page shows through a modal's backdrop: a dimming layer above it hides nothing.
+										const dim = (h) => dimmer(win, el, h);
 										withHitTesting(o, () => {
 											let n = 0;
 											const done = new Set();
@@ -821,7 +881,7 @@ export const INPAGE = String.raw`
 															if (c0[2] - c0[0] <= 0 || c0[3] - c0[1] <= 0) continue;
 															const px = (c0[0] + c0[2]) / 2;
 															const py = (c0[1] + c0[3]) / 2;
-															if (px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e))
+															if (px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e, dim))
 																cells.set("band:" + c0.join(","), c0);
 														}
 													}
@@ -829,39 +889,59 @@ export const INPAGE = String.raw`
 												}
 												for (let y = Math.floor(er.y / 8) * 8; y < er.bottom && cells.size < 20000; y += 8)
 													for (let x = Math.floor(er.x / 8) * 8; x < er.right; x += 8) {
-														const k = x + "," + y;
-														const c0 = [Math.max(x, er.x), Math.max(y, er.y), Math.min(x + 8, er.right), Math.min(y + 8, er.bottom)];
-														const had = cells.get(k);
-														if (had && had[0] <= c0[0] && had[1] <= c0[1] && had[2] >= c0[2] && had[3] >= c0[3]) continue;
-														const px = (c0[0] + c0[2]) / 2;
-														const py = (c0[1] + c0[3]) / 2;
-														// Inside a border-only frame (XFA field borders) it paints nothing.
-														if (!svg && frameOnlyAt(win, e, px, py)) continue;
-														if (px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e))
-															cells.set(k, had ? [Math.min(had[0], c0[0]), Math.min(had[1], c0[1]), Math.max(had[2], c0[2]), Math.max(had[3], c0[3])] : c0);
+														// Cells outside the target or across its edge are sampled at 2 px: a menu's
+														// 8 px margin of page around it is narrower than a cell.
+														// So are cells in the target's corners (16 px): outside a rounded corner the page
+														// shows.
+														const nearX = x < tb.left + 16 || x + 8 > tb.right - 16;
+														const nearY = y < tb.top + 16 || y + 8 > tb.bottom - 16;
+														const inside = x >= tb.left && x + 8 <= tb.right && y >= tb.top && y + 8 <= tb.bottom && !(nearX && nearY);
+														const step = inside ? 8 : 2;
+														for (let sy = y; sy < y + 8; sy += step)
+															for (let sx = x; sx < x + 8; sx += step) {
+																const k = inside ? x + "," + y : "sub:" + sx + "," + sy;
+																const c0 = [Math.max(sx, er.x), Math.max(sy, er.y), Math.min(sx + step, er.right), Math.min(sy + step, er.bottom)];
+																if (c0[2] - c0[0] <= 0 || c0[3] - c0[1] <= 0) continue;
+																const had = cells.get(k);
+																if (had && had[0] <= c0[0] && had[1] <= c0[1] && had[2] >= c0[2] && had[3] >= c0[3]) continue;
+																// The center, and for a 2 px cell its corners too: a box edge at a fractional
+																// pixel leaves the page behind showing through part of the edge pixel.
+																const pts = [[(c0[0] + c0[2]) / 2, (c0[1] + c0[3]) / 2]];
+																if (!inside) for (const [fx, fy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) pts.push([fx ? c0[2] - 0.25 : c0[0] + 0.25, fy ? c0[3] - 0.25 : c0[1] + 0.25]);
+																const hit = pts.some(([px, py]) =>
+																	// Inside a border-only frame (XFA field borders) it paints nothing.
+																	!(!svg && frameOnlyAt(win, e, px, py)) && px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e, dim));
+																if (hit) cells.set(k, had ? [Math.min(had[0], c0[0]), Math.min(had[1], c0[1]), Math.max(had[2], c0[2]), Math.max(had[3], c0[3])] : c0);
+															}
 													}
 											}
 										});
 										// Full cells merged into runs along each row; clipped cells kept as they are.
 										const runs = [];
 										const byRow = new Map();
+										const byRow2 = new Map();
 										const fmt = (v) => Math.round(v * 10) / 10;
 										for (const [k, c] of cells) {
-											if (k.startsWith("band:")) { runs.push([c[0], c[1], c[2] - c[0], c[3] - c[1]].map(fmt).join(",")); continue; }
+											if (k.startsWith("sub:")) {
+												const [x2, y2] = k.slice(4).split(",").map(Number);
+												if (c[0] === x2 && c[1] === y2 && c[2] === x2 + 2 && c[3] === y2 + 2) { if (!byRow2.has(y2)) byRow2.set(y2, []); byRow2.get(y2).push(x2); continue; }
+											}
+											if (k.startsWith("band:") || k.startsWith("sub:")) { runs.push([c[0], c[1], c[2] - c[0], c[3] - c[1]].map(fmt).join(",")); continue; }
 											const [x, y] = k.split(",").map(Number);
 											if (c[0] === x && c[1] === y && c[2] === x + 8 && c[3] === y + 8) { if (!byRow.has(y)) byRow.set(y, []); byRow.get(y).push(x); }
 											else runs.push([c[0], c[1], c[2] - c[0], c[3] - c[1]].map(fmt).join(","));
 										}
-										for (const [y, xs] of byRow) {
-											xs.sort((a, b) => a - b);
-											let start = xs[0], prev = xs[0];
-											for (const x of [...xs.slice(1), Infinity]) {
-												if (x === prev + 8) { prev = x; continue; }
-												runs.push([start, y, prev + 8 - start, 8].join(","));
-												start = x; prev = x;
+										for (const [rows, size] of [[byRow, 8], [byRow2, 2]])
+											for (const [y, xs] of rows) {
+												xs.sort((a, b) => a - b);
+												let start = xs[0], prev = xs[0];
+												for (const x of [...xs.slice(1), Infinity]) {
+													if (x === prev + size) { prev = x; continue; }
+													runs.push([start, y, prev + size - start, size].join(","));
+													start = x; prev = x;
+												}
 											}
-										}
-										if (runs.length) ph.setAttribute("data-capture-paints", runs.slice(0, 2000).join(" "));
+										if (runs.length) ph.setAttribute("data-capture-paints", runs.slice(0, 6000).join(" "));
 									}
 								}
 							}
@@ -891,7 +971,41 @@ export const INPAGE = String.raw`
 		const canvasPixels = [];
 		[...out.querySelectorAll("canvas")].forEach((cv, index) => {
 			const k = cv.getAttribute("data-capture-canvas");
-			if (k !== null) { canvasPixels.push({ index, ...canvases[+k] }); cv.removeAttribute("data-capture-canvas"); }
+			if (k !== null) { canvasPixels.push({ index, url: canvases[+k].url, rect: canvases[+k].rect }); cv.removeAttribute("data-capture-canvas"); }
+		});
+		// Canvases inside frames: the outermost frame's index in the saved fixture replaces its mark;
+		// inside the frame, the index of that canvas among its frame document's canvases.
+		const topFrame = new Map();
+		[...out.querySelectorAll("iframe")].forEach((fr, i) => {
+			const k = fr.getAttribute("data-capture-frame-canvas");
+			if (k !== null) topFrame.set("@" + k, String(i));
+			fr.removeAttribute("data-capture-frame-canvas");
+		});
+		const frameDocs = new Map();
+		const docAt = (path) => {
+			if (!frameDocs.has(path)) {
+				let d = null;
+				const parts = path.split("/");
+				let html = [...out.querySelectorAll("iframe")][+parts[0]]?.getAttribute("srcdoc");
+				for (let i = 0; html != null; i++) {
+					d = new DOMParser().parseFromString(html, "text/html");
+					if (i + 1 >= parts.length) break;
+					html = [...d.querySelectorAll("iframe")][+parts[i + 1]]?.getAttribute("srcdoc");
+					if (html == null) d = null;
+				}
+				frameDocs.set(path, d);
+			}
+			return frameDocs.get(path);
+		};
+		canvases.forEach((c, k) => {
+			if (c.frame === null) return;
+			const [mark, ...rest] = c.frame.split("/");
+			const top = topFrame.get(mark);
+			if (top === undefined) return;
+			const path = [top, ...rest].join("/");
+			const d = docAt(path);
+			const index = d ? [...d.querySelectorAll("canvas")].findIndex((e) => e.getAttribute("data-capture-canvas") === String(k)) : -1;
+			if (index >= 0) canvasPixels.push({ index, frame: path, url: c.url, rect: c.rect });
 		});
 		// Intrinsic sizes of images that will not load offline, by index in document.images order.
 		const imageSizes = [];
@@ -931,7 +1045,7 @@ export const INPAGE = String.raw`
 		const fixture = same
 			? (doc.compatMode === "BackCompat" ? "" : "<!doctype html>\n") + "<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8">' + headExtra + "</head>\n<body" + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
 			: '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(out) + "\n";
-		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, sheets, frameSheets, quirks: doc.compatMode === "BackCompat", whole: whole && opts.context !== "document" ? "see-through" : null };
+		return { html: fixture, textStyles: textStyles(el), format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, sheets, frameSheets, quirks: doc.compatMode === "BackCompat", whole: whole && opts.context !== "document" ? "see-through" : null };
 	}
 	/** Painted style of the target and pseudo subtrees (colors, borders, shadows, decorations, ::before/::after), for a before/after state diff. */
 	const PAINT = ["color", "background-color", "background-image", "border-top-color", "border-right-color", "border-bottom-color", "border-left-color", "outline-color", "outline-style", "outline-width", "box-shadow", "text-decoration-line", "text-decoration-color", "opacity", "filter", "transform", "visibility", "fill", "stroke"];
@@ -1000,6 +1114,6 @@ export const INPAGE = String.raw`
 		const r = scroller.getBoundingClientRect();
 		return scroller.scrollHeight > scroller.clientHeight && x > r.left + scroller.clientLeft + scroller.clientWidth && x < r.right && y > r.top && y < r.bottom;
 	}
-	window.cap = { sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges, candidates, stackAt };
+	window.cap = { clear, textStyles, sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges, candidates, stackAt };
 })();
 `;
