@@ -61,7 +61,10 @@ function tally(states: CompareState[]): [string, number][] {
 	return [...counts].sort((a, b) => b[1] - a[1]);
 }
 
-const NOT_COMPARED: CompareState = { status: "not-proven", reasons: ["not compared yet"] };
+const NOT_COMPARED: CompareState = {
+	status: "not-proven",
+	reasons: ["not checked with these sides"],
+};
 /** Said when a capture differs, but not on an element that is surely the component's. */
 export const changedElsewhere = (component: string) =>
 	`a change in this capture, not on the ${component} itself`;
@@ -158,7 +161,10 @@ export function combine(states: CompareState[]): CompareState {
 	if (states.some((s) => s.status === "different")) return { status: "different" };
 	const reasons = [...new Set(states.flatMap((s) => (s.status === "not-proven" ? s.reasons : [])))];
 	if (states.some((s) => s.status === "not-proven") || states.length === 0) {
-		return { status: "not-proven", reasons: reasons.length ? reasons : ["not compared yet"] };
+		return {
+			status: "not-proven",
+			reasons: reasons.length ? reasons : ["not checked with these sides"],
+		};
 	}
 	return { status: "same" };
 }

@@ -1,4 +1,3 @@
-import type { Change } from "./compare-states.ts";
 // Shapes shared by the viewer server and page.
 export interface Fixture {
 	id: string;
@@ -41,28 +40,8 @@ export interface ViewerData {
 	fixtures: Fixture[];
 	components: Record<string, ComponentEntry>;
 	usage: Usage[];
-	/** Null until the compare tool has written its file. */
-	diffs: Diffs | null;
-	/** Per-fixture verdicts by id; null until the compare tool has run. */
-	compare: Record<string, CompareState> | null;
-	/** What the compare report says about itself; null until the compare tool has run. */
-	report: ReportInfo | null;
-	/** What differs in each capture that is not the same, by fixture id. */
-	changes: Record<string, { total: number; list: Change[]; diffImage: boolean }>;
-	/** Per capture with differences: the components that have one on their own elements. */
-	touched: Record<string, string[]>;
 	/** Why compare.json could not be used, when it exists but is not a schemaVersion 1 report. */
 	compareError?: string;
-}
-
-/** What a compare report says about itself: when it ran and the hashes of the two themes it compared. */
-export interface ReportInfo {
-	/** When the report was written (ISO). From the report, or failing that its file date. */
-	generated: string;
-	/** sha256 of the left (before) theme text it compared, when it records one. */
-	before?: string;
-	/** sha256 of the right (after) theme text it compared, when it records one. */
-	after?: string;
 }
 
 /** One side as the page knows it: a name and the hash of its CSS, or why it cannot be shown. */

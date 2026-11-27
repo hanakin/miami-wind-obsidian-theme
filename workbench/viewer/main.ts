@@ -6,6 +6,7 @@ import {
 	rowState,
 	stateFor,
 } from "./compare-states.ts";
+import type { Results } from "./results.ts";
 import type { SideChoice } from "./sides.ts";
 import type { CompareState, Fixture, ResolvedSide, ViewerData, Which } from "./types.ts";
 import { bySurface, kinds, plainReason, surfaceName } from "./words.ts";
@@ -118,20 +119,19 @@ const labelOf = (which: Which) => {
 };
 
 /**
- * True when the last compare report was made with exactly the CSS now shown on both sides. Only
- * then do its verdicts mean anything here.
+ * What is on record for the two sides now shown: each capture's result from a check made with
+ * exactly this CSS on both sides. Captures never checked with these sides have no entry.
  */
-const fresh = () =>
-	data.report?.before !== undefined &&
-	data.report.before === hashOf("left") &&
-	data.report.after === hashOf("right");
-
-// The report's results, or nothing when it was made with other CSS: never a verdict from that.
-const none = { compare: null, touched: {}, changes: {} } as Pick<
-	ViewerData,
-	"compare" | "touched" | "changes"
->;
-let live: Pick<ViewerData, "compare" | "touched" | "changes"> = fresh() ? data : none;
+async function fetchResults(): Promise<Results | null> {
+	const [before, after] = [hashOf("left"), hashOf("right")];
+	if (!before || !after) return null;
+	return (await (
+		await fetch(`/api/results?before=${before}&after=${after}`)
+	).json()) as Results | null;
+}
+const none = { generated: "", compare: null, touched: {}, changes: {}, diffs: {} };
+let live: Omit<Results, "compare"> & { compare: Results["compare"] | null } =
+	(await fetchResults()) ?? none;
 
 /** A component's places counted by verdict: the page header and the sidebar dot both use this. */
 const summaryOf = (name: string) =>
@@ -145,16 +145,13 @@ const summaryOf = (name: string) =>
 let summaries = new Map(names.map((n) => [n, summaryOf(n)]));
 
 /** Re-reads everything that depends on the sides after they change. */
-function refresh(): void {
-	live = fresh() ? data : none;
+async function refresh(): Promise<void> {
+	live = (await fetchResults()) ?? none;
 	summaries = new Map(names.map((n) => [n, summaryOf(n)]));
 }
 
-/** Why something is not proven, in plain words. With an out-of-date report, that is the reason. */
-const why = (reason: string) =>
-	reason === "not compared yet" && data.report && !fresh()
-		? "the last check used different CSS"
-		: plainReason(reason);
+/** Why something is not proven, in plain words. */
+const why = plainReason;
 
 let mode: Mode = MODES.find(([m]) => m === stored("mw-viewer-view"))?.[0] ?? "both";
 
@@ -459,7 +456,11 @@ function whatDiffers(
 			// Fetched only when opened: these are full-window pictures.
 			details.addEventListener(
 				"toggle",
-				() => picture.setAttribute("src", `/diff/${encodeURIComponent(f.id)}`),
+				() =>
+					picture.setAttribute(
+						"src",
+						`/diff/${hashOf("left")}/${hashOf("right")}/${encodeURIComponent(f.id)}`,
+					),
 				{ once: true },
 			);
 		}
@@ -540,10 +541,10 @@ function fold(summary: string, ...content: Child[]): HTMLElement {
 
 /** How this place departs from the component's shared look (component-diffs.json), in one line. */
 function sharedLookLine(component: string, surface: string): HTMLElement | false {
-	const all = Object.values(data.diffs?.[component] ?? {});
+	const all = Object.values(live.diffs?.[component] ?? {});
 	// Styled differently in every place means there is no standard to differ from: say nothing.
 	if (all.length > 1 && all.every((x) => !x.same)) return false;
-	const d = data.diffs?.[component]?.[surface];
+	const d = live.diffs?.[component]?.[surface];
 	// Nothing to say when it matches. This is about the component across places, not left against right.
 	if (!d || d.same) return false;
 	return h(
@@ -714,7 +715,7 @@ const KINDS: [SideChoice["kind"], string][] = [
 async function applySides(): Promise<void> {
 	store("mw-viewer-sides", JSON.stringify(choices));
 	sides = await resolveSides();
-	refresh();
+	await refresh();
 	renderNav();
 	renderPage();
 }
@@ -775,19 +776,18 @@ function sidePicker(which: Which): HTMLElement {
 
 /** "Checked Miami Wind 1.x against Current build, Nov 25, 2026." Shown only for a report of these sides. */
 function reportLine(): string | false {
-	const r = data.report;
-	if (!r || !fresh()) return false;
-	const date = new Date(r.generated).toLocaleDateString("en-US", {
+	if (!live.compare) return false;
+	const date = new Date(live.generated).toLocaleDateString("en-US", {
 		year: "numeric",
 		month: "short",
 		day: "numeric",
 	});
-	const compared = Object.keys(live.compare ?? {}).length;
+	const checked = data.fixtures.filter((f) => live.compare?.[f.id]).length;
 	const part =
-		compared < data.fixtures.length
-			? ` The check covers ${compared.toLocaleString("en-US")} of ${data.fixtures.length.toLocaleString("en-US")} captures.`
+		checked < data.fixtures.length
+			? ` ${checked.toLocaleString("en-US")} of ${data.fixtures.length.toLocaleString("en-US")} captures are checked.`
 			: "";
-	return `Checked ${labelOf("left")} against ${labelOf("right")}, ${date}.${part}`;
+	return `Checked ${labelOf("left")} against ${labelOf("right")}, last on ${date}.${part}`;
 }
 
 /** Starts a compare run on the two sides shown, for one component or for everything. */
@@ -832,8 +832,11 @@ function recheckNotice(component?: string): HTMLElement | false {
 			`The check failed. ${checking.log.trim().split("\n").slice(-2).join(" ")}`,
 		);
 	}
-	if (fresh()) return false;
 	if (!hashOf("left") || !hashOf("right")) return false;
+	// Captures on this page with no result made with these two sides.
+	const here = component !== undefined && component in data.components ? capturesOf(component) : [];
+	const unchecked = here.filter((f) => !live.compare?.[f.id]).length;
+	if (live.compare && unchecked === 0) return false;
 	const button = (label: string, name?: string) => {
 		const b = h("button", { type: "button" }, label);
 		b.addEventListener("click", () => void recheck(name));
@@ -845,9 +848,9 @@ function recheckNotice(component?: string): HTMLElement | false {
 		h(
 			"p",
 			{},
-			data.report
-				? "Out of date: the last check was made with different CSS than what is shown here, so no result is shown."
-				: "These two sides have not been checked against each other yet.",
+			live.compare
+				? `${unchecked} of ${here.length} captures here have not been checked with these two sides.`
+				: "Not checked with these two sides yet, so no result is shown.",
 		),
 		h(
 			"div",
@@ -989,18 +992,22 @@ void watchRecheck();
 // A theme file one side points at changed on disk: redraw that side's pictures in place.
 import.meta.hot?.on("mw:side-changed", async () => {
 	const before = { left: hashOf("left"), right: hashOf("right") };
-	const wasFresh = fresh();
 	sides = await resolveSides();
-	if (wasFresh !== fresh() || WHICH.some((w) => !before[w] || !hashOf(w))) {
-		// The results no longer describe what is shown (or do again): everything is redrawn.
-		refresh();
+	const changed = WHICH.filter((w) => hashOf(w) !== before[w]);
+	if (changed.length === 0) return;
+	const had = live.compare !== null;
+	await refresh();
+	if (had || live.compare !== null || changed.some((w) => !before[w] || !hashOf(w))) {
+		// The results on screen were made with other CSS (or results exist for the new CSS):
+		// everything is redrawn.
 		renderNav();
 		renderPage();
 		return;
 	}
-	for (const which of WHICH) {
+	// No results either way: only the changed side's pictures need redrawing, in place.
+	for (const which of changed) {
 		const sha = hashOf(which);
-		if (!sha || sha === before[which]) continue;
+		if (!sha) continue;
 		for (const frame of document.querySelectorAll<HTMLIFrameElement>(
 			`iframe[data-side="${which}"]`,
 		)) {

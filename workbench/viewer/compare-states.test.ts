@@ -51,7 +51,7 @@ it("never calls a group the same unless every capture is proven the same", () =>
 	expect(combine([same, same])).toEqual(same);
 	expect(combine([same, unproven])).toEqual(unproven);
 	expect(combine([same, unproven, different])).toEqual(different);
-	expect(combine([])).toEqual({ status: "not-proven", reasons: ["not compared yet"] });
+	expect(combine([])).toEqual({ status: "not-proven", reasons: ["not checked with these sides"] });
 });
 
 const fixtures = [
@@ -83,7 +83,7 @@ it("judges a row from the data alone, whatever order the captures come in", () =
 		expect(rowState("button", "canvas", list, compare)).toBeUndefined();
 	}
 	// No result for a capture is not proven, with or without a compare run.
-	const notCompared = { status: "not-proven", reasons: ["not compared yet"] };
+	const notCompared = { status: "not-proven", reasons: ["not checked with these sides"] };
 	expect(rowState("button", "mobile-phone", fixtures, compare)?.state).toEqual(notCompared);
 	expect(rowState("button", "settings", fixtures, null)?.state).toEqual(notCompared);
 });

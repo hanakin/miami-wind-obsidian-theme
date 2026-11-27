@@ -2,7 +2,15 @@
 // with Obsidian's CSS plus one theme, and a reload when the built theme or the compare result changes.
 import { type ChildProcess, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, statSync, watchFile, writeFileSync } from "node:fs";
+import {
+	copyFileSync,
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	statSync,
+	watchFile,
+	writeFileSync,
+} from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import Specificity from "@bramus/specificity";
 import { extractFile } from "@electron/asar";
@@ -14,8 +22,9 @@ import { changes, compareStates } from "./compare-states.ts";
 import { touchedComponents } from "./elements.ts";
 import { forceStates } from "./force-states.ts";
 import { frameCsp, frameDocument, type ImageSize } from "./frame.ts";
+import { type FixtureResult, mergeRun, pairKey, resultsFor, type Store } from "./results.ts";
 import { parseChoice, resolveSide, type Side } from "./sides.ts";
-import type { ViewerData } from "./types.ts";
+import type { CompareState, Diffs, ViewerData } from "./types.ts";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 
@@ -58,14 +67,6 @@ interface ReportMeta {
 }
 
 const OUT = `${ROOT}workbench/out`;
-
-function reportInfo(report: ReportMeta): ViewerData["report"] {
-	return {
-		generated: report.generated ?? statSync(paths.compare).mtime.toISOString(),
-		before: report.themes?.before?.sha256,
-		after: report.themes?.after?.sha256,
-	};
-}
 
 // Every side resolved so far, by the hash of its CSS: the text to draw (states forced) and the
 // text as it was read. Frames and re-checks work from these bytes, never from a path again.
@@ -131,11 +132,9 @@ const VIEWPORTS: Record<string, [number, number]> = {
 	"mobile-tablet": [1024, 768],
 };
 
-function data(index: FixtureIndex): ViewerData {
-	const report = json(paths.compare) as ReportMeta | null;
+/** What a compare report found for each of its captures, in the form the workbench keeps. */
+function entries(report: ReportMeta, index: FixtureIndex, states: Record<string, CompareState>) {
 	const byId = new Map(index.fixtures.map((f) => [f.id, f]));
-	const compare = report === null ? null : compareStates(report);
-	const differing = typeof compare === "string" ? [] : (report?.fixtures ?? []);
 	const contains = new Map(index.fixtures.map((f) => [f.id, [f.component, ...f.contains]]));
 	// A component with no selector of its own (a whole view, the gutter) is its capture: every
 	// change in that capture is a change to it.
@@ -143,10 +142,76 @@ function data(index: FixtureIndex): ViewerData {
 		const component = byId.get(id)?.component;
 		return component && !COMPONENTS[component] ? [component] : [];
 	};
-	const tied = (found: ReturnType<typeof changes>, whole: string[]) => ({
-		...found,
-		list: found.list.map((c) => ({ ...c, components: [...c.components, ...whole] })),
-	});
+	const out: Record<string, Omit<FixtureResult, "generated">> = {};
+	for (const f of report.fixtures ?? []) {
+		const state = states[f.id];
+		if (!state || !byId.has(f.id)) continue;
+		const differences = f.differences ?? [];
+		const selectors = Object.fromEntries(
+			(contains.get(f.id) ?? []).flatMap((c) => (COMPONENTS[c] ? [[c, COMPONENTS[c]]] : [])),
+		);
+		const found = differences.length ? changes(differences, selectors) : undefined;
+		out[f.id] = {
+			state,
+			touched: differences.length
+				? [
+						...touchedComponents(differences, contains.get(f.id) ?? [], COMPONENTS),
+						...ownWhole(f.id),
+					]
+				: [],
+			changes: found && {
+				...found,
+				list: found.list.map((c) => ({ ...c, components: [...c.components, ...ownWhole(f.id)] })),
+			},
+			diffImage: Boolean(f.images?.diff) && existsSync(`${OUT}/diffs/${f.id}.diff.png`),
+		};
+	}
+	return out;
+}
+
+const STORE = `${OUT}/results.json`;
+/** Where a pair's saved diff pictures live: named by the start of both hashes. */
+const pictures = (before: string, after: string) =>
+	`${OUT}/results/${before.slice(0, 16)}-${after.slice(0, 16)}`;
+
+let store: Store = (json(STORE) as Store | null) ?? { pairs: {} };
+let ingested = 0;
+let reportError: string | undefined;
+/**
+ * Takes the compare tool's latest report into the workbench's own record, once per report. The
+ * report names the two themes it compared by hash; its results are filed under that pair and its
+ * diff pictures are copied beside them, because the next run clears the compare tool's own.
+ */
+function ingest(index: FixtureIndex): void {
+	if (!existsSync(paths.compare)) return;
+	const mtime = statSync(paths.compare).mtimeMs;
+	if (mtime === ingested) return;
+	ingested = mtime;
+	const report = json(paths.compare) as ReportMeta;
+	const states = compareStates(report);
+	const before = report.themes?.before?.sha256;
+	const after = report.themes?.after?.sha256;
+	reportError = typeof states === "string" ? states : undefined;
+	// A report that does not say which themes it compared cannot be filed under any pair.
+	if (typeof states === "string" || !before || !after) return;
+	const found = entries(report, index, states);
+	const dir = pictures(before, after);
+	mkdirSync(dir, { recursive: true });
+	for (const [id, f] of Object.entries(found)) {
+		if (f.diffImage) copyFileSync(`${OUT}/diffs/${id}.diff.png`, `${dir}/${id}.diff.png`);
+	}
+	store = mergeRun(
+		store,
+		pairKey(before, after),
+		report.generated ?? new Date(mtime).toISOString(),
+		found,
+		(json(paths.diffs) as Diffs | null) ?? {},
+	);
+	writeFileSync(STORE, JSON.stringify(store));
+}
+
+function data(index: FixtureIndex): ViewerData {
+	ingest(index);
 	return {
 		appCss: existsSync(paths.app),
 		cmCss: existsSync(paths.cm),
@@ -161,42 +226,7 @@ function data(index: FixtureIndex): ViewerData {
 		})),
 		components: index.components,
 		usage: (json(paths.usage) as ViewerData["usage"] | null) ?? [],
-		diffs: json(paths.diffs) as ViewerData["diffs"],
-		compare: typeof compare === "string" ? null : compare,
-		report: report && typeof compare !== "string" ? reportInfo(report) : null,
-		touched: Object.fromEntries(
-			differing
-				.filter((f) => f.differences?.length)
-				.map((f) => [
-					f.id,
-					[
-						...touchedComponents(f.differences ?? [], contains.get(f.id) ?? [], COMPONENTS),
-						...ownWhole(f.id),
-					],
-				]),
-		),
-		changes: Object.fromEntries(
-			differing
-				.filter((f) => f.differences?.length)
-				.map((f) => [
-					f.id,
-					{
-						...tied(
-							changes(
-								f.differences ?? [],
-								Object.fromEntries(
-									(contains.get(f.id) ?? []).flatMap((c) =>
-										COMPONENTS[c] ? [[c, COMPONENTS[c]]] : [],
-									),
-								),
-							),
-							ownWhole(f.id),
-						),
-						diffImage: Boolean(f.images?.diff),
-					},
-				]),
-		),
-		compareError: typeof compare === "string" ? compare : undefined,
+		compareError: reportError,
 	};
 }
 
@@ -351,6 +381,15 @@ export function viewer(): Plugin {
 						.catch(() => send(res, 400, "text/plain", "Bad request"));
 					return;
 				}
+				if (url.pathname === "/api/results") {
+					// What is on record for one pair of sides, named by the hashes of their CSS.
+					ingest(index);
+					const key = pairKey(
+						url.searchParams.get("before") ?? "",
+						url.searchParams.get("after") ?? "",
+					);
+					return send(res, 200, "application/json", JSON.stringify(resultsFor(store, key)));
+				}
 				if (url.pathname === "/api/data") {
 					return send(res, 200, "application/json", JSON.stringify(data(index)));
 				}
@@ -406,10 +445,13 @@ export function viewer(): Plugin {
 					res.setHeader("Cache-Control", "max-age=31536000, immutable");
 					return send(res, 200, "text/css; charset=utf-8", body);
 				}
-				if (area === "diff" && a && !b && byId.has(a)) {
-					// The compare tool's diff picture for one fixture; the id is a known fixture's.
-					const file = `${ROOT}workbench/out/diffs/${a}.diff.png`;
-					if (!existsSync(file)) return send(res, 404, "text/plain", "Not found");
+				const picture = /^\/diff\/([0-9a-f]{64})\/([0-9a-f]{64})\/(.+)$/.exec(url.pathname);
+				if (picture) {
+					// A saved diff picture: the pair by its two hashes, the capture by a known id.
+					const [, before = "", after = "", raw = ""] = picture;
+					const id = decodeURIComponent(raw);
+					const file = `${pictures(before, after)}/${id}.diff.png`;
+					if (!byId.has(id) || !existsSync(file)) return send(res, 404, "text/plain", "Not found");
 					res.setHeader("Cache-Control", "no-store");
 					return send(res, 200, "image/png", readFileSync(file));
 				}
