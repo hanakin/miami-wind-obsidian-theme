@@ -147,6 +147,7 @@ export const INPAGE = String.raw`
 	function withHitTesting(el, fn) {
 		const doc = el.ownerDocument;
 		const st = doc.createElement("style");
+		st.setAttribute("data-capture-hit", "");
 		st.textContent = "*, *::before, *::after { pointer-events: auto !important; }";
 		(doc.head ?? doc.documentElement).appendChild(st);
 		try { return fn(); } finally { st.remove(); }
@@ -383,6 +384,10 @@ export const INPAGE = String.raw`
 			case "option":
 				if (s.selected) d.setAttribute("selected", ""); else d.removeAttribute("selected");
 				break;
+			case "select":
+				// Nothing chosen shows a blank box; parsed markup would show the first option.
+				if (s.selectedIndex === -1) d.setAttribute("data-capture-select-none", "");
+				break;
 		}
 	}
 	/** Keeps the first cards plus one card per special state (classes + badge text); drops the rest. */
@@ -424,6 +429,23 @@ export const INPAGE = String.raw`
 		if (!Number.isFinite(h)) h = o.offsetHeight ?? o.getBoundingClientRect().height;
 		return Math.round(w * 1000) / 1000 + " " + Math.round(h * 1000) / 1000;
 	}
+	/**
+	 * Every stylesheet of a document, in order: app.css, the theme, and the texts of the runtime
+	 * ones (CodeMirror, MathJax, the slides' linked reveal.js sheet...), which can exist only while
+	 * their view shows.
+	 */
+	function collectSheets(d) {
+		const sheets = [];
+		for (const sh of d.querySelectorAll("link[rel=stylesheet], style")) {
+			if (sh.localName === "link" && /(^|\/)app\.css$/.test(sh.getAttribute("href") ?? "")) { sheets.push({ kind: "app" }); continue; }
+			if (sh.localName === "style" && sh.textContent.startsWith("/* Miami Wind Theme")) { sheets.push({ kind: "theme" }); continue; }
+			let text = sh.textContent;
+			try { text = [...sh.sheet.cssRules].map((r) => r.cssText).join("\n"); } catch {}
+			if (text.trim()) sheets.push({ kind: "runtime", text });
+		}
+		for (const sh of d.adoptedStyleSheets ?? []) { const text = [...sh.cssRules].map((r) => r.cssText).join("\n"); if (text.trim()) sheets.push({ kind: "runtime", text }); }
+		return sheets;
+	}
 	/** The margin on one side of e after margins of its first / last children collapse through it. */
 	function escMargin(win, e, side) {
 		const cs = win.getComputedStyle(e);
@@ -457,6 +479,15 @@ export const INPAGE = String.raw`
 			if (s) c.setAttribute("data-capture-state", s.join(" "));
 			// Text selected inside a field is not a document selection: keep its range.
 			if (o === doc.activeElement && typeof o.selectionStart === "number" && o.selectionStart !== o.selectionEnd) c.setAttribute("data-capture-input-selection", o.selectionStart + " " + o.selectionEnd + " " + (o.selectionDirection ?? "none"));
+			// A scrollbar shown live (its content overflowed): kept even when a trimmed list no longer
+			// overflows, so the layout keeps its width.
+			if (o.offsetWidth && o.clientWidth) {
+				const ocs = doc.defaultView.getComputedStyle(o);
+				const bw = (parseFloat(ocs.borderLeftWidth) || 0) + (parseFloat(ocs.borderRightWidth) || 0);
+				const bh = (parseFloat(ocs.borderTopWidth) || 0) + (parseFloat(ocs.borderBottomWidth) || 0);
+				const bars = (o.offsetWidth - o.clientWidth - bw > 0 && /auto|scroll/.test(ocs.overflowY) ? "y" : "") + (o.offsetHeight - o.clientHeight - bh > 0 && /auto|scroll/.test(ocs.overflowX) ? "x" : "");
+				if (bars) c.setAttribute("data-capture-scrollbar", bars);
+			}
 			// Scroll offsets are not part of the markup; a viewer restores them from this mark.
 			if (o.scrollTop || o.scrollLeft) c.setAttribute("data-capture-scroll", o.scrollTop + " " + o.scrollLeft);
 			// Media and frames get their size from content that does not load offline.
@@ -536,34 +567,33 @@ export const INPAGE = String.raw`
 		// Same-origin iframes Obsidian fills by script (no src/srcdoc, e.g. a canvas card being
 		// edited): their live document goes into srcdoc. Stylesheets are not copied (Obsidian's CSS
 		// is proprietary); their origins are listed in data-capture-iframe-styles instead.
-		for (const fc of [t, ...t.querySelectorAll("iframe")].filter((x) => x.localName === "iframe")) {
+		// Frames: their markup goes into srcdoc without stylesheets (Obsidian's are not committed);
+		// the stylesheets are returned like the window's own (frameSheets, by data-capture-frame)
+		// so a replay can restore them. A frame that showed nothing is marked as such.
+		const frameSheets = [];
+		for (const fc of copy.querySelectorAll("iframe")) {
 			const fo = back.get(fc);
 			let idoc = null;
 			try { idoc = fo?.contentDocument; } catch {}
-			// A srcdoc of Obsidian's own making (the startup snapshot) carries copies of the window's
-			// stylesheets: keep its markup, drop the copied styles, note what was there.
-			if (fc.hasAttribute("srcdoc") && /<style|<link/i.test(fc.getAttribute("srcdoc"))) {
-				const sd = new DOMParser().parseFromString(fc.getAttribute("srcdoc"), "text/html");
-				const dropped = [];
-				for (const st of sd.querySelectorAll("style, link[rel=stylesheet]")) {
-					dropped.push(st.localName === "link" ? "link " + st.getAttribute("href") : "style (" + st.textContent.length + " chars)");
-					st.remove();
-				}
-				fc.setAttribute("srcdoc", "<!DOCTYPE html>" + sd.documentElement.outerHTML);
-				fc.setAttribute("data-capture-iframe-styles", dropped.join("; "));
+			if (idoc?.body && ![...idoc.body.querySelectorAll("*")].some((e) => e.getClientRects().length) && !idoc.body.innerText?.trim()) {
+				fc.setAttribute("data-capture-frame-empty", "");
 				continue;
 			}
-			if (!idoc?.documentElement || fc.hasAttribute("srcdoc") || (fc.getAttribute("src") && fc.getAttribute("src") !== "about:blank")) continue;
+			const own = fc.hasAttribute("srcdoc");
+			const scripted = !own && idoc?.documentElement && !(fc.getAttribute("src") && fc.getAttribute("src") !== "about:blank");
+			if (!idoc?.documentElement || !(own || scripted)) continue;
+			// The live frame document, with whatever scripts changed after it loaded (the startup
+			// screen hides the status bar and adds its loading item).
 			const ir = idoc.documentElement.cloneNode(true);
-			const styles = [];
+			const dropped = [];
 			for (const st of ir.querySelectorAll("style, link[rel=stylesheet]")) {
-				styles.push(st.localName === "link" ? "link " + st.getAttribute("href") : "style" + (st.id ? "#" + st.id : "") + " (" + st.textContent.length + " chars)");
+				dropped.push(st.localName === "link" ? "link " + st.getAttribute("href") : "style" + (st.id ? "#" + st.id : "") + " (" + st.textContent.length + " chars)");
 				st.remove();
 			}
-			const adopted = idoc.adoptedStyleSheets?.length ?? 0;
-			if (adopted) styles.push("adopted stylesheets: " + adopted);
 			fc.setAttribute("srcdoc", "<!doctype html>" + ir.outerHTML);
-			fc.setAttribute("data-capture-iframe-styles", styles.join("; "));
+			fc.setAttribute("data-capture-iframe-styles", dropped.join("; "));
+			fc.setAttribute("data-capture-frame", String(frameSheets.length));
+			frameSheets.push(collectSheets(idoc));
 		}
 		// Canvas pixels are not part of the markup either: keep each painted canvas as a PNG (by index
 		// in the fixture's canvas order). WebGL canvases read back empty; the capture script takes
@@ -615,18 +645,79 @@ export const INPAGE = String.raw`
 		// Every stylesheet of the window, in document order: app.css, the theme, and the texts of the
 		// runtime ones (CodeMirror, MathJax, the slides' linked reveal.js sheet...), which can exist
 		// only while their view shows.
-		const sheets = [];
-		for (const sh of doc.querySelectorAll("link[rel=stylesheet], style")) {
-			if (sh.localName === "link" && /(^|\/)app\.css$/.test(sh.getAttribute("href") ?? "")) { sheets.push({ kind: "app" }); continue; }
-			if (sh.localName === "style" && sh.textContent.startsWith("/* Miami Wind Theme")) { sheets.push({ kind: "theme" }); continue; }
-			let text = sh.textContent;
-			try { text = [...sh.sheet.cssRules].map((r) => r.cssText).join("\n"); } catch {}
-			if (text.trim()) sheets.push({ kind: "runtime", text });
-		}
-		for (const sh of doc.adoptedStyleSheets ?? []) { const text = [...sh.cssRules].map((r) => r.cssText).join("\n"); if (text.trim()) sheets.push({ kind: "runtime", text }); }
+		const sheets = collectSheets(doc);
 		const win = doc.defaultView;
 		const viewport = [win.innerWidth, win.innerHeight];
 		out.documentElement.setAttribute("data-capture-viewport", viewport.join(" "));
+		// What a replay cannot show as it was: animated parts (spinners, progress, blinking
+		// cursors: their state at the shot is not in the markup) and the native text caret.
+		const box = (r, pad = 0) => [r.x - pad, r.y, r.width + 2 * pad, r.height].map((v) => Math.round(v * 10) / 10).join(",");
+		const moving = new Set();
+		const movingWhat = [];
+		// The window's animations and those of its same-origin frames (the startup screen's
+		// loading bar), in window coordinates.
+		const anims = doc.getAnimations().map((an) => [an, 0, 0]);
+		for (const fr of doc.querySelectorAll("iframe")) {
+			let fd = null;
+			try { fd = fr.contentDocument; } catch {}
+			if (!fd) continue;
+			const fr0 = fr.getBoundingClientRect();
+			for (const an of fd.getAnimations()) anims.push([an, fr0.x + fr.clientLeft, fr0.y + fr.clientTop]);
+		}
+		for (const [an, ox, oy] of anims) {
+			if (!/running|paused/.test(an.playState)) continue;
+			// Near-instant ones are hooks, not motion (Obsidian's node-insert-event detects insertion).
+			const tm = an.effect?.getComputedTiming?.();
+			if (tm && Number.isFinite(tm.endTime) && tm.endTime < 50) continue;
+			let e = an.effect?.target;
+			if (!e?.getBoundingClientRect) continue;
+			// A part sliding inside a clipped track (an indeterminate progress bar): the whole track.
+			const ew = e.ownerDocument.defaultView;
+			for (let a = e.parentElement, k = 0; a && k < 3; a = a.parentElement, k++) {
+				const cs = ew.getComputedStyle(a);
+				const ar = a.getBoundingClientRect();
+				if ((cs.overflowX !== "visible" || cs.overflowY !== "visible") && ar.width * ar.height < 0.25 * ew.innerWidth * ew.innerHeight) { e = a; break; }
+			}
+			// A caret-color transition changes nothing but the text caret (masked on its own).
+			if (an.transitionProperty === "caret-color") continue;
+			// An animation nobody can see (a hidden loading icon's ::after) hides nothing.
+			const pseudo = an.effect?.pseudoElement ?? null;
+			const pcs = e.ownerDocument.defaultView.getComputedStyle(e, pseudo);
+			if (pcs.display === "none" || pcs.visibility !== "visible" || parseFloat(pcs.opacity) === 0 || (pseudo && /^(none|normal)$/.test(pcs.content))) continue;
+			const shift = (r) => ({ x: r.x + ox, y: r.y + oy, width: r.width, height: r.height });
+			const r = shift(e.getBoundingClientRect());
+			if (r.width * r.height >= 1) {
+				if (moving.size < 60 && !moving.has(box(r, 1))) { moving.add(box(r, 1)); movingWhat.push(e.localName + "." + [...e.classList].slice(0, 2).join(".") + (pseudo ?? "") + " " + (an.animationName ?? an.transitionProperty ?? "animation")); }
+				continue;
+			}
+			// A zero-size layer (CodeMirror's cursor layer blinking its cursors): its children.
+			for (const c of [...e.children].slice(0, 20)) {
+				const cr = shift(c.getBoundingClientRect());
+				if (cr.width * cr.height >= 1 && moving.size < 60) moving.add(box(cr, 1));
+			}
+		}
+		// Native resize grips of text areas: Chromium draws them itself, differently per build.
+		for (const ta of doc.querySelectorAll("textarea")) {
+			const r = ta.getBoundingClientRect();
+			if (r.width < 1 || win.getComputedStyle(ta).resize === "none" || moving.size >= 60) continue;
+			moving.add([r.right - 18, r.bottom - 18, 18, 18].map((v) => Math.round(v * 10) / 10).join(","));
+		}
+		const ae = doc.activeElement;
+		const dsel = doc.getSelection();
+		if (ae?.isContentEditable && dsel?.rangeCount && dsel.isCollapsed) {
+			const r = dsel.getRangeAt(0).getBoundingClientRect();
+			if (r.height > 0) moving.add(box(r, 2));
+		} else if (ae && /^(input|textarea)$/.test(ae.localName) && typeof ae.selectionStart === "number" && ae.selectionStart === ae.selectionEnd) {
+			// The caret's x from the text before it, measured in the field's font.
+			const cs = win.getComputedStyle(ae);
+			const m = doc.createElement("canvas").getContext("2d");
+			m.font = cs.font;
+			const r = ae.getBoundingClientRect();
+			const x = r.x + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft) + m.measureText(ae.value.slice(0, ae.selectionStart)).width - ae.scrollLeft;
+			moving.add([x - 2, r.y, 4, r.height].map((v) => Math.round(v * 10) / 10).join(","));
+		}
+		if (moving.size) out.documentElement.setAttribute("data-capture-animated", [...moving].join(" "));
+		if (movingWhat.length) out.documentElement.setAttribute("data-capture-animated-what", movingWhat.join("; "));
 		out.documentElement.setAttribute("data-capture-styles", styles.join(" "));
 		// A see-through overlay shows the page under it: keep the whole window. That is a target in
 		// a positioned layer (a modal backdrop, a PDF highlight, a canvas handle, a code block's
@@ -673,7 +764,107 @@ export const INPAGE = String.raw`
 							if (keep) for (const d of ph.querySelectorAll("*")) { d.removeAttribute("data-capture-seen"); d.removeAttribute("data-capture-state"); }
 							ph.setAttribute("data-capture-placeholder", "");
 							// Shown live (visible, not transparent, with a box): a floating one painted over things.
-							if (o) { const cs = win.getComputedStyle(o); const r = o.getBoundingClientRect(); if (cs.visibility === "visible" && parseFloat(cs.opacity) > 0 && r.width * r.height > 0) ph.setAttribute("data-capture-shown", ""); }
+							if (o) {
+								const cs = win.getComputedStyle(o);
+								const r = o.getBoundingClientRect();
+								// (A box of its own is not needed for its parts: an empty container can hold a
+								// fixed tooltip, like CodeMirror's tooltip root on <body>.)
+								if (cs.visibility === "visible" && parseFloat(cs.opacity) > 0 && cs.display !== "none") {
+									if (r.width * r.height > 0) ph.setAttribute("data-capture-shown", "");
+									// Parts of it painted over the target (the titlebar's buttons, the status bar
+									// above a drag preview): keep exactly the cells, inside the target's box, where
+									// a hit test finds one of its painting elements on top, so a replay leaves those
+									// out (a popover under a menu hides nothing of the menu).
+									const tb = el.getBoundingClientRect();
+									const zone = { x: tb.x - 8, y: tb.y - 8, right: tb.right + 8, bottom: tb.bottom + 8 };
+									{
+										// Cell key -> [x0, y0, x1, y1]: the 8 px cell clipped to the painting part's box (a
+										// neighbor's corner must not cover a tiny target), widened when several parts paint it.
+										const cells = new Map();
+										withHitTesting(o, () => {
+											let n = 0;
+											const done = new Set();
+											for (const e0 of [o, ...o.querySelectorAll("*")]) {
+												if (n >= 400) break;
+												// An icon paints with thin strokes a grid point can miss: its whole <svg> box counts.
+												const svg = e0.namespaceURI === "http://www.w3.org/2000/svg";
+												const e = svg ? (e0.localName === "svg" ? e0 : e0.ownerSVGElement) : e0;
+												if (!e || done.has(e)) continue;
+												if (svg && e === e0) continue; // the <svg> itself counts once one of its shapes paints
+												done.add(e);
+												const er0 = e.getBoundingClientRect();
+												const er = { x: Math.max(er0.x, zone.x), y: Math.max(er0.y, zone.y), right: Math.min(er0.right, zone.right), bottom: Math.min(er0.bottom, zone.bottom) };
+												if (er.right - er.x < 1 || er.bottom - er.y < 1 || (!svg && clear(win, e))) continue;
+												n++;
+												// A border-only frame (XFA field borders) paints just its border bands: sample along
+												// them (a grid point seldom lands on a 1 px line).
+												if (!svg && frameOnlyAt(win, e, (er0.left + er0.right) / 2, (er0.top + er0.bottom) / 2)) {
+													const fcs = win.getComputedStyle(e);
+													const bw = (k) => parseFloat(fcs["border" + k + "Width"]) || 0;
+													// Widened by 1 px on each side: a thin border under a scale (a PDF layer) draws wider
+													// than its computed width.
+													const bands = [
+														[er0.left, er0.top - 1, er0.width, bw("Top") + 2],
+														[er0.left, er0.bottom - bw("Bottom") - 1, er0.width, bw("Bottom") + 2],
+														[er0.left - 1, er0.top, bw("Left") + 2, er0.height],
+														[er0.right - bw("Right") - 1, er0.top, bw("Right") + 2, er0.height],
+													].filter((b) => b[2] > 2 && b[3] > 2);
+													for (const [bx, by, bwid, bhei] of bands) {
+														if (bwid <= 0 || bhei <= 0) continue;
+														const horiz = bwid >= bhei;
+														for (let t = 0; t < (horiz ? bwid : bhei); t += 8) {
+															const x0 = horiz ? bx + t : bx;
+															const y0 = horiz ? by : by + t;
+															const w0 = horiz ? Math.min(8, bwid - t) : bwid;
+															const h0 = horiz ? bhei : Math.min(8, bhei - t);
+															const c0 = [Math.max(x0, zone.x), Math.max(y0, zone.y), Math.min(x0 + w0, zone.right), Math.min(y0 + h0, zone.bottom)];
+															if (c0[2] - c0[0] <= 0 || c0[3] - c0[1] <= 0) continue;
+															const px = (c0[0] + c0[2]) / 2;
+															const py = (c0[1] + c0[3]) / 2;
+															if (px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e))
+																cells.set("band:" + c0.join(","), c0);
+														}
+													}
+													continue;
+												}
+												for (let y = Math.floor(er.y / 8) * 8; y < er.bottom && cells.size < 20000; y += 8)
+													for (let x = Math.floor(er.x / 8) * 8; x < er.right; x += 8) {
+														const k = x + "," + y;
+														const c0 = [Math.max(x, er.x), Math.max(y, er.y), Math.min(x + 8, er.right), Math.min(y + 8, er.bottom)];
+														const had = cells.get(k);
+														if (had && had[0] <= c0[0] && had[1] <= c0[1] && had[2] >= c0[2] && had[3] >= c0[3]) continue;
+														const px = (c0[0] + c0[2]) / 2;
+														const py = (c0[1] + c0[3]) / 2;
+														// Inside a border-only frame (XFA field borders) it paints nothing.
+														if (!svg && frameOnlyAt(win, e, px, py)) continue;
+														if (px >= 0 && py >= 0 && px < win.innerWidth && py < win.innerHeight && topmost(doc, win, px, py, e))
+															cells.set(k, had ? [Math.min(had[0], c0[0]), Math.min(had[1], c0[1]), Math.max(had[2], c0[2]), Math.max(had[3], c0[3])] : c0);
+													}
+											}
+										});
+										// Full cells merged into runs along each row; clipped cells kept as they are.
+										const runs = [];
+										const byRow = new Map();
+										const fmt = (v) => Math.round(v * 10) / 10;
+										for (const [k, c] of cells) {
+											if (k.startsWith("band:")) { runs.push([c[0], c[1], c[2] - c[0], c[3] - c[1]].map(fmt).join(",")); continue; }
+											const [x, y] = k.split(",").map(Number);
+											if (c[0] === x && c[1] === y && c[2] === x + 8 && c[3] === y + 8) { if (!byRow.has(y)) byRow.set(y, []); byRow.get(y).push(x); }
+											else runs.push([c[0], c[1], c[2] - c[0], c[3] - c[1]].map(fmt).join(","));
+										}
+										for (const [y, xs] of byRow) {
+											xs.sort((a, b) => a - b);
+											let start = xs[0], prev = xs[0];
+											for (const x of [...xs.slice(1), Infinity]) {
+												if (x === prev + 8) { prev = x; continue; }
+												runs.push([start, y, prev + 8 - start, 8].join(","));
+												start = x; prev = x;
+											}
+										}
+										if (runs.length) ph.setAttribute("data-capture-paints", runs.slice(0, 2000).join(" "));
+									}
+								}
+							}
 							// The stand-in is empty, so keep its live border-box size for the layout around it.
 							if (o && disp !== "inline" && disp !== "contents" && disp !== "none") {
 								ph.setAttribute("data-capture-size", layoutSize(win, o));
@@ -738,9 +929,9 @@ export const INPAGE = String.raw`
 		const format = same ? "html" : "xhtml";
 		const contains = Object.entries(opts.components).filter(([, sel]) => t.matches?.(sel) || t.querySelector(sel)).map(([k]) => k);
 		const fixture = same
-			? "<!doctype html>\n<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8">' + headExtra + "</head>\n<body" + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
+			? (doc.compatMode === "BackCompat" ? "" : "<!doctype html>\n") + "<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8">' + headExtra + "</head>\n<body" + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
 			: '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(out) + "\n";
-		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, sheets, whole: whole && opts.context !== "document" ? "see-through" : null };
+		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, sheets, frameSheets, quirks: doc.compatMode === "BackCompat", whole: whole && opts.context !== "document" ? "see-through" : null };
 	}
 	/** Painted style of the target and pseudo subtrees (colors, borders, shadows, decorations, ::before/::after), for a before/after state diff. */
 	const PAINT = ["color", "background-color", "background-image", "border-top-color", "border-right-color", "border-bottom-color", "border-left-color", "outline-color", "outline-style", "outline-width", "box-shadow", "text-decoration-line", "text-decoration-color", "opacity", "filter", "transform", "visibility", "fill", "stroke"];

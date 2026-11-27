@@ -118,6 +118,7 @@ export function checklistItems(scenes: Scene[]): ChecklistItem[] {
 				...(i.expect ? { expect: i.expect } : {}),
 				...(i.synthetic ? { synthetic: i.synthetic } : {}),
 				...(i.minUnobscured !== undefined ? { minUnobscured: i.minUnobscured } : {}),
+				...(i.excluded ? { excluded: i.excluded } : {}),
 			});
 		}
 	}

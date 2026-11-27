@@ -212,8 +212,6 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 			component: "menu",
 			surface,
 			target: ".menu",
-			// The sheet marks its title row selected just after it opens (a 0.1 s fade).
-			settle: 600,
 			expect:
 				size === "phone"
 					? ".menu.mod-sheet:has(.menu-item.is-warning)"
@@ -227,6 +225,9 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 				);
 				if (!at) throw new Error("no file in the drawer");
 				await ctx.page.mouse.click(at[0], at[1], { button: "right" });
+				// The sheet slides up under the pointer: move it off, or its title row stays hovered
+				// (a touch screen has no pointer resting there).
+				await ctx.page.mouse.move(195, 4);
 				await ctx.sleep(900);
 			},
 			note: note(

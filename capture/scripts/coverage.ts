@@ -3,12 +3,11 @@
 // theme.css selector counts only when it matches a valid fixture AND Chromium matched it in the
 // live app at capture time. App classes count when a valid fixture contains them.
 // Usage: bun run capture:coverage    (exit code 1 while any gap is neither covered nor excluded)
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { chromium } from "playwright";
-import { matchable, replayCss, selectors, themeAffectedClasses } from "./css.ts";
-import { APP_CSS_MARK, pngStats, RUNTIME_DIR } from "./engine.ts";
-import { INPAGE } from "./inpage.ts";
+import { matchable, selectors, themeAffectedClasses } from "./css.ts";
+import { pngStats } from "./engine.ts";
 import { SCREENSHOTS, WORK } from "./obsidian.ts";
 import {
 	appClassStatuses,
@@ -19,7 +18,7 @@ import {
 	themeExclusion,
 	themeSelectors,
 } from "./plan.ts";
-import { replayFixture } from "./replay.ts";
+import { checkFixture, makeEnv, REPLAY_MIN_MATCH } from "./replay-check.ts";
 import type { ChecklistItem, FixtureEntry } from "./types.ts";
 
 if (!existsSync(`${CAPTURE}.app/app.css`)) {
@@ -41,7 +40,6 @@ const theme = themeSelectors();
 const rewritten = theme.map((s) => matchable(s.selector));
 const screenshotsHere = existsSync(SCREENSHOTS);
 /** Share of 16 px blocks of the target that must match the live screenshot when replayed alone. */
-const REPLAY_MIN_MATCH = 0.97;
 
 // Scrollbars take layout space in Obsidian; headless Chromium hides them unless told not to.
 const browser = await chromium.launch({ ignoreDefaultArgs: ["--hide-scrollbars"] });
@@ -225,324 +223,23 @@ for (const f of fx.fixtures) {
 }
 
 // Each saved fixture must show its target when rendered alone, the way a viewer replays it, and
-// look like the live screenshot: see replay.ts and the "Replay alone" section of COVERAGE.md.
-const runtimePath = `${CAPTURE}.app/runtime-styles.css`;
-if (!existsSync(runtimePath) || !readFileSync(runtimePath, "utf8").trim())
-	throw new Error(
-		"capture/.app/runtime-styles.css is missing or empty: run `bun run capture:extract-runtime-css`.",
-	);
-const sheetPath: Record<string, string> = {
-	app: `${CAPTURE}.app/app.css`,
-	runtime: runtimePath,
-	theme: `${CAPTURE}../theme.css`,
-};
-const ASSETS = "https://obsidian-app.invalid/";
-if (!existsSync(`${CAPTURE}.app/assets/public`))
-	throw new Error("Obsidian's fonts are not extracted: run `bun run capture:extract-app-css`.");
-const cssCache = new Map<string, string>();
-/** The stylesheets the fixture's window applied (all three when not recorded), with replay rewrites. */
-/** The window's own stylesheets in document order (FixtureEntry.runtimeStyles), with replay rewrites. */
-const sheetCss = (list: string[], touch: boolean) => {
-	const key = `own ${list.join(" ")}|${touch}`;
-	let css = cssCache.get(key);
-	if (css === undefined) {
-		css = list
-			.map((tok) =>
-				replayCss(
-					readFileSync(
-						tok === "app" || tok === "theme"
-							? (sheetPath[tok] as string)
-							: `${RUNTIME_DIR}${tok}.css`,
-						"utf8",
-					),
-					touch,
-				),
-			)
-			.join("\n")
-			.replaceAll('url("./public/', `url("${ASSETS}public/`)
-			.replaceAll('url("/lib/', `url("${ASSETS}lib/`);
-		css +=
-			"\n[data-capture-placeholder], [data-capture-placeholder] * { visibility: hidden !important; }";
-		cssCache.set(key, css);
-	}
-	return css;
-};
-const renderCss = (styles: string[], touch: boolean) => {
-	const key = `${styles.join(" ")}|${touch}`;
-	let css = cssCache.get(key);
-	if (css === undefined) {
-		// Document order: runtime styles before the app.css marker, app.css, the rest of the runtime
-		// styles, theme.css. A window without app.css or the runtime styles skips them.
-		const read = (k: string) => replayCss(readFileSync(sheetPath[k] as string, "utf8"), touch);
-		const runtime = styles.includes("runtime") ? read("runtime") : "";
-		const at = runtime.indexOf(APP_CSS_MARK);
-		const [before, after] = at < 0 ? ["", runtime] : [runtime.slice(0, at), runtime.slice(at)];
-		css = [
-			before,
-			styles.includes("app") ? read("app") : "",
-			after,
-			styles.includes("theme") ? read("theme") : "",
-		]
-			.join("\n")
-			// The app's own fonts and images, served from the local extract (see the route below).
-			.replaceAll('url("./public/', `url("${ASSETS}public/`)
-			.replaceAll('url("/lib/', `url("${ASSETS}lib/`);
-		// Stand-ins keep their box (layout around the target holds) but paint nothing.
-		css +=
-			"\n[data-capture-placeholder], [data-capture-placeholder] * { visibility: hidden !important; }";
-		cssCache.set(key, css);
-	}
-	return css;
-};
-const render = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
-// Nothing loads from the network; Obsidian's bundled fonts and images come from capture/.app.
-await render.route("**", (r) => {
-	const url = r.request().url();
-	const file = `${CAPTURE}.app/assets/${url.slice(ASSETS.length).split("?")[0]}`;
-	if (url.startsWith(ASSETS) && existsSync(file)) return r.fulfill({ path: file });
-	return r.abort();
-});
-await render.setContent(
-	'<!doctype html><html><head><style id="replay"></style></head><body></body></html>',
-);
-await render.evaluate(INPAGE);
-const cmp = await browser.newPage();
+// look like the live screenshot: see replay-check.ts and the "Replay alone" section of COVERAGE.md.
+const env = await makeEnv(browser);
 /** Fixtures whose replay cannot be compared with the live screenshot, and why. */
 const replayLimits = new Map<string, string>();
 /** Per fixture: share of compared 16 px blocks that match the live screenshot. */
 const replayMatch = new Map<string, number>();
 const replayDir = `${WORK}/replay`;
-mkdirSync(replayDir, { recursive: true });
-let cssKey = "";
-const sheetTexts = new Map<string, string>();
-const sheetText = (t: string) => {
-	let v = sheetTexts.get(t);
-	if (v === undefined) {
-		v = existsSync(`${RUNTIME_DIR}${t}.css`) ? readFileSync(`${RUNTIME_DIR}${t}.css`, "utf8") : "";
-		sheetTexts.set(t, v);
-	}
-	return v;
-};
-const glyphRules = new Set(
-	[...readFileSync(runtimePath, "utf8").matchAll(/mjx-c\.(mjx-c[0-9A-F]+)/g)].map((m) => m[1]),
-);
-const renderCdp = await render.context().newCDPSession(render);
-let mediaNow = "-";
-let behindBlack = false;
 const renderOrder = [...valid.keys()].filter((id) => !byId.get(id)?.variantOf).sort();
 for (const id of renderOrder) {
-	const f = byId.get(id) as FixtureEntry;
-	const touch = id.startsWith("mobile.");
-	const size =
-		f.viewport ??
-		(id.startsWith("mobile.phone.")
-			? [390, 844]
-			: id.startsWith("mobile.tablet.")
-				? [1024, 768]
-				: [1600, 1000]);
-	const styles = f.styles ?? Object.keys(sheetPath);
-	const own = f.runtimeStyles;
-	const lost = (own ?? []).filter(
-		(t) => t !== "app" && t !== "theme" && !existsSync(`${RUNTIME_DIR}${t}.css`),
-	);
-	if (lost.length) {
+	const r = await checkFixture(env, byId.get(id) as FixtureEntry);
+	if (r.share !== undefined) replayMatch.set(id, r.share);
+	if (r.status === "fail") {
 		valid.delete(id);
-		invalid.set(id, [`runtime stylesheet missing from capture/.app/runtime: ${lost.join(" ")}`]);
-		continue;
-	}
-	const key = `${(own ?? styles).join(" ")}|${own ? "own" : "shared"}|${touch}`;
-	if (key !== cssKey) {
-		await render.evaluate(
-			(css) => {
-				(document.getElementById("replay") as HTMLStyleElement).textContent = css;
-			},
-			own ? sheetCss(own, touch) : renderCss(styles, touch),
-		);
-		cssKey = key;
-	}
-	await render.setViewportSize({ width: size[0] ?? 1600, height: size[1] ?? 1000 });
-	// The media the item was captured under (print, forced colors), or none.
-	// The window's color scheme (forced colors picks its palette from it) plus any emulated media.
-	const media = `${f.evidence?.media ?? ""}|${f.evidence?.inputMedia?.dark ?? true}|${f.evidence?.inputMedia?.canvas ?? ""}`;
-	if (media !== mediaNow) {
-		const m = (f.evidence?.media ? JSON.parse(f.evidence.media) : {}) as {
-			media?: string;
-			features?: { name: string; value: string }[];
-		};
-		// Forced colors take their palette from the system: match the recorded Canvas color.
-		const canvas = (f.evidence?.inputMedia?.canvas ?? "").match(/\d+/g)?.map(Number);
-		const forced = (m.features ?? []).some((x) => x.name === "forced-colors");
-		const scheme =
-			forced && canvas
-				? (canvas[0] ?? 0) + (canvas[1] ?? 0) + (canvas[2] ?? 0) < 384
-					? "dark"
-					: "light"
-				: f.evidence?.inputMedia?.dark === false
-					? "light"
-					: "dark";
-		await renderCdp.send("Emulation.setEmulatedMedia", {
-			media: m.media ?? "",
-			features: [...(m.features ?? []), { name: "prefers-color-scheme", value: scheme }],
-		});
-		mediaNow = media;
-	}
-	// MathJax draws each character through its own CSS rule, kept only while the character is on
-	// screen: every character in the fixture needs one, in the fixture's own <head> (or the
-	// runtime styles).
-	const html = readFileSync(`${CAPTURE}fixtures/${f.file}`, "utf8");
-	const noGlyph = [
-		...new Set([...html.matchAll(/class="(mjx-c[0-9A-F]+)"/g)].map((m) => m[1] ?? "")),
-	].filter(
-		(c) =>
-			!glyphRules.has(c) &&
-			!html.includes(`mjx-c.${c}`) &&
-			!(own ?? []).some((t) => t !== "app" && t !== "theme" && sheetText(t).includes(`mjx-c.${c}`)),
-	);
-	if (noGlyph.length) {
-		valid.delete(id);
-		invalid.set(id, [
-			`MathJax glyph rules missing (fixture <head> and runtime styles): ${noGlyph.join(" ")}`,
-		]);
-		continue;
-	}
-	const pixels = (f.canvasPixels ?? []).map((c) => ({
-		index: c.index,
-		b64: readFileSync(`${CAPTURE}fixtures/${c.file}`).toString("base64"),
-	}));
-	// A translucent window (body.is-translucent) shows what is behind it: the capture saw black.
-	const translucent = /<body[^>]*class="[^"]*\bis-translucent\b/.test(html);
-	if (translucent !== behindBlack) {
-		await renderCdp.send(
-			"Emulation.setDefaultBackgroundColorOverride",
-			translucent ? { color: { r: 0, g: 0, b: 0, a: 1 } } : {},
-		);
-		behindBlack = translucent;
-	}
-	const got = await replayFixture(render, html, f.imageSizes ?? [], pixels);
-	if (got.why) {
-		valid.delete(id);
-		invalid.set(id, [`does not render alone: ${got.why}`]);
-		continue;
-	}
-	// Pixel check against the live screenshot.
-	const ev = f.evidence;
-	const shot = `${SCREENSHOTS}/${f.id}.png`;
-	if (!screenshotsHere || !ev?.clip || !existsSync(shot)) {
-		replayLimits.set(id, "live screenshot not on this machine");
-		continue;
-	}
-	if (f.trimmed) {
-		replayLimits.set(id, "trimmed fixture: the live screenshot shows the untrimmed list");
-		continue;
-	}
-	const [cx = 0, cy = 0, cw = 0, ch = 0] = ev.clip;
-	const [lx = 0, ly = 0, lw = 0, lh = 0] = ev.inView;
-	const [rx = 0, ry = 0, rw = 0, rh = 0] = got.inView ?? [];
-	if (Math.max(Math.abs(lx - rx), Math.abs(ly - ry), Math.abs(lw - rw), Math.abs(lh - rh)) > 4) {
-		valid.delete(id);
-		invalid.set(id, [
-			`replay layout differs: target at ${[lx, ly, lw, lh].map(Math.round).join(",")} live, ${[rx, ry, rw, rh].map(Math.round).join(",")} replayed alone${got.moved ? `; first moved: ${got.moved}` : ""}`,
-		]);
-		continue;
-	}
-	const replayShot = `${replayDir}/${f.id}.png`;
-	await render.screenshot({ path: replayShot, clip: { x: cx, y: cy, width: cw, height: ch } });
-	const res = (await cmp.evaluate(
-		async ([live, replay, region, masks]) => {
-			const data = async (b64: string) => {
-				const bmp = await createImageBitmap(
-					await (await fetch(`data:image/png;base64,${b64}`)).blob(),
-				);
-				const c = new OffscreenCanvas(bmp.width, bmp.height);
-				const x = c.getContext("2d") as OffscreenCanvasRenderingContext2D;
-				x.drawImage(bmp, 0, 0);
-				return x.getImageData(0, 0, bmp.width, bmp.height);
-			};
-			const a = await data(live);
-			const b = await data(replay);
-			// A scrolled capture stacks every scroll position; the snapshot is of the last one.
-			const dy = a.height - b.height;
-			// Mean color per 16 px block (edge blocks may be smaller): a one-pixel text shift between
-			// Chromium builds stays under the limit; a blank canvas, a different layout or other colors
-			// do not.
-			const B = 16;
-			let blocks = 0;
-			let bad = 0;
-			const where: string[] = [];
-			const [gx, gy, gw, gh] = [...region].map(Math.round) as [number, number, number, number];
-			const x0 = Math.max(0, gx);
-			const y0 = Math.max(0, gy);
-			const x1 = Math.min(b.width, a.width, gx + gw);
-			const y1 = Math.min(b.height, gy + gh);
-			// Even cuts of about B px, so no sliver of a block at the edge decides alone.
-			const cuts = (from: number, to: number) => {
-				const n = Math.max(1, Math.round((to - from) / B));
-				return Array.from({ length: n }, (_, k) => [
-					from + Math.round(((to - from) * k) / n),
-					from + Math.round(((to - from) * (k + 1)) / n),
-				]);
-			};
-			for (const [y, ye] of y1 - y0 >= 1 ? cuts(y0, y1) : [])
-				for (const [x, xe] of x1 - x0 >= 1 ? cuts(x0, x1) : []) {
-					const bw = (xe as number) - (x as number);
-					const bh = (ye as number) - (y as number);
-					if (bw < 1 || bh < 1) continue;
-					if (
-						masks.some(
-							([mx, my, mw, mh]) => x < mx + mw && x + bw > mx && y < my + mh && y + bh > my,
-						)
-					)
-						continue;
-					const sa = [0, 0, 0];
-					const sb = [0, 0, 0];
-					for (let j = 0; j < bh; j++)
-						for (let i = 0; i < bw; i++) {
-							const pa = ((y + j + dy) * a.width + x + i) * 4;
-							const pb = ((y + j) * b.width + x + i) * 4;
-							for (let k = 0; k < 3; k++) {
-								sa[k] += a.data[pa + k] ?? 0;
-								sb[k] += b.data[pb + k] ?? 0;
-							}
-						}
-					blocks++;
-					const diff = Math.max(...sa.map((v, k) => Math.abs(v - (sb[k] ?? 0)) / (bw * bh)));
-					if (diff > 24) {
-						bad++;
-						if (where.length < 3) where.push(`${x},${y}`);
-					}
-				}
-			return { blocks, bad, where };
-		},
-		[
-			readFileSync(shot).toString("base64"),
-			readFileSync(replayShot).toString("base64"),
-			// The target box; a thin one (a slider track) is padded like the screenshot, so a pixel
-			// of drift does not decide alone.
-			// (Only the thinner side when both are thin: a tiny node's neighbors are stand-ins.)
-			[
-				lw < 16 && lw <= lh ? lx - cx - 8 : lx - cx,
-				lh < 16 && lh < lw ? ly - cy - 8 : ly - cy,
-				lw < 16 && lw <= lh ? lw + 16 : lw,
-				lh < 16 && lh < lw ? lh + 16 : lh,
-			],
-			(got.masks ?? []).map(([x = 0, y = 0, w = 0, h = 0]) => [x - cx, y - cy, w, h]),
-		] as const,
-	)) as { blocks: number; bad: number; where: string[] };
-	if (!res.blocks) {
-		replayLimits.set(id, "nothing to compare: the target is all images, media or iframes");
-		continue;
-	}
-	const share = 1 - res.bad / res.blocks;
-	replayMatch.set(id, share);
-	if (share < REPLAY_MIN_MATCH) {
-		valid.delete(id);
-		invalid.set(id, [
-			`replay differs from the live screenshot in ${Math.round((100 * res.bad) / res.blocks)}% of the target (16 px blocks; first at ${res.where.join(" ")} in ${replayShot})`,
-		]);
-	}
+		invalid.set(id, [r.why ?? "replay failed"]);
+	} else if (r.status === "limit") replayLimits.set(id, r.why ?? "");
 }
-await render.close();
-await cmp.close();
+await env.close();
 writeFileSync(
 	`${replayDir}/match.json`,
 	JSON.stringify(Object.fromEntries([...replayMatch].sort((x, y) => x[1] - y[1])), null, 1),
@@ -894,9 +591,10 @@ list(
 			`${r.id} ${r.selector}${r.fixtureOnly.length ? ` (fixture-only: ${r.fixtureOnly.slice(0, 2).join(", ")})` : ""}${r.liveOnly.length ? ` (live-only: ${r.liveOnly.slice(0, 2).join(", ")})` : ""}`,
 	),
 );
-list("App classes neither captured nor excluded", [
-	appMissing.map((c) => `${c.name}${c.census ? "*" : ""}`).join(" "),
-]);
+list(
+	"App classes neither captured nor excluded",
+	appMissing.length ? [appMissing.map((c) => `${c.name}${c.census ? "*" : ""}`).join(" ")] : [],
+);
 list(
 	"Unexplained identical screenshots",
 	dupes.map((d) => d.join(" = ")),

@@ -21,7 +21,8 @@
 		"test": "playwright install chromium && vitest run",
 		"lint:css": "bun scripts/lint-css.ts",
 		"capture:selftest": "bun capture/scripts/selftest.ts && bun capture/scripts/css.ts",
-		"capture:extract-runtime-css": "bun capture/scripts/runtime-css.ts"
+		"capture:extract-runtime-css": "bun capture/scripts/runtime-css.ts",
+		"capture:replay-selftest": "bun capture/scripts/replay-selftest.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.8",

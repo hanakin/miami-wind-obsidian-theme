@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-26T05:10:04.402Z",
+	"generated": "2026-11-27T17:19:06.441Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
 		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/config/obsidian"
@@ -14239,16 +14239,6 @@
 			"minUnobscured": 0.3
 		},
 		{
-			"id": "qc.canvas.snaps",
-			"scene": "qc.canvas",
-			"surface": "canvas",
-			"component": "canvas",
-			"state": "dragging-node",
-			"source": "catalog:canvas-qc",
-			"target": ".canvas-wrapper",
-			"expect": ":has(.canvas-snaps)"
-		},
-		{
 			"id": "qc.canvas.zoomed-out",
 			"scene": "qc.canvas",
 			"surface": "canvas",
@@ -14265,6 +14255,16 @@
 			"state": "default",
 			"source": "catalog:canvas-qc",
 			"target": ".canvas-node-placeholder"
+		},
+		{
+			"id": "qc.canvas.snaps",
+			"scene": "qc.canvas",
+			"surface": "canvas",
+			"component": "canvas",
+			"state": "dragging-node",
+			"source": "catalog:canvas-qc",
+			"target": ".canvas-wrapper",
+			"expect": ":has(.canvas-snaps)"
 		},
 		{
 			"id": "qc.pdf.find-settings",
@@ -14351,7 +14351,7 @@
 				"sel": ".annotationLayer",
 				"in": "leaf"
 			},
-			"note": "forms.pdf is a hand-written sample with AcroForm fields and annotations."
+			"excluded": "Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)"
 		},
 		{
 			"id": "qc.pdf.text-field.focus",
@@ -14366,7 +14366,21 @@
 			},
 			"pseudo": [
 				"focus"
-			]
+			],
+			"excluded": "Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)"
+		},
+		{
+			"id": "qc.pdf.annotations",
+			"scene": "qc.pdf",
+			"surface": "pdf",
+			"component": "pdf",
+			"state": "default",
+			"source": "catalog:pdf-qc",
+			"target": {
+				"sel": ".annotationLayer",
+				"in": "leaf"
+			},
+			"note": "annotations.pdf is a hand-written sample with non-form annotations only (no fillable fields)."
 		},
 		{
 			"id": "qc.pdf.annotation-popup",
@@ -14379,7 +14393,7 @@
 				"sel": ".annotationLayer .popupWrapper",
 				"in": "leaf"
 			},
-			"note": "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup.",
+			"note": "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup (a PDF without form fields).",
 			"expect": ".popupWrapper:not([hidden]):has(.popup:not([hidden]) .popupContent)"
 		},
 		{
@@ -15273,7 +15287,7 @@
 			"state": "default",
 			"source": "catalog:print-export",
 			"target": ".print",
-			"note": "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs.",
+			"note": "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs. The window has no doctype (quirks mode), so the fixture has none either.",
 			"expect": "body.theme-light > .print"
 		},
 		{
