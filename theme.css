@@ -16,18 +16,18 @@
  * 2. settings: tokens...................src/settings/tokens.css
  * 3. global application: inputs.........src/global/inputs.css
  * 4. global application: multi select...src/global/multi-select.css
- * 5. global application: icons..........src/global/icons.css
- * 6. global application: ribbon.........src/global/ribbon.css
- * 7. global application: sidebars.......src/global/sidebars.css
- * 8. global application: tabs...........src/global/tabs.css
- * 9. global application: suggestions....src/global/suggestions.css
- * 10. global application: status bar....src/global/status-bar.css
- * 11. global application: modals........src/global/modals.css
- * 12. global application: dropdowns.....src/global/dropdowns.css
- * 13. global application: prompts.......src/global/prompts.css
- * 14. global application: search........src/global/search.css
- * 15. global application: menus.........src/global/menus.css
- * 16. global application: overrides.....src/global/overrides.css
+ * 5. global application: ribbon.........src/global/ribbon.css
+ * 6. global application: sidebars.......src/global/sidebars.css
+ * 7. global application: tabs...........src/global/tabs.css
+ * 8. global application: suggestions....src/global/suggestions.css
+ * 9. global application: status bar.....src/global/status-bar.css
+ * 10. global application: modals........src/global/modals.css
+ * 11. global application: dropdowns.....src/global/dropdowns.css
+ * 12. global application: prompts.......src/global/prompts.css
+ * 13. global application: search........src/global/search.css
+ * 14. global application: menus.........src/global/menus.css
+ * 15. global application: overrides.....src/global/overrides.css
+ * 16. global application: icons.........src/global/icons.css
  * 17. markdown: headings................src/markdown/headings.css
  * 18. markdown: code....................src/markdown/code.css
  * 19. markdown: code actions............src/markdown/code-actions.css
@@ -47,9 +47,8 @@
  * 33. app section: file explorer........src/sections/file-explorer.css
  * 34. app section: bases................src/sections/bases.css
  * 35. graph: graph......................src/sections/graph.css
- * 36. PDF: pdf forms....................src/sections/pdf-forms.css
+ * 36. PDF: pdf..........................src/sections/pdf.css
  * 37. PDF: pdf xfa......................src/sections/pdf-xfa.css
- * 38. community browser: community browser..src/sections/community-browser.css
  */
 
 
@@ -522,6 +521,49 @@ input[type] {
 	border-color: var(--mw-input-border);
 }
 
+/*
+ * Shared icon controls in Bases.
+ *
+ * Sheet filter buttons have literal app fills; tie only those exact selectors.
+ */
+.menu.mod-sheet .filter-row .filter-property-select.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-property-select,
+.menu.mod-sheet .filter-row .filter-operator.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-operator {
+	background-color: var(--grey-11);
+}
+
+/*
+ * Editable table values otherwise reset their inputs with background shorthand.
+ */
+.bases-rendered-value input {
+	background-color: var(--grey-11);
+}
+
+/*
+ * Shared text fields in the Properties editor.
+ */
+.metadata-property-key-input {
+	--metadata-label-text-color: var(--magenta);
+}
+
+/*
+ * Tie Obsidian’s literal transparent property-input fills without affecting
+ * pills.
+ */
+.metadata-property .metadata-property-key-input,
+.metadata-property .metadata-property-key-input:hover,
+.metadata-property .metadata-property-key-input:active,
+.metadata-property .metadata-property-key-input:focus,
+.metadata-property-value .metadata-input-text,
+.metadata-property-value .metadata-input-text:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .metadata-input-number,
+.metadata-property-value .metadata-input-number:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .multi-select-container input {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @global application: Multi Select
@@ -539,30 +581,6 @@ input[type] {
 .multi-select-pill-remove-button:hover {
 	color: var(--red-bright);
 	cursor: pointer;
-}
-
-
-/* -----------------------------------------------------------------------------
- * @global application: Icons
- * -----------------------------------------------------------------------------
- * @source: src/global/icons.css
- * @description:
- *
- * Clickable icon hover fills and disabled pointer behavior.
- *
- * -------------------------------------------------------------------------- */
-
-/*
- * Clickable icon hover fills and disabled pointer behavior.
- */
-.clickable-icon:hover,
-.mod-left-split .workspace-tab-header,
-.mod-right-split .workspace-tab-header {
-	cursor: var(--icon-cursor);
-}
-
-.clickable-icon[aria-disabled='true'] {
-	cursor: default;
 }
 
 
@@ -964,6 +982,17 @@ select option:checked {
 	background-color: var(--magenta);
 }
 
+/*
+ * Shared icon controls in Bases.
+ *
+ * Obsidian's query conjunction uses a literal fill; its hover reads this leaf
+ * variable.
+ */
+.filter-group-header .conjunction.dropdown {
+	--background-modifier-hover: var(--magenta);
+	background-color: var(--magenta);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @global application: Prompts
@@ -1201,6 +1230,95 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 
 .clickable-icon[aria-disabled='true'],
 .clickable-icon[aria-disabled='true']:is(:hover, :active, .is-active, .has-active-menu):where(:not(.modal-close-button:hover)) {
+	color: var(--text-disabled);
+}
+
+
+/* -----------------------------------------------------------------------------
+ * @global application: Icons
+ * -----------------------------------------------------------------------------
+ * @source: src/global/icons.css
+ * @description:
+ *
+ * Clickable icon hover fills and disabled pointer behavior.
+ *
+ * -------------------------------------------------------------------------- */
+
+/*
+ * Clickable icon hover fills and disabled pointer behavior.
+ */
+.clickable-icon:hover,
+.mod-left-split .workspace-tab-header,
+.mod-right-split .workspace-tab-header {
+	cursor: var(--icon-cursor);
+}
+
+.clickable-icon[aria-disabled='true'] {
+	cursor: default;
+}
+
+/*
+ * Shared icon controls in Bases.
+ */
+.bases-toolbar-section-content .filter-group-actions .text-icon-button,
+.filter-row-actions .clickable-icon {
+	margin-right: 4px;
+}
+
+.filter-row-actions .clickable-icon {
+	--text-faint: transparent;
+	background-color: transparent;
+}
+
+.filter-row-actions .clickable-icon:hover {
+	--text-faint: var(--magenta-transparent);
+	background-color: var(--magenta-transparent);
+	color: var(--magenta);
+}
+
+/*
+ * Keep the original 0,3,0 hover tie by using the disabled attribute instead of
+ * the icon class.
+ */
+.filter-row-actions [aria-disabled='true']:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--text-disabled);
+}
+
+/*
+ * Sheet actions read accent text directly at 0,5,0 / 0,6,0.
+ */
+.filter-row-actions [aria-disabled='true'],
+.filter-group-header-actions [aria-disabled='true'] {
+	--text-on-accent: var(--text-disabled);
+}
+
+.filter-group-header-actions [aria-disabled='true'] {
+	--text-faint: transparent;
+}
+
+/*
+ * Shared SVG icons in Canvas.
+ */
+.canvas-control-item:hover .svg-icon {
+	color: var(--magenta);
+}
+
+/*
+ * Shared SVG icons in Properties.
+ */
+.metadata-container .metadata-show-source-button:hover .svg-icon,
+.metadata-container .metadata-add-button:hover .svg-icon {
+	color: var(--black);
+}
+
+/*
+ * Shared controls in community browser.
+ *
+ * Tie Obsidian 1.15.1's 0,3,1 sidebar button color without changing child
+ * variables.
+ */
+.mod-community-modal button.clickable-icon[aria-disabled='true'] {
 	color: var(--text-disabled);
 }
 
@@ -1903,10 +2021,6 @@ hr {
 	background-color: var(--magenta-transparent);
 }
 
-.canvas-control-item:hover .svg-icon {
-	color: var(--magenta);
-}
-
 .canvas-card-menu {
 	border: 1px solid var(--magenta);
 }
@@ -1960,32 +2074,6 @@ hr {
 	color: var(--black);
 }
 
-.metadata-container .metadata-show-source-button:hover .svg-icon,
-.metadata-container .metadata-add-button:hover .svg-icon {
-	color: var(--black);
-}
-
-.metadata-property-key-input {
-	--metadata-label-text-color: var(--magenta);
-}
-
-/*
- * Tie Obsidian’s literal transparent property-input fills without affecting
- * pills.
- */
-.metadata-property .metadata-property-key-input,
-.metadata-property .metadata-property-key-input:hover,
-.metadata-property .metadata-property-key-input:active,
-.metadata-property .metadata-property-key-input:focus,
-.metadata-property-value .metadata-input-text,
-.metadata-property-value .metadata-input-text:is(:hover, :active, :focus, :focus-within),
-.metadata-property-value .metadata-input-number,
-.metadata-property-value .metadata-input-number:is(:hover, :active, :focus, :focus-within),
-.metadata-property-value .multi-select-container input {
-	background-color: var(--grey-11);
-	border-color: var(--mw-input-border);
-}
-
 
 /* -----------------------------------------------------------------------------
  * @app section: File Explorer
@@ -2036,69 +2124,6 @@ hr {
 	color: var(--magenta);
 }
 
-.bases-toolbar-section-content .filter-group-actions .text-icon-button,
-.filter-row-actions .clickable-icon {
-	margin-right: 4px;
-}
-
-.filter-row-actions .clickable-icon {
-	--text-faint: transparent;
-	background-color: transparent;
-}
-
-.filter-row-actions .clickable-icon:hover {
-	--text-faint: var(--magenta-transparent);
-	background-color: var(--magenta-transparent);
-	color: var(--magenta);
-}
-
-/*
- * Keep the original 0,3,0 hover tie by using the disabled attribute instead of
- * the icon class.
- */
-.filter-row-actions [aria-disabled='true']:hover {
-	background-color: var(--magenta-transparent);
-	color: var(--text-disabled);
-}
-
-/*
- * Sheet actions read accent text directly at 0,5,0 / 0,6,0.
- */
-.filter-row-actions [aria-disabled='true'],
-.filter-group-header-actions [aria-disabled='true'] {
-	--text-on-accent: var(--text-disabled);
-}
-
-.filter-group-header-actions [aria-disabled='true'] {
-	--text-faint: transparent;
-}
-
-/*
- * Obsidian's query conjunction uses a literal fill; its hover reads this leaf
- * variable.
- */
-.filter-group-header .conjunction.dropdown {
-	--background-modifier-hover: var(--magenta);
-	background-color: var(--magenta);
-}
-
-/*
- * Sheet filter buttons have literal app fills; tie only those exact selectors.
- */
-.menu.mod-sheet .filter-row .filter-property-select.combobox-button,
-.drag-reorder-ghost.mod-sheet .filter-row .filter-property-select,
-.menu.mod-sheet .filter-row .filter-operator.combobox-button,
-.drag-reorder-ghost.mod-sheet .filter-row .filter-operator {
-	background-color: var(--grey-11);
-}
-
-/*
- * Editable table values otherwise reset their inputs with background shorthand.
- */
-.bases-rendered-value input {
-	background-color: var(--grey-11);
-}
-
 
 /* -----------------------------------------------------------------------------
  * @graph: Graph
@@ -2124,45 +2149,20 @@ hr {
 
 
 /* -----------------------------------------------------------------------------
- * @PDF: Pdf Forms
+ * @PDF: Pdf
  * -----------------------------------------------------------------------------
- * @source: src/sections/pdf-forms.css
+ * @source: src/sections/pdf.css
  * @description:
  *
- * PDF toolbar loading fill and annotation focus states; form boxes keep their inline colors.
+ * PDF viewer page-number loading fill in the toolbar.
  *
  * -------------------------------------------------------------------------- */
 
 /*
- * PDF toolbar and form focus states in the app’s PDF renderer.
- *
- * Fillable PDF boxes retain their own inline colors, including text, checks,
- * radios and dropdowns.
- *
- * Obsidian 1.15.1 PDF forms use background:none at 0,3,1; tie only its color.
- */
-.annotationLayer .choiceWidgetAnnotation select:focus,
-.annotationLayer .choiceWidgetAnnotation select[disabled] {
-	background-color: var(--magenta);
-}
-
-/*
- * The page-number loading state belongs to the toolbar, not the PDF form.
+ * PDF viewer page-number loading state in the toolbar.
  */
 .pdf-page-input.mod-page-loading {
 	background-color: var(--grey-11);
-}
-
-/*
- * pdf.js reads these only for borders and focus outlines, not widget inline
- * colors.
- */
-.annotationLayer input {
-	--input-unfocused-border-color: var(--mw-input-border);
-	--input-hover-border-color: var(--mw-input-border);
-	--input-focus-border-color: var(--mw-input-border);
-	--input-disabled-border-color: var(--mw-input-border);
-	--input-focus-outline: none;
 }
 
 
@@ -2211,25 +2211,4 @@ hr {
 .xfaLayer input {
 	background-color: var(--grey-11);
 	border-color: var(--mw-input-border);
-}
-
-
-/* -----------------------------------------------------------------------------
- * @community browser: Community Browser
- * -----------------------------------------------------------------------------
- * @source: src/sections/community-browser.css
- * @description:
- *
- * Disabled icon button colors in the community plugin browser.
- *
- * -------------------------------------------------------------------------- */
-
-/*
- * Disabled icon button colors in the community plugin browser.
- *
- * Tie Obsidian 1.15.1's 0,3,1 sidebar button color without changing child
- * variables.
- */
-.mod-community-modal button.clickable-icon[aria-disabled='true'] {
-	color: var(--text-disabled);
 }

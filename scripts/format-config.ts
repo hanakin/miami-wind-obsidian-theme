@@ -33,19 +33,13 @@ export const formatConfig = {
 			description:
 				"Graph node colors for files, tags, attachments and unresolved links.",
 		},
-		"pdf-forms.css": {
+		"pdf.css": {
 			layer: "PDF",
-			description:
-				"PDF toolbar loading fill and annotation focus states; form boxes keep their inline colors.",
+			description: "PDF viewer page-number loading fill in the toolbar.",
 		},
 		"pdf-xfa.css": {
 			layer: "PDF",
 			description: "XFA form select text, fills and focused states.",
-		},
-		"community-browser.css": {
-			layer: "community browser",
-			description:
-				"Disabled icon button colors in the community plugin browser.",
 		},
 		"palette.css": {
 			layer: "settings",

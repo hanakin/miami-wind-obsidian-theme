@@ -216,7 +216,7 @@
 		]
 	},
 	{
-		"file": "src/sections/community-browser.css",
+		"file": "src/global/icons.css",
 		"rule": "selector-no-qualifying-type",
 		"reason": "Exact Obsidian selector/specificity compatibility, retained from the reviewed ports; the PostCSS allowlist remains narrow.",
 		"selectors": [
@@ -275,7 +275,7 @@
 		]
 	},
 	{
-		"file": "src/sections/bases.css",
+		"file": "src/global/inputs.css",
 		"rule": "selector-max-specificity",
 		"reason": "Obsidian sheet filter controls paint literal backgrounds at 0,5,0; three-compound selectors tie those controls without importance.",
 		"selectors": [

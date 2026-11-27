@@ -99,9 +99,9 @@ it("preserves phone menu states including disabled focus and active", async () =
 	);
 });
 
-it("preserves PDF form and mobile onboarding select fills", async () => {
+it("preserves mobile onboarding select fills", async () => {
 	await compareStates(
-		`<div class="annotationLayer"><div class="choiceWidgetAnnotation"><select data-target><option>PDF</option></select><select disabled data-target><option>Disabled PDF</option></select></div></div><div class="mobile-onboarding"><div class="language-dropdown"><select data-target><option>Language</option></select></div></div>`,
+		`<div class="mobile-onboarding"><div class="language-dropdown"><select data-target><option>Language</option></select></div></div>`,
 		`
 		select, select:hover, select:focus, select:focus-visible, select:focus-within, select:active { background-color: var(--magenta) !important; }
 	`,
@@ -211,27 +211,4 @@ it("preserves XFA select color and fill through focus", async () => {
 		`<div class="xfaLayer" style="color: rgb(0, 0, 255)"><select class="xfaSelect" data-target><option>Choice</option></select><select class="xfaSelect" disabled data-target><option>Disabled</option></select></div>`,
 		`select { color: var(--black) !important; background-color: var(--magenta) !important; }`,
 	);
-});
-
-it("keeps the approved inline PDF select appearance at rest and focus", async () => {
-	const page = await browser.newPage();
-	try {
-		for (const mode of ["theme-dark", "theme-light"]) {
-			await page.setContent(
-				`<body class="${mode}"><div class="annotationLayer"><div class="choiceWidgetAnnotation"><select style="color: rgb(0, 0, 0); background-color: transparent"><option>PDF choice</option></select></div></div></body>`,
-			);
-			await page.addStyleTag({ content: rivals + theme });
-			for (const focused of [false, true]) {
-				if (focused) await page.locator("select").focus();
-				expect(
-					await page.locator("select").evaluate((select) => {
-						const style = getComputedStyle(select);
-						return { color: style.color, background: style.backgroundColor };
-					}),
-				).toEqual({ color: "rgb(0, 0, 0)", background: "rgba(0, 0, 0, 0)" });
-			}
-		}
-	} finally {
-		await page.close();
-	}
 });

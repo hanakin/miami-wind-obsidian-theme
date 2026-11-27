@@ -133,7 +133,7 @@ export function checkCss(): Plugin {
 						// --text-normal at 0,3,1; omitting its sidebar ancestor keeps that tie.
 						if (
 							rule.source?.input.file ===
-								path.resolve("src/sections/community-browser.css") &&
+								path.resolve("src/global/icons.css") &&
 							selector.toString().trim() ===
 								".mod-community-modal button.clickable-icon[aria-disabled='true']"
 						)
@@ -163,8 +163,7 @@ export function checkCss(): Plugin {
 					// Sheet filters have literal app backgrounds at 0,5,0. Keep that tie
 					// in three compounds, using the actual combobox class instead of an ancestor.
 					if (
-						rule.source?.input.file ===
-							path.resolve("src/sections/bases.css") &&
+						rule.source?.input.file === path.resolve("src/global/inputs.css") &&
 						[
 							".menu.mod-sheet .filter-row .filter-property-select.combobox-button",
 							".menu.mod-sheet .filter-row .filter-operator.combobox-button",

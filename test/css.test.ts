@@ -274,13 +274,13 @@ it("allows only the exact disabled community-sidebar rival in overrides.css", as
 		".mod-community-modal button.clickable-icon[aria-disabled='true'] { color: var(--text-disabled) }";
 	await expect(
 		postcss([checkCss()]).process(css, {
-			from: "src/sections/community-browser.css",
+			from: "src/global/icons.css",
 		}),
 	).resolves.toBeDefined();
 	await expect(check(css)).rejects.toThrow();
 	await expect(
 		postcss([checkCss()]).process(css.replace("button.", "div."), {
-			from: "src/sections/community-browser.css",
+			from: "src/global/icons.css",
 		}),
 	).rejects.toThrow();
 });
