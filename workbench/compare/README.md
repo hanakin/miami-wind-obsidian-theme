@@ -25,6 +25,8 @@ Empty `data-capture-placeholder` stand-ins retain their recorded layout boxes bu
 
 Four independent captures use the baseline, baseline with a comment, after theme, and after theme with a comment. Every capture clears the stylesheet, resolves layout, and swaps in the requested CSS. This exercises the same replay path for repeat checks and theme comparisons.
 
+Each observation primes one identical reconstruction before its style read and screenshot. Chromium otherwise reports unstable used auto-margins on the first PDF reconstruction. The priming replay contributes no comparison observations.
+
 Capture's shared stylesheet transformation restores recorded pseudo-states. Its shared replay restores text selection, field selection, canvas pixels, styled frame documents, and scrolling. An unavailable state receives a not-proven reason. Computed styles inside frames remain compared.
 
 Style reads compare standard computed properties on every element. Applicable pseudo-elements include generated content, markers, selection, placeholders, scrollbars, scrollbar thumbs, tracks, corners, and file-selector buttons. Offscreen probes resolve graph, canvas, and PDF colors that Obsidian reads through JavaScript.

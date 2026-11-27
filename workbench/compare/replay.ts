@@ -10,6 +10,17 @@ const origin = "https://obsidian-app.invalid/";
 const assetRoot = resolve("capture/.app/assets");
 const modes = new WeakMap<Page, boolean>();
 const sheets = new Map<string, string>();
+const desktopCss = new Map<string, string>();
+const touchCss = new Map<string, string>();
+function transformed(text: string, touch: boolean): string {
+	const cache = touch ? touchCss : desktopCss;
+	let value = cache.get(text);
+	if (value === undefined) {
+		value = replayCss(text, touch);
+		cache.set(text, value);
+	}
+	return value;
+}
 const limits: Record<string, string> = existsSync("capture/coverage.json")
 	? (JSON.parse(readFileSync("capture/coverage.json", "utf8")).replay?.limits ??
 		{})
@@ -19,9 +30,9 @@ function sheet(
 	css: { app: string; cm: string; theme: string },
 	touch: boolean,
 ): string {
-	if (token === "theme") return replayCss(css.theme, touch);
-	if (token === "app") return replayCss(css.app, touch);
-	if (token === "runtime") return replayCss(css.cm, touch);
+	if (token === "theme") return transformed(css.theme, touch);
+	if (token === "app") return transformed(css.app, touch);
+	if (token === "runtime") return transformed(css.cm, touch);
 	const key = `${token}:${touch}`;
 	let value = sheets.get(key);
 	if (value === undefined) {

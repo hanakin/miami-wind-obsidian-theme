@@ -1,9 +1,10 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { type Browser, chromium } from "playwright";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { FixtureEntry } from "../../capture/scripts/types";
 import { BROWSER_OPTIONS } from "./browser";
-import { styleDiff } from "./model";
+import { outcome, styleDiff } from "./model";
 import { render } from "./render";
 
 let browser: Browser;
@@ -94,6 +95,19 @@ test("retains coverage limits for visible webview and remote background interior
 		base,
 	);
 	expect(result.unsupported).toEqual(["webview", "background image"]);
+	expect(
+		outcome({
+			differences: 0,
+			pixels: 0,
+			noise: false,
+			invisible: false,
+			unsupported: result.unsupported,
+			replayIssues: [],
+		}).notProvenReasons,
+	).toEqual([
+		"webview content is not reconstructed",
+		"background image content is not reconstructed",
+	]);
 	await page.close();
 });
 test
@@ -135,6 +149,55 @@ test
 			expect(
 				await page.evaluate(() => getSelection()?.toString().length),
 			).toBeGreaterThan(0);
+		await page.close();
+	},
+	30000,
+);
+
+test
+	.skipIf(!existsSync("capture/.app/runtime"))
+	.each(["qc.pdf.annotations", "qc.pdf.annotation-popup"])(
+	"keeps %s used margins stable and still catches a margin change",
+	async (id) => {
+		const page = await browser.newPage({
+			viewport: { width: 1600, height: 1000 },
+		});
+		const cdp = await page.context().newCDPSession(page);
+		const registry = JSON.parse(
+			readFileSync("capture/fixtures.json", "utf8"),
+		) as { fixtures: FixtureEntry[] };
+		const f = registry.fixtures.find((f) => f.id === id)!;
+		const html = readFileSync(`capture/fixtures/${f.file}`, "utf8");
+		const theme = execFileSync("git", ["show", "b478dc8:theme.css"], {
+			encoding: "utf8",
+		});
+		const css = {
+			app: readFileSync("capture/.app/app.css", "utf8"),
+			cm: "",
+			theme,
+		};
+		const a = await render(page, cdp, html, css, f);
+		const repeat = await render(
+			page,
+			cdp,
+			html,
+			{ ...css, theme: theme + "\n/* same */" },
+			f,
+		);
+		expect(styleDiff(a.styles, repeat.styles)).toEqual([]);
+		expect(a.png.equals(repeat.png)).toBe(true);
+		const changed = await render(
+			page,
+			cdp,
+			html,
+			{ ...css, theme: theme + "\n.pdfViewer .page {margin-left:13px}" },
+			f,
+		);
+		expect(
+			styleDiff(a.styles, changed.styles).some(
+				(d) => d.property === "margin-left" && d.after === "13px",
+			),
+		).toBe(true);
 		await page.close();
 	},
 	30000,

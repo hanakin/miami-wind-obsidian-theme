@@ -48,6 +48,10 @@ export async function render(
 ): Promise<Rendered> {
 	await cdp.send("Animation.enable");
 	await cdp.send("Animation.setPlaybackRate", { playbackRate: 0 });
+	// Chromium can retain a stale used auto-margin on the first reconstruction even
+	// after layout and paint. Prime one identical replay before every observation.
+	if (fixture.runtimeStyles)
+		await prepareReplay(page, cdp, html, css, fixture as FixtureEntry);
 	const shared = fixture.runtimeStyles
 		? await prepareReplay(page, cdp, html, css, fixture as FixtureEntry)
 		: undefined;
