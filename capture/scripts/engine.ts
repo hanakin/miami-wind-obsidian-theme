@@ -203,6 +203,16 @@ async function emulateMedia(
 	return null;
 }
 
+/** A crop of a PNG file as PNG bytes (null when ImageMagick fails). */
+function cropPng(path: string, x: number, y: number, w: number, h: number): Buffer | null {
+	const tmp = join(WORK, "tmp");
+	mkdirSync(tmp, { recursive: true });
+	const r = Bun.spawnSync(["magick", path, "-crop", `${w}x${h}+${x}+${y}`, "+repage", "png:-"], {
+		env: { ...process.env, MAGICK_TEMPORARY_PATH: tmp, TMPDIR: tmp },
+	});
+	return r.exitCode === 0 && r.stdout.length ? Buffer.from(r.stdout) : null;
+}
+
 /** ImageMagick with its temporary files under the work folder (/tmp may be out of quota); throws on failure. */
 function magick(args: string[]): string {
 	const tmp = join(WORK, "tmp");
@@ -333,6 +343,7 @@ interface Snap {
 	styles: string[];
 	whole: "see-through" | null;
 	quirks: boolean;
+	frameSheets: Snap["sheets"][];
 	sheets: { kind: "app" | "theme" | "runtime"; text?: string }[];
 }
 
@@ -465,6 +476,11 @@ export async function captureItem(
 		}
 		if (!probe.expectOk)
 			return { id: item.id, error: `state not shown: target does not match ${item.expect}` };
+		// Let the page settle so the shot shows what the snapshot holds: no DOM change for 300 ms
+		// (a dialog still adding its buttons), at most 2 s.
+		await page.evaluate(
+			"(async () => { const d = window.__cap.target?.ownerDocument ?? document; let last = performance.now(); const mo = new MutationObserver(() => { last = performance.now(); }); mo.observe(d, { subtree: true, childList: true, attributes: true, characterData: true }); const t0 = performance.now(); while (performance.now() - last < 300 && performance.now() - t0 < 2000) await new Promise((ok) => setTimeout(ok, 50)); mo.disconnect(); })()",
+		);
 		// Let finite running animations (a menu row's fade, a sheet sliding in) end, so the shot
 		// shows the state the snapshot holds. Held or endless ones are left alone.
 		await page.evaluate(
@@ -563,17 +579,35 @@ export async function captureItem(
 			? null
 			: ((await page.evaluate("cap.stackAt(window.__cap.target)")) as string[]);
 		const file = `${item.id}.${snap.format}`;
-		writeFileSync(join(out.fixturesDir, file), snap.html);
+		// Each frame names its own stylesheets, saved like the window's (local only).
+		const html = snap.html.replace(
+			/data-capture-frame="(\d+)"/g,
+			(_, k: string) =>
+				`data-capture-frame-styles="${saveSheets(snap.frameSheets[Number(k)] ?? []).join(" ")}"`,
+		);
+		writeFileSync(join(out.fixturesDir, file), html);
 		// Canvas pixels as PNG files named by content (PDF pages repeat across fixtures). WebGL
 		// canvases read back empty, so those come from the screen.
 		const canvasPixels: NonNullable<FixtureEntry["canvasPixels"]> = [];
 		for (const c of snap.canvasPixels) {
 			const [cx = 0, cy = 0, cw = 0, ch = 0] = c.rect;
+			// From the shot itself when the canvas lies inside it: a moving canvas (the graph's
+			// force layout) must match the shot, not a moment later.
+			const x0 = Math.round(cx - clip.x);
+			const y0 = Math.round(cy - clip.y);
+			const inShot =
+				!scroll &&
+				x0 >= 0 &&
+				y0 >= 0 &&
+				x0 + Math.round(cw) <= clip.width + 1 &&
+				y0 + Math.round(ch) <= clip.height + 1;
 			const png = c.url
 				? Buffer.from(c.url.slice(c.url.indexOf(",") + 1), "base64")
-				: await page
-						.screenshot({ clip: { x: cx, y: cy, width: cw, height: ch } })
-						.catch(() => null);
+				: inShot
+					? cropPng(shot, x0, y0, Math.round(cw), Math.round(ch))
+					: await page
+							.screenshot({ clip: { x: cx, y: cy, width: cw, height: ch } })
+							.catch(() => null);
 			if (!png) continue;
 			const name = `pixels/${new Bun.CryptoHasher("sha256").update(png).digest("hex").slice(0, 32)}.png`;
 			mkdirSync(join(out.fixturesDir, "pixels"), { recursive: true });
@@ -597,6 +631,7 @@ export async function captureItem(
 			styles: snap.styles,
 			runtimeStyles: saveSheets(snap.sheets),
 			...(snap.quirks ? { quirks: true } : {}),
+			...(snap.trimmed ? { trimSelector: snap.trimmed.selector } : {}),
 			...(item.context
 				? { context: item.context }
 				: snap.whole

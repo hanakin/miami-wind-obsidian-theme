@@ -116,7 +116,8 @@ export interface ChecklistItem {
  *   layout around the target. Viewers give it that size, display and margins, and hide it and
  *   its content with visibility: hidden (not display: none). Small inline-level stand-ins keep
  *   their content (for their text baseline), without painted or state marks.
- * - data-capture-shown on a stand-in: it was visible live (a floating one painted over parts).
+ * - data-capture-shown on a stand-in: it was visible live; data-capture-paints="X,Y,W,H ..." on
+ *   a floating one: the boxes it painted over the window (its background, its buttons).
  * - data-capture-size on img (shown size of an image that does not load offline), video, audio,
  *   iframe, object, embed and webview: their live border-box size.
  * - data-capture-scroll="TOP LEFT": scroll offsets to restore after layout.
@@ -128,6 +129,11 @@ export interface ChecklistItem {
  * - data-capture-input-selection="START END DIRECTION" on the focused field: its selected text.
  * - data-capture-cm-selection: CodeMirror's own selection ranges (reference only; the editor
  *   draws them as .cm-selectionBackground boxes, which are in the markup).
+ * - data-capture-frame-styles="TOKENS" on an iframe: its document's stylesheets in order, like
+ *   runtimeStyles below (its srcdoc holds the markup without them); data-capture-frame-empty: the
+ *   frame showed nothing live (a resize helper), so it hides nothing.
+ * - data-capture-animated="X,Y,W,H ..." on <html>: animated parts and the text caret at the shot
+ *   (their state is not in the markup); data-capture-select-none: a select with nothing chosen.
  * - data-capture-viewport / data-capture-styles on <html>: as viewport and styles below.
  * - <style data-capture-runtime="mathjax"> in <head>: MathJax's rule for each character in the
  *   fixture (MathJax keeps them only while the character is on screen). Viewers apply it.
@@ -188,6 +194,8 @@ export interface FixtureEntry {
 	 * none either, so a viewer lays it out the same way.
 	 */
 	quirks?: true;
+	/** Set on trimmed fixtures: the repeated entries; each kept one is compared by its recorded box. */
+	trimSelector?: string;
 	/**
 	 * "document": the whole window was kept, not just the target's branch: overlays that show the
 	 * page under them (set on the item, or found: a positioned target without a solid background).

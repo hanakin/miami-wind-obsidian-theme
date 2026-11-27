@@ -22,11 +22,14 @@ for (const file of sources) {
 	mkdirSync(dirname(dest), { recursive: true });
 	writeFileSync(dest, extractFile(asar, file));
 }
-// Fonts and images app.css and the runtime styles load (Inter, Source Code Pro, MathJax), so a
+// Fonts and images app.css, the runtime styles and pdf.js load (Inter, Source Code Pro, MathJax,
+// annotation icons), so a
 // replay of a fixture draws text like the app. Same rule: local only, never committed.
 const assets = listPackage(asar, { isPack: false })
 	.map((p) => p.replace(/^\//, ""))
-	.filter((p) => /^(public\/|lib\/mathjax\/).*\.(woff2?|ttf|otf|svg)$/.test(p));
+	.filter((p) =>
+		/^(public\/|lib\/mathjax\/|lib\/pdfjs\/).*\.(woff2?|ttf|otf|svg|png|gif)$/.test(p),
+	);
 for (const file of assets) {
 	const dest = `${outDir}assets/${file}`;
 	mkdirSync(dirname(dest), { recursive: true });

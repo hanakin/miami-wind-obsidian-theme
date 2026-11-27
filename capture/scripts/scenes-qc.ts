@@ -824,21 +824,17 @@ const pdfQc: Scene = {
 			note: "locked.pdf is sample.pdf encrypted with qpdf (password capture-user).",
 		},
 		{
-			id: "qc.pdf.forms",
+			// Fillable-PDF form boxes are out of scope (Mike, 2026-11-26): annotations.pdf has the
+			// non-form annotations only (sticky note, free text, highlight, link, attached file).
+			id: "qc.pdf.annotations",
 			component: "pdf",
 			target: leaf(".annotationLayer"),
 			before: async (ctx) => {
-				await ctx.open("Attachments/forms.pdf", "live");
+				await ctx.open("Attachments/annotations.pdf", "live");
 				await ctx.sleep(2000);
 			},
-			note: "forms.pdf is a hand-written sample with AcroForm fields and annotations.",
+			note: "annotations.pdf is a hand-written sample with non-form annotations only (no fillable fields).",
 		},
-		p(
-			"qc.pdf.text-field.focus",
-			"text-input",
-			leaf(".annotationLayer .textWidgetAnnotation input"),
-			["focus"],
-		),
 		{
 			id: "qc.pdf.annotation-popup",
 			component: "pdf",
@@ -846,27 +842,14 @@ const pdfQc: Scene = {
 			state: "popup-open",
 			expect: ".popupWrapper:not([hidden]):has(.popup:not([hidden]) .popupContent)",
 			before: async (ctx) => {
-				await ctx.open("Attachments/forms.pdf", "live");
+				await ctx.open("Attachments/annotations.pdf", "live");
 				await ctx.sleep(2000);
 				const b = await center(ctx, leaf(".annotationLayer .textAnnotation"));
 				await ctx.page.mouse.click(b[0], b[1]);
 				await ctx.sleep(600);
 			},
-			note: "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup.",
+			note: "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup (a PDF without form fields).",
 		},
-		{
-			id: "qc.pdf.xfa",
-			component: "pdf",
-			target: leaf(".xfaLayer"),
-			expect:
-				".xfaLayer:has(.xfaPage .xfaTextfield):has(.xfaCheckbox):has(.xfaSelect):has(.xfaButton)",
-			before: async (ctx) => {
-				await ctx.open("Attachments/xfa-form.pdf", "live");
-				await ctx.sleep(2500);
-			},
-			note: "xfa-form.pdf is a hand-written pure XFA form (template packet only); Obsidian's pdf.js has enableXfa on and draws it with its XFA layer.",
-		},
-		p("qc.pdf.xfa-text.focus", "text-input", leaf(".xfaLayer .xfaTextfield"), ["focus"]),
 	],
 };
 

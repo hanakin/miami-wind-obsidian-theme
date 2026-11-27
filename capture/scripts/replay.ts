@@ -6,7 +6,10 @@ import type { Page } from "playwright";
 export interface Replayed {
 	why: string;
 	inView?: number[] | null;
-	masks?: number[][];
+	/** Elements whose content cannot be replayed are marked data-replay-mask (see replay-check.ts). */
+	masked?: number;
+	/** Trimmed fixtures: each kept entry's live box and replayed box. */
+	entries?: { live: number[]; now: number[] }[];
 	/** The first part around the target (outermost first) that is not where it was live. */
 	moved?: string | null;
 }
@@ -16,9 +19,11 @@ export async function replayFixture(
 	html: string,
 	sizes: { index: number; width: number; height: number }[],
 	canvases: { index: number; b64: string }[],
+	frames: Record<string, string> = {},
+	trimSelector: string | null = null,
 ): Promise<Replayed> {
 	return (await page.evaluate(
-		async ([html, sizes, canvases]) => {
+		async ([html, sizes, canvases, frames, trimSelector]) => {
 			const d = new DOMParser().parseFromString(
 				html,
 				html.startsWith("<?xml") ? "application/xhtml+xml" : "text/html",
@@ -37,6 +42,19 @@ export async function replayFixture(
 			document.body.replaceChildren(
 				...[...d.body.childNodes].map((n) => document.importNode(n, true)),
 			);
+			// Frames get their own stylesheets back (data-capture-frame-styles), then load.
+			const loads: Promise<unknown>[] = [];
+			for (const fr of document.querySelectorAll<HTMLIFrameElement>(
+				"iframe[data-capture-frame-styles]",
+			)) {
+				const css = frames[fr.getAttribute("data-capture-frame-styles") ?? ""];
+				if (css === undefined) continue;
+				const sd = fr.getAttribute("srcdoc") ?? "";
+				loads.push(new Promise((ok) => fr.addEventListener("load", ok, { once: true })));
+				fr.setAttribute("data-replay-frame", "");
+				fr.srcdoc = sd.replace(/<head([^>]*)>/i, (m) => `${m}<style>${css}</style>`);
+			}
+			await Promise.race([Promise.all(loads), new Promise((ok) => setTimeout(ok, 3000))]);
 			// Offline images get same-size stand-ins from the recorded imageSizes.
 			for (const { index, width, height } of sizes) {
 				const im = document.images[index];
@@ -86,6 +104,15 @@ export async function replayFixture(
 				])
 					e.style.setProperty(k as string, v as string, "important");
 			}
+			// Controls whose state is not in the markup.
+			for (const e of document.querySelectorAll<HTMLSelectElement>(
+				"select[data-capture-select-none]",
+			))
+				e.selectedIndex = -1;
+			for (const e of document.querySelectorAll<HTMLInputElement>(
+				"input[data-capture-indeterminate]",
+			))
+				e.indeterminate = true;
 			// The recorded native text selection.
 			const end = (name: string): [Node, number] | null => {
 				const e = document.querySelector(`[data-capture-sel-${name}]`);
@@ -142,42 +169,63 @@ export async function replayFixture(
 						break;
 					}
 			if (!boxed) return { why: "renders with no box" };
-			// What replay cannot reproduce offline: images, media, iframes (their stylesheets are not
-			// kept), canvases without recorded pixels.
-			const masks: number[][] = [];
+			// What replay cannot reproduce offline is marked data-replay-mask; the check paints those
+			// elements in two flat colors and leaves out only the pixels that change, so anything
+			// drawn above them (controls over the graph) is still compared. Frames that showed
+			// nothing, or got their stylesheets back, hide nothing.
+			let masked = 0;
+			const mark = (e: Element, how = "") => {
+				e.setAttribute("data-replay-mask", how);
+				masked++;
+			};
 			for (const e of document.querySelectorAll(
 				"img, video, audio, iframe, object, embed, webview, canvas:not([data-replay-pixels])",
 			)) {
+				// A loaded image (data:, or an app icon from the local extract) is replayed as it was.
+				const im = e as HTMLImageElement;
 				if (
 					e.localName === "img" &&
-					(e.getAttribute("src") ?? "").startsWith("data:") &&
+					im.complete &&
+					im.naturalWidth > 0 &&
 					!e.hasAttribute("data-replay-standin")
 				)
 					continue;
-				for (const r of e.getClientRects()) masks.push([r.x, r.y, r.width, r.height]);
+				if (
+					e.localName === "iframe" &&
+					(e.hasAttribute("data-capture-frame-empty") || e.hasAttribute("data-replay-frame"))
+				)
+					continue;
+				mark(e);
 			}
-			// Positioned stand-ins that were painted live (the status bar, other floating parts) lay
-			// over the target; replayed, they are hidden.
-			// Only those with a solid background of their own: a transparent bar (the titlebar's
-			// drag area) painted nothing over the target.
-			const solid = (c: string) => {
-				const ctx = document.createElement("canvas").getContext("2d");
-				if (!ctx) return true;
-				ctx.fillStyle = c;
-				ctx.fillRect(0, 0, 1, 1);
-				return (ctx.getImageData(0, 0, 1, 1).data[3] ?? 0) >= 128;
-			};
-			for (const e of document.querySelectorAll("[data-capture-placeholder][data-capture-shown]")) {
-				const cs = getComputedStyle(e);
-				if (!/^(absolute|fixed|sticky)$/.test(cs.position)) continue;
-				if (!solid(cs.backgroundColor) && cs.backgroundImage === "none") continue;
-				for (const r of e.getClientRects()) masks.push([r.x, r.y, r.width, r.height]);
+			// Floating stand-ins (the titlebar's buttons, the status bar) painted these boxes over the
+			// window live; replayed they are hidden. Animated parts and the text caret changed with
+			// time. Those boxes are left out (topmost overlays, invisible except while the check
+			// paints its masks).
+			for (const e of document.querySelectorAll("[data-capture-paints], [data-capture-animated]")) {
+				const list =
+					e.getAttribute("data-capture-paints") ?? e.getAttribute("data-capture-animated");
+				for (const box of (list ?? "").split(" ").filter(Boolean)) {
+					const [x = 0, y = 0, w = 0, h = 0] = box.split(",").map(Number);
+					const o = document.createElement("div");
+					o.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:${w}px;height:${h}px;z-index:2147483647;visibility:hidden;pointer-events:none`;
+					document.body.appendChild(o);
+					mark(o, "overlay");
+				}
 			}
 			// Background images from app: / https: files do not load offline either.
 			for (const e of document.querySelectorAll("[style*='url(']")) {
 				if (!/url\(\s*["']?(?!data:)/.test(getComputedStyle(e).backgroundImage)) continue;
-				for (const r of e.getClientRects()) masks.push([r.x, r.y, r.width, r.height]);
+				mark(e);
 			}
+			// Trimmed lists: each kept entry, live box and replayed box.
+			const entries: { live: number[]; now: number[] }[] = [];
+			if (trimSelector)
+				for (const e of t.querySelectorAll(trimSelector)) {
+					const want = e.getAttribute("data-capture-box")?.split(" ").map(Number);
+					const r = e.getBoundingClientRect();
+					if (want && r.width >= 1 && r.height >= 1)
+						entries.push({ live: want, now: [r.x, r.y, r.width, r.height] });
+				}
 			const cap = (window as unknown as { cap: { visibleRect(e: Element): number[] | null } }).cap;
 			// The first recorded part (outermost first) that is not where it was live.
 			let moved: string | null = null;
@@ -213,14 +261,8 @@ export async function replayFixture(
 					}
 				}
 			}
-			return {
-				why: "",
-				inView: cap.visibleRect(t),
-				// Empty boxes (CodeMirror's zero-width widget buffers) cover nothing.
-				masks: masks.filter(([, , w = 0, h = 0]) => w >= 1 && h >= 1),
-				moved,
-			};
+			return { why: "", inView: cap.visibleRect(t), masked, entries, moved };
 		},
-		[html, sizes, canvases] as const,
+		[html, sizes, canvases, frames, trimSelector] as const,
 	)) as Replayed;
 }

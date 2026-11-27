@@ -383,6 +383,10 @@ export const INPAGE = String.raw`
 			case "option":
 				if (s.selected) d.setAttribute("selected", ""); else d.removeAttribute("selected");
 				break;
+			case "select":
+				// Nothing chosen shows a blank box; parsed markup would show the first option.
+				if (s.selectedIndex === -1) d.setAttribute("data-capture-select-none", "");
+				break;
 		}
 	}
 	/** Keeps the first cards plus one card per special state (classes + badge text); drops the rest. */
@@ -423,6 +427,23 @@ export const INPAGE = String.raw`
 		if (!Number.isFinite(w)) w = o.offsetWidth ?? o.getBoundingClientRect().width;
 		if (!Number.isFinite(h)) h = o.offsetHeight ?? o.getBoundingClientRect().height;
 		return Math.round(w * 1000) / 1000 + " " + Math.round(h * 1000) / 1000;
+	}
+	/**
+	 * Every stylesheet of a document, in order: app.css, the theme, and the texts of the runtime
+	 * ones (CodeMirror, MathJax, the slides' linked reveal.js sheet...), which can exist only while
+	 * their view shows.
+	 */
+	function collectSheets(d) {
+		const sheets = [];
+		for (const sh of d.querySelectorAll("link[rel=stylesheet], style")) {
+			if (sh.localName === "link" && /(^|\/)app\.css$/.test(sh.getAttribute("href") ?? "")) { sheets.push({ kind: "app" }); continue; }
+			if (sh.localName === "style" && sh.textContent.startsWith("/* Miami Wind Theme")) { sheets.push({ kind: "theme" }); continue; }
+			let text = sh.textContent;
+			try { text = [...sh.sheet.cssRules].map((r) => r.cssText).join("\n"); } catch {}
+			if (text.trim()) sheets.push({ kind: "runtime", text });
+		}
+		for (const sh of d.adoptedStyleSheets ?? []) { const text = [...sh.cssRules].map((r) => r.cssText).join("\n"); if (text.trim()) sheets.push({ kind: "runtime", text }); }
+		return sheets;
 	}
 	/** The margin on one side of e after margins of its first / last children collapse through it. */
 	function escMargin(win, e, side) {
@@ -536,34 +557,31 @@ export const INPAGE = String.raw`
 		// Same-origin iframes Obsidian fills by script (no src/srcdoc, e.g. a canvas card being
 		// edited): their live document goes into srcdoc. Stylesheets are not copied (Obsidian's CSS
 		// is proprietary); their origins are listed in data-capture-iframe-styles instead.
-		for (const fc of [t, ...t.querySelectorAll("iframe")].filter((x) => x.localName === "iframe")) {
+		// Frames: their markup goes into srcdoc without stylesheets (Obsidian's are not committed);
+		// the stylesheets are returned like the window's own (frameSheets, by data-capture-frame)
+		// so a replay can restore them. A frame that showed nothing is marked as such.
+		const frameSheets = [];
+		for (const fc of copy.querySelectorAll("iframe")) {
 			const fo = back.get(fc);
 			let idoc = null;
 			try { idoc = fo?.contentDocument; } catch {}
-			// A srcdoc of Obsidian's own making (the startup snapshot) carries copies of the window's
-			// stylesheets: keep its markup, drop the copied styles, note what was there.
-			if (fc.hasAttribute("srcdoc") && /<style|<link/i.test(fc.getAttribute("srcdoc"))) {
-				const sd = new DOMParser().parseFromString(fc.getAttribute("srcdoc"), "text/html");
-				const dropped = [];
-				for (const st of sd.querySelectorAll("style, link[rel=stylesheet]")) {
-					dropped.push(st.localName === "link" ? "link " + st.getAttribute("href") : "style (" + st.textContent.length + " chars)");
-					st.remove();
-				}
-				fc.setAttribute("srcdoc", "<!DOCTYPE html>" + sd.documentElement.outerHTML);
-				fc.setAttribute("data-capture-iframe-styles", dropped.join("; "));
+			if (idoc?.body && ![...idoc.body.querySelectorAll("*")].some((e) => e.getClientRects().length) && !idoc.body.innerText?.trim()) {
+				fc.setAttribute("data-capture-frame-empty", "");
 				continue;
 			}
-			if (!idoc?.documentElement || fc.hasAttribute("srcdoc") || (fc.getAttribute("src") && fc.getAttribute("src") !== "about:blank")) continue;
-			const ir = idoc.documentElement.cloneNode(true);
-			const styles = [];
+			const own = fc.hasAttribute("srcdoc");
+			const scripted = !own && idoc?.documentElement && !(fc.getAttribute("src") && fc.getAttribute("src") !== "about:blank");
+			if (!idoc?.documentElement || !(own || scripted)) continue;
+			const ir = (own ? new DOMParser().parseFromString(fc.getAttribute("srcdoc"), "text/html").documentElement : idoc.documentElement.cloneNode(true));
+			const dropped = [];
 			for (const st of ir.querySelectorAll("style, link[rel=stylesheet]")) {
-				styles.push(st.localName === "link" ? "link " + st.getAttribute("href") : "style" + (st.id ? "#" + st.id : "") + " (" + st.textContent.length + " chars)");
+				dropped.push(st.localName === "link" ? "link " + st.getAttribute("href") : "style" + (st.id ? "#" + st.id : "") + " (" + st.textContent.length + " chars)");
 				st.remove();
 			}
-			const adopted = idoc.adoptedStyleSheets?.length ?? 0;
-			if (adopted) styles.push("adopted stylesheets: " + adopted);
 			fc.setAttribute("srcdoc", "<!doctype html>" + ir.outerHTML);
-			fc.setAttribute("data-capture-iframe-styles", styles.join("; "));
+			fc.setAttribute("data-capture-iframe-styles", dropped.join("; "));
+			fc.setAttribute("data-capture-frame", String(frameSheets.length));
+			frameSheets.push(collectSheets(idoc));
 		}
 		// Canvas pixels are not part of the markup either: keep each painted canvas as a PNG (by index
 		// in the fixture's canvas order). WebGL canvases read back empty; the capture script takes
@@ -615,18 +633,47 @@ export const INPAGE = String.raw`
 		// Every stylesheet of the window, in document order: app.css, the theme, and the texts of the
 		// runtime ones (CodeMirror, MathJax, the slides' linked reveal.js sheet...), which can exist
 		// only while their view shows.
-		const sheets = [];
-		for (const sh of doc.querySelectorAll("link[rel=stylesheet], style")) {
-			if (sh.localName === "link" && /(^|\/)app\.css$/.test(sh.getAttribute("href") ?? "")) { sheets.push({ kind: "app" }); continue; }
-			if (sh.localName === "style" && sh.textContent.startsWith("/* Miami Wind Theme")) { sheets.push({ kind: "theme" }); continue; }
-			let text = sh.textContent;
-			try { text = [...sh.sheet.cssRules].map((r) => r.cssText).join("\n"); } catch {}
-			if (text.trim()) sheets.push({ kind: "runtime", text });
-		}
-		for (const sh of doc.adoptedStyleSheets ?? []) { const text = [...sh.cssRules].map((r) => r.cssText).join("\n"); if (text.trim()) sheets.push({ kind: "runtime", text }); }
+		const sheets = collectSheets(doc);
 		const win = doc.defaultView;
 		const viewport = [win.innerWidth, win.innerHeight];
 		out.documentElement.setAttribute("data-capture-viewport", viewport.join(" "));
+		// What a replay cannot show as it was: animated parts (spinners, progress, blinking
+		// cursors: their state at the shot is not in the markup) and the native text caret.
+		const box = (r, pad = 0) => [r.x - pad, r.y, r.width + 2 * pad, r.height].map((v) => Math.round(v * 10) / 10).join(",");
+		const moving = new Set();
+		for (const an of doc.getAnimations()) {
+			if (!/running|paused/.test(an.playState)) continue;
+			let e = an.effect?.target;
+			if (!e?.getBoundingClientRect) continue;
+			// A part sliding inside a clipped track (an indeterminate progress bar): the whole track.
+			for (let a = e.parentElement, k = 0; a && k < 3; a = a.parentElement, k++) {
+				const cs = win.getComputedStyle(a);
+				const ar = a.getBoundingClientRect();
+				if ((cs.overflowX !== "visible" || cs.overflowY !== "visible") && ar.width * ar.height < 0.25 * win.innerWidth * win.innerHeight) { e = a; break; }
+			}
+			const r = e.getBoundingClientRect();
+			if (r.width * r.height >= 1) { if (moving.size < 60) moving.add(box(r, 1)); continue; }
+			// A zero-size layer (CodeMirror's cursor layer blinking its cursors): its children.
+			for (const c of [...e.children].slice(0, 20)) {
+				const cr = c.getBoundingClientRect();
+				if (cr.width * cr.height >= 1 && moving.size < 60) moving.add(box(cr, 1));
+			}
+		}
+		const ae = doc.activeElement;
+		const dsel = doc.getSelection();
+		if (ae?.isContentEditable && dsel?.rangeCount && dsel.isCollapsed) {
+			const r = dsel.getRangeAt(0).getBoundingClientRect();
+			if (r.height > 0) moving.add(box(r, 2));
+		} else if (ae && /^(input|textarea)$/.test(ae.localName) && typeof ae.selectionStart === "number" && ae.selectionStart === ae.selectionEnd) {
+			// The caret's x from the text before it, measured in the field's font.
+			const cs = win.getComputedStyle(ae);
+			const m = doc.createElement("canvas").getContext("2d");
+			m.font = cs.font;
+			const r = ae.getBoundingClientRect();
+			const x = r.x + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft) + m.measureText(ae.value.slice(0, ae.selectionStart)).width - ae.scrollLeft;
+			moving.add([x - 2, r.y, 4, r.height].map((v) => Math.round(v * 10) / 10).join(","));
+		}
+		if (moving.size) out.documentElement.setAttribute("data-capture-animated", [...moving].join(" "));
 		out.documentElement.setAttribute("data-capture-styles", styles.join(" "));
 		// A see-through overlay shows the page under it: keep the whole window. That is a target in
 		// a positioned layer (a modal backdrop, a PDF highlight, a canvas handle, a code block's
@@ -673,7 +720,26 @@ export const INPAGE = String.raw`
 							if (keep) for (const d of ph.querySelectorAll("*")) { d.removeAttribute("data-capture-seen"); d.removeAttribute("data-capture-state"); }
 							ph.setAttribute("data-capture-placeholder", "");
 							// Shown live (visible, not transparent, with a box): a floating one painted over things.
-							if (o) { const cs = win.getComputedStyle(o); const r = o.getBoundingClientRect(); if (cs.visibility === "visible" && parseFloat(cs.opacity) > 0 && r.width * r.height > 0) ph.setAttribute("data-capture-shown", ""); }
+							if (o) {
+								const cs = win.getComputedStyle(o);
+								const r = o.getBoundingClientRect();
+								if (cs.visibility === "visible" && parseFloat(cs.opacity) > 0 && r.width * r.height > 0) {
+									ph.setAttribute("data-capture-shown", "");
+									// A floating one (the titlebar, the status bar) painted over parts of the
+									// window: keep the boxes it really painted (its background, its buttons), so a
+									// replay leaves exactly those out.
+									if (/^(absolute|fixed|sticky)$/.test(cs.position)) {
+										const paints = [];
+										for (const e of [o, ...o.querySelectorAll("*")].slice(0, 400)) {
+											if (paints.length >= 40) break;
+											const er = e.getBoundingClientRect();
+											if (er.width < 1 || er.height < 1 || clear(win, e)) continue;
+											paints.push([er.x, er.y, er.width, er.height].map((v) => Math.round(v * 10) / 10).join(","));
+										}
+										if (paints.length) ph.setAttribute("data-capture-paints", paints.join(" "));
+									}
+								}
+							}
 							// The stand-in is empty, so keep its live border-box size for the layout around it.
 							if (o && disp !== "inline" && disp !== "contents" && disp !== "none") {
 								ph.setAttribute("data-capture-size", layoutSize(win, o));
@@ -740,7 +806,7 @@ export const INPAGE = String.raw`
 		const fixture = same
 			? (doc.compatMode === "BackCompat" ? "" : "<!doctype html>\n") + "<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8">' + headExtra + "</head>\n<body" + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
 			: '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(out) + "\n";
-		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, sheets, quirks: doc.compatMode === "BackCompat", whole: whole && opts.context !== "document" ? "see-through" : null };
+		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, sheets, frameSheets, quirks: doc.compatMode === "BackCompat", whole: whole && opts.context !== "document" ? "see-through" : null };
 	}
 	/** Painted style of the target and pseudo subtrees (colors, borders, shadows, decorations, ::before/::after), for a before/after state diff. */
 	const PAINT = ["color", "background-color", "background-image", "border-top-color", "border-right-color", "border-bottom-color", "border-left-color", "outline-color", "outline-style", "outline-width", "box-shadow", "text-decoration-line", "text-decoration-color", "opacity", "filter", "transform", "visibility", "fill", "stroke"];

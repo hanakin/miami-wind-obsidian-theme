@@ -188,6 +188,12 @@ for (const name of readdirSync(FIXTURES))
 	if (name !== "pixels" && !keep.has(name)) rmSync(`${FIXTURES}${name}`);
 // Runtime stylesheets no fixture names any more.
 const sheetsUsed = new Set(fixtures.flatMap((f) => f.runtimeStyles ?? []));
+for (const f of fixtures) {
+	const path = `${FIXTURES}${f.file}`;
+	if (!existsSync(path)) continue;
+	for (const m of readFileSync(path, "utf8").matchAll(/data-capture-frame-styles="([^"]*)"/g))
+		for (const t of (m[1] ?? "").split(" ")) sheetsUsed.add(t);
+}
 if (existsSync(RUNTIME_DIR))
 	for (const name of readdirSync(RUNTIME_DIR))
 		if (!sheetsUsed.has(name.replace(/\.css$/, ""))) rmSync(`${RUNTIME_DIR}${name}`);
