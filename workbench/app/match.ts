@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { matchable } from "../../capture/scripts/css.ts";
 import { COMPONENTS } from "../../capture/scripts/engine.ts";
-import { type Probe, probes } from "./organization.ts";
+import { type Compound, lastCompounds, type Probe, probes } from "./organization.ts";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const CACHE = `${ROOT}workbench/out/organization.json`;
@@ -22,6 +22,8 @@ function hits(args: {
 	captures: { html: string; xml: boolean; component: string; contains: string[] }[];
 	probes: Probe[];
 	selectors: Record<string, string>;
+	/** Each item's own selector, as the names of each of its alternatives. */
+	names: Record<string, Compound[]>;
 }): string[] {
 	const found = new Set<string>();
 	for (const capture of args.captures) {
@@ -54,25 +56,39 @@ function hits(args: {
 			} catch {
 				continue;
 			}
+			// The rule counts for an item only when it selects the item's own element and calls it
+			// by the item's own name. An item with no selector of its own is its captured element.
+			const calls = (item: string) => {
+				const own = args.names[item];
+				return (
+					!own ||
+					own.some(
+						(name) =>
+							(name.tag !== undefined || name.classes.length + name.attributes.length > 0) &&
+							(!name.tag || name.tag === probe.last.tag) &&
+							name.classes.every((c) => probe.last.classes.includes(c)) &&
+							name.attributes.every((a) => probe.last.attributes.includes(a)),
+					)
+				);
+			};
 			for (const el of matched) {
-				// The rule styles the item itself…
-				for (const item of owners.get(el) ?? []) found.add(`${item}\n${probe.file}`);
+				for (const item of owners.get(el) ?? []) {
+					found.add(`${item}\n${probe.file}\n${calls(item) ? "named" : "selected"}`);
+				}
 				if (owners.has(el) || probe.prefixes.length === 0) continue;
-				// …or something inside it, in a rule that names the item on the way there.
+				// Something inside an item, in a rule that goes through the item to get there: the
+				// rule reaches the item (for listing it), without naming it.
 				for (let up = el.parentElement; up; up = up.parentElement) {
 					const items = owners.get(up);
 					if (!items) continue;
-					if (
-						probe.prefixes.some((p) => {
-							try {
-								return up.matches(p);
-							} catch {
-								return false;
-							}
-						})
-					) {
-						for (const item of items) found.add(`${item}\n${probe.file}`);
-					}
+					const through = probe.prefixes.some((p) => {
+						try {
+							return up.matches(p);
+						} catch {
+							return false;
+						}
+					});
+					if (through) for (const item of items) found.add(`${item}\n${probe.file}\nselected`);
 					break;
 				}
 			}
@@ -81,13 +97,19 @@ function hits(args: {
 	return [...found];
 }
 
+/** For each item, the source files whose rules reach it. */
+export interface Styled {
+	/** Files with a rule that selects the item's own element: where the item is listed. */
+	selected: Record<string, string[]>;
+	/** Files with a rule that also names the item itself: what the overlap check judges. */
+	named: Record<string, string[]>;
+}
+
 /**
  * For each item, the source files with a rule that styles it. `files` are the source files as
  * "folder/file.css" with their text.
  */
-export async function styledBy(
-	files: { path: string; css: string }[],
-): Promise<Record<string, string[]>> {
+export async function styledBy(files: { path: string; css: string }[]): Promise<Styled> {
 	const index = readFileSync(`${ROOT}capture/fixtures.json`, "utf8");
 	const list = probes(files, matchable);
 	// Everything the answer depends on: the selectors tested, the captures, and how they are matched.
@@ -97,10 +119,13 @@ export async function styledBy(
 	if (existsSync(CACHE)) {
 		const cached = JSON.parse(readFileSync(CACHE, "utf8")) as {
 			key: string;
-			styled: Record<string, string[]>;
+			styled: Styled;
 		};
 		if (cached.key === key) return cached.styled;
 	}
+	const names = Object.fromEntries(
+		Object.entries(COMPONENTS).map(([item, selector]) => [item, lastCompounds(selector)]),
+	);
 	const captures = (JSON.parse(index) as { fixtures: Capture[] }).fixtures;
 	const browser = await chromium.launch();
 	const pairs = new Set<string>();
@@ -115,6 +140,7 @@ export async function styledBy(
 				captures: batch,
 				probes: list,
 				selectors: COMPONENTS,
+				names,
 			})) {
 				pairs.add(pair);
 			}
@@ -136,10 +162,14 @@ export async function styledBy(
 	} finally {
 		await browser.close();
 	}
-	const styled: Record<string, string[]> = {};
+	const styled: Styled = { selected: {}, named: {} };
 	for (const pair of pairs) {
-		const [item = "", file = "0"] = pair.split("\n");
-		styled[item] = [...(styled[item] ?? []), files[Number(file)]?.path ?? ""].sort();
+		const [item = "", file = "0", how = ""] = pair.split("\n");
+		const path = files[Number(file)]?.path ?? "";
+		// A rule that names the item also selects it.
+		for (const set of how === "named" ? [styled.named, styled.selected] : [styled.selected]) {
+			if (!set[item]?.includes(path)) set[item] = [...(set[item] ?? []), path].sort();
+		}
 	}
 	mkdirSync(`${ROOT}workbench/out`, { recursive: true });
 	writeFileSync(CACHE, JSON.stringify({ key, styled }));

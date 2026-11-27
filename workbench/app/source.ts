@@ -14,19 +14,16 @@ export function sourceFiles(): { path: string; css: string }[] {
 }
 
 /** The workbench's sidebar, built from src/ and the captures as they are now. */
-export async function organization(): Promise<Organization & { styled: Record<string, string[]> }> {
+export async function organization(): Promise<Organization> {
 	const files = sourceFiles();
 	const items = Object.keys(
 		(JSON.parse(readFileSync(`${ROOT}capture/fixtures.json`, "utf8")) as { components: object })
 			.components,
 	);
 	const styled = await styledBy(files);
-	return {
-		...organize(
-			styled,
-			items,
-			files.map((f) => f.path),
-		),
+	return organize(
 		styled,
-	};
+		items,
+		files.map((f) => f.path),
+	);
 }
