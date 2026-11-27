@@ -506,7 +506,9 @@ export async function render(
 					checkVisibilityCSS: true,
 				}),
 			unsupported: Array.from(
-				document.querySelectorAll("canvas,video,audio,iframe,img,embed,object"),
+				document.querySelectorAll(
+					"canvas,video,audio,iframe,img,embed,object,webview,[data-replay-mask]:not([data-replay-mask=overlay])",
+				),
 			)
 				.filter((e) => {
 					if (e.closest("[data-capture-placeholder]")) return false;
@@ -542,7 +544,12 @@ export async function render(
 						);
 					return true;
 				})
-				.map((e) => e.localName),
+				.map((e) =>
+					e.hasAttribute("data-replay-mask") &&
+					getComputedStyle(e).backgroundImage !== "none"
+						? "background image"
+						: e.localName,
+				),
 		};
 	};
 	const readArgs = {

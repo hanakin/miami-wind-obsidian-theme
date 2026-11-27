@@ -84,6 +84,18 @@ test("compares computed styles inside restored frames, including nonvisual decla
 	).toBe(true);
 	await page.close();
 });
+test("retains coverage limits for visible webview and remote background interiors", async () => {
+	const { page, cdp } = await setup();
+	const result = await render(
+		page,
+		cdp,
+		'<div data-capture-target><webview data-capture-size="100 40" src="https://obsidian.md/"></webview><div style="width:100px;height:40px;background-image:url(https://obsidian.md/missing.png)"></div></div>',
+		{ app: "", cm: "", theme: "" },
+		base,
+	);
+	expect(result.unsupported).toEqual(["webview", "background image"]);
+	await page.close();
+});
 test
 	.skipIf(!existsSync("capture/.app/runtime"))
 	.each([
