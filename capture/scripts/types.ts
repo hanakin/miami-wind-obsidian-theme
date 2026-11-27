@@ -168,9 +168,11 @@ export interface FixtureEntry {
 	evidence?: Evidence;
 	/**
 	 * Intrinsic size (naturalWidth/naturalHeight) of each image whose source does not load offline
-	 * (app:, https:, file:), by zero-based index in the saved fixture's document.images order.
+	 * (app:, https:, file:), by zero-based index in the saved fixture's document.images order. An
+	 * image from the capture vault also names its file (under capture/fixtures/, by content), which
+	 * a replay draws in its place.
 	 */
-	imageSizes?: { index: number; width: number; height: number }[];
+	imageSizes?: { index: number; width: number; height: number; file?: string }[];
 	/** "xhtml" when the tree cannot be written as HTML text (e.g. a <div> inside a <p>); parse it as application/xhtml+xml. */
 	format?: "xhtml";
 	/**

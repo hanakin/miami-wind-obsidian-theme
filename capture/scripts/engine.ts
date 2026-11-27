@@ -1,10 +1,10 @@
 // Drives a running Obsidian: reaches each scene, forces states and records DOM + screenshots.
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CDPSession, Page } from "playwright";
 import { normSelector } from "./css.ts";
 import { INPAGE } from "./inpage.ts";
-import { type Session, WORK } from "./obsidian.ts";
+import { type Session, VAULT, WORK } from "./obsidian.ts";
 import type { Ctx, Evidence, FixtureEntry, ItemDef, Mode, Scene, Target } from "./types.ts";
 
 /** Components worth showing across surfaces. Key = component tag, value = selector. */
@@ -337,7 +337,7 @@ interface Snap {
 	trimmed: { selector: string; kept: number; of: number } | null;
 	contains: string[];
 	seen: number;
-	imageSizes: { index: number; width: number; height: number }[];
+	imageSizes: { index: number; width: number; height: number; src: string | null }[];
 	canvasPixels: { index: number; frame?: string; url: string | null; rect: number[] }[];
 	textStyles: Record<string, number>;
 	viewport: [number, number];
@@ -651,6 +651,26 @@ export async function captureItem(
 				source: own ? "canvas" : "screen",
 			});
 		}
+		// Images from the capture vault (app: URLs of its files) are kept by content, so a replay
+		// draws the real picture; others (remote) stay same-size stand-ins.
+		const imageSizes: NonNullable<FixtureEntry["imageSizes"]> = snap.imageSizes.map(
+			({ src, ...im }) => {
+				let path = "";
+				try {
+					const u = new URL(src ?? "");
+					if (u.protocol === "app:") path = decodeURIComponent(u.pathname);
+				} catch {}
+				if (!path.startsWith(`${VAULT}/`) || !existsSync(path) || statSync(path).size > 1 << 20)
+					return im;
+				const data = readFileSync(path);
+				const ext = (path.match(/\.(png|jpe?g|gif|svg|webp|avif|bmp)$/i)?.[1] ?? "").toLowerCase();
+				if (!ext) return im;
+				const name = `pixels/${new Bun.CryptoHasher("sha256").update(data).digest("hex").slice(0, 32)}.${ext}`;
+				mkdirSync(join(out.fixturesDir, "pixels"), { recursive: true });
+				writeFileSync(join(out.fixturesDir, name), data);
+				return { ...im, file: name };
+			},
+		);
 		const entry: FixtureEntry = {
 			id: item.id,
 			file,
@@ -662,7 +682,7 @@ export async function captureItem(
 			covers: [item.id],
 			obsidianVersion: out.version,
 			contains: snap.contains,
-			...(snap.imageSizes.length ? { imageSizes: snap.imageSizes } : {}),
+			...(imageSizes.length ? { imageSizes } : {}),
 			...(canvasPixels.length ? { canvasPixels } : {}),
 			viewport: snap.viewport,
 			styles: snap.styles,

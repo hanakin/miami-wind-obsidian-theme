@@ -182,7 +182,11 @@ writeFileSync(fixturesPath, `${JSON.stringify(file, null, "\t")}\n`);
 writeFileSync(censusPath, `${JSON.stringify([...census].sort(), null, "\t")}\n`);
 // Drop fixture files no entry points to (renamed or removed items).
 const keep = new Set(
-	fixtures.flatMap((f) => [f.file, ...(f.canvasPixels ?? []).map((c) => c.file)]),
+	fixtures.flatMap((f) => [
+		f.file,
+		...(f.canvasPixels ?? []).map((c) => c.file),
+		...(f.imageSizes ?? []).flatMap((i) => (i.file ? [i.file] : [])),
+	]),
 );
 for (const name of readdirSync(FIXTURES))
 	if (name !== "pixels" && !keep.has(name)) rmSync(`${FIXTURES}${name}`);

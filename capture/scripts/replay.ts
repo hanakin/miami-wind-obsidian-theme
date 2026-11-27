@@ -19,7 +19,7 @@ export interface Replayed {
 export async function replayFixture(
 	page: Page,
 	html: string,
-	sizes: { index: number; width: number; height: number }[],
+	sizes: { index: number; width: number; height: number; url: string | null }[],
 	canvases: { index: number; frame: string | null; b64: string }[],
 	frames: Record<string, string> = {},
 	trimSelector: string | null = null,
@@ -72,10 +72,15 @@ export async function replayFixture(
 				return Promise.all(loads);
 			};
 			await Promise.race([loadFrames(document), new Promise((ok) => setTimeout(ok, 3000))]);
-			// Offline images get same-size stand-ins from the recorded imageSizes.
-			for (const { index, width, height } of sizes) {
+			// Images the fixture keeps are drawn as they were; other offline images get same-size
+			// stand-ins from the recorded imageSizes.
+			const decoding: Promise<unknown>[] = [];
+			for (const { index, width, height, url } of sizes) {
 				const im = document.images[index];
-				if (im) {
+				if (im && url) {
+					im.src = url;
+					decoding.push(im.decode().catch(() => null));
+				} else if (im) {
 					im.width = width;
 					im.height = height;
 					// A broken image ignores its size; a transparent stand-in of that size does not.
@@ -83,6 +88,7 @@ export async function replayFixture(
 					im.setAttribute("data-replay-standin", "");
 				}
 			}
+			await Promise.all(decoding);
 			// Recorded canvas pixels, then recorded scroll offsets (after layout).
 			// A canvas inside a frame: follow its frame path (iframe indexes, outermost first).
 			const docOf = (path: string | null): Document | null => {
