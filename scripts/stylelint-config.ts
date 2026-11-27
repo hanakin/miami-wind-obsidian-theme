@@ -35,6 +35,8 @@ export const stylelintConfig: Config = {
 	plugins: ["stylelint-order", "@stylistic/stylelint-plugin"],
 	rules: {
 		...rules,
+		// Family boundaries are validated by the source-aware PostCSS checker.
+		"custom-property-empty-line-before": null,
 		"selector-max-specificity": "0,4,1",
 		"selector-max-compound-selectors": 3,
 		"selector-pseudo-class-disallowed-list": ["has"],

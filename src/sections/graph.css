@@ -1,0 +1,9 @@
+/* Graph node colors for files, tags, attachments and unresolved links. */
+.theme-dark,
+.theme-light {
+	--graph-node: var(--magenta);
+	--graph-node-focused: var(--yellow);
+	--graph-node-attachment: var(--cyan);
+	--graph-node-tag: var(--cyan);
+	--graph-node-unresolved: var(--yellow);
+}

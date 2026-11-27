@@ -1,87 +1,5 @@
 [
 	{
-		"component": "surface-background",
-		"usages": [
-			{
-				"surface": "code.css",
-				"selector": ".markdown-rendered code",
-				"properties": {
-					"--mw-surface-background": "var(--code-background)"
-				}
-			},
-			{
-				"surface": "code.css",
-				"selector": ".cm-inline-code",
-				"properties": {
-					"--mw-surface-background": "var(--code-background)"
-				}
-			},
-			{
-				"surface": "code.css",
-				"selector": ".markdown-rendered pre",
-				"properties": {
-					"--mw-surface-background": "var(--code-background)"
-				}
-			},
-			{
-				"surface": "tabs.css",
-				"selector": ".workspace .mod-root .workspace-tab-header",
-				"properties": {
-					"--mw-surface-background": "var(--grey-10)"
-				}
-			},
-			{
-				"surface": "tables.css",
-				"selector": ".markdown-rendered th",
-				"properties": {
-					"--mw-surface-background": "var(--code-background)"
-				}
-			},
-			{
-				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout=\"note\"])",
-				"properties": {
-					"--mw-surface-background": "var(--blue-bright-transparent)"
-				}
-			},
-			{
-				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout=\"info\"])",
-				"properties": {
-					"--mw-surface-background": "var(--cyan-transparent)"
-				}
-			},
-			{
-				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout=\"todo\"])",
-				"properties": {
-					"--mw-surface-background": "var(--magenta-transparent)"
-				}
-			},
-			{
-				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout=\"warning\"])",
-				"properties": {
-					"--mw-surface-background": "var(--orange-transparent)"
-				}
-			},
-			{
-				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout=\"tip\"])",
-				"properties": {
-					"--mw-surface-background": "var(--green-transparent)"
-				}
-			},
-			{
-				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout=\"example\"])",
-				"properties": {
-					"--mw-surface-background": "var(--purple-transparent)"
-				}
-			}
-		]
-	},
-	{
 		"component": "icon-background",
 		"usages": [
 			{
@@ -114,9 +32,91 @@
 			},
 			{
 				"surface": "tabs.css",
-				"selector": ".workspace-tabs .clickable-icon:active,\n\t.workspace-tabs .clickable-icon.has-active-menu,\n\t.workspace-tabs .clickable-icon.is-active",
+				"selector": ".workspace-tabs .clickable-icon:active,\n.workspace-tabs .clickable-icon.has-active-menu,\n.workspace-tabs .clickable-icon.is-active",
 				"properties": {
 					"--mw-icon-background": "var(--icon-background-active)"
+				}
+			}
+		]
+	},
+	{
+		"component": "surface-background",
+		"usages": [
+			{
+				"surface": "tabs.css",
+				"selector": ".workspace .mod-root .workspace-tab-header",
+				"properties": {
+					"--mw-surface-background": "var(--grey-10)"
+				}
+			},
+			{
+				"surface": "code.css",
+				"selector": ".markdown-rendered code",
+				"properties": {
+					"--mw-surface-background": "var(--code-background)"
+				}
+			},
+			{
+				"surface": "code.css",
+				"selector": ".cm-inline-code",
+				"properties": {
+					"--mw-surface-background": "var(--code-background)"
+				}
+			},
+			{
+				"surface": "code.css",
+				"selector": ".markdown-rendered pre",
+				"properties": {
+					"--mw-surface-background": "var(--code-background)"
+				}
+			},
+			{
+				"surface": "tables.css",
+				"selector": ".markdown-rendered th",
+				"properties": {
+					"--mw-surface-background": "var(--code-background)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout='note'])",
+				"properties": {
+					"--mw-surface-background": "var(--blue-bright-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout='info'])",
+				"properties": {
+					"--mw-surface-background": "var(--cyan-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout='todo'])",
+				"properties": {
+					"--mw-surface-background": "var(--magenta-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout='warning'])",
+				"properties": {
+					"--mw-surface-background": "var(--orange-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout='tip'])",
+				"properties": {
+					"--mw-surface-background": "var(--green-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ":where(.cm-callout) .callout:where([data-callout='example'])",
+				"properties": {
+					"--mw-surface-background": "var(--purple-transparent)"
 				}
 			}
 		]
@@ -126,7 +126,7 @@
 		"usages": [
 			{
 				"surface": "suggestions.css",
-				"selector": ".suggestion-container.mod-property-value .suggestion-item:hover,\n.suggestion-item.is-selected, .suggestion-item.mobile-tap",
+				"selector": ".suggestion-container.mod-property-value .suggestion-item:hover,\n.suggestion-item.is-selected,\n.suggestion-item.mobile-tap",
 				"properties": {
 					"--mw-item-background": "var(--magenta-transparent)",
 					"--mw-item-color": "var(--magenta)"

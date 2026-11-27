@@ -22,7 +22,7 @@ interface ComponentUsage {
 }
 
 export async function compile(options: { format?: boolean } = {}) {
-	const legacyPath = path.resolve("src/legacy.css");
+	const legacyPath = path.resolve("src/settings/legacy.css");
 	const legacy = await readFile(legacyPath, "utf8");
 	if (
 		createHash("sha256").update(legacy).digest("hex") !== legacyChecksum.sha256
@@ -49,20 +49,25 @@ export async function compile(options: { format?: boolean } = {}) {
 					previous = file;
 				}
 			}
-			const slots: postcss.AtRule[] = [];
-			root.walkAtRules("pilot", (slot) => {
-				slots.push(slot);
-			});
-			for (const slot of slots) {
-				const file = path.resolve(`src/${slot.params}.css`);
-				const content = postcss.parse(await readFile(file, "utf8"), {
-					from: file,
+			while (true) {
+				const slots: postcss.AtRule[] = [];
+				root.walkAtRules("pilot", (slot) => {
+					slots.push(slot);
 				});
-				slot.replaceWith(
-					postcss.comment({ text: `@section src/${slot.params}.css` }),
-					...content.nodes,
-					postcss.comment({ text: "@section src/legacy.css (continued)" }),
-				);
+				if (!slots.length) break;
+				for (const slot of slots) {
+					const file = path.resolve(`src/${slot.params}.css`);
+					const content = postcss.parse(await readFile(file, "utf8"), {
+						from: file,
+					});
+					slot.replaceWith(
+						postcss.comment({ text: `@section src/${slot.params}.css` }),
+						...content.nodes,
+						postcss.comment({
+							text: "@section src/settings/legacy.css (continued)",
+						}),
+					);
+				}
 			}
 			root.prepend(postcss.comment({ text: formatConfig.header }));
 			root.walkAtRules("mixin", (use) => {

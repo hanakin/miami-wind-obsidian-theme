@@ -1,0 +1,15 @@
+/* Note table backgrounds, borders and text in reading view. */
+
+/* Shared component adjustments: surface-background.
+ * Local --mw-* variables below set this section’s colors and backgrounds. */
+
+.markdown-rendered table { border: 1px solid var(--background-modifier-border); }
+
+.markdown-rendered th {
+	--mw-surface-background: var(--code-background);
+	@mixin surface-background;
+	--table-header-color: var(--text-accent);
+}
+
+.markdown-rendered td { border: 1px solid var(--background-modifier-border); }
+

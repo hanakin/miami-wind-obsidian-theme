@@ -1,0 +1,12 @@
+/* Command prompt surfaces and instruction key colors. */
+
+.prompt {
+	--prompt-border-color: var(--magenta);
+}
+
+.prompt-instruction-command {
+	color: var(--code-normal);
+	padding: 4px 8px;
+	background-color: var(--black);
+	border-radius: 4px;
+}

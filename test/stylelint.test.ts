@@ -57,7 +57,7 @@ it("recognizes PostCSS mixins without a Sass parser", async () => {
 
 it("bounds exceptions to an exact file, rule, selector and occurrence count", () => {
 	const finding: Finding = {
-		file: "src/code.css",
+		file: "src/markdown/code.css",
 		rule: "selector-no-qualifying-type",
 		selector: ".cm-s-obsidian span.cm-keyword",
 		property: "",
@@ -85,7 +85,7 @@ it("bounds exceptions to an exact file, rule, selector and occurrence count", ()
 
 it("detects unused exception entries and counts above their remaining findings", () => {
 	const exception: CssException = {
-		file: "src/code.css",
+		file: "src/markdown/code.css",
 		rule: "selector-no-qualifying-type",
 		selector: ".cm-s-obsidian span.cm-keyword",
 		count: 2,

@@ -1,3 +1,5 @@
+/* Reusable icon background styles controlled by local variables. */
+
 @define-mixin icon-background {
 	background-color: var(--mw-icon-background);
 }

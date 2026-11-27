@@ -1,0 +1,6 @@
+/* Active file entries in the file explorer. */
+
+.nav-file-title.is-active {
+	color: var(--text-normal);
+}
+

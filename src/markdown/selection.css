@@ -1,0 +1,7 @@
+/* Selection text and background colors throughout the app. */
+
+::selection {
+	background-color: var(--text-selection);
+	color: var(--text-selection-fg);
+}
+

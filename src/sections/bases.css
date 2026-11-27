@@ -1,0 +1,58 @@
+/* Bases toolbar actions and filter-row controls in normal and hover states. */
+
+/* Shared component adjustments: action-button.
+ * Local --mw-* variables below set this section’s colors and backgrounds. */
+
+.bases-toolbar-item .text-icon-button,
+.bases-toolbar-section-content .text-icon-button {
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--cyan-transparent);
+	@mixin action-button;
+}
+
+.bases-toolbar-item .text-icon-button:hover,
+.bases-toolbar-section-content .text-icon-button:hover {
+	color: var(--magenta);
+	background-color: var(--magenta-transparent);
+}
+
+.bases-toolbar-section-content .filter-group-actions .text-icon-button,
+.filter-row-actions .clickable-icon {
+	margin-right: 4px;
+}
+
+.filter-row-actions .clickable-icon {
+	--text-faint: transparent;
+	background-color: transparent;
+}
+
+.filter-row-actions .clickable-icon:hover {
+	--text-faint: var(--magenta-transparent);
+	color: var(--magenta);
+	background-color: var(--magenta-transparent);
+}
+
+
+/* Keep the original 0,3,0 hover tie; the disabled condition adds no weight. */
+.filter-row-actions .clickable-icon:where([aria-disabled='true']):hover {
+	background-color: var(--magenta-transparent);
+	color: var(--text-disabled);
+}
+
+/* Sheet actions read accent text directly at 0,5,0 / 0,6,0. */
+.filter-row-actions .clickable-icon:where([aria-disabled='true']),
+.filter-group-header-actions .clickable-icon:where([aria-disabled='true']) {
+	--text-on-accent: var(--text-disabled);
+}
+
+.filter-group-header-actions .clickable-icon:where([aria-disabled='true']) {
+	--text-faint: transparent;
+}
+
+/* Obsidian's query conjunction uses a literal fill; its hover reads this leaf variable. */
+.filter-group-header .conjunction.dropdown {
+	background-color: var(--magenta);
+	--background-modifier-hover: var(--magenta);
+}
+
+

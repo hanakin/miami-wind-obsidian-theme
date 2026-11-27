@@ -1,0 +1,6 @@
+/* Disabled icon colors in the community browser sidebar. */
+
+/* Tie Obsidian 1.15.1's 0,3,1 sidebar button color without changing child variables. */
+.mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true']) {
+	color: var(--text-disabled);
+}

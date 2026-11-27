@@ -1,0 +1,7 @@
+/* PDF form control overrides for the app’s PDF renderer. */
+
+/* Obsidian 1.15.1 PDF forms use background:none at 0,3,1; tie only its color. */
+.annotationLayer .choiceWidgetAnnotation select:focus,
+.annotationLayer .choiceWidgetAnnotation select[disabled] {
+	background-color: var(--magenta);
+}

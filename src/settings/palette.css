@@ -1,0 +1,64 @@
+/* Miami Wind palette: neutral shades, accent colors and transparent variants. */
+.theme-dark,
+.theme-light {
+	--grey-0: #cdd6f4;
+	--grey-1: #bac2de;
+	--grey-2: #a6adc8;
+	--grey-3: #9399b2;
+	--grey-4: #7f849c;
+	--grey-5: #6c7086;
+	--grey-6: #585b70;
+	--grey-7: #45475a;
+	--grey-8: #313244;
+	--grey-9: #1e1e2e;
+	--grey-10: #181825;
+	--grey-11: #11111b;
+
+	--magenta: #f472b6;
+	--magenta-bright: #ec4899;
+	--magenta-transparent: #f472b67a;
+	--magenta-bright-transparent: #ec48997a;
+
+	--cyan: #22d3ee;
+	--cyan-bright: #38bdf8;
+	--cyan-transparent: #22d3ee72;
+	--cyan-bright-transparent: #38bdf87a;
+
+	--yellow: #fef08a;
+	--yellow-bright: #fde047;
+	--yellow-transparent: #fef08a7a;
+	--yellow-bright-transparent: #fde0477a;
+
+	--purple: #c084fc;
+	--purple-bright: #a78bfa;
+	--purple-transparent: #c084fc7a;
+	--purple-bright-transparent: #a78bfa7a;
+
+	--blue: #818cf8;
+	--blue-bright: #2563eb;
+	--blue-transparent: #818cf87a;
+	--blue-bright-transparent: #2563eb7a;
+
+	--green: #34d399;
+	--green-bright: ##4ade80;
+	--green-transparent: #34d3997a;
+	--green-bright-transparent: ##4ade807a;
+
+	--orange: #fdba74;
+	--orange-bright: #fb923c;
+	--orange-transparent: #fdba747a;
+	--orange-bright-transparent: #fb923c7a;
+
+	--red: #f87171;
+	--red-bright: #f43f5e;
+	--red-transparent: #f871717a;
+	--red-bright-transparent: #f43f5e7a;
+
+	--white: var(--grey-0);
+	--white-bright: var(--grey-1);
+	--white-transparent: #cdd6f47a;
+
+	--black: var(--grey-10);
+	--black-bright: var(--grey-9);
+	--black-transparent: #1818257a;
+}

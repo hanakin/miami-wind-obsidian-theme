@@ -2,28 +2,8 @@
 	{
 		"file": "theme.css",
 		"rule": "declaration-no-important",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
 		"selectors": [
-			{
-				"selector": ".markdown-rendered mark, .cm-s-obsidian span.cm-highlight, mark",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-rendered blockquote",
-				"count": 1
-			},
-			{
-				"selector": ".clickable-icon[aria-disabled='true']",
-				"count": 2
-			},
-			{
-				"selector": ".filter-row-actions .clickable-icon",
-				"count": 1
-			},
-			{
-				"selector": ".filter-row-actions .clickable-icon:hover",
-				"count": 1
-			},
 			{
 				"selector": "input, .combobox-button",
 				"count": 2
@@ -33,108 +13,40 @@
 				"count": 2
 			},
 			{
-				"selector": ".status-bar",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-']",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] input",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] input",
 				"count": 3
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/']",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] input",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!']",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?']",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x']",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] input",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] input",
 				"count": 3
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' ']",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] input",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*']",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] input",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q']",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] input",
 				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>']",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] input",
-				"count": 2
-			},
-			{
-				"selector": ".modal-close-button.clickable-icon:hover",
-				"count": 1
-			},
-			{
-				"selector": ".modal .dropdown, .dropdown, select, select:hover, select:focus, select:focus-visible, select:focus-within, select:active",
-				"count": 2
-			},
-			{
-				"selector": ".modal .dropdown::-webkit-scrollbar-thumb, .dropdown::-webkit-scrollbar-thumb, select::-webkit-scrollbar-thumb",
-				"count": 1
-			},
-			{
-				"selector": ".modal .dropdown option:hover, .modal .dropdown option:checked, .dropdown option:hover, .dropdown option:checked, select option:hover, select option:checked",
-				"count": 1
-			},
-			{
-				"selector": ".menu .bases-toolbar-menu-item:hover .clickable-icon, .menu .bases-toolbar-menu-item.is-selected .clickable-icon",
-				"count": 1
-			},
-			{
-				"selector": ".menu-item:hover, .menu-item:focus, .menu-item:active, .menu-item.selected, .bases-toolbar-menu-item:hover, .bases-toolbar-menu-item:focus, .bases-toolbar-menu-item:active, .bases-toolbar-menu-item.selected",
-				"count": 1
-			},
-			{
-				"selector": ".menu-item.is-disabled:hover, .bases-toolbar-menu-item.mod-hidden:hover",
-				"count": 1
 			},
 			{
 				"selector": ".code-block-flair, .edit-block-button",
@@ -147,444 +59,43 @@
 		]
 	},
 	{
-		"file": "theme.css",
-		"rule": "no-duplicate-selectors",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Quote normalization exposes duplicate legacy selectors; keep source selectors until the tasks port merges.",
-		"selectors": [
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-']",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/']",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!']",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?']",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x']",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' ']",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*']",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q']",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>']",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] input",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "theme.css",
-		"rule": "selector-max-specificity",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": ".suggestion-container.mod-property-key .suggestion-item.mod-complex:hover .suggestion-flair",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "theme.css",
-		"rule": "selector-no-qualifying-type",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": "input.metadata-property-key-input",
-				"count": 1
-			},
-			{
-				"selector": "input.prompt-input:hover, input.prompt-input:focus, input.prompt-input:focus-visible",
-				"count": 3
-			}
-		]
-	},
-	{
-		"file": "src/tokens.css",
-		"rule": "@stylistic/selector-list-comma-newline-after",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": ".theme-dark, .theme-light",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/tokens.css",
-		"rule": "@stylistic/string-quotes",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": ".theme-dark, .theme-light",
-				"count": 3
-			}
-		]
-	},
-	{
-		"file": "src/code.css",
-		"rule": "order/order",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": ".markdown-rendered code",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/code.css",
+		"file": "src/components/action-button.css",
 		"rule": "order/properties-order",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
 		"selectors": [
 			{
-				"selector": ".markdown-rendered code",
+				"selector": "@define-mixin action-button",
 				"count": 1
 			}
 		]
 	},
 	{
-		"file": "src/code.css",
-		"rule": "rule-empty-line-before",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
+		"file": "src/markdown/blockquotes.css",
+		"rule": "shorthand-property-no-redundant-values",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
 		"selectors": [
 			{
-				"selector": ".cm-s-obsidian span.cm-string",
-				"count": 1
-			},
-			{
-				"selector": ".cm-s-obsidian span.cm-number",
-				"count": 1
-			},
-			{
-				"selector": ".cm-s-obsidian span.cm-comment",
-				"count": 1
-			},
-			{
-				"selector": ".cm-s-obsidian span.cm-operator",
-				"count": 1
-			},
-			{
-				"selector": ".cm-s-obsidian span.cm-variable",
-				"count": 1
-			},
-			{
-				"selector": ".cm-s-obsidian span.cm-def",
+				"selector": ".markdown-rendered blockquote",
 				"count": 1
 			}
 		]
 	},
 	{
-		"file": "src/tabs.css",
+		"file": "src/markdown/inline-marks.css",
 		"rule": "order/properties-order",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": ".workspace .mod-root .workspace-tab-header:hover",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/tabs.css",
-		"rule": "rule-empty-line-before",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": ".workspace .mod-root .workspace-tab-header:hover",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/legacy.css",
-		"rule": "@stylistic/block-opening-brace-space-before",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": ".mod-left-split .workspace-tab-header:hover, .mod-right-split .workspace-tab-header:hover",
-				"count": 1
-			},
-			{
-				"selector": ".metadata-container .metadata-show-source-button:hover .svg-icon, .metadata-container .metadata-add-button:hover .svg-icon",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/legacy.css",
-		"rule": "@stylistic/selector-list-comma-newline-after",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": ".cm-header-1, .markdown-rendered h1",
-				"count": 1
-			},
-			{
-				"selector": ".cm-header-2, .markdown-rendered h2",
-				"count": 1
-			},
-			{
-				"selector": ".cm-header-3, .markdown-rendered h3",
-				"count": 1
-			},
-			{
-				"selector": ".cm-header-4, .markdown-rendered h4",
-				"count": 1
-			},
-			{
-				"selector": ".cm-header-5, .markdown-rendered h5",
-				"count": 1
-			},
-			{
-				"selector": ".cm-header-6, .markdown-rendered h6",
-				"count": 1
-			},
-			{
-				"selector": ".suggestion-container.mod-property-value .suggestion-item:hover, .suggestion-item.is-selected, .suggestion-item.mobile-tap",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/legacy.css",
-		"rule": "@stylistic/string-quotes",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": ".metadata-property[data-property-key=\"tags\"] .multi-select-pill",
-				"count": 1
-			},
-			{
-				"selector": ".metadata-property[data-property-key=\"tags\"] .multi-select-pill:hover",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"note\"]",
-				"count": 1
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"note\"] .callout-title",
-				"count": 1
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"info\"]",
-				"count": 1
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"info\"] .callout-title",
-				"count": 1
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"todo\"]",
-				"count": 1
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"todo\"] .callout-title",
-				"count": 1
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"warning\"]",
-				"count": 1
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"warning\"] .callout-title",
-				"count": 1
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"tip\"]",
-				"count": 1
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"tip\"] .callout-title",
-				"count": 1
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"example\"]",
-				"count": 1
-			},
-			{
-				"selector": ".cm-callout .callout[data-callout=\"example\"] .callout-title",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/legacy.css",
-		"rule": "@stylistic/indentation",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": "@root",
-				"count": 4
-			},
-			{
-				"selector": ".workspace-ribbon .clickable-icon:hover",
-				"count": 3
-			},
-			{
-				"selector": ".workspace-ribbon .clickable-icon:active",
-				"count": 3
-			},
-			{
-				"selector": ".workspace-drawer-vault-actions .clickable-icon:hover",
-				"count": 3
-			},
-			{
-				"selector": ".mod-left-split .workspace-tab-header:hover, .mod-right-split .workspace-tab-header:hover",
-				"count": 4
-			},
-			{
-				"selector": ".mod-left-split .workspace-tab-header.is-active, .mod-left-split .workspace-tab-header.is-active:hover, .mod-right-split .workspace-tab-header.is-active, .mod-right-split .workspace-tab-header.is-active:hover",
-				"count": 6
-			},
-			{
-				"selector": ".workspace-tabs .clickable-icon:hover",
-				"count": 3
-			},
-			{
-				"selector": ".workspace-tabs .clickable-icon:active, .workspace-tabs .clickable-icon.has-active-menu, .workspace-tabs .clickable-icon.is-active",
-				"count": 5
-			},
-			{
-				"selector": ".modal-close-button.clickable-icon:hover",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/legacy.css",
-		"rule": "order/properties-order",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
 		"selectors": [
 			{
 				"selector": ".markdown-rendered mark, .cm-s-obsidian span.cm-highlight, mark",
 				"count": 1
-			},
+			}
+		]
+	},
+	{
+		"file": "src/markdown/links.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
 			{
 				"selector": ".markdown-rendered a:hover",
 				"count": 1
@@ -596,186 +107,137 @@
 			{
 				"selector": ".markdown-rendered a:hover:visited, .markdown-rendered a:hover:active, .markdown-rendered a:hover:focus",
 				"count": 1
-			},
+			}
+		]
+	},
+	{
+		"file": "src/markdown/tables.css",
+		"rule": "order/order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
 			{
-				"selector": ".clickable-icon[aria-disabled='true']",
-				"count": 2
-			},
-			{
-				"selector": ".bases-toolbar-item .text-icon-button, .bases-toolbar-section-content .text-icon-button",
-				"count": 1
-			},
-			{
-				"selector": ".bases-toolbar-item .text-icon-button:hover, .bases-toolbar-section-content .text-icon-button:hover",
-				"count": 1
-			},
-			{
-				"selector": ".filter-row-actions .clickable-icon:hover",
-				"count": 1
-			},
-			{
-				"selector": "input:focus, input:focus-visible, input:focus-within, textarea:focus, textarea:focus-visible, textarea:focus-within, .combobox-button:focus, .combobox-button:focus-visible, .combobox-button:focus-within",
-				"count": 1
-			},
-			{
-				"selector": ".canvas-control-group",
-				"count": 1
-			},
-			{
-				"selector": ".canvas-control-item",
-				"count": 3
-			},
-			{
-				"selector": ".metadata-property[data-property-key=\"tags\"] .multi-select-pill",
-				"count": 1
-			},
-			{
-				"selector": ".metadata-container .metadata-show-source-button, .metadata-container .metadata-add-button",
-				"count": 1
-			},
-			{
-				"selector": ".metadata-container .metadata-show-source-button:hover, .metadata-container .metadata-add-button:hover",
-				"count": 1
-			},
-			{
-				"selector": ".suggestion-container",
-				"count": 2
-			},
-			{
-				"selector": ".suggestion",
-				"count": 1
-			},
-			{
-				"selector": ".suggestion-container.mod-property-value .suggestion-item, .suggestion-container.mod-property-key .suggestion-item",
-				"count": 1
-			},
-			{
-				"selector": ".suggestion-container.mod-property-value .suggestion-item:hover, .suggestion-item.is-selected, .suggestion-item.mobile-tap",
-				"count": 1
-			},
-			{
-				"selector": ".status-bar",
-				"count": 2
-			},
-			{
-				"selector": ".status-bar-item, .status-bar-item.mod-clickable",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".modal-close-button.clickable-icon:hover",
-				"count": 1
-			},
-			{
-				"selector": ".modal .vertical-tab-nav-item:hover",
-				"count": 1
-			},
-			{
-				"selector": ".modal button",
-				"count": 2
-			},
-			{
-				"selector": ".modal button:hover, .modal .clickable-icon:hover",
-				"count": 1
-			},
-			{
-				"selector": ".modal button.mod-cta",
-				"count": 2
-			},
-			{
-				"selector": ".modal .setting-hotkey",
-				"count": 1
-			},
-			{
-				"selector": ".modal .setting-hotkey:hover",
-				"count": 1
-			},
-			{
-				"selector": ".modal .dropdown, .dropdown, select, select:hover, select:focus, select:focus-visible, select:focus-within, select:active",
-				"count": 1
-			},
-			{
-				"selector": ".modal .dropdown option, .dropdown option, select option",
-				"count": 1
-			},
-			{
-				"selector": ".prompt-instruction-command",
-				"count": 1
-			},
-			{
-				"selector": ".menu .clickable-icon",
-				"count": 1
-			},
-			{
-				"selector": ".menu .clickable-icon:hover, .menu .back-button:hover",
-				"count": 1
-			},
-			{
-				"selector": "body:not(.is-phone) .horizontal-tab-nav-item.is-active, body:not(.is-phone) .vertical-tab-nav-item.is-active, .modal .vertical-tab-nav-item.is-active, .modal .vertical-tab-nav-item.is-active:hover",
+				"selector": ".markdown-rendered th",
 				"count": 1
 			}
 		]
 	},
 	{
-		"file": "src/legacy.css",
-		"rule": "declaration-no-important",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
+		"file": "src/markdown/code.css",
+		"rule": "order/order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
 		"selectors": [
 			{
-				"selector": ".markdown-rendered mark, .cm-s-obsidian span.cm-highlight, mark",
-				"count": 2
-			},
+				"selector": ".markdown-rendered code",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/markdown/code.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
 			{
-				"selector": ".markdown-rendered blockquote",
+				"selector": ".markdown-rendered code",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/settings/legacy.css",
+		"rule": "@stylistic/string-quotes",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"] input",
 				"count": 1
 			},
 			{
-				"selector": ".clickable-icon[aria-disabled='true']",
-				"count": 2
-			},
-			{
-				"selector": ".filter-row-actions .clickable-icon",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"] input",
 				"count": 1
 			},
 			{
-				"selector": ".filter-row-actions .clickable-icon:hover",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"] input",
 				"count": 1
 			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"] input",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/settings/legacy.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": "input:focus, input:focus-visible, input:focus-within, textarea:focus, textarea:focus-visible, textarea:focus-within, .combobox-button:focus, .combobox-button:focus-visible, .combobox-button:focus-within",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"] input",
+				"count": 1
+			},
+			{
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"] input",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/settings/legacy.css",
+		"rule": "declaration-no-important",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
 			{
 				"selector": "input, .combobox-button",
 				"count": 2
@@ -785,108 +247,40 @@
 				"count": 2
 			},
 			{
-				"selector": ".status-bar",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"]",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"] input",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"] input",
 				"count": 3
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"]",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"] input",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"]",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"] input",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"] input",
 				"count": 3
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"]",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"] input",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"]",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"] input",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"] input",
 				"count": 2
 			},
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"]",
+				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"] input",
 				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"]",
-				"count": 2
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"] input",
-				"count": 2
-			},
-			{
-				"selector": ".modal-close-button.clickable-icon:hover",
-				"count": 1
-			},
-			{
-				"selector": ".modal .dropdown, .dropdown, select, select:hover, select:focus, select:focus-visible, select:focus-within, select:active",
-				"count": 2
-			},
-			{
-				"selector": ".modal .dropdown::-webkit-scrollbar-thumb, .dropdown::-webkit-scrollbar-thumb, select::-webkit-scrollbar-thumb",
-				"count": 1
-			},
-			{
-				"selector": ".modal .dropdown option:hover, .modal .dropdown option:checked, .dropdown option:hover, .dropdown option:checked, select option:hover, select option:checked",
-				"count": 1
-			},
-			{
-				"selector": ".menu .bases-toolbar-menu-item:hover .clickable-icon, .menu .bases-toolbar-menu-item.is-selected .clickable-icon",
-				"count": 1
-			},
-			{
-				"selector": ".menu-item:hover, .menu-item:focus, .menu-item:active, .menu-item.selected, .bases-toolbar-menu-item:hover, .bases-toolbar-menu-item:focus, .bases-toolbar-menu-item:active, .bases-toolbar-menu-item.selected",
-				"count": 1
-			},
-			{
-				"selector": ".menu-item.is-disabled:hover, .bases-toolbar-menu-item.mod-hidden:hover",
-				"count": 1
 			},
 			{
 				"selector": ".code-block-flair, .edit-block-button",
@@ -899,187 +293,209 @@
 		]
 	},
 	{
-		"file": "src/legacy.css",
-		"rule": "no-duplicate-selectors",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
+		"file": "src/sections/bases.css",
+		"rule": "order/order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
 		"selectors": [
 			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"]",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"-\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"]",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"/\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"]",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"!\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"]",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"?\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"]",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"x\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"]",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\" \"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"]",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"*\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"]",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\"q\"] input",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"], .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"]",
-				"count": 1
-			},
-			{
-				"selector": ".markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"] input, .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=\">\"] input",
+				"selector": ".filter-group-header .conjunction.dropdown",
 				"count": 1
 			}
 		]
 	},
 	{
-		"file": "src/legacy.css",
-		"rule": "rule-empty-line-before",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
+		"file": "src/sections/bases.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
 		"selectors": [
 			{
-				"selector": ".cm-header-2, .markdown-rendered h2",
+				"selector": ".bases-toolbar-item .text-icon-button:hover, .bases-toolbar-section-content .text-icon-button:hover",
 				"count": 1
 			},
 			{
-				"selector": ".cm-header-3, .markdown-rendered h3",
-				"count": 1
-			},
-			{
-				"selector": ".cm-header-4, .markdown-rendered h4",
-				"count": 1
-			},
-			{
-				"selector": ".cm-header-5, .markdown-rendered h5",
-				"count": 1
-			},
-			{
-				"selector": ".cm-header-6, .markdown-rendered h6",
-				"count": 1
-			},
-			{
-				"selector": ".clickable-icon[aria-disabled='true']",
+				"selector": ".filter-row-actions .clickable-icon:hover",
 				"count": 1
 			}
 		]
 	},
 	{
-		"file": "src/legacy.css",
-		"rule": "selector-max-specificity",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
+		"file": "src/sections/canvas.css",
+		"rule": "order/order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
 		"selectors": [
 			{
-				"selector": ".suggestion-container.mod-property-key .suggestion-item.mod-complex:hover .suggestion-flair",
+				"selector": ".canvas-control-group",
 				"count": 1
 			}
 		]
 	},
 	{
-		"file": "src/legacy.css",
-		"rule": "selector-no-qualifying-type",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
+		"file": "src/sections/canvas.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
 		"selectors": [
 			{
-				"selector": ".markdown-rendered mark, .cm-s-obsidian span.cm-highlight, mark",
-				"count": 1
-			},
-			{
-				"selector": "input.metadata-property-key-input",
-				"count": 1
-			},
-			{
-				"selector": "body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-profile",
-				"count": 1
-			},
-			{
-				"selector": ".modal button.mod-cta",
-				"count": 1
-			},
-			{
-				"selector": ".modal button.mod-cta:hover",
-				"count": 1
-			},
-			{
-				"selector": "input.prompt-input:hover, input.prompt-input:focus, input.prompt-input:focus-visible",
+				"selector": ".canvas-control-item",
 				"count": 3
+			}
+		]
+	},
+	{
+		"file": "src/sections/pdf-xfa.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".xfaSelect",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/sections/properties.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".metadata-property[data-property-key='tags'] .multi-select-pill",
+				"count": 1
 			},
+			{
+				"selector": ".metadata-container .metadata-show-source-button, .metadata-container .metadata-add-button",
+				"count": 1
+			},
+			{
+				"selector": ".metadata-container .metadata-show-source-button:hover, .metadata-container .metadata-add-button:hover",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/global/dropdowns.css",
+		"rule": "order/order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".modal .dropdown, .dropdown, select, select:hover, select:focus, select:focus-visible, select:focus-within, select:active",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/global/dropdowns.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".modal .dropdown option, .dropdown option, select option",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/global/prompts.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".prompt-instruction-command",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/global/modals.css",
+		"rule": "order/order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".modal",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/global/modals.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".modal-close-button.clickable-icon:hover",
+				"count": 1
+			},
+			{
+				"selector": ".modal button:hover, .modal .clickable-icon:hover",
+				"count": 1
+			},
+			{
+				"selector": ".modal .setting-hotkey",
+				"count": 1
+			},
+			{
+				"selector": ".modal .setting-hotkey:hover",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/global/overrides.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
 			{
 				"selector": "body:not(.is-phone) .horizontal-tab-nav-item.is-active, body:not(.is-phone) .vertical-tab-nav-item.is-active, .modal .vertical-tab-nav-item.is-active, .modal .vertical-tab-nav-item.is-active:hover",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/global/status-bar.css",
+		"rule": "order/order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".status-bar",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/global/status-bar.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".status-bar-item, .status-bar-item.mod-clickable",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/global/tabs.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".workspace .mod-root .workspace-tab-header:hover",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "src/global/suggestions.css",
+		"rule": "order/properties-order",
+		"reason": "temporary: remove during the legacy/source cleanup. Existing inherited declarations or source formatting; no additional findings are allowed.",
+		"selectors": [
+			{
+				"selector": ".suggestion-container",
 				"count": 2
-			}
-		]
-	},
-	{
-		"file": "src/legacy.css",
-		"rule": "shorthand-property-no-redundant-values",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
+			},
 			{
-				"selector": ".markdown-rendered blockquote",
-				"count": 1
-			}
-		]
-	},
-	{
-		"file": "src/index.css",
-		"rule": "@stylistic/string-quotes",
-		"reason": "temporary: fix when src/ is rewritten after the ports merge. Existing source/layout or unported legacy debt; no new findings are allowed.",
-		"selectors": [
-			{
-				"selector": "@import \"components/surface-background.css\"",
+				"selector": ".suggestion",
 				"count": 1
 			},
 			{
-				"selector": "@import \"tokens.css\"",
-				"count": 1
-			},
-			{
-				"selector": "@import \"legacy.css\"",
+				"selector": ".suggestion-container.mod-property-value .suggestion-item, .suggestion-container.mod-property-key .suggestion-item",
 				"count": 1
 			}
 		]

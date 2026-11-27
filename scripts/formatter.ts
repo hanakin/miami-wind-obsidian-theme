@@ -24,7 +24,15 @@ function fileInfo(file: string) {
 		label: name.replace(/\.css$/, "").replaceAll("-", " "),
 		layer:
 			config.sections[name]?.layer ??
-			(source.includes("/components/") ? "object" : "component"),
+			(source.includes("/markdown/")
+				? "markdown"
+				: source.includes("/global/")
+					? "global application"
+					: source.includes("/sections/")
+						? "app section"
+						: source.includes("/components/")
+							? "component"
+							: "settings"),
 	};
 }
 function sectionBanner(file: string, continued: boolean): string {
@@ -146,6 +154,7 @@ function render(
 		major: boolean;
 		comment: boolean;
 		title: boolean;
+		family?: string;
 	}[] = [];
 	const seen = new Set<string>();
 	for (let index = 0; index < nodes.length; index++) {
@@ -192,8 +201,10 @@ function render(
 					end++;
 				if (
 					!nodes.slice(index + 1, end).some((item) => item.type !== "comment")
-				)
+				) {
+					index = end - 1;
 					continue;
+				}
 				const { source, name } = fileInfo(marker[1]);
 				const continued = seen.has(source);
 				seen.add(source);
@@ -227,6 +238,9 @@ function render(
 		}
 		if (node.type === "decl") {
 			output.push({
+				family: node.prop.startsWith("--")
+					? node.prop.slice(2).split("-")[0]
+					: undefined,
 				text: `${indent}${node.prop}: ${numericBoxValue(node.prop, node.value)}${node.important ? " !important" : ""};`,
 				major: false,
 				comment: false,
@@ -251,13 +265,17 @@ function render(
 		.map((item, index) => {
 			if (!index) return item.text;
 			const previous = output[index - 1];
-			const separator = item.major
-				? "\n\n\n"
-				: previous?.title
+			const separator =
+				previous?.family && item.family && previous.family !== item.family
 					? "\n\n"
-					: previous?.comment || (container.type === "rule" && !item.comment)
-						? "\n"
-						: "\n\n";
+					: item.major
+						? "\n\n\n"
+						: item.title || previous?.title
+							? "\n\n"
+							: previous?.comment ||
+									(container.type === "rule" && !item.comment)
+								? "\n"
+								: "\n\n";
 			return `${separator}${item.text}`;
 		})
 		.join("");

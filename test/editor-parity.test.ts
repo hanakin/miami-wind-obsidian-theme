@@ -10,7 +10,7 @@ let rivals: string;
 beforeAll(async () => {
 	browser = await chromium.launch({ headless: true });
 	after = (await compile()).css;
-	before = `${await readFile("src/tokens.css", "utf8")} ${await readFile("test/fixtures/editor-before.css", "utf8")}`;
+	before = `${await readFile("src/settings/palette.css", "utf8")} ${await readFile("src/settings/tokens.css", "utf8")} ${await readFile("test/fixtures/editor-before.css", "utf8")}`;
 	rivals = await readFile("test/fixtures/editor-rivals.css", "utf8");
 });
 afterAll(async () => {

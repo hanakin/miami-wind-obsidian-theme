@@ -58,6 +58,28 @@ export function checkCss(legacyFile?: string): Plugin {
 				!!legacyFile && file === path.resolve(legacyFile);
 			root.walkDecls((decl) => {
 				if (isLegacy(decl.source?.input.file)) return;
+				if (
+					["src/settings/tokens.css", "src/settings/palette.css"].some(
+						(file) => decl.source?.input.file === path.resolve(file),
+					)
+				) {
+					const previous = decl.prev();
+					if (
+						previous?.type === "decl" &&
+						previous.prop.startsWith("--") &&
+						decl.prop.startsWith("--")
+					) {
+						const changed =
+							previous.prop.slice(2).split("-")[0] !==
+							decl.prop.slice(2).split("-")[0];
+						const blank = /\n[\t ]*\n/.test(decl.raws.before ?? "");
+						if (changed !== blank)
+							throw decl.error(
+								"Separate variable families with one blank line; keep each family together",
+							);
+					}
+				}
+
 				if (decl.important || decl.prop === "all")
 					throw decl.error("No !important or all declarations");
 			});
@@ -88,14 +110,15 @@ export function checkCss(legacyFile?: string): Plugin {
 					// Inspect every compound, including selector lists inside functional pseudos.
 					selector.walkTags((tag) => {
 						if (
-							rule.source?.input.file === path.resolve("src/code.css") &&
+							rule.source?.input.file ===
+								path.resolve("src/markdown/code.css") &&
 							paritySpanSelectors.has(selector.toString().trim())
 						)
 							return;
 
 						if (
 							rule.source?.input.file ===
-								path.resolve("src/inline-marks.css") &&
+								path.resolve("src/markdown/inline-marks.css") &&
 							highlightSpanSelectors.has(selector.toString().trim())
 						)
 							return;
@@ -103,7 +126,8 @@ export function checkCss(legacyFile?: string): Plugin {
 						// Obsidian 1.15.1 button.mod-destructive.mod-cta(:hover) uses
 						// 0,2,1 / 0,3,1 reading --background-modifier-error/-hover; ties preserve CTA fills.
 						if (
-							rule.source?.input.file === path.resolve("src/modals.css") &&
+							rule.source?.input.file ===
+								path.resolve("src/global/modals.css") &&
 							[".modal button.mod-cta", ".modal button.mod-cta:hover"].includes(
 								selector.toString().trim(),
 							)
@@ -113,7 +137,8 @@ export function checkCss(legacyFile?: string): Plugin {
 						// Obsidian 1.15.1's community sidebar button.clickable-icon reads
 						// --text-normal at 0,3,1; the zero-weight state keeps an exact tie.
 						if (
-							rule.source?.input.file === path.resolve("src/overrides.css") &&
+							rule.source?.input.file ===
+								path.resolve("src/sections/community-browser.css") &&
 							selector.toString().trim() ===
 								".mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true'])"
 						)
@@ -146,7 +171,7 @@ export function checkCss(legacyFile?: string): Plugin {
 						(Specificity.compare(specificity, { a: 0, b: 4, c: 1 }) > 0 &&
 							!(
 								rule.source?.input.file ===
-									path.resolve("src/inline-marks.css") &&
+									path.resolve("src/markdown/inline-marks.css") &&
 								selector.toString().trim() ===
 									".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)"
 							))

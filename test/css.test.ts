@@ -7,7 +7,7 @@ import { checkCss } from "../scripts/checker";
 import { formatCss } from "../scripts/formatter";
 
 async function check(css: string) {
-	return postcss([checkCss()]).process(css, { from: "src/code.css" });
+	return postcss([checkCss()]).process(css, { from: "src/markdown/code.css" });
 }
 
 describe("theme rules", () => {
@@ -35,11 +35,11 @@ describe("theme rules", () => {
 
 it("formats with tabs, safe property order, section banners and stable output", async () => {
 	const input =
-		"/* @section code.css */ .x{color:red;display:block;background:blue} @media (hover: hover){.y{color:green}}";
+		"/* @section src/markdown/code.css */ .x{color:red;display:block;background:blue} @media (hover: hover){.y{color:green}}";
 	const result = await postcss([formatCss()]).process(input, {
 		from: undefined,
 	});
-	expect(result.css).toContain(" * @component: Code");
+	expect(result.css).toContain(" * @markdown: Code");
 	expect(result.css).toContain("\t display".replace(" ", ""));
 	expect(result.css.indexOf("color:")).toBeLessThan(
 		result.css.indexOf("display:"),
@@ -67,7 +67,7 @@ it("allows exactly the isolated tag hover exception", async () => {
 	const css =
 		".cm-hashtag-begin:has(+ .cm-hashtag-end:hover) { background-color: var(--magenta) }";
 	await expect(
-		postcss([checkCss()]).process(css, { from: "src/tag-hover.css" }),
+		postcss([checkCss()]).process(css, { from: "src/markdown/tag-hover.css" }),
 	).resolves.toBeDefined();
 	await expect(check(css)).rejects.toThrow();
 });
@@ -75,7 +75,7 @@ it("allows exactly the isolated tag hover exception", async () => {
 it("checks selectors and declarations after nesting and component expansion", async () => {
 	await expect(
 		postcss([nested(), checkCss()]).process(".a .b { & .c .d { color:red } }", {
-			from: "src/tabs.css",
+			from: "src/global/tabs.css",
 		}),
 	).rejects.toThrow();
 	await expect(
@@ -115,7 +115,7 @@ it.each([
 		const css = `.cm-s-obsidian span.cm-${token} { color: var(--${token}) }`;
 		await expect(check(css)).resolves.toBeDefined();
 		await expect(
-			postcss([checkCss()]).process(css, { from: "src/tabs.css" }),
+			postcss([checkCss()]).process(css, { from: "src/global/tabs.css" }),
 		).rejects.toThrow();
 		await expect(check(css.replace("span.", "div."))).rejects.toThrow();
 	},
@@ -127,7 +127,7 @@ it.each(["cm-footref", "cm-hmd-footnote"])(
 		const css = `.markdown-source-view.mod-cm6 span.cm-inline-code.${state} { color: var(--code-foreground) }`;
 		await expect(check(css)).resolves.toBeDefined();
 		await expect(
-			postcss([checkCss()]).process(css, { from: "src/tabs.css" }),
+			postcss([checkCss()]).process(css, { from: "src/global/tabs.css" }),
 		).rejects.toThrow();
 		await expect(check(css.replace(state, "cm-link"))).rejects.toThrow();
 	},
@@ -135,15 +135,15 @@ it.each(["cm-footref", "cm-hmd-footnote"])(
 
 it("generates base-l file, section, subsection and component comments", async () => {
 	const input =
-		"/* @section code.css */ /* @heading Syntax highlighting */ .x { /* Component: surface-background */ background-color: black; }";
+		"/* @section src/markdown/code.css */ /* @heading Syntax highlighting */ .x { /* Component: surface-background */ background-color: black; }";
 	const result = await postcss([formatCss()]).process(input, {
 		from: undefined,
 	});
 	expect(result.css).toContain(
 		"/* -----------------------------------------------------------------------------\n * Miami Wind: Obsidian theme\n * -----------------------------------------------------------------------------",
 	);
-	expect(result.css).toContain(" * @component: Code\n");
-	expect(result.css).toContain(" * @source: src/code.css\n");
+	expect(result.css).toContain(" * @markdown: Code\n");
+	expect(result.css).toContain(" * @source: src/markdown/code.css\n");
 	expect(result.css).toContain(
 		"/*\n * Syntax highlighting\n * -----------------------------------------------------------------------------\n */",
 	);
@@ -223,12 +223,14 @@ it.each([
 	async (selector) => {
 		const css = `${selector} { background-color: var(--highlight) }`;
 		await expect(
-			postcss([checkCss()]).process(css, { from: "src/inline-marks.css" }),
+			postcss([checkCss()]).process(css, {
+				from: "src/markdown/inline-marks.css",
+			}),
 		).resolves.toBeDefined();
 		await expect(check(css)).rejects.toThrow();
 		await expect(
 			postcss([checkCss()]).process(css.replace("span.", "div."), {
-				from: "src/inline-marks.css",
+				from: "src/markdown/inline-marks.css",
 			}),
 		).rejects.toThrow();
 	},
@@ -239,12 +241,12 @@ it.each([".modal button.mod-cta", ".modal button.mod-cta:hover"])(
 	async (selector) => {
 		const css = `${selector} { background-color: var(--cyan) }`;
 		await expect(
-			postcss([checkCss()]).process(css, { from: "src/modals.css" }),
+			postcss([checkCss()]).process(css, { from: "src/global/modals.css" }),
 		).resolves.toBeDefined();
 		await expect(check(css)).rejects.toThrow();
 		await expect(
 			postcss([checkCss()]).process(css.replace("button.", "div."), {
-				from: "src/modals.css",
+				from: "src/global/modals.css",
 			}),
 		).rejects.toThrow();
 	},
@@ -271,12 +273,14 @@ it("allows only the exact disabled community-sidebar rival in overrides.css", as
 	const css =
 		".mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true']) { color: var(--text-disabled) }";
 	await expect(
-		postcss([checkCss()]).process(css, { from: "src/overrides.css" }),
+		postcss([checkCss()]).process(css, {
+			from: "src/sections/community-browser.css",
+		}),
 	).resolves.toBeDefined();
 	await expect(check(css)).rejects.toThrow();
 	await expect(
 		postcss([checkCss()]).process(css.replace("button.", "div."), {
-			from: "src/overrides.css",
+			from: "src/sections/community-browser.css",
 		}),
 	).rejects.toThrow();
 });
@@ -307,10 +311,12 @@ it("preserves comment lists, descriptions, explicit headings and literal replace
 
 it("lists only emitted sections, counts continuations after the first banner, and reformats idempotently", async () => {
 	const input =
-		"/* @section src/components/empty.css */ /* @section src/legacy.css (continued) */ .x { color:red; } /* @section src/code.css */ .y { color:blue; } /* @section src/legacy.css (continued) */ .z { color:green; }";
+		"/* @section src/components/empty.css */ /* @section src/settings/legacy.css (continued) */ .x { color:red; } /* @section src/markdown/code.css */ .y { color:blue; } /* @section src/settings/legacy.css (continued) */ .z { color:green; }";
 	const once = await postcss([formatCss()]).process(input, { from: undefined });
 	expect(once.css).not.toContain("empty.css");
-	expect(once.css.match(/@theme: Legacy \(continued\)/g)).toHaveLength(1);
+	expect(
+		once.css.match(/@pending legacy port: Legacy \(continued\)/g),
+	).toHaveLength(1);
 	const twice = await postcss([formatCss()]).process(once.css, {
 		from: undefined,
 	});
@@ -346,18 +352,18 @@ it("keeps consecutive source notes as paragraphs directly above their rule", asy
 });
 
 it("prints the actual tokens-block headings with their rule lines", async () => {
-	const tokens = await readFile("src/tokens.css", "utf8");
+	const tokens = await readFile("src/settings/tokens.css", "utf8");
 	const result = await postcss([formatCss()]).process(tokens, {
 		from: undefined,
 	});
 	expect(result.css).toContain(
-		`\t/*\n\t * Core colors\n\t * ${"-".repeat(73)}\n\t */`,
+		`\t/*\n\t * Application backgrounds\n\t * ${"-".repeat(73)}\n\t */`,
 	);
 });
 
 it("keeps generated banner rule lines within 80 characters", async () => {
 	const result = await postcss([formatCss()]).process(
-		"/* @section src/code.css */ .x { color: red; }",
+		"/* @section src/markdown/code.css */ .x { color: red; }",
 		{ from: undefined },
 	);
 	for (const line of result.css
@@ -382,7 +388,7 @@ it("keeps hanging indents on wrapped numbered and dashed list items", async () =
 
 it("uses real section descriptions and requires them for new surfaces", async () => {
 	const result = await postcss([formatCss()]).process(
-		"/* @source: src/unmapped.css */ /* @section src/code.css */ .x { color: red; }",
+		"/* @source: src/unmapped.css */ /* @section src/markdown/code.css */ .x { color: red; }",
 		{ from: undefined },
 	);
 	expect(result.css).toContain("@source: src/unmapped.css");
@@ -396,4 +402,21 @@ it("uses real section descriptions and requires them for new surfaces", async ()
 			{ from: undefined },
 		),
 	).rejects.toThrow("Missing section description for src/unknown.css");
+});
+
+it("requires blank lines exactly between settings variable families", async () => {
+	for (const [css, valid] of [
+		[
+			".theme-dark { --icon-color: red;\n --icon-color-hover: blue;\n\n --tab-color: red; }",
+			true,
+		],
+		[".theme-dark { --icon-color: red;\n --tab-color: blue; }", false],
+		[".theme-dark { --icon-color: red;\n\n --icon-color-hover: blue; }", false],
+	] as const) {
+		const result = postcss([checkCss()]).process(css, {
+			from: "src/settings/tokens.css",
+		});
+		if (valid) await expect(result).resolves.toBeDefined();
+		else await expect(result).rejects.toThrow("Separate variable families");
+	}
 });

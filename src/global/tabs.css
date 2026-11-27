@@ -1,0 +1,57 @@
+/* Workspace tab icons, header backgrounds and active, hover and close states. */
+
+/* Shared component adjustments: icon-background, surface-background.
+ * Local --mw-* variables below set this section’s colors and backgrounds. */
+
+/* @heading Tab icons */
+.workspace-tabs .clickable-icon:hover {
+	--mw-icon-background: var(--icon-background-hover);
+	@mixin icon-background;
+}
+
+.workspace-tabs .clickable-icon:active,
+.workspace-tabs .clickable-icon.has-active-menu,
+.workspace-tabs .clickable-icon.is-active {
+	--mw-icon-background: var(--icon-background-active);
+	@mixin icon-background;
+}
+
+/* @heading Tab headers */
+.workspace-tab-header-container {
+	background-color: var(--grey-11);
+}
+
+.workspace .mod-root .workspace-tab-header {
+	--mw-surface-background: var(--grey-10);
+	@mixin surface-background;
+	border-radius: 0;
+	cursor: pointer;
+}
+
+.workspace .mod-root .workspace-tab-header.is-active {
+	background-color: var(--grey-9);
+	border-top: 1px solid var(--tab-divider-color);
+}
+
+.workspace-tab-header:not(.is-active):hover .workspace-tab-header-inner {
+	background-color: transparent;
+	border-radius: 0;
+}
+
+.workspace .mod-root .workspace-tab-header:hover {
+	color: var(--magenta);
+	border-top: 1px solid var(--tab-divider-color);
+}
+
+.workspace .mod-root .workspace-tab-header:where(:not(.is-active)):hover {
+	background-color: var(--magenta-transparent);
+}
+
+.workspace-tab-header-inner-close-button {
+	cursor: pointer;
+}
+
+.workspace-tab-header.is-active .workspace-tab-header-inner-close-button:hover {
+	background-color: var(--magenta-transparent);
+}
+

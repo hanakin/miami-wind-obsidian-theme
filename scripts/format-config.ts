@@ -12,13 +12,36 @@ export const formatConfig = {
 	closingRule: "-".repeat(74),
 	commentWidth: 80,
 	sections: {
+		"graph.css": {
+			layer: "graph",
+			description:
+				"Graph node colors for files, tags, attachments and unresolved links.",
+		},
+		"pdf-forms.css": {
+			layer: "PDF",
+			description: "PDF annotation form controls: focus and disabled colors.",
+		},
+		"pdf-xfa.css": {
+			layer: "PDF",
+			description: "XFA form select text, fills and focused states.",
+		},
+		"community-browser.css": {
+			layer: "community browser",
+			description:
+				"Disabled sidebar icon colors in the community plugin browser.",
+		},
+		"palette.css": {
+			layer: "settings",
+			description:
+				"Neutral shades, accent colors and transparent palette variants.",
+		},
 		"tokens.css": {
-			layer: "setting",
+			layer: "settings",
 			description:
 				"Palette colors and shared variables for note text and interface states.",
 		},
 		"legacy.css": {
-			layer: "theme",
+			layer: "pending legacy port",
 			description:
 				"Remaining shared controls and unported rules in their original order.",
 		},
@@ -71,7 +94,7 @@ export const formatConfig = {
 			description:
 				"Status bar backgrounds, item text and clickable hover states.",
 		},
-		"navigation.css": {
+		"file-explorer.css": {
 			description: "Active file entries in the file explorer.",
 		},
 		"tasks.css": {
@@ -90,14 +113,13 @@ export const formatConfig = {
 				"Dialog surfaces, navigation, action buttons and close-button states.",
 		},
 		"dropdowns.css": {
-			description:
-				"Dropdown controls, option states and PDF form select colors.",
+			description: "Dropdown controls and option states, including onboarding.",
 		},
 		"prompts.css": {
 			description: "Command prompt surfaces and instruction key colors.",
 		},
 		"search.css": {
-			description: "Search input clear buttons in normal and hover states.",
+			description: "Search clear buttons and result sorting dropdown states.",
 		},
 		"tags.css": {
 			description:
