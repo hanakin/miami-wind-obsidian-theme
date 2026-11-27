@@ -1,3 +1,5 @@
+import { propertyValueKey } from "./css-values";
+
 export interface ElementStyle {
 	element: string;
 	props: Record<string, string>;
@@ -38,7 +40,13 @@ export function styleDiff(
 		if (!changes) {
 			changes = [];
 			for (const property of new Set([...Object.keys(x), ...Object.keys(y)]))
-				if (x[property] !== y[property])
+				if (
+					x[property] !== y[property] &&
+					(x[property] === undefined ||
+						y[property] === undefined ||
+						propertyValueKey(property, x[property]!) !==
+							propertyValueKey(property, y[property]!))
+				)
 					changes.push({
 						property,
 						before: x[property] ?? null,
@@ -83,12 +91,12 @@ export function componentDiffs(
 					continue;
 				const counts = new Map<string, number>();
 				for (const s of group) {
-					const v = s.props[prop] ?? "";
+					const v = propertyValueKey(prop, s.props[prop] ?? "");
 					counts.set(v, (counts.get(v) ?? 0) + 1);
 				}
 				const shared = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
 				for (const s of group)
-					if ((s.props[prop] ?? "") !== shared)
+					if (propertyValueKey(prop, s.props[prop] ?? "") !== shared)
 						exceptions.get(s.surface)?.add(prop);
 			}
 		}
