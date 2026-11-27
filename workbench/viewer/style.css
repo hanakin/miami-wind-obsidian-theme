@@ -648,3 +648,98 @@ nav a.untied {
 .surface h3 a:focus-visible {
 	color: var(--pink);
 }
+
+/* The two sides: what each one shows. */
+.sides {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px 32px;
+	margin: 20px 0 0;
+}
+
+.side {
+	display: flex;
+	flex: 1 1 360px;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	min-width: 0;
+}
+
+.side-name {
+	width: 40px;
+	color: var(--grey-400);
+	font-size: 11px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.side select,
+.side input {
+	padding: 6px 10px;
+	background: var(--grey-900);
+	border: 1px solid transparent;
+	border-radius: var(--radius);
+	color: var(--text);
+	font: inherit;
+	font-size: 13px;
+}
+
+.side select {
+	cursor: pointer;
+}
+
+.side input {
+	flex: 1 1 200px;
+	min-width: 0;
+	font-family: var(--mono);
+	font-size: 12px;
+}
+
+.side select:hover,
+.side input:hover {
+	background: var(--interactive);
+}
+
+/* Focus shows as a surface and border shift, never a ring. */
+.side select:focus-visible,
+.side input:focus {
+	background: var(--interactive);
+	border-color: var(--grey-500);
+}
+
+.side-error {
+	width: 100%;
+	margin: 0 0 0 48px;
+	color: var(--red);
+	font-size: 12px;
+}
+
+/* Out of date, or a check running. */
+.recheck p {
+	margin: 0;
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.actions button {
+	padding: 7px 14px;
+	background: var(--interactive);
+	border: 0;
+	border-radius: var(--radius);
+	color: var(--text);
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.actions button:hover,
+.actions button:focus-visible {
+	background: var(--grey-700);
+	color: var(--pink);
+}

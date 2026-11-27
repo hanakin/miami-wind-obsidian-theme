@@ -57,19 +57,17 @@ export interface ViewerData {
 	compareError?: string;
 }
 
-/** Which build a compare report describes, and whether the pictures here show that same build. */
+/** What a compare report says about itself: when it ran and the hashes of the two themes it compared. */
 export interface ReportInfo {
 	/** When the report was written (ISO). From the report, or failing that its file date. */
 	generated: string;
-	/** The 2.0 theme the report compared, when it records one. */
-	after?: { sha256: string; source?: string };
-	/** True when the report's 2.0 theme is not the current theme.css; null when it does not say. */
-	stale: boolean | null;
-	/**
-	 * True when both sides are drawn with theme text that has the hash the report recorded. False
-	 * when either side cannot be verified.
-	 */
-	exact: boolean;
+	/** sha256 of the left (before) theme text it compared, when it records one. */
+	before?: string;
+	/** sha256 of the right (after) theme text it compared, when it records one. */
+	after?: string;
 }
 
-export type Theme = "current" | "new";
+/** One side as the page knows it: a name and the hash of its CSS, or why it cannot be shown. */
+export type ResolvedSide = { label: string; sha256: string } | { error: string };
+
+export type Which = "left" | "right";

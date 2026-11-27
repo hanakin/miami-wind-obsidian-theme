@@ -1,9 +1,9 @@
 // The viewer's local asset handling, as a Vite plugin: the data for the page, the fixtures wrapped
 // with Obsidian's CSS plus one theme, and a reload when the built theme or the compare result changes.
-import { execFileSync } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync, statSync, watchFile } from "node:fs";
-import type { ServerResponse } from "node:http";
+import { existsSync, mkdirSync, readFileSync, statSync, watchFile, writeFileSync } from "node:fs";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import Specificity from "@bramus/specificity";
 import { extractFile } from "@electron/asar";
 import type { Plugin } from "vite";
@@ -14,11 +14,10 @@ import { changes, compareStates } from "./compare-states.ts";
 import { touchedComponents } from "./elements.ts";
 import { forceStates } from "./force-states.ts";
 import { frameCsp, frameDocument, type ImageSize } from "./frame.ts";
-import { type ReportTheme, sha256, side } from "./themes.ts";
+import { parseChoice, resolveSide, type Side } from "./sides.ts";
 import type { ViewerData } from "./types.ts";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
-const CURRENT_REF = "b478dc8";
 
 const paths = {
 	app: `${ROOT}capture/.app/app.css`,
@@ -54,41 +53,54 @@ const json = (path: string): unknown =>
 /** What a compare.json says about itself. Older reports record none of this. */
 interface ReportMeta {
 	generated?: string;
-	themes?: { before?: ReportTheme; after?: ReportTheme };
+	themes?: { before?: { sha256?: string }; after?: { sha256?: string } };
 	fixtures?: ReportFixture[];
 }
 
 const OUT = `${ROOT}workbench/out`;
 
-// The 1.x theme the viewer draws when a report saved none: the file at CURRENT_REF.
-let gitTheme: string | undefined;
-function currentTheme(): string {
-	gitTheme ??= execFileSync("git", ["show", `${CURRENT_REF}:theme.css`], {
-		cwd: ROOT,
-		encoding: "utf8",
-	});
-	return gitTheme;
-}
-
-/** How each side is drawn for a report, and whether it is provably what the report compared. */
-function sides(report: ReportMeta | null) {
-	return {
-		before: side(OUT, report?.themes?.before, currentTheme()),
-		after: side(OUT, report?.themes?.after, readFileSync(paths.new, "utf8")),
-	};
-}
-
 function reportInfo(report: ReportMeta): ViewerData["report"] {
-	const after = report.themes?.after;
-	const drawn = sides(report);
 	return {
 		generated: report.generated ?? statSync(paths.compare).mtime.toISOString(),
-		after: after?.sha256 ? { sha256: after.sha256, source: after.source } : undefined,
-		stale: after?.sha256 ? after.sha256 !== sha256(readFileSync(paths.new)) : null,
-		// Both sides, each checked against its recorded hash. One unverified side is not exact.
-		exact: drawn.before.matches && drawn.after.matches,
+		before: report.themes?.before?.sha256,
+		after: report.themes?.after?.sha256,
 	};
 }
+
+// Every side resolved so far, by the hash of its CSS: the text to draw (states forced) and the
+// text as it was read. Frames and re-checks work from these bytes, never from a path again.
+const sheets = new Map<string, { forced: string; raw: string }>();
+const MAX_SHEETS = 24;
+function remember(side: Side): void {
+	if (!sheets.has(side.sha256)) {
+		sheets.set(side.sha256, { forced: forceStates(side.css), raw: side.css });
+		for (const old of [...sheets.keys()].slice(0, Math.max(0, sheets.size - MAX_SHEETS))) {
+			sheets.delete(old);
+		}
+	}
+}
+
+/** The body of a small JSON request from the page. */
+function body(req: IncomingMessage): Promise<unknown> {
+	return new Promise((resolve, reject) => {
+		let text = "";
+		req.on("data", (chunk: Buffer) => {
+			text += chunk;
+			if (text.length > 10_000) reject(new Error("Request too large."));
+		});
+		req.on("end", () => {
+			try {
+				resolve(JSON.parse(text));
+			} catch {
+				reject(new Error("Not JSON."));
+			}
+		});
+		req.on("error", reject);
+	});
+}
+
+// The one compare run this viewer may have going, started by the Re-check button.
+let recheck: { proc: ChildProcess; log: string; done: boolean; code: number | null } | undefined;
 
 /** The parts of a compare.json fixture the viewer shows beyond its verdict. */
 interface ReportFixture {
@@ -203,23 +215,6 @@ function sheet(path: string): string | null {
 	return out;
 }
 
-// Each side's theme for the current report, with forced states: the verified text itself, kept
-// until the report changes. Never re-read from a remembered path.
-let drawn: { key: string; before: string; after: string } | undefined;
-function themes(): { before: string; after: string } {
-	const mtime = existsSync(paths.compare) ? statSync(paths.compare).mtimeMs : 0;
-	const key = `${mtime}:${statSync(paths.new).mtimeMs}`;
-	if (drawn?.key !== key) {
-		const now = sides(mtime ? (json(paths.compare) as ReportMeta | null) : null);
-		drawn = {
-			key,
-			before: forceStates(now.before.css),
-			after: forceStates(now.after.css),
-		};
-	}
-	return drawn;
-}
-
 // Obsidian's runtime rules with MathJax's fonts embedded the way the compare tool embeds them, so
 // frames ask the server for no font but the app's own.
 let runtime: { mtime: number; css: string } | undefined;
@@ -256,12 +251,26 @@ export function viewer(): Plugin {
 			process.chdir(ROOT);
 			// Bumped on every change so frames fetch fresh CSS while unchanged CSS stays cached.
 			let version = Date.now();
-			for (const path of [paths.new, paths.diffs, paths.compare, paths.app, paths.cm]) {
+			for (const path of [paths.diffs, paths.compare, paths.app, paths.cm]) {
 				watchFile(path, { interval: 300 }, () => {
 					version = Date.now();
 					server.ws.send({ type: "full-reload" });
 				});
 			}
+			// Theme files a side points at. A change tells the page to redraw that side, no reload.
+			const watched = new Set<string>();
+			const watchSide = (path: string | undefined) => {
+				if (!path || watched.has(path)) return;
+				watched.add(path);
+				watchFile(path, { interval: 300 }, () =>
+					server.ws.send({ type: "custom", event: "mw:side-changed" }),
+				);
+			};
+			// Requests that act on the machine must come from the viewer's own page.
+			const fromPage = (req: IncomingMessage) =>
+				req.method === "POST" &&
+				req.headers.origin === `http://${req.headers.host}` &&
+				(req.headers["content-type"] ?? "").startsWith("application/json");
 
 			server.middlewares.use((req, res, next) => {
 				const url = new URL(req.url ?? "/", "http://viewer");
@@ -269,15 +278,96 @@ export function viewer(): Plugin {
 				// Frames have no origin of their own (sandbox), so every URL they load is spelled out.
 				const origin = `http://${req.headers.host}`;
 
+				if (url.pathname === "/api/sides") {
+					// Resolve what each side points at. The page gets a label and a hash, never the text.
+					if (!fromPage(req)) return send(res, 403, "text/plain", "Forbidden");
+					body(req)
+						.then((sent) => {
+							const out: Record<string, unknown> = {};
+							for (const which of ["left", "right"] as const) {
+								try {
+									const side = resolveSide(
+										ROOT,
+										parseChoice((sent as Record<string, unknown>)[which]),
+									);
+									remember(side);
+									watchSide(side.watch);
+									out[which] = { label: side.label, sha256: side.sha256 };
+								} catch (e) {
+									out[which] = { error: e instanceof Error ? e.message : String(e) };
+								}
+							}
+							send(res, 200, "application/json", JSON.stringify(out));
+						})
+						.catch(() => send(res, 400, "text/plain", "Bad request"));
+					return;
+				}
+				if (url.pathname === "/api/recheck" && req.method === "GET") {
+					return send(
+						res,
+						200,
+						"application/json",
+						JSON.stringify(
+							recheck
+								? { running: !recheck.done, code: recheck.code, log: recheck.log.slice(-400) }
+								: { running: false, code: null, log: "" },
+						),
+					);
+				}
+				if (url.pathname === "/api/recheck") {
+					// Run the compare tool on the two sides now shown, for one component or for everything.
+					if (!fromPage(req)) return send(res, 403, "text/plain", "Forbidden");
+					body(req)
+						.then((sent) => {
+							const { left, right, component } = sent as Record<string, unknown>;
+							const before = sheets.get(String(left));
+							const after = sheets.get(String(right));
+							const named = typeof component === "string" && component in index.components;
+							if (!before || !after || (component !== undefined && !named)) {
+								return send(res, 400, "text/plain", "Unknown side or component");
+							}
+							if (recheck && !recheck.done) return send(res, 409, "text/plain", "Already running");
+							// The compare tool reads files: hand it exactly the bytes the pictures are drawn from.
+							mkdirSync(`${OUT}/sides`, { recursive: true });
+							const files = [left, right].map((sha) => `${OUT}/sides/${sha}.css`);
+							writeFileSync(files[0] as string, before.raw);
+							writeFileSync(files[1] as string, after.raw);
+							const args = ["workbench/compare/cli.ts", "--before", files[0], "--after", files[1]];
+							const proc = spawn(
+								"bun",
+								[...args, ...(named ? ["--component", component as string] : [])] as string[],
+								{ cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] },
+							);
+							const run = { proc, log: "", done: false, code: null as number | null };
+							recheck = run;
+							const keep = (chunk: Buffer) => {
+								run.log = (run.log + chunk).slice(-4000);
+							};
+							proc.stdout?.on("data", keep);
+							proc.stderr?.on("data", keep);
+							proc.on("close", (code) => {
+								run.done = true;
+								run.code = code;
+							});
+							send(res, 200, "application/json", JSON.stringify({ running: true }));
+						})
+						.catch(() => send(res, 400, "text/plain", "Bad request"));
+					return;
+				}
 				if (url.pathname === "/api/data") {
 					return send(res, 200, "application/json", JSON.stringify(data(index)));
 				}
-				if (area === "frame" && (a === "current" || a === "new") && b && byId.has(b)) {
+				if (area === "frame" && a && sheets.has(a) && b && byId.has(b)) {
 					const nonce = randomUUID();
 					const component = url.searchParams.get("focus") ?? "";
 					const selector = COMPONENTS[component];
 					const focus = selector ? { is: selector, not: moreSpecific(component) } : null;
-					const styles = ["cm", "app", a].map((n) => `${origin}/css/${n}.css?v=${version}`);
+					// Runtime rules, app CSS, then the side's theme by its hash: the compare tool's order.
+					const styles = [
+						`${origin}/css/cm.css?v=${version}`,
+						`${origin}/css/app.css?v=${version}`,
+						`${origin}/css/theme/${a}.css`,
+					];
 					const fixture = byId.get(b);
 					const html = readFileSync(`${ROOT}capture/fixtures/${fixture?.file}`, "utf8");
 					// The content decides: synthetic platform variants keep ".html" names for XHTML text.
@@ -305,20 +395,16 @@ export function viewer(): Plugin {
 						return send(res, 404, "text/plain", "Not found");
 					}
 				}
+				if (area === "css" && a === "theme" && b) {
+					// A side's theme, named by the hash of its text: only text a side resolved to.
+					const theme = sheets.get(b.replace(/\.css$/, ""));
+					if (!theme) return send(res, 404, "text/plain", "Not found");
+					res.setHeader("Cache-Control", "max-age=31536000, immutable");
+					return send(res, 200, "text/css; charset=utf-8", theme.forced);
+				}
 				if (area === "css" && a && !b) {
 					const name = a.replace(/\.css$/, "");
-					// Each side is drawn with the theme file the report compared, when it saved one, so
-					// the pictures and the results describe the same CSS.
-					const body =
-						name === "current"
-							? themes().before
-							: name === "new"
-								? themes().after
-								: name === "cm"
-									? runtimeSheet()
-									: name === "app"
-										? sheet(paths.app)
-										: null;
+					const body = name === "cm" ? runtimeSheet() : name === "app" ? sheet(paths.app) : null;
 					if (body === null) return send(res, 404, "text/plain", "Not found");
 					res.setHeader("Cache-Control", "max-age=31536000, immutable");
 					return send(res, 200, "text/css; charset=utf-8", body);

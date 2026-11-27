@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import {
 	type Change,
 	type PlaceVerdict,
@@ -5,17 +6,18 @@ import {
 	rowState,
 	stateFor,
 } from "./compare-states.ts";
-import type { CompareState, Fixture, Theme, ViewerData } from "./types.ts";
+import type { SideChoice } from "./sides.ts";
+import type { CompareState, Fixture, ResolvedSide, ViewerData, Which } from "./types.ts";
 import { bySurface, kinds, plainReason, surfaceName } from "./words.ts";
 
-type Mode = Theme | "both";
+type Mode = Which | "both";
 type Status = CompareState["status"];
 type Child = Node | string | false | null | undefined;
 type Rect = [number, number, number, number];
 
 const MODES: [Mode, string][] = [
-	["current", "1.x theme"],
-	["new", "2.0 build"],
+	["left", "Left"],
+	["right", "Right"],
 	["both", "Side by side"],
 ];
 // The four states a place or capture can be in, worst first, in plain words.
@@ -65,16 +67,7 @@ const buildOnly = [...usage.keys()].filter((n) => !data.components[n]).sort();
 /** Every capture the component appears in, its own and larger ones around it. */
 const capturesOf = (name: string) =>
 	(data.components[name]?.fixtures ?? []).flatMap((id) => fixtures.get(id) ?? []);
-/** A component's places counted by verdict: the page header and the sidebar dot both use this. */
-const summaryOf = (name: string) =>
-	pageSummary(
-		name,
-		data.components[name]?.surfaces ?? [],
-		capturesOf(name),
-		data.compare,
-		data.touched,
-	);
-const summaries = new Map(names.map((n) => [n, summaryOf(n)]));
+// --- The two sides -----------------------------------------------------------------------
 
 function stored(key: string): string | null {
 	try {
@@ -83,6 +76,87 @@ function stored(key: string): string | null {
 		return null;
 	}
 }
+
+function store(key: string, value: string): void {
+	try {
+		localStorage.setItem(key, value);
+	} catch {
+		// Private windows: the choice just doesn't persist.
+	}
+}
+
+const WHICH: Which[] = ["left", "right"];
+// What each side is pointed at. Out of the box: the released 1.x beside the current build.
+const DEFAULT_CHOICES: Record<Which, SideChoice> = {
+	left: { kind: "release" },
+	right: { kind: "build" },
+};
+let choices: Record<Which, SideChoice> = DEFAULT_CHOICES;
+try {
+	const saved = JSON.parse(stored("mw-viewer-sides") ?? "null") as Record<Which, SideChoice> | null;
+	if (saved?.left?.kind && saved.right?.kind) choices = saved;
+} catch {
+	// A broken saved value: start from the defaults.
+}
+
+/** Asks the server what each side points at now: a name and the hash of its CSS, or an error. */
+async function resolveSides(): Promise<Record<Which, ResolvedSide>> {
+	const res = await fetch("/api/sides", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(choices),
+	});
+	return (await res.json()) as Record<Which, ResolvedSide>;
+}
+let sides = await resolveSides();
+const hashOf = (which: Which) => {
+	const side = sides[which];
+	return "sha256" in side ? side.sha256 : undefined;
+};
+const labelOf = (which: Which) => {
+	const side = sides[which];
+	return "label" in side ? side.label : which === "left" ? "Left" : "Right";
+};
+
+/**
+ * True when the last compare report was made with exactly the CSS now shown on both sides. Only
+ * then do its verdicts mean anything here.
+ */
+const fresh = () =>
+	data.report?.before !== undefined &&
+	data.report.before === hashOf("left") &&
+	data.report.after === hashOf("right");
+
+// The report's results, or nothing when it was made with other CSS: never a verdict from that.
+const none = { compare: null, touched: {}, changes: {} } as Pick<
+	ViewerData,
+	"compare" | "touched" | "changes"
+>;
+let live: Pick<ViewerData, "compare" | "touched" | "changes"> = fresh() ? data : none;
+
+/** A component's places counted by verdict: the page header and the sidebar dot both use this. */
+const summaryOf = (name: string) =>
+	pageSummary(
+		name,
+		data.components[name]?.surfaces ?? [],
+		capturesOf(name),
+		live.compare,
+		live.touched,
+	);
+let summaries = new Map(names.map((n) => [n, summaryOf(n)]));
+
+/** Re-reads everything that depends on the sides after they change. */
+function refresh(): void {
+	live = fresh() ? data : none;
+	summaries = new Map(names.map((n) => [n, summaryOf(n)]));
+}
+
+/** Why something is not proven, in plain words. With an out-of-date report, that is the reason. */
+const why = (reason: string) =>
+	reason === "not compared yet" && data.report && !fresh()
+		? "the last check used different CSS"
+		: plainReason(reason);
+
 let mode: Mode = MODES.find(([m]) => m === stored("mw-viewer-view"))?.[0] ?? "both";
 
 // --- Navigation ---------------------------------------------------------------------------
@@ -102,7 +176,7 @@ function navLink(name: string, count?: number): HTMLElement {
 function legend(): HTMLElement {
 	return h(
 		"ul",
-		{ class: "legend", "aria-label": "1.x vs 2.0, by component" },
+		{ class: "legend", "aria-label": "Left against right, by component" },
 		h("li", { class: "legend-title" }, `${names.length} components:`),
 		...STATES.toReversed().map(([status, label]) =>
 			h(
@@ -141,12 +215,12 @@ function renderNav(): void {
 			h("div", { class: "brand" }, "Miami Wind components"),
 			filter,
 			legend(),
-			untiedCount > 0 &&
+			untiedCount() > 0 &&
 				h(
 					"a",
 					{ href: `#${UNTIED}`, "data-name": UNTIED, class: "untied" },
 					h("span", { class: "nav-name" }, "Changes not tied to a component"),
-					h("span", { class: "nav-count" }, String(untiedCount)),
+					h("span", { class: "nav-count" }, String(untiedCount())),
 				),
 		),
 		h(
@@ -189,10 +263,26 @@ const lazy = new IntersectionObserver(
 );
 
 /** One fixture under one theme, cropped to the shown element once the frame reports it. */
-function shot(f: Fixture, theme: Theme, label: boolean, focus?: string): HTMLElement {
+const frameUrl = (sha: string, id: string, focus?: string) =>
+	`/frame/${sha}/${encodeURIComponent(id)}${focus ? `?focus=${encodeURIComponent(focus)}` : ""}`;
+
+function shot(f: Fixture, which: Which, label: boolean, focus?: string): HTMLElement {
+	const sha = hashOf(which);
+	const name = h("span", { class: "shot-label" }, labelOf(which));
+	// A side that cannot be read has no picture; its picker says why.
+	if (!sha)
+		return h(
+			"div",
+			{ class: "shot" },
+			label && name,
+			h("p", { class: "aside" }, "Nothing to show for this side."),
+		);
 	const frame = h("iframe", {
-		"data-src": `/frame/${theme}/${encodeURIComponent(f.id)}${focus ? `?focus=${encodeURIComponent(focus)}` : ""}`,
-		title: `${f.id} (${theme === "current" ? "1.x" : "2.0"})`,
+		"data-src": frameUrl(sha, f.id, focus),
+		"data-side": which,
+		"data-fixture": f.id,
+		"data-focus": focus ?? "",
+		title: `${f.id} (${labelOf(which)})`,
 		// Captured markup is untrusted: no same-origin access, only the viewer's own measuring script.
 		sandbox: "allow-scripts",
 		width: String((f.viewport ?? DESKTOP)[0]),
@@ -201,12 +291,7 @@ function shot(f: Fixture, theme: Theme, label: boolean, focus?: string): HTMLEle
 	});
 	const crop = h("div", { class: "crop" }, frame);
 	lazy.observe(crop);
-	return h(
-		"div",
-		{ class: "shot" },
-		label && h("span", { class: "shot-label" }, theme === "current" ? "1.x" : "2.0"),
-		crop,
-	);
+	return h("div", { class: "shot" }, label && name, crop);
 }
 
 /** Per crop: the box the frame reported. Per figure: what to do when its component is not found. */
@@ -304,7 +389,11 @@ function value(v: string | null): HTMLElement {
 		swatch.style.background = v;
 		return swatch;
 	}
-	return h("code", {}, v ?? "none");
+	// A long value (a font list) is cut short on the page and kept whole on hover.
+	const text = v ?? "none";
+	return text.length > 48
+		? h("code", { title: text }, `${text.slice(0, 46)}…`)
+		: h("code", {}, text);
 }
 
 /** One change in plain words: what changed, from what to what, and on which item. */
@@ -331,11 +420,9 @@ function changeLine(c: Change, component: string): HTMLElement {
 const untied = (c: Change) => c.components.length === 0;
 // Those changes get a page of their own, so that judging each component by its own items hides nothing.
 const UNTIED = "~untied";
-const untiedCaptures = data.fixtures.filter((f) => data.changes[f.id]?.list.some(untied));
-const untiedCount = untiedCaptures.reduce(
-	(n, f) => n + (data.changes[f.id]?.list.filter(untied).length ?? 0),
-	0,
-);
+const untiedCaptures = () => data.fixtures.filter((f) => live.changes[f.id]?.list.some(untied));
+const untiedCount = () =>
+	untiedCaptures().reduce((n, f) => n + (live.changes[f.id]?.list.filter(untied).length ?? 0), 0);
 
 /** What differs in a capture, in plain words: the first few changes, the rest behind a click. */
 function whatDiffers(
@@ -343,7 +430,7 @@ function whatDiffers(
 	component: string,
 	only?: (c: Change) => boolean,
 ): HTMLElement | false {
-	const all = data.changes[f.id];
+	const all = live.changes[f.id];
 	if (!all) return false;
 	const list = only ? all.list.filter(only) : all.list;
 	// A filtered list is complete as shown; the full one may have been cut by the server.
@@ -392,7 +479,7 @@ function verdictLines(verdict: CompareState): HTMLElement | false {
 	if (verdict.status === "same") return false;
 	const reasons =
 		verdict.status === "not-proven"
-			? verdict.reasons.map(plainReason)
+			? verdict.reasons.map(why)
 			: verdict.status === "accepted"
 				? [`intentional: ${verdict.reason}`]
 				: [];
@@ -410,11 +497,11 @@ function verdictLines(verdict: CompareState): HTMLElement | false {
  * something larger around it; the verdict shown is always about that component.
  */
 function capture(f: Fixture, focus?: string, only?: (c: Change) => boolean): HTMLElement {
-	const themes: Theme[] = mode === "both" ? ["current", "new"] : [mode];
+	const themes: Which[] = mode === "both" ? WHICH : [mode];
 	const component = focus ?? f.component;
 	// A larger capture previewed for another component: the row above already gives the verdict.
 	const around = f.component !== component;
-	const verdict = around ? undefined : stateFor(component, f.id, data.compare, data.touched);
+	const verdict = around ? undefined : stateFor(component, f.id, live.compare, live.touched);
 	return h(
 		"figure",
 		{ class: "capture" },
@@ -464,7 +551,7 @@ function sharedLookLine(component: string, surface: string): HTMLElement | false
 	// Styled differently in every place means there is no standard to differ from: say nothing.
 	if (all.length > 1 && all.every((x) => !x.same)) return false;
 	const d = data.diffs?.[component]?.[surface];
-	// Nothing to say when it matches. This is about the component across places, not 1.x vs 2.0.
+	// Nothing to say when it matches. This is about the component across places, not left against right.
 	if (!d || d.same) return false;
 	return h(
 		"div",
@@ -490,9 +577,7 @@ function reasonLines(place: PlaceVerdict): HTMLElement | false {
 			h(
 				"li",
 				{},
-				place.captures === 1
-					? plainReason(reason)
-					: `${n} of ${place.captures} captures: ${plainReason(reason)}`,
+				place.captures === 1 ? why(reason) : `${n} of ${place.captures} captures: ${why(reason)}`,
 			),
 		),
 	);
@@ -501,7 +586,7 @@ function reasonLines(place: PlaceVerdict): HTMLElement | false {
 /** One place: its verdict from the data, and the captures (or one close-up) that show it. */
 function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLElement {
 	const here = all.filter((f) => f.surface === surface);
-	const place = rowState(component, surface, all, data.compare, data.touched);
+	const place = rowState(component, surface, all, live.compare, live.touched);
 	const status = place?.state.status ?? "not-proven";
 	const captures = h("div", { class: "captures" });
 	const row = h(
@@ -511,7 +596,7 @@ function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLEle
 			"header",
 			{},
 			h("h3", {}, surfaceName(surface)),
-			h("span", { class: `badge ${status}` }, `1.x vs 2.0: ${LABEL[status]}`),
+			h("span", { class: `badge ${status}` }, `Left vs right: ${LABEL[status]}`),
 			place?.inside &&
 				h(
 					"p",
@@ -605,11 +690,7 @@ function modeSwitch(): HTMLElement {
 			const b = h("button", { type: "button", "aria-pressed": String(m === mode) }, label);
 			b.addEventListener("click", () => {
 				mode = m;
-				try {
-					localStorage.setItem("mw-viewer-view", m);
-				} catch {
-					// Private windows: the choice just doesn't persist.
-				}
+				store("mw-viewer-view", m);
 				renderPage();
 			});
 			return b;
@@ -631,24 +712,162 @@ function counts(name: string, places: number): string {
 	return `${places} ${places === 1 ? "place" : "places"}: ${parts.filter(Boolean).join(", ")}`;
 }
 
-/** "Compared 1.x with 2.0 build 3f9c2ab, Nov 25, 2026." Which build the results describe. */
+// The kinds of side a picker offers, in plain words.
+const KINDS: [SideChoice["kind"], string][] = [
+	["default", "Default Obsidian"],
+	["release", "Miami Wind 1.x (released)"],
+	["build", "Current build (theme.css)"],
+	["git", "Miami Wind version…"],
+	["path", "Folder or file…"],
+];
+
+/** Points both sides at the current choices, then redraws everything that depends on them. */
+async function applySides(): Promise<void> {
+	store("mw-viewer-sides", JSON.stringify(choices));
+	sides = await resolveSides();
+	refresh();
+	renderNav();
+	renderPage();
+}
+
+/** One side's picker: what kind of thing it shows, and which version or path when that applies. */
+function sidePicker(which: Which): HTMLElement {
+	const choice = choices[which];
+	const side = sides[which];
+	const kind = h(
+		"select",
+		{ "aria-label": `${which === "left" ? "Left" : "Right"} side` },
+		...KINDS.map(([value, label]) =>
+			h("option", value === choice.kind ? { value, selected: "" } : { value }, label),
+		),
+	) as HTMLSelectElement;
+	const detail = h("input", {
+		type: "text",
+		spellcheck: "false",
+		"aria-label":
+			choice.kind === "git"
+				? "Version: a tag or commit"
+				: "Full path to a theme folder or .css file",
+		placeholder:
+			choice.kind === "git"
+				? "tag or commit, for example 1.2.1"
+				: "/full/path/to/theme folder or .css file",
+		value: choice.kind === "git" ? choice.ref : choice.kind === "path" ? choice.path : "",
+	}) as HTMLInputElement;
+	const set = (next: SideChoice) => {
+		choices = { ...choices, [which]: next };
+		void applySides();
+	};
+	kind.addEventListener("change", () => {
+		const k = kind.value as SideChoice["kind"];
+		// A version or a path still has to be typed: show the box first, apply when it is filled in.
+		if (k === "git") choices = { ...choices, [which]: { kind: k, ref: "" } };
+		else if (k === "path") choices = { ...choices, [which]: { kind: k, path: "" } };
+		else return set({ kind: k });
+		renderPage();
+		main.querySelector<HTMLInputElement>(`.side.${which} input`)?.focus();
+	});
+	detail.addEventListener("change", () => {
+		const text = detail.value.trim();
+		if (choice.kind === "git") set({ kind: "git", ref: text });
+		if (choice.kind === "path") set({ kind: "path", path: text });
+	});
+	const typed = choice.kind === "git" || choice.kind === "path";
+	const empty = (choice.kind === "git" && !choice.ref) || (choice.kind === "path" && !choice.path);
+	return h(
+		"div",
+		{ class: `side ${which}` },
+		h("span", { class: "side-name" }, which === "left" ? "Left" : "Right"),
+		kind,
+		typed && detail,
+		"error" in side && !empty && h("p", { class: "side-error" }, side.error),
+	);
+}
+
+/** "Checked Miami Wind 1.x against Current build, Nov 25, 2026." Shown only for a report of these sides. */
 function reportLine(): string | false {
 	const r = data.report;
-	if (!r) return false;
+	if (!r || !fresh()) return false;
 	const date = new Date(r.generated).toLocaleDateString("en-US", {
 		year: "numeric",
 		month: "short",
 		day: "numeric",
 	});
-	const compared = Object.keys(data.compare ?? {}).length;
+	const compared = Object.keys(live.compare ?? {}).length;
 	const part =
 		compared < data.fixtures.length
-			? ` This report covers ${compared.toLocaleString("en-US")} of ${data.fixtures.length.toLocaleString("en-US")} captures.`
+			? ` The check covers ${compared.toLocaleString("en-US")} of ${data.fixtures.length.toLocaleString("en-US")} captures.`
 			: "";
-	return (
-		(r.after
-			? `Compared 1.x with 2.0 build ${r.after.sha256.slice(0, 7)}, ${date}.`
-			: `Compared 1.x with a 2.0 build on ${date}. The report does not record which build.`) + part
+	return `Checked ${labelOf("left")} against ${labelOf("right")}, ${date}.${part}`;
+}
+
+/** Starts a compare run on the two sides shown, for one component or for everything. */
+async function recheck(component?: string): Promise<void> {
+	await fetch("/api/recheck", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ left: hashOf("left"), right: hashOf("right"), component }),
+	});
+	void watchRecheck();
+}
+
+// The component page on screen, for the notice to offer a re-check of just that component.
+let shown: string | undefined;
+// A run in progress, as last heard from the server.
+let checking: { running: boolean; code: number | null; log: string } | undefined;
+/** Follows a compare run until it ends. A finished run rewrites the report, which reloads the page. */
+async function watchRecheck(): Promise<void> {
+	checking = (await (await fetch("/api/recheck")).json()) as typeof checking;
+	const slot = document.querySelector(".recheck");
+	if (slot) slot.replaceWith(recheckNotice(shown) || "");
+	if (checking?.running) setTimeout(() => void watchRecheck(), 1500);
+}
+
+/**
+ * When the results on hand were not made with the CSS now shown: say so, and offer to check again.
+ * While a check runs, show how far it is.
+ */
+function recheckNotice(component?: string): HTMLElement | false {
+	if (checking?.running) {
+		const progress = checking.log
+			.trim()
+			.split("\n")
+			.findLast((line) => /\d+\/\d+ checked/.test(line));
+		return h("p", { class: "message recheck" }, `Checking… ${progress ?? "starting"}`);
+	}
+	// 0 same, 1 differences, 2 not proven: all normal ends. Anything else is a failed run.
+	if (checking && checking.code !== null && checking.code > 2) {
+		return h(
+			"p",
+			{ class: "message warn recheck" },
+			`The check failed. ${checking.log.trim().split("\n").slice(-2).join(" ")}`,
+		);
+	}
+	if (fresh()) return false;
+	if (!hashOf("left") || !hashOf("right")) return false;
+	const button = (label: string, name?: string) => {
+		const b = h("button", { type: "button" }, label);
+		b.addEventListener("click", () => void recheck(name));
+		return b;
+	};
+	return h(
+		"div",
+		{ class: "message warn recheck" },
+		h(
+			"p",
+			{},
+			data.report
+				? "Out of date: the last check was made with different CSS than what is shown here, so no result is shown."
+				: "These two sides have not been checked against each other yet.",
+		),
+		h(
+			"div",
+			{ class: "actions" },
+			component !== undefined &&
+				component in data.components &&
+				button(`Re-check ${component}`, component),
+			button("Re-check everything (about 35 minutes)"),
+		),
 	);
 }
 
@@ -665,17 +884,18 @@ function renderUntied(): void {
 				h(
 					"p",
 					{},
-					`${untiedCount} ${untiedCount === 1 ? "change" : "changes"} in ${untiedCaptures.length} ${untiedCaptures.length === 1 ? "capture" : "captures"}, on items that belong to no component the viewer knows.`,
+					`${untiedCount()} ${untiedCount() === 1 ? "change" : "changes"} in ${untiedCaptures().length} ${untiedCaptures().length === 1 ? "capture" : "captures"}, on items that belong to no component the viewer knows.`,
 				),
 				h("p", { class: "report" }, reportLine()),
 			),
 			modeSwitch(),
 		),
-		...[reportNotice()].filter((n): n is HTMLElement => Boolean(n)),
+		h("div", { class: "sides" }, sidePicker("left"), sidePicker("right")),
+		...[recheckNotice()].filter((n): n is HTMLElement => Boolean(n)),
 		h(
 			"section",
 			{},
-			...untiedCaptures.map((f) =>
+			...untiedCaptures().map((f) =>
 				h(
 					"section",
 					{ class: "surface" },
@@ -693,26 +913,6 @@ function renderUntied(): void {
 	main.scrollTop = 0;
 }
 
-/** A warning when the pictures may not show the build the results describe. */
-function reportNotice(): HTMLElement | false {
-	const r = data.report;
-	if (!r) return false;
-	const older = r.stale ? "This report is older than the current build. " : "";
-	if (r.exact) {
-		// Both sides verified against the report's hashes: only an old report is worth a note.
-		return older
-			? h("p", { class: "message warn" }, older, "The pictures show the build it compared.")
-			: false;
-	}
-	// Either side unverified is enough: a matching 2.0 theme does not vouch for the 1.x side.
-	return h(
-		"p",
-		{ class: "message warn" },
-		older,
-		"The pictures could not be checked against the theme files this report compared, so they can differ from what the results say.",
-	);
-}
-
 function renderPage(): void {
 	const name = decodeURIComponent(location.hash.slice(1)) || shared[0] || names[0] || "";
 	for (const a of nav.querySelectorAll("a")) {
@@ -723,11 +923,12 @@ function renderPage(): void {
 		renderUntied();
 		return;
 	}
+	shown = name;
 	const entry = data.components[name];
 	const all = capturesOf(name);
 	const own = all.filter((f) => f.component === name);
 	const status = (surface: string) =>
-		rowState(name, surface, all, data.compare, data.touched)?.state.status;
+		rowState(name, surface, all, live.compare, live.touched)?.state.status;
 	const places = (entry?.surfaces ?? []).toSorted(bySurface);
 	// Places that differ come first; the sort is stable, so the rest keep their order.
 	const rows = places
@@ -749,7 +950,8 @@ function renderPage(): void {
 			),
 			modeSwitch(),
 		),
-		reportNotice(),
+		h("div", { class: "sides" }, sidePicker("left"), sidePicker("right")),
+		recheckNotice(name),
 		!data.appCss &&
 			h(
 				"p",
@@ -767,14 +969,7 @@ function renderPage(): void {
 				h("code", {}, "bun run capture:extract-runtime-css"),
 				" and this page reloads.",
 			),
-		!data.compare &&
-			h(
-				"p",
-				{ class: "message" },
-				data.compareError ?? "1.x and 2.0 have not been compared yet. Run ",
-				!data.compareError && h("code", {}, "bun run compare"),
-				!data.compareError && " and this page reloads.",
-			),
+		data.compareError && h("p", { class: "message warn" }, data.compareError),
 		ready && entry?.multiSurface && sharedLook(name, own),
 		ready &&
 			rows.length > 0 &&
@@ -800,3 +995,30 @@ renderNav();
 renderPage();
 nav.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "center" });
 addEventListener("hashchange", renderPage);
+void watchRecheck();
+
+// A theme file one side points at changed on disk: redraw that side's pictures in place.
+import.meta.hot?.on("mw:side-changed", async () => {
+	const before = { left: hashOf("left"), right: hashOf("right") };
+	const wasFresh = fresh();
+	sides = await resolveSides();
+	if (wasFresh !== fresh() || WHICH.some((w) => !before[w] || !hashOf(w))) {
+		// The results no longer describe what is shown (or do again): everything is redrawn.
+		refresh();
+		renderNav();
+		renderPage();
+		return;
+	}
+	for (const which of WHICH) {
+		const sha = hashOf(which);
+		if (!sha || sha === before[which]) continue;
+		for (const frame of document.querySelectorAll<HTMLIFrameElement>(
+			`iframe[data-side="${which}"]`,
+		)) {
+			const url = frameUrl(sha, frame.dataset.fixture ?? "", frame.dataset.focus || undefined);
+			frame.dataset.src = url;
+			// Frames not yet scrolled into view pick the new address up when they load.
+			if (frame.getAttribute("src")) frame.src = url;
+		}
+	}
+});
