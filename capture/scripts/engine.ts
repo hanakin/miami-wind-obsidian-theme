@@ -1,5 +1,5 @@
 // Drives a running Obsidian: reaches each scene, forces states and records DOM + screenshots.
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CDPSession, Page } from "playwright";
 import { normSelector } from "./css.ts";
@@ -215,30 +215,63 @@ function magick(args: string[]): string {
 	return r.stdout.toString();
 }
 
+type Rect = [number, number, number, number];
+/** Color histogram of a region of a PNG (window coordinates), with rectangles masked out. */
+function histogram(
+	png: string,
+	region?: Rect,
+	excludes: Rect[] = [],
+): [number, number, number, number][] {
+	const args = [png];
+	if (region) {
+		const [x, y, w, h] = region.map((v) => Math.max(0, Math.round(v)));
+		args.push("-crop", `${w}x${h}+${x}+${y}`, "+repage");
+		for (const [ex, ey, ew, eh] of excludes) {
+			const x0 = Math.round(ex - (region[0] ?? 0));
+			const y0 = Math.round(ey - (region[1] ?? 0));
+			args.push(
+				"-fill",
+				"#010203",
+				"-draw",
+				`rectangle ${x0},${y0} ${x0 + Math.round(ew)},${y0 + Math.round(eh)}`,
+			);
+		}
+	}
+	args.push("-alpha", "off", "-format", "%c", "histogram:info:-");
+	const out = magick(args);
+	if (!out.trim()) throw new Error(`empty ImageMagick histogram for ${png}`);
+	const entries: [number, number, number, number][] = [];
+	for (const m of out.matchAll(/^\s*(\d+):.*?#([0-9A-Fa-f]{6})/gm)) {
+		const v = Number.parseInt(m[2] ?? "0", 16);
+		if (v === 0x010203) continue;
+		entries.push([Number(m[1]), (v >> 16) & 255, (v >> 8) & 255, v & 255]);
+	}
+	return entries;
+}
+
 /**
- * Screenshot pixels showing each 0xrrggbb color. Opaque colors count exact matches; a color drawn
- * with alpha < 1 counts pixels within 3 per channel of that color blended over the background (the
- * screenshot's most common color).
+ * Pixels showing each 0xrrggbb color, counted only inside `region` (minus `excludes`) or a class's
+ * own region. Opaque colors count exact matches (within 12 per channel inside a node's own region);
+ * a color drawn with alpha < 1 counts pixels within 3 per channel of it blended over the region's
+ * most common color (the background).
  */
 export function pixelCounts(
 	png: string,
 	colors: Record<string, number>,
 	alphas: Record<string, number> = {},
+	where: { region?: Rect; excludes?: Rect[]; classRegions?: Record<string, Rect> } = {},
 ): Record<string, number> {
-	const hist = magick([png, "-alpha", "off", "-format", "%c", "histogram:info:-"]);
-	if (!hist.trim()) throw new Error(`empty ImageMagick histogram for ${png}`);
-	const entries: [number, number, number, number][] = [];
-	for (const m of hist.matchAll(/^\s*(\d+):.*?#([0-9A-Fa-f]{6})/gm)) {
-		const v = Number.parseInt(m[2] ?? "0", 16);
-		entries.push([Number(m[1]), (v >> 16) & 255, (v >> 8) & 255, v & 255]);
-	}
-	const bg = entries.reduce((a, e) => (e[0] > a[0] ? e : a), [0, 0, 0, 0]);
+	const main = histogram(png, where.region, where.excludes ?? []);
+	const bg = main.reduce((a, e) => (e[0] > a[0] ? e : a), [0, 0, 0, 0]);
 	const out: Record<string, number> = {};
 	for (const [k, rgb] of Object.entries(colors)) {
+		const own = where.classRegions?.[k];
+		const entries = own ? histogram(png, own) : main;
 		const a = alphas[k] ?? 1;
 		const c = [(rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255];
 		const want = c.map((v, i) => Math.round(a * v + (1 - a) * (bg[i + 1] ?? 0)));
-		const tol = a < 1 ? 3 : 0;
+		// Inside a node's own region the renderer's color conversion may shift a channel a little.
+		const tol = own ? 12 : a < 1 ? 3 : 0;
 		out[k] = entries
 			.filter((e) => want.every((w, i) => Math.abs((e[i + 1] ?? 0) - w) <= tol))
 			.reduce((n, e) => n + e[0], 0);
@@ -295,6 +328,26 @@ interface Snap {
 	contains: string[];
 	seen: number;
 	imageSizes: { index: number; width: number; height: number }[];
+	canvasPixels: { index: number; url: string | null; rect: number[] }[];
+	viewport: [number, number];
+	styles: string[];
+	whole: "see-through" | null;
+	sheets: { kind: "app" | "theme" | "runtime"; text?: string }[];
+}
+
+/** Runtime stylesheet texts by content hash (gitignored, like app.css): see FixtureEntry.runtimeStyles. */
+export const RUNTIME_DIR = new URL("../.app/runtime/", import.meta.url).pathname;
+
+function saveSheets(sheets: Snap["sheets"]): string[] {
+	mkdirSync(RUNTIME_DIR, { recursive: true });
+	return sheets.map((sh) => {
+		if (sh.kind !== "runtime") return sh.kind;
+		const text = sh.text ?? "";
+		const hash = new Bun.CryptoHasher("sha256").update(text).digest("hex").slice(0, 20);
+		const path = `${RUNTIME_DIR}${hash}.css`;
+		if (!existsSync(path)) writeFileSync(path, text);
+		return hash;
+	});
 }
 
 /** Captures one item in the current UI state. Fails unless the target is visibly shown in its state. */
@@ -382,7 +435,7 @@ export async function captureItem(
 				if (!real)
 					return { id: item.id, error: `the real pointer did not produce ${pseudo.join("+")}` };
 			}
-		} else await sleep(200);
+		} else await sleep(200 + (item.settle ?? 0));
 		const probe = (await page.evaluate(
 			`(() => {
 				let el = window.__cap.target;
@@ -411,9 +464,21 @@ export async function captureItem(
 		}
 		if (!probe.expectOk)
 			return { id: item.id, error: `state not shown: target does not match ${item.expect}` };
+		// Let finite running animations (a menu row's fade, a sheet sliding in) end, so the shot
+		// shows the state the snapshot holds. Held or endless ones are left alone.
+		await page.evaluate(
+			"(async () => { const d = window.__cap.target?.ownerDocument ?? document; for (let i = 0; i < 40; i++) { const r = d.getAnimations().filter((a) => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming?.().endTime ?? Infinity)); if (!r.length) break; await new Promise((ok) => setTimeout(ok, 25)); } })()",
+		);
 		const vp = (await page.evaluate(
-			"({ width: innerWidth, height: innerHeight, hover: matchMedia('(hover: hover)').matches, finePointer: matchMedia('(pointer: fine)').matches })",
-		)) as { width: number; height: number; hover: boolean; finePointer: boolean };
+			"({ width: innerWidth, height: innerHeight, hover: matchMedia('(hover: hover)').matches, finePointer: matchMedia('(pointer: fine)').matches, dark: matchMedia('(prefers-color-scheme: dark)').matches, canvas: (() => { const d = document.createElement('div'); d.style.backgroundColor = 'Canvas'; document.body.append(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return c; })() })",
+		)) as {
+			width: number;
+			height: number;
+			hover: boolean;
+			finePointer: boolean;
+			dark: boolean;
+			canvas: string;
+		};
 		const [x = 0, y = 0, w = 0, h = 0] = vis.inView ?? [];
 		const pad = 8;
 		const x0 = Math.max(0, x - pad);
@@ -468,6 +533,11 @@ export async function captureItem(
 					shot,
 					record.graphColors,
 					(record.graphAlpha as Record<string, number> | undefined) ?? {},
+					{
+						region: record.graphRegion as Rect | undefined,
+						excludes: (record.graphExclude as Rect[] | undefined) ?? [],
+						classRegions: record.classRegions as Record<string, Rect> | undefined,
+					},
 				);
 		}
 		const stats = pngStats(shot);
@@ -484,6 +554,7 @@ export async function captureItem(
 				trim: item.trim ?? null,
 				label: item.state && item.state !== "default" ? item.state : null,
 				synthetic: item.synthetic ?? null,
+				context: item.context ?? null,
 			})})`,
 		)) as Snap;
 		if (snap.lost) return { id: item.id, error: "target vanished before the snapshot" };
@@ -492,6 +563,22 @@ export async function captureItem(
 			: ((await page.evaluate("cap.stackAt(window.__cap.target)")) as string[]);
 		const file = `${item.id}.${snap.format}`;
 		writeFileSync(join(out.fixturesDir, file), snap.html);
+		// Canvas pixels as PNG files named by content (PDF pages repeat across fixtures). WebGL
+		// canvases read back empty, so those come from the screen.
+		const canvasPixels: NonNullable<FixtureEntry["canvasPixels"]> = [];
+		for (const c of snap.canvasPixels) {
+			const [cx = 0, cy = 0, cw = 0, ch = 0] = c.rect;
+			const png = c.url
+				? Buffer.from(c.url.slice(c.url.indexOf(",") + 1), "base64")
+				: await page
+						.screenshot({ clip: { x: cx, y: cy, width: cw, height: ch } })
+						.catch(() => null);
+			if (!png) continue;
+			const name = `pixels/${new Bun.CryptoHasher("sha256").update(png).digest("hex").slice(0, 32)}.png`;
+			mkdirSync(join(out.fixturesDir, "pixels"), { recursive: true });
+			writeFileSync(join(out.fixturesDir, name), png);
+			canvasPixels.push({ index: c.index, file: name, source: c.url ? "canvas" : "screen" });
+		}
 		const entry: FixtureEntry = {
 			id: item.id,
 			file,
@@ -504,6 +591,15 @@ export async function captureItem(
 			obsidianVersion: out.version,
 			contains: snap.contains,
 			...(snap.imageSizes.length ? { imageSizes: snap.imageSizes } : {}),
+			...(canvasPixels.length ? { canvasPixels } : {}),
+			viewport: snap.viewport,
+			styles: snap.styles,
+			runtimeStyles: saveSheets(snap.sheets),
+			...(item.context
+				? { context: item.context }
+				: snap.whole
+					? { context: "document" as const }
+					: {}),
 			...(item.note ? { note: item.note } : {}),
 			...(item.synthetic ? { synthetic: item.synthetic } : {}),
 			...(snap.trimmed
@@ -534,7 +630,12 @@ export async function captureItem(
 				clip: [clip.x, clip.y, clip.width, clip.height].map((v) => Math.round(v)),
 				...(scroll ? { scroll } : {}),
 				...(item.media ? { media: JSON.stringify(item.media) } : {}),
-				inputMedia: { hover: vp.hover, finePointer: vp.finePointer },
+				inputMedia: {
+					hover: vp.hover,
+					finePointer: vp.finePointer,
+					dark: vp.dark,
+					canvas: vp.canvas,
+				},
 				screenshot: { sha256, ...stats },
 				...(record ? { record } : {}),
 			},
@@ -561,7 +662,16 @@ export async function runScene(
 	only?: Set<string>,
 	census?: Set<string>,
 ): Promise<ItemResult[]> {
-	const page = await pageFor(scene);
+	// A window that does not open fails this scene's items, not the whole run.
+	let page: Page;
+	try {
+		page = await pageFor(scene);
+	} catch (e) {
+		const why = `scene window did not open: ${(e as Error).message.split("\n")[0]}`;
+		return scene.items
+			.filter((i) => !only || only.has(i.id))
+			.map((i) => ({ id: i.id, error: why }));
+	}
 	await install(page);
 	const cdp = await page.context().newCDPSession(page);
 	await cdp.send("DOM.enable");
@@ -605,18 +715,29 @@ export function ensureDirs(out: CaptureOut): void {
 	mkdirSync(out.screenshotsDir, { recursive: true });
 }
 
+/** Where app.css sits among the runtime styles (they are saved in document order). */
+export const APP_CSS_MARK = "/* capture: app.css here */";
+
 /** Obsidian's runtime <style> and adopted stylesheets, for rendering fixtures locally (gitignored). */
 export async function saveRuntimeStyles(page: Page): Promise<void> {
 	const css = (await page.evaluate(`(() => {
+		const APP_CSS_MARK = ${JSON.stringify(APP_CSS_MARK)};
 		const parts = [];
-		for (const s of document.head.querySelectorAll("style")) {
+		// In document order: CodeMirror puts its styles first in <head>, before app.css, so
+		// app.css wins ties. The marker says where app.css goes.
+		for (const s of document.head.querySelectorAll("style, link[rel=stylesheet]")) {
+			if (s.localName === "link") { if (/(^|\\/)app\\.css$/.test(s.getAttribute("href") ?? "")) parts.push(APP_CSS_MARK); continue; }
 			if (s === app.customCss.styleEl) continue;
-			parts.push("/* <style" + (s.id ? " id=" + s.id : "") + "> */\\n" + s.textContent);
+			// Rules added through the CSSOM (MathJax adds one per character) are not in textContent.
+			let text = s.textContent;
+			try { text = [...s.sheet.cssRules].map((r) => r.cssText).join("\\n"); } catch {}
+			parts.push("/* <style" + (s.id ? " id=" + s.id : "") + "> */\\n" + text);
 		}
 		for (const sheet of document.adoptedStyleSheets) parts.push("/* adopted */\\n" + [...sheet.cssRules].map((r) => r.cssText).join("\\n"));
 		return parts.join("\\n\\n");
 	})()`)) as string;
-	if (!css.trim()) throw new Error("no runtime styles found (open an editor first)");
+	if (!css.replace(APP_CSS_MARK, "").trim())
+		throw new Error("no runtime styles found (open an editor first)");
 	const dir = new URL("../.app/", import.meta.url).pathname;
 	mkdirSync(dir, { recursive: true });
 	writeFileSync(`${dir}runtime-styles.css`, css);
