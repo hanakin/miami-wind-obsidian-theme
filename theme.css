@@ -14,39 +14,42 @@
  *
  * 1. settings: palette..................src/settings/palette.css
  * 2. settings: tokens...................src/settings/tokens.css
- * 3. global application: icons..........src/global/icons.css
- * 4. global application: ribbon.........src/global/ribbon.css
- * 5. global application: sidebars.......src/global/sidebars.css
- * 6. global application: tabs...........src/global/tabs.css
- * 7. global application: suggestions....src/global/suggestions.css
- * 8. global application: status bar.....src/global/status-bar.css
- * 9. global application: modals.........src/global/modals.css
- * 10. global application: dropdowns.....src/global/dropdowns.css
- * 11. global application: prompts.......src/global/prompts.css
- * 12. global application: search........src/global/search.css
- * 13. global application: menus.........src/global/menus.css
- * 14. global application: overrides.....src/global/overrides.css
- * 15. markdown: headings................src/markdown/headings.css
- * 16. markdown: code....................src/markdown/code.css
- * 17. markdown: inline marks............src/markdown/inline-marks.css
- * 18. markdown: selection...............src/markdown/selection.css
- * 19. markdown: links...................src/markdown/links.css
- * 20. markdown: blockquotes.............src/markdown/blockquotes.css
- * 21. markdown: tasks...................src/markdown/tasks.css
- * 22. markdown: tables..................src/markdown/tables.css
- * 23. markdown: callouts................src/markdown/callouts.css
- * 24. markdown: tags....................src/markdown/tags.css
- * 25. markdown: tag hover...............src/markdown/tag-hover.css
- * 26. markdown: horizontal rule.........src/markdown/horizontal-rule.css
- * 27. app section: canvas...............src/sections/canvas.css
- * 28. app section: properties...........src/sections/properties.css
- * 29. app section: file explorer........src/sections/file-explorer.css
- * 30. app section: bases................src/sections/bases.css
- * 31. graph: graph......................src/sections/graph.css
- * 32. PDF: pdf forms....................src/sections/pdf-forms.css
- * 33. PDF: pdf xfa......................src/sections/pdf-xfa.css
- * 34. community browser: community browser..src/sections/community-browser.css
- * 35. pending legacy port: legacy.......src/settings/legacy.css
+ * 3. global application: inputs.........src/global/inputs.css
+ * 4. global application: multi select...src/global/multi-select.css
+ * 5. global application: icons..........src/global/icons.css
+ * 6. global application: ribbon.........src/global/ribbon.css
+ * 7. global application: sidebars.......src/global/sidebars.css
+ * 8. global application: tabs...........src/global/tabs.css
+ * 9. global application: suggestions....src/global/suggestions.css
+ * 10. global application: status bar....src/global/status-bar.css
+ * 11. global application: modals........src/global/modals.css
+ * 12. global application: dropdowns.....src/global/dropdowns.css
+ * 13. global application: prompts.......src/global/prompts.css
+ * 14. global application: search........src/global/search.css
+ * 15. global application: menus.........src/global/menus.css
+ * 16. global application: overrides.....src/global/overrides.css
+ * 17. markdown: headings................src/markdown/headings.css
+ * 18. markdown: code....................src/markdown/code.css
+ * 19. markdown: code actions............src/markdown/code-actions.css
+ * 20. markdown: inline marks............src/markdown/inline-marks.css
+ * 21. markdown: selection...............src/markdown/selection.css
+ * 22. markdown: links...................src/markdown/links.css
+ * 23. markdown: blockquotes.............src/markdown/blockquotes.css
+ * 24. markdown: tasks...................src/markdown/tasks.css
+ * 25. markdown: task inputs.............src/markdown/task-inputs.css
+ * 26. markdown: tables..................src/markdown/tables.css
+ * 27. markdown: callouts................src/markdown/callouts.css
+ * 28. markdown: tags....................src/markdown/tags.css
+ * 29. markdown: tag hover...............src/markdown/tag-hover.css
+ * 30. markdown: horizontal rule.........src/markdown/horizontal-rule.css
+ * 31. app section: canvas...............src/sections/canvas.css
+ * 32. app section: properties...........src/sections/properties.css
+ * 33. app section: file explorer........src/sections/file-explorer.css
+ * 34. app section: bases................src/sections/bases.css
+ * 35. graph: graph......................src/sections/graph.css
+ * 36. PDF: pdf forms....................src/sections/pdf-forms.css
+ * 37. PDF: pdf xfa......................src/sections/pdf-xfa.css
+ * 38. community browser: community browser..src/sections/community-browser.css
  */
 
 
@@ -59,8 +62,6 @@
  * Neutral shades, accent colors and transparent palette variants.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Miami Wind palette: neutral shades, accent colors and transparent variants.
@@ -139,8 +140,6 @@
  * Palette colors and shared variables for note text and interface states.
  *
  * -------------------------------------------------------------------------- */
-
-/* #settings */
 
 /*
  * Shared variables grouped by the note content and application controls they
@@ -416,6 +415,112 @@
 
 
 /* -----------------------------------------------------------------------------
+ * @global application: Inputs
+ * -----------------------------------------------------------------------------
+ * @source: src/global/inputs.css
+ * @description:
+ *
+ * Shared inputs and comboboxes: fills, borders and keyboard focus.
+ *
+ * -------------------------------------------------------------------------- */
+
+/*
+ * Shared inputs and comboboxes: fills, borders and keyboard focus.
+ */
+input,
+.combobox-button {
+	--background-modifier-form-field: var(--grey-11);
+	--background-modifier-form-field-hover: var(--grey-11);
+
+	--slider-track-background: var(--grey-11);
+
+	--background-modifier-border: var(--grey-9);
+	--background-modifier-border-hover: var(--grey-9);
+	--background-modifier-border-focus: var(--grey-9);
+
+	--checkbox-border-color: var(--grey-9);
+	--checkbox-border-color-hover: var(--grey-9);
+	--checkbox-color: var(--grey-11);
+	--checkbox-color-hover: var(--grey-11);
+	background-color: var(--grey-11);
+	border-color: var(--grey-9);
+	color: var(--text-normal);
+}
+
+input:focus,
+input:focus-visible,
+input:focus-within,
+textarea:focus,
+textarea:focus-visible,
+textarea:focus-within,
+.combobox-button:focus,
+.combobox-button:focus-visible,
+.combobox-button:focus-within {
+	--background-modifier-border: var(--cyan);
+	--background-modifier-border-hover: var(--cyan);
+	--background-modifier-border-focus: var(--cyan);
+
+	--checkbox-border-color: var(--cyan);
+	--checkbox-border-color-hover: var(--cyan);
+	border-color: var(--cyan);
+	outline: none;
+}
+
+/*
+ * Invalid-field border paint is literal in the app; match its selector and use
+ * the input-local state token.
+ */
+.form-field.is-invalid input {
+	border-color: var(--background-modifier-border);
+}
+
+input[type='checkbox']:checked,
+input[type='radio']:checked,
+input[type='checkbox']:checked:hover,
+input[type='radio']:checked:hover {
+	border-color: var(--checkbox-border-color);
+}
+
+/*
+ * These search inputs reset borders literally; preserve their old computed
+ * border colors.
+ */
+.combobox .search-input-container input[type='search'],
+.bases-toolbar-menu-container .search-input-container input[type='search'] {
+	background-color: var(--grey-11);
+	border-color: var(--background-modifier-border);
+}
+
+/*
+ * Combobox hover and focus fills read dropdown tokens rather than text-field
+ * tokens.
+ */
+.combobox-button {
+	--dropdown-background: var(--grey-11);
+	--dropdown-background-hover: var(--grey-11);
+}
+
+
+/* -----------------------------------------------------------------------------
+ * @global application: Multi Select
+ * -----------------------------------------------------------------------------
+ * @source: src/global/multi-select.css
+ * @description:
+ *
+ * Remove-button hover colors in shared multi-select controls.
+ *
+ * -------------------------------------------------------------------------- */
+
+/*
+ * Remove-button hover colors in shared multi-select controls.
+ */
+.multi-select-pill-remove-button:hover {
+	color: var(--red-bright);
+	cursor: pointer;
+}
+
+
+/* -----------------------------------------------------------------------------
  * @global application: Icons
  * -----------------------------------------------------------------------------
  * @source: src/global/icons.css
@@ -424,8 +529,6 @@
  * Clickable icon hover fills and disabled pointer behavior.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Clickable icon hover fills and disabled pointer behavior.
@@ -450,8 +553,6 @@
  * Ribbon icon backgrounds in hover and active states.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Ribbon icon backgrounds in hover and active states.
@@ -479,8 +580,6 @@
  * Drawer actions, sidebar tab states and the vault profile border.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Drawer actions, sidebar tab states and the vault profile border.
@@ -533,8 +632,6 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  * Workspace tab icons, header backgrounds and active, hover and close states.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Workspace tab icons, header backgrounds and active, hover and close states.
@@ -591,7 +688,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 	color: var(--magenta);
 }
 
-.workspace .mod-root .workspace-tab-header:where(:not(.is-active)):hover {
+.mod-root .workspace-tab-header:not(.is-active):hover {
 	background-color: var(--magenta-transparent);
 }
 
@@ -613,8 +710,6 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  * Suggestion lists, selected rows, property fields and complex-item flair.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Suggestion lists, selected rows, property fields and complex-item flair.
@@ -655,7 +750,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
 	background-color: var(--magenta-transparent);
 }
 
-.suggestion-container:where(.mod-property-key) .suggestion-item:where(.mod-complex):hover .suggestion-flair {
+.mod-property-key .mod-complex:hover .suggestion-flair {
 	color: var(--magenta);
 }
 
@@ -680,8 +775,6 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  * Status bar backgrounds, item text and clickable hover states.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Status bar backgrounds, item text and clickable hover states.
@@ -716,8 +809,6 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  * Dialog surfaces, navigation, action buttons and close-button states.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Dialog surfaces, navigation, action buttons and close-button states.
@@ -804,8 +895,6 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  *
  * -------------------------------------------------------------------------- */
 
-/* #css */
-
 /*
  * Dropdown controls and option states, including onboarding.
  */
@@ -864,8 +953,6 @@ select option:checked {
  *
  * -------------------------------------------------------------------------- */
 
-/* #css */
-
 /*
  * Command prompt surfaces and instruction key colors.
  */
@@ -880,6 +967,16 @@ select option:checked {
 	padding: 4px 8px;
 }
 
+/*
+ * Obsidian’s prompt input has a literal transparent fill.
+ */
+.prompt .prompt-input,
+.prompt .prompt-input:hover,
+.prompt .prompt-input:focus,
+.prompt .prompt-input:focus-visible {
+	background-color: var(--grey-11);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @global application: Search
@@ -890,8 +987,6 @@ select option:checked {
  * Search clear buttons and result sorting dropdown states.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Search clear buttons and result sorting dropdown states.
@@ -925,8 +1020,6 @@ select option:checked {
  * Menu surfaces, icons, selected items and mobile action rows.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Menu surfaces, icons, selected items and mobile action rows.
@@ -1053,8 +1146,6 @@ select option:checked {
  *
  * -------------------------------------------------------------------------- */
 
-/* #css */
-
 /*
  * Final state overrides for settings tabs, scrollbars and disabled icons.
  */
@@ -1074,6 +1165,9 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 /*
  * Disabled paint must follow surface states; cursor keeps its original cascade
  * position.
+ *
+ * The zero-weight modal-close exclusion preserves its separate hover rule’s
+ * precedence.
  */
 .clickable-icon[aria-disabled='true'],
 .clickable-icon[aria-disabled='true']:hover,
@@ -1098,8 +1192,6 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
  * Heading colors in the editor and reading view.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Heading colors in the editor and reading view.
@@ -1165,8 +1257,6 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
  * Inline code, fenced code and editor syntax tokens: colors and backgrounds.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Inline code, fenced code and editor syntax tokens: colors and backgrounds.
@@ -1256,6 +1346,50 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 
 
 /* -----------------------------------------------------------------------------
+ * @markdown: Code Actions
+ * -----------------------------------------------------------------------------
+ * @source: src/markdown/code-actions.css
+ * @description:
+ *
+ * Code copy and edit buttons, including editor-specific state ties.
+ *
+ * -------------------------------------------------------------------------- */
+
+/*
+ * Code copy and edit buttons, including editor-specific state ties.
+ */
+.code-block-flair,
+.edit-block-button {
+	color: var(--cyan);
+	cursor: pointer;
+}
+
+/*
+ * Tie the editor’s own button selectors; 1.x hover also painted on touch
+ * devices.
+ */
+.markdown-source-view.mod-cm6 .code-block-flair,
+.markdown-source-view.mod-cm6 .edit-block-button {
+	color: var(--cyan);
+	cursor: pointer;
+}
+
+/*
+ * Shared component adjustments: action-button hover colors in Markdown.
+ */
+.code-block-flair:hover,
+.edit-block-button:hover,
+.markdown-source-view.mod-cm6 .code-block-flair:hover,
+.markdown-source-view.mod-cm6 .edit-block-button:hover {
+	--mw-action-background: var(--cyan-transparent);
+	--mw-action-color: var(--magenta);
+	background-color: var(--mw-action-background);
+	color: var(--mw-action-color);
+	cursor: pointer;
+}
+
+
+/* -----------------------------------------------------------------------------
  * @markdown: Inline Marks
  * -----------------------------------------------------------------------------
  * @source: src/markdown/inline-marks.css
@@ -1264,8 +1398,6 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
  * Highlighted text across editor tokens, reading view and PDF export.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Highlighted text across editor tokens, reading view and PDF export.
@@ -1312,33 +1444,33 @@ mark {
 }
 
 /*
- * Obsidian's formatting-label rival is 0,5,1; :where keeps the same
- * specificity.
+ * The highlight token replaces the redundant editor ancestor, keeping the 0,5,1
+ * tie.
  */
-.cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight) {
+.cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting.cm-highlight {
 	color: var(--background-primary);
 }
 
 /*
  * Link-formatting token rivals are type-qualified at 0,3,1 and 0,4,1.
  */
-.cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight),
-.cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight):hover {
+span.cm-formatting-link.cm-url.cm-highlight,
+span.cm-formatting-link.cm-url.cm-highlight:hover {
 	color: var(--background-primary);
 }
 
 /*
  * Flashing ranges use an important background; set its variable on the token.
  */
-.cm-s-obsidian span.is-flashing:where(.cm-highlight) {
+span.is-flashing.cm-highlight {
 	--highlight-background: var(--highlight);
 }
 
 /*
  * Footnote URL titles and escaped hashtags can also carry a highlight token.
  */
-.cm-s-obsidian .cm-line.HyperMD-footnote .cm-hmd-footnote-url-title:where(.cm-highlight),
-.cm-s-obsidian span.cm-hashtag.cm-hmd-escape-backslash:where(.cm-highlight) {
+.cm-line.HyperMD-footnote .cm-hmd-footnote-url-title.cm-highlight,
+span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 	color: var(--background-primary);
 }
 
@@ -1352,8 +1484,6 @@ mark {
  * Selection text and background colors throughout the app.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Selection text and background colors throughout the app.
@@ -1373,8 +1503,6 @@ mark {
  * Reading-view link colors across normal, hover, visited and focus states.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Reading-view link colors across normal, hover, visited and focus states.
@@ -1413,8 +1541,6 @@ mark {
  *
  * -------------------------------------------------------------------------- */
 
-/* #css */
-
 /*
  * Blockquote text, borders and backgrounds in reading view.
  */
@@ -1433,8 +1559,6 @@ mark {
  * Editor task states: marker colors, text colors and completion styling.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Editor task states: marker colors, text colors and completion styling.
@@ -1487,6 +1611,67 @@ mark {
 
 
 /* -----------------------------------------------------------------------------
+ * @markdown: Task Inputs
+ * -----------------------------------------------------------------------------
+ * @source: src/markdown/task-inputs.css
+ * @description:
+ *
+ * Task checkbox fills, borders and marker colors for each task state.
+ *
+ * -------------------------------------------------------------------------- */
+
+/*
+ * Task checkbox fills, borders and marker colors for each task state.
+ */
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] input {
+	background-color: var(--red);
+	border-color: var(--red);
+	color: var(--black);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] input {
+	background-color: var(--black);
+	border-color: var(--magenta);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] input {
+	background-color: var(--black);
+	border-color: var(--orange);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] input {
+	background-color: var(--black);
+	border-color: var(--blue);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] input {
+	background-color: var(--green);
+	border-color: var(--green);
+	color: var(--black);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] input {
+	background-color: var(--black);
+	border-color: var(--cyan);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] input {
+	background-color: var(--black);
+	border-color: var(--yellow);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] input {
+	background-color: var(--black);
+	border-color: var(--grey-3);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] input {
+	background-color: var(--black);
+	border-color: var(--purple);
+}
+
+
+/* -----------------------------------------------------------------------------
  * @markdown: Tables
  * -----------------------------------------------------------------------------
  * @source: src/markdown/tables.css
@@ -1495,8 +1680,6 @@ mark {
  * Note table backgrounds, borders and text in reading view.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Note table backgrounds, borders and text in reading view.
@@ -1530,8 +1713,6 @@ mark {
  *
  * -------------------------------------------------------------------------- */
 
-/* #css */
-
 /*
  * Callout backgrounds and title colors for each built-in callout type.
  *
@@ -1540,57 +1721,57 @@ mark {
  *
  * Background has no variable; title rules avoid recoloring icons and borders.
  */
-:where(.cm-callout) .callout:where([data-callout='note']) {
+.cm-callout [data-callout='note'] {
 	--mw-surface-background: var(--blue-bright-transparent);
 	background-color: var(--mw-surface-background);
 }
 
-:where(.cm-callout .callout[data-callout='note']) .callout-title {
+.cm-callout [data-callout='note'] .callout-title {
 	color: var(--blue-bright);
 }
 
-:where(.cm-callout) .callout:where([data-callout='info']) {
+.cm-callout [data-callout='info'] {
 	--mw-surface-background: var(--cyan-transparent);
 	background-color: var(--mw-surface-background);
 }
 
-:where(.cm-callout .callout[data-callout='info']) .callout-title {
+.cm-callout [data-callout='info'] .callout-title {
 	color: var(--cyan);
 }
 
-:where(.cm-callout) .callout:where([data-callout='todo']) {
+.cm-callout [data-callout='todo'] {
 	--mw-surface-background: var(--magenta-transparent);
 	background-color: var(--mw-surface-background);
 }
 
-:where(.cm-callout .callout[data-callout='todo']) .callout-title {
+.cm-callout [data-callout='todo'] .callout-title {
 	color: var(--magenta);
 }
 
-:where(.cm-callout) .callout:where([data-callout='warning']) {
+.cm-callout [data-callout='warning'] {
 	--mw-surface-background: var(--orange-transparent);
 	background-color: var(--mw-surface-background);
 }
 
-:where(.cm-callout .callout[data-callout='warning']) .callout-title {
+.cm-callout [data-callout='warning'] .callout-title {
 	color: var(--orange);
 }
 
-:where(.cm-callout) .callout:where([data-callout='tip']) {
+.cm-callout [data-callout='tip'] {
 	--mw-surface-background: var(--green-transparent);
 	background-color: var(--mw-surface-background);
 }
 
-:where(.cm-callout .callout[data-callout='tip']) .callout-title {
+.cm-callout [data-callout='tip'] .callout-title {
 	color: var(--green);
 }
 
-:where(.cm-callout) .callout:where([data-callout='example']) {
+.cm-callout [data-callout='example'] {
 	--mw-surface-background: var(--purple-transparent);
 	background-color: var(--mw-surface-background);
 }
 
-:where(.cm-callout .callout[data-callout='example']) .callout-title {
+.cm-callout [data-callout='example'] .callout-title {
 	color: var(--purple);
 }
 
@@ -1604,8 +1785,6 @@ mark {
  * Tag pills in editor and reading view: colors, hover and invalid tags.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Tag pills in editor and reading view: colors, hover and invalid tags.
@@ -1636,8 +1815,6 @@ mark {
  *
  * -------------------------------------------------------------------------- */
 
-/* #css */
-
 /*
  * Joined tag highlighting when the editor tag text is hovered.
  *
@@ -1659,8 +1836,6 @@ mark {
  *
  * -------------------------------------------------------------------------- */
 
-/* #css */
-
 /*
  * Horizontal divider colors in notes.
  */
@@ -1678,8 +1853,6 @@ hr {
  * Canvas controls, card menus and their icon hover states.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Canvas controls, card menus and their icon hover states.
@@ -1735,8 +1908,6 @@ hr {
  *
  * -------------------------------------------------------------------------- */
 
-/* #css */
-
 /*
  * Property labels, tag pills and property action buttons.
  */
@@ -1776,6 +1947,20 @@ hr {
 	--metadata-label-text-color: var(--magenta);
 }
 
+/*
+ * Tie Obsidian’s literal transparent property-input fills without affecting
+ * pills.
+ */
+.metadata-property .metadata-property-key-input,
+.metadata-property .metadata-property-key-input:hover,
+.metadata-property .metadata-property-key-input:active,
+.metadata-property .metadata-property-key-input:focus,
+.metadata-property-value .metadata-input-text,
+.metadata-property-value .metadata-input-number {
+	background-color: var(--grey-11);
+	border-color: var(--background-modifier-border);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @app section: File Explorer
@@ -1786,8 +1971,6 @@ hr {
  * Active file entries in the file explorer.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Active file entries in the file explorer.
@@ -1806,8 +1989,6 @@ hr {
  * Bases toolbar actions and filter-row controls in normal and hover states.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Bases toolbar actions and filter-row controls in normal and hover states.
@@ -1847,9 +2028,10 @@ hr {
 }
 
 /*
- * Keep the original 0,3,0 hover tie; the disabled condition adds no weight.
+ * Keep the original 0,3,0 hover tie by using the disabled attribute instead of
+ * the icon class.
  */
-.filter-row-actions .clickable-icon:where([aria-disabled='true']):hover {
+.filter-row-actions [aria-disabled='true']:hover {
 	background-color: var(--magenta-transparent);
 	color: var(--text-disabled);
 }
@@ -1857,12 +2039,12 @@ hr {
 /*
  * Sheet actions read accent text directly at 0,5,0 / 0,6,0.
  */
-.filter-row-actions .clickable-icon:where([aria-disabled='true']),
-.filter-group-header-actions .clickable-icon:where([aria-disabled='true']) {
+.filter-row-actions [aria-disabled='true'],
+.filter-group-header-actions [aria-disabled='true'] {
 	--text-on-accent: var(--text-disabled);
 }
 
-.filter-group-header-actions .clickable-icon:where([aria-disabled='true']) {
+.filter-group-header-actions [aria-disabled='true'] {
 	--text-faint: transparent;
 }
 
@@ -1875,6 +2057,16 @@ hr {
 	background-color: var(--magenta);
 }
 
+/*
+ * Sheet filter buttons have literal app fills; tie only those exact selectors.
+ */
+.menu.mod-sheet .filter-row .filter-property-select.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-property-select,
+.menu.mod-sheet .filter-row .filter-operator.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-operator {
+	background-color: var(--grey-11);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @graph: Graph
@@ -1885,8 +2077,6 @@ hr {
  * Graph node colors for files, tags, attachments and unresolved links.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * Graph node colors for files, tags, attachments and unresolved links.
@@ -1911,8 +2101,6 @@ hr {
  *
  * -------------------------------------------------------------------------- */
 
-/* #css */
-
 /*
  * PDF form control overrides for the app’s PDF renderer.
  *
@@ -1921,6 +2109,13 @@ hr {
 .annotationLayer .choiceWidgetAnnotation select:focus,
 .annotationLayer .choiceWidgetAnnotation select[disabled] {
 	background-color: var(--magenta);
+}
+
+/*
+ * The page-number loading state belongs to the toolbar, not the PDF form.
+ */
+.pdf-page-input.mod-page-loading {
+	background-color: var(--grey-11);
 }
 
 
@@ -1933,8 +2128,6 @@ hr {
  * XFA form select text, fills and focused states.
  *
  * -------------------------------------------------------------------------- */
-
-/* #css */
 
 /*
  * PDF form control overrides for the app’s PDF renderer.
@@ -1951,6 +2144,19 @@ hr {
 	background-color: var(--magenta);
 }
 
+/*
+ * XFA focus resets are ordinary app rules, unlike AcroForm inline fills.
+ */
+.xfaTextfield:focus {
+	background-color: var(--grey-11);
+	outline: none;
+}
+
+.xfaCheckbox:focus,
+.xfaRadio:focus {
+	outline: none;
+}
+
 
 /* -----------------------------------------------------------------------------
  * @community browser: Community Browser
@@ -1958,125 +2164,16 @@ hr {
  * @source: src/sections/community-browser.css
  * @description:
  *
- * Disabled sidebar icon colors in the community plugin browser.
+ * Disabled icon button colors in the community plugin browser.
  *
  * -------------------------------------------------------------------------- */
 
-/* #css */
-
 /*
- * Disabled icon colors in the community browser sidebar.
+ * Disabled icon button colors in the community plugin browser.
  *
  * Tie Obsidian 1.15.1's 0,3,1 sidebar button color without changing child
  * variables.
  */
-.mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true']) {
+.mod-community-modal button.clickable-icon[aria-disabled='true'] {
 	color: var(--text-disabled);
-}
-
-
-/* -----------------------------------------------------------------------------
- * @pending legacy port: Legacy
- * -----------------------------------------------------------------------------
- * @source: src/settings/legacy.css
- * @description:
- *
- * Remaining shared controls and unported rules in their original order.
- *
- * -------------------------------------------------------------------------- */
-
-/* #css */
-
-/*
- * Remaining shared rules, preserved until the legacy port is verified.
- */
-input,
-.combobox-button {
-	background-color: var(--grey-11) !important;
-	border-color: var(--grey-9) !important;
-	color: var(--text-normal);
-}
-
-input:focus,
-input:focus-visible,
-input:focus-within,
-textarea:focus,
-textarea:focus-visible,
-textarea:focus-within,
-.combobox-button:focus,
-.combobox-button:focus-visible,
-.combobox-button:focus-within {
-	border-color: var(--cyan) !important;
-	outline: none !important;
-}
-
-/*
- * Shared multi-select control.
- */
-.multi-select-pill-remove-button:hover {
-	color: var(--red-bright);
-	cursor: pointer;
-}
-
-/*
- * Shared task inputs: port with the global input rules.
- */
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] input {
-	background-color: var(--red) !important;
-	border-color: var(--red) !important;
-	color: var(--black) !important;
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] input {
-	background-color: var(--black) !important;
-	border-color: var(--magenta) !important;
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] input {
-	background-color: var(--black) !important;
-	border-color: var(--orange) !important;
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] input {
-	background-color: var(--black) !important;
-	border-color: var(--blue) !important;
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] input {
-	background-color: var(--green) !important;
-	border-color: var(--green) !important;
-	color: var(--black) !important;
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] input {
-	background-color: var(--black) !important;
-	border-color: var(--cyan) !important;
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] input {
-	background-color: var(--black) !important;
-	border-color: var(--yellow) !important;
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] input {
-	background-color: var(--black) !important;
-	border-color: var(--grey-3) !important;
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] input {
-	background-color: var(--black) !important;
-	border-color: var(--purple) !important;
-}
-
-.code-block-flair,
-.edit-block-button {
-	color: var(--cyan) !important;
-	cursor: pointer !important;
-}
-
-.code-block-flair:hover,
-.edit-block-button:hover {
-	background-color: var(--cyan-transparent) !important;
-	color: var(--magenta) !important;
-	cursor: pointer !important;
 }

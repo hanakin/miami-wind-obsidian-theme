@@ -4,14 +4,14 @@
  * Local --mw-* variables below set this section’s colors and backgrounds. */
 
 .modal {
-	background-color: var(--background-primary);
 	--modal-border-width: 2px;
 	--modal-border-color: var(--magenta);
+	background-color: var(--background-primary);
 }
 
 .modal-close-button.clickable-icon:hover {
-	color: var(--magenta);
 	background-color: var(--icon-background-hover);
+	color: var(--magenta);
 }
 
 .modal .vertical-tab-header-group-title {
@@ -32,8 +32,8 @@
 
 .modal button:hover,
 .modal .clickable-icon:hover {
-	color: var(--magenta);
 	background-color: var(--magenta-transparent);
+	color: var(--magenta);
 }
 
 .modal button.mod-cta {
@@ -51,14 +51,14 @@
 }
 
 .modal .setting-hotkey {
-	color: var(--yellow);
 	background-color: var(--yellow-transparent);
+	color: var(--yellow);
 	padding: 4px 8px 2px;
 }
 
 .modal .setting-hotkey:hover {
-	color: var(--purple);
 	background-color: var(--purple-transparent);
+	color: var(--purple);
 }
 
 .modal input:hover {

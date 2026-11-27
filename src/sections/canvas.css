@@ -6,18 +6,18 @@
 }
 
 .canvas-control-group {
+	--canvas-controls-radius: 0;
 	border: none;
 	box-shadow: none;
-	--canvas-controls-radius: 0;
 }
 
 .canvas-control-item {
-	color: var(--cyan);
 	background-color: transparent;
-	box-shadow: none;
 	border: none;
-	cursor: pointer;
 	border-radius: 4px;
+	box-shadow: none;
+	color: var(--cyan);
+	cursor: pointer;
 }
 
 .canvas-control-item:hover {
@@ -39,5 +39,3 @@
 .canvas-card-menu .canvas-card-menu-button:hover {
 	color: var(--magenta);
 }
-
-

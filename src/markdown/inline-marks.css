@@ -4,8 +4,8 @@
 .cm-s-obsidian span.cm-highlight,
 mark {
 	background-color: var(--highlight);
-	color: var(--background-primary);
 	border-radius: 3px;
+	color: var(--background-primary);
 	padding: 2px 4px;
 }
 
@@ -33,24 +33,24 @@ mark {
 	color: var(--background-primary);
 }
 
-/* Obsidian's formatting-label rival is 0,5,1; :where keeps the same specificity. */
-.cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight) {
+/* The highlight token replaces the redundant editor ancestor, keeping the 0,5,1 tie. */
+.cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting.cm-highlight {
 	color: var(--background-primary);
 }
 
 /* Link-formatting token rivals are type-qualified at 0,3,1 and 0,4,1. */
-.cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight),
-.cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight):hover {
+span.cm-formatting-link.cm-url.cm-highlight,
+span.cm-formatting-link.cm-url.cm-highlight:hover {
 	color: var(--background-primary);
 }
 
 /* Flashing ranges use an important background; set its variable on the token. */
-.cm-s-obsidian span.is-flashing:where(.cm-highlight) {
+span.is-flashing.cm-highlight {
 	--highlight-background: var(--highlight);
 }
 
 /* Footnote URL titles and escaped hashtags can also carry a highlight token. */
-.cm-s-obsidian .cm-line.HyperMD-footnote .cm-hmd-footnote-url-title:where(.cm-highlight),
-.cm-s-obsidian span.cm-hashtag.cm-hmd-escape-backslash:where(.cm-highlight) {
+.cm-line.HyperMD-footnote .cm-hmd-footnote-url-title.cm-highlight,
+span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 	color: var(--background-primary);
 }

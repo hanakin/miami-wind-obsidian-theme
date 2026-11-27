@@ -26,13 +26,13 @@ paritySpanSelectors.add(
 const highlightSpanSelectors = new Set([
 	".cm-s-obsidian span.cm-highlight",
 	".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
-	".cm-s-obsidian span.is-flashing:where(.cm-highlight)",
-	".cm-s-obsidian span.cm-hashtag.cm-hmd-escape-backslash:where(.cm-highlight)",
-	".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight)",
-	".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight):hover",
+	"span.is-flashing.cm-highlight",
+	"span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight",
+	"span.cm-formatting-link.cm-url.cm-highlight",
+	"span.cm-formatting-link.cm-url.cm-highlight:hover",
 	".markdown-source-view.mod-cm6 span.cm-highlight.cm-footref",
 	".markdown-source-view.mod-cm6 span.cm-highlight.cm-hmd-footnote",
-	".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)",
+	".cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting.cm-highlight",
 ]);
 
 function compoundDepth(selector: selectorParser.Selector): number {
@@ -49,15 +49,11 @@ function compoundDepth(selector: selectorParser.Selector): number {
 	return direct + nested;
 }
 
-// shortcut: untouched 1.x rules are grandfathered only in the checksum-locked legacy file.
-export function checkCss(legacyFile?: string): Plugin {
+export function checkCss(): Plugin {
 	return {
 		postcssPlugin: "miami-wind-check",
 		OnceExit(root) {
-			const isLegacy = (file?: string) =>
-				!!legacyFile && file === path.resolve(legacyFile);
 			root.walkDecls((decl) => {
-				if (isLegacy(decl.source?.input.file)) return;
 				if (
 					["src/settings/tokens.css", "src/settings/palette.css"].some(
 						(file) => decl.source?.input.file === path.resolve(file),
@@ -88,7 +84,6 @@ export function checkCss(legacyFile?: string): Plugin {
 					throw rule.error("No @layer or @scope");
 			});
 			root.walkRules((rule) => {
-				if (isLegacy(rule.source?.input.file)) return;
 				const ast = selectorParser().astSync(rule.selector);
 				ast.each((selector) => {
 					const fail = (message: string) => {
@@ -135,12 +130,12 @@ export function checkCss(legacyFile?: string): Plugin {
 							return;
 
 						// Obsidian 1.15.1's community sidebar button.clickable-icon reads
-						// --text-normal at 0,3,1; the zero-weight state keeps an exact tie.
+						// --text-normal at 0,3,1; omitting its sidebar ancestor keeps that tie.
 						if (
 							rule.source?.input.file ===
 								path.resolve("src/sections/community-browser.css") &&
 							selector.toString().trim() ===
-								".mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true'])"
+								".mod-community-modal button.clickable-icon[aria-disabled='true']"
 						)
 							return;
 
@@ -165,6 +160,17 @@ export function checkCss(legacyFile?: string): Plugin {
 							fail("No type-qualified classes");
 					});
 					if (compoundDepth(selector) > 3) fail("Maximum depth is 3 compounds");
+					// Sheet filters have literal app backgrounds at 0,5,0. Keep that tie
+					// in three compounds, using the actual combobox class instead of an ancestor.
+					if (
+						rule.source?.input.file ===
+							path.resolve("src/sections/bases.css") &&
+						[
+							".menu.mod-sheet .filter-row .filter-property-select.combobox-button",
+							".menu.mod-sheet .filter-row .filter-operator.combobox-button",
+						].includes(selector.toString().trim())
+					)
+						return;
 					const specificity = Specificity.calculate(selector.toString())[0];
 					if (
 						!specificity ||
@@ -173,7 +179,7 @@ export function checkCss(legacyFile?: string): Plugin {
 								rule.source?.input.file ===
 									path.resolve("src/markdown/inline-marks.css") &&
 								selector.toString().trim() ===
-									".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)"
+									".cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting.cm-highlight"
 							))
 					)
 						fail("Maximum specificity is 0,4,1");

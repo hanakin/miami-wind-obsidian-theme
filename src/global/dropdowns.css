@@ -8,17 +8,17 @@ select:focus,
 select:focus-visible,
 select:focus-within,
 select:active {
-	color: var(--black);
 	--dropdown-background: var(--magenta);
 	--dropdown-background-hover: var(--magenta);
+	color: var(--black);
 	cursor: pointer;
 }
 
 .modal .dropdown option,
 .dropdown option,
 select option {
-	color: var(--black);
 	background-color: var(--magenta-transparent);
+	color: var(--black);
 	cursor: pointer;
 }
 
@@ -41,4 +41,3 @@ select option:checked {
 .mobile-onboarding .language-dropdown select {
 	background-color: var(--magenta);
 }
-

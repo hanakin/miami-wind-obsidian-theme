@@ -5,3 +5,8 @@
 .annotationLayer .choiceWidgetAnnotation select[disabled] {
 	background-color: var(--magenta);
 }
+
+/* The page-number loading state belongs to the toolbar, not the PDF form. */
+.pdf-page-input.mod-page-loading {
+	background-color: var(--grey-11);
+}

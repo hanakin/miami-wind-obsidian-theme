@@ -79,42 +79,42 @@
 			},
 			{
 				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout='note'])",
+				"selector": ".cm-callout [data-callout='note']",
 				"properties": {
 					"--mw-surface-background": "var(--blue-bright-transparent)"
 				}
 			},
 			{
 				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout='info'])",
+				"selector": ".cm-callout [data-callout='info']",
 				"properties": {
 					"--mw-surface-background": "var(--cyan-transparent)"
 				}
 			},
 			{
 				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout='todo'])",
+				"selector": ".cm-callout [data-callout='todo']",
 				"properties": {
 					"--mw-surface-background": "var(--magenta-transparent)"
 				}
 			},
 			{
 				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout='warning'])",
+				"selector": ".cm-callout [data-callout='warning']",
 				"properties": {
 					"--mw-surface-background": "var(--orange-transparent)"
 				}
 			},
 			{
 				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout='tip'])",
+				"selector": ".cm-callout [data-callout='tip']",
 				"properties": {
 					"--mw-surface-background": "var(--green-transparent)"
 				}
 			},
 			{
 				"surface": "callouts.css",
-				"selector": ":where(.cm-callout) .callout:where([data-callout='example'])",
+				"selector": ".cm-callout [data-callout='example']",
 				"properties": {
 					"--mw-surface-background": "var(--purple-transparent)"
 				}
@@ -183,6 +183,14 @@
 				"properties": {
 					"--mw-action-color": "var(--magenta)",
 					"--mw-action-background": "var(--magenta-transparent)"
+				}
+			},
+			{
+				"surface": "code-actions.css",
+				"selector": ".code-block-flair:hover,\n.edit-block-button:hover,\n.markdown-source-view.mod-cm6 .code-block-flair:hover,\n.markdown-source-view.mod-cm6 .edit-block-button:hover",
+				"properties": {
+					"--mw-action-background": "var(--cyan-transparent)",
+					"--mw-action-color": "var(--magenta)"
 				}
 			},
 			{

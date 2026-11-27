@@ -5,22 +5,22 @@
 
 .suggestion-container {
 	border: 1px solid var(--magenta);
-	cursor: pointer;
-	padding: 0;
 	margin: 0;
+	padding: 0;
+	cursor: pointer;
 }
 
 .suggestion {
+	margin: 0;
 	padding: 0;
 	cursor: pointer;
-	margin: 0;
 }
 
 .suggestion-container.mod-property-value .suggestion-item,
 .suggestion-container.mod-property-key .suggestion-item {
+	margin: 0;
 	padding: 8px 16px;
 	cursor: pointer;
-	margin: 0;
 }
 
 .suggestion-container.mod-property-key .suggestion-item {
@@ -36,7 +36,7 @@
 	background-color: var(--magenta-transparent);
 }
 
-.suggestion-container:where(.mod-property-key) .suggestion-item:where(.mod-complex):hover .suggestion-flair {
+.mod-property-key .mod-complex:hover .suggestion-flair {
 	color: var(--magenta);
 }
 
@@ -48,4 +48,3 @@
 	@mixin menu-item-state;
 	border-radius: 0;
 }
-

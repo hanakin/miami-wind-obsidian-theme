@@ -1,0 +1,6 @@
+/* Remove-button hover colors in shared multi-select controls. */
+
+.multi-select-pill-remove-button:hover {
+	color: var(--red-bright);
+	cursor: pointer;
+}

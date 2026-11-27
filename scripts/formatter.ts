@@ -205,12 +205,12 @@ function render(
 					index = end - 1;
 					continue;
 				}
-				const { source, name } = fileInfo(marker[1]);
+				const { source } = fileInfo(marker[1]);
 				const continued = seen.has(source);
 				seen.add(source);
 				if (!files.includes(source)) files.push(source);
 				output.push({
-					text: `${sectionBanner(source, continued)}\n\n/* ${name === "tokens.css" ? "#settings" : "#css"} */`,
+					text: sectionBanner(source, continued),
 					major: true,
 					comment: true,
 					title: true,
@@ -306,12 +306,6 @@ export function formatCss(): Plugin {
 							node.text === commentText(sectionBanner(file, continued)),
 					)
 				) {
-					const next = node.next();
-					if (
-						next?.type === "comment" &&
-						["#css", "#settings"].includes(next.text)
-					)
-						next.remove();
 					node.text = `@section ${file}`;
 					continue;
 				}

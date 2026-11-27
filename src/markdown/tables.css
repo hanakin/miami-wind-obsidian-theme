@@ -7,9 +7,8 @@
 
 .markdown-rendered th {
 	--mw-surface-background: var(--code-background);
-	@mixin surface-background;
 	--table-header-color: var(--text-accent);
+	@mixin surface-background;
 }
 
 .markdown-rendered td { border: 1px solid var(--background-modifier-border); }
-

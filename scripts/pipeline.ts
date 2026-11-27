@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import postcss, { type Plugin } from "postcss";
@@ -10,7 +9,6 @@ import obsidian from "stylelint-config-obsidianmd";
 import { checkCss } from "./checker";
 import { formatConfig } from "./format-config";
 import { formatCss } from "./formatter";
-import legacyChecksum from "./legacy-sha256.json";
 
 interface ComponentUsage {
 	component: string;
@@ -22,20 +20,11 @@ interface ComponentUsage {
 }
 
 export async function compile(options: { format?: boolean } = {}) {
-	const legacyPath = path.resolve("src/settings/legacy.css");
-	const legacy = await readFile(legacyPath, "utf8");
-	if (
-		createHash("sha256").update(legacy).digest("hex") !== legacyChecksum.sha256
-	) {
-		throw new Error(
-			"Legacy CSS changed: port the rules into a checked surface; do not refresh the checksum without review.",
-		);
-	}
 	const components: ComponentUsage[] = [];
-	const expandPilot: Plugin = {
-		postcssPlugin: "miami-wind-pilot",
+	const trackComponents: Plugin = {
+		postcssPlugin: "miami-wind-components",
 		async Once(root) {
-			// Keep source order: the legacy slots retain the original cascade positions.
+			// Track the explicit import order without changing the cascade.
 			let previous = "";
 			for (const node of [...root.nodes]) {
 				const file = node.source?.input.file;
@@ -47,26 +36,6 @@ export async function compile(options: { format?: boolean } = {}) {
 						}),
 					);
 					previous = file;
-				}
-			}
-			while (true) {
-				const slots: postcss.AtRule[] = [];
-				root.walkAtRules("pilot", (slot) => {
-					slots.push(slot);
-				});
-				if (!slots.length) break;
-				for (const slot of slots) {
-					const file = path.resolve(`src/${slot.params}.css`);
-					const content = postcss.parse(await readFile(file, "utf8"), {
-						from: file,
-					});
-					slot.replaceWith(
-						postcss.comment({ text: `@section src/${slot.params}.css` }),
-						...content.nodes,
-						postcss.comment({
-							text: "@section src/settings/legacy.css (continued)",
-						}),
-					);
 				}
 			}
 			root.prepend(postcss.comment({ text: formatConfig.header }));
@@ -91,10 +60,10 @@ export async function compile(options: { format?: boolean } = {}) {
 	const input = await readFile("src/index.css", "utf8");
 	const result = await postcss([
 		atImport(),
-		expandPilot,
+		trackComponents,
 		mixins(),
 		nested(),
-		checkCss(legacyPath),
+		checkCss(),
 		...(options.format === false ? [] : [formatCss()]),
 	]).process(input, { from: path.resolve("src/index.css"), map: false });
 	return {
@@ -113,10 +82,10 @@ export async function lintPublished(css: string) {
 	const warnings = result.results.flatMap((file) => file.warnings);
 	const errors = warnings.filter((warning) => warning.severity === "error");
 	console.log(
-		`Obsidian lint: ${errors.length} errors, ${warnings.length - errors.length} published warnings (legacy pilot baseline).`,
+		`Obsidian lint: ${errors.length} errors, ${warnings.length - errors.length} published warnings (isolated tag-hover allowance).`,
 	);
 	const baseline: Record<string, number> = {
-		"declaration-no-important": 61,
+		"declaration-no-important": 0,
 		"selector-pseudo-class-disallowed-list": 1,
 	};
 	const counts: Record<string, number> = {};

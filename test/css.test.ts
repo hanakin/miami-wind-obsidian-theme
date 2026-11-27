@@ -211,13 +211,13 @@ it("does not shorten a shorthand whose variables can expand into multiple values
 it.each([
 	".cm-s-obsidian span.cm-highlight",
 	".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
-	".cm-s-obsidian span.is-flashing:where(.cm-highlight)",
-	".cm-s-obsidian span.cm-hashtag.cm-hmd-escape-backslash:where(.cm-highlight)",
-	".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight)",
-	".cm-s-obsidian span.cm-formatting-link.cm-url:where(.cm-highlight):hover",
+	"span.is-flashing.cm-highlight",
+	"span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight",
+	"span.cm-formatting-link.cm-url.cm-highlight",
+	"span.cm-formatting-link.cm-url.cm-highlight:hover",
 	".markdown-source-view.mod-cm6 span.cm-highlight.cm-footref",
 	".markdown-source-view.mod-cm6 span.cm-highlight.cm-hmd-footnote",
-	".cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting:where(.cm-highlight)",
+	".cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting.cm-highlight",
 ])(
 	"limits the highlight exception to its exact surface: %s",
 	async (selector) => {
@@ -271,7 +271,7 @@ it.each([
 );
 it("allows only the exact disabled community-sidebar rival in overrides.css", async () => {
 	const css =
-		".mod-community-modal .modal-sidebar button.clickable-icon:where([aria-disabled='true']) { color: var(--text-disabled) }";
+		".mod-community-modal button.clickable-icon[aria-disabled='true'] { color: var(--text-disabled) }";
 	await expect(
 		postcss([checkCss()]).process(css, {
 			from: "src/sections/community-browser.css",
@@ -311,11 +311,12 @@ it("preserves comment lists, descriptions, explicit headings and literal replace
 
 it("lists only emitted sections, counts continuations after the first banner, and reformats idempotently", async () => {
 	const input =
-		"/* @section src/components/empty.css */ /* @section src/settings/legacy.css (continued) */ .x { color:red; } /* @section src/markdown/code.css */ .y { color:blue; } /* @section src/settings/legacy.css (continued) */ .z { color:green; }";
+		"/* @section src/components/empty.css */ /* @section src/global/inputs.css (continued) */ .x { color:red; } /* @section src/markdown/code.css */ .y { color:blue; } /* @section src/global/inputs.css (continued) */ .z { color:green; }";
 	const once = await postcss([formatCss()]).process(input, { from: undefined });
 	expect(once.css).not.toContain("empty.css");
+	expect(once.css).not.toMatch(/#(?:settings|css)\b/);
 	expect(
-		once.css.match(/@pending legacy port: Legacy \(continued\)/g),
+		once.css.match(/@global application: Inputs \(continued\)/g),
 	).toHaveLength(1);
 	const twice = await postcss([formatCss()]).process(once.css, {
 		from: undefined,

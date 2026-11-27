@@ -12,4 +12,3 @@
 	--mw-icon-background: var(--icon-background-active);
 	@mixin icon-background;
 }
-

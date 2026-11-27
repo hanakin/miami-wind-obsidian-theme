@@ -3,21 +3,20 @@
 .markdown-rendered a { color: var(--link-unresolved-color); }
 
 .markdown-rendered a:hover {
-	color: var(--link-color-hover);
 	text-decoration: var(--link-decoration-hover);
+	color: var(--link-color-hover);
 }
 
 .markdown-rendered a:visited,
 .markdown-rendered a:active,
 .markdown-rendered a:focus {
-	color: var(--link-color);
 	text-decoration: var(--link-decoration);
+	color: var(--link-color);
 }
 
 .markdown-rendered a:hover:visited,
 .markdown-rendered a:hover:active,
 .markdown-rendered a:hover:focus {
-	color: var(--link-color-hover);
 	text-decoration: var(--link-decoration);
+	color: var(--link-color-hover);
 }
-

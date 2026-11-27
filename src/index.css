@@ -1,10 +1,13 @@
 /* Settings, Global application, Markdown and app-specific sections, in cascade order. */
+
 @import 'components/menu-item-state.css';
 @import 'components/action-button.css';
 @import 'components/icon-background.css';
 @import 'components/surface-background.css';
 @import 'settings/palette.css';
 @import 'settings/tokens.css';
+@import 'global/inputs.css';
+@import 'global/multi-select.css';
 @import 'global/icons.css';
 @import 'global/ribbon.css';
 @import 'global/sidebars.css';
@@ -19,11 +22,13 @@
 @import 'global/overrides.css';
 @import 'markdown/headings.css';
 @import 'markdown/code.css';
+@import 'markdown/code-actions.css';
 @import 'markdown/inline-marks.css';
 @import 'markdown/selection.css';
 @import 'markdown/links.css';
 @import 'markdown/blockquotes.css';
 @import 'markdown/tasks.css';
+@import 'markdown/task-inputs.css';
 @import 'markdown/tables.css';
 @import 'markdown/callouts.css';
 @import 'markdown/tags.css';
@@ -37,4 +42,3 @@
 @import 'sections/pdf-forms.css';
 @import 'sections/pdf-xfa.css';
 @import 'sections/community-browser.css';
-@import 'settings/legacy.css';

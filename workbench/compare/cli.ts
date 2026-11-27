@@ -27,6 +27,7 @@ const { values } = parseArgs({
 	args: process.argv.slice(2),
 	options: {
 		before: { type: "string" },
+		out: { type: "string" },
 		formatting: { type: "boolean" },
 		after: { type: "string" },
 		id: { type: "string" },
@@ -45,7 +46,7 @@ if (values.formatting && (values.before || values.after))
 	throw new Error("--formatting cannot be combined with --before or --after");
 const started = performance.now();
 const generated = new Date().toISOString();
-const out = "workbench/out";
+const out = values.out ?? "workbench/out";
 for (const file of ["compare.json", "compare.md", "component-diffs.json"])
 	rmSync(`${out}/${file}`, { force: true });
 rmSync(`${out}/diffs`, { recursive: true, force: true });

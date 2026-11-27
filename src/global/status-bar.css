@@ -2,16 +2,16 @@
 
 .status-bar {
 	--status-bar-text-color: var(--magenta);
+	--status-bar-radius: 0;
 	border-top: 1px solid var(--cyan);
 	padding: 0;
-	--status-bar-radius: 0;
 }
 
 .status-bar-item,
 .status-bar-item.mod-clickable {
+	border-radius: 0;
 	padding: 4px 8px;
 	cursor: pointer;
-	border-radius: 0;
 }
 
 .status-bar-item:hover,
@@ -19,4 +19,3 @@
 	background-color: var(--cyan-transparent);
 	color: var(--magenta);
 }
-

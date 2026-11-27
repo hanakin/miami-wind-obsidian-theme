@@ -5,8 +5,8 @@
 }
 
 .metadata-property[data-property-key='tags'] .multi-select-pill {
-	color: var(--black);
 	background-color: var(--purple);
+	color: var(--black);
 	cursor: pointer;
 }
 
@@ -16,15 +16,15 @@
 
 .metadata-container .metadata-show-source-button,
 .metadata-container .metadata-add-button {
-	color: var(--black);
 	background-color: var(--cyan);
+	color: var(--black);
 	cursor: pointer;
 }
 
 .metadata-container .metadata-show-source-button:hover,
 .metadata-container .metadata-add-button:hover {
-	color: var(--black);
 	background-color: var(--magenta);
+	color: var(--black);
 }
 
 .metadata-container .metadata-show-source-button:hover .svg-icon,
@@ -36,3 +36,13 @@
 	--metadata-label-text-color: var(--magenta);
 }
 
+/* Tie Obsidian’s literal transparent property-input fills without affecting pills. */
+.metadata-property .metadata-property-key-input,
+.metadata-property .metadata-property-key-input:hover,
+.metadata-property .metadata-property-key-input:active,
+.metadata-property .metadata-property-key-input:focus,
+.metadata-property-value .metadata-input-text,
+.metadata-property-value .metadata-input-number {
+	background-color: var(--grey-11);
+	border-color: var(--background-modifier-border);
+}

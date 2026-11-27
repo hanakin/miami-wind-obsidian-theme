@@ -39,11 +39,11 @@
 }
 
 .workspace .mod-root .workspace-tab-header:hover {
-	color: var(--magenta);
 	border-top: 1px solid var(--tab-divider-color);
+	color: var(--magenta);
 }
 
-.workspace .mod-root .workspace-tab-header:where(:not(.is-active)):hover {
+.mod-root .workspace-tab-header:not(.is-active):hover {
 	background-color: var(--magenta-transparent);
 }
 
@@ -54,4 +54,3 @@
 .workspace-tab-header.is-active .workspace-tab-header-inner-close-button:hover {
 	background-color: var(--magenta-transparent);
 }
-

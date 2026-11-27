@@ -12,8 +12,8 @@
 
 .bases-toolbar-item .text-icon-button:hover,
 .bases-toolbar-section-content .text-icon-button:hover {
-	color: var(--magenta);
 	background-color: var(--magenta-transparent);
+	color: var(--magenta);
 }
 
 .bases-toolbar-section-content .filter-group-actions .text-icon-button,
@@ -28,31 +28,36 @@
 
 .filter-row-actions .clickable-icon:hover {
 	--text-faint: var(--magenta-transparent);
-	color: var(--magenta);
 	background-color: var(--magenta-transparent);
+	color: var(--magenta);
 }
 
-
-/* Keep the original 0,3,0 hover tie; the disabled condition adds no weight. */
-.filter-row-actions .clickable-icon:where([aria-disabled='true']):hover {
+/* Keep the original 0,3,0 hover tie by using the disabled attribute instead of the icon class. */
+.filter-row-actions [aria-disabled='true']:hover {
 	background-color: var(--magenta-transparent);
 	color: var(--text-disabled);
 }
 
 /* Sheet actions read accent text directly at 0,5,0 / 0,6,0. */
-.filter-row-actions .clickable-icon:where([aria-disabled='true']),
-.filter-group-header-actions .clickable-icon:where([aria-disabled='true']) {
+.filter-row-actions [aria-disabled='true'],
+.filter-group-header-actions [aria-disabled='true'] {
 	--text-on-accent: var(--text-disabled);
 }
 
-.filter-group-header-actions .clickable-icon:where([aria-disabled='true']) {
+.filter-group-header-actions [aria-disabled='true'] {
 	--text-faint: transparent;
 }
 
 /* Obsidian's query conjunction uses a literal fill; its hover reads this leaf variable. */
 .filter-group-header .conjunction.dropdown {
-	background-color: var(--magenta);
 	--background-modifier-hover: var(--magenta);
+	background-color: var(--magenta);
 }
 
-
+/* Sheet filter buttons have literal app fills; tie only those exact selectors. */
+.menu.mod-sheet .filter-row .filter-property-select.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-property-select,
+.menu.mod-sheet .filter-row .filter-operator.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-operator {
+	background-color: var(--grey-11);
+}

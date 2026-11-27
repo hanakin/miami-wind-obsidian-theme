@@ -1,7 +1,7 @@
 /* Reusable action button styles controlled by local variables. */
 
 @define-mixin action-button {
-	color: var(--mw-action-color);
 	background-color: var(--mw-action-background);
+	color: var(--mw-action-color);
 	cursor: pointer;
 }

@@ -4,58 +4,56 @@
  * Local --mw-* variables below set this section’s colors and backgrounds. */
 
 /* Background has no variable; title rules avoid recoloring icons and borders. */
-:where(.cm-callout) .callout:where([data-callout='note']) {
+.cm-callout [data-callout='note'] {
 	--mw-surface-background: var(--blue-bright-transparent);
 	@mixin surface-background;
 }
 
-:where(.cm-callout .callout[data-callout='note']) .callout-title {
+.cm-callout [data-callout='note'] .callout-title {
 	color: var(--blue-bright);
 }
 
-:where(.cm-callout) .callout:where([data-callout='info']) {
+.cm-callout [data-callout='info'] {
 	--mw-surface-background: var(--cyan-transparent);
 	@mixin surface-background;
 }
 
-:where(.cm-callout .callout[data-callout='info']) .callout-title {
+.cm-callout [data-callout='info'] .callout-title {
 	color: var(--cyan);
 }
 
-:where(.cm-callout) .callout:where([data-callout='todo']) {
+.cm-callout [data-callout='todo'] {
 	--mw-surface-background: var(--magenta-transparent);
 	@mixin surface-background;
 }
 
-:where(.cm-callout .callout[data-callout='todo']) .callout-title {
+.cm-callout [data-callout='todo'] .callout-title {
 	color: var(--magenta);
 }
 
-:where(.cm-callout) .callout:where([data-callout='warning']) {
+.cm-callout [data-callout='warning'] {
 	--mw-surface-background: var(--orange-transparent);
 	@mixin surface-background;
 }
 
-:where(.cm-callout .callout[data-callout='warning']) .callout-title {
+.cm-callout [data-callout='warning'] .callout-title {
 	color: var(--orange);
 }
 
-:where(.cm-callout) .callout:where([data-callout='tip']) {
+.cm-callout [data-callout='tip'] {
 	--mw-surface-background: var(--green-transparent);
 	@mixin surface-background;
 }
 
-:where(.cm-callout .callout[data-callout='tip']) .callout-title {
+.cm-callout [data-callout='tip'] .callout-title {
 	color: var(--green);
 }
 
-:where(.cm-callout) .callout:where([data-callout='example']) {
+.cm-callout [data-callout='example'] {
 	--mw-surface-background: var(--purple-transparent);
 	@mixin surface-background;
 }
 
-:where(.cm-callout .callout[data-callout='example']) .callout-title {
+.cm-callout [data-callout='example'] .callout-title {
 	color: var(--purple);
 }
-
-

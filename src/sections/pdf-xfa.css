@@ -2,10 +2,21 @@
 
 /* pdf.js XFA resets color/fill on every child, then clears focused select fills. */
 .xfaSelect {
-	color: var(--black);
 	background-color: var(--magenta);
+	color: var(--black);
 }
 
 .xfaSelect:focus {
 	background-color: var(--magenta);
+}
+
+/* XFA focus resets are ordinary app rules, unlike AcroForm inline fills. */
+.xfaTextfield:focus {
+	background-color: var(--grey-11);
+	outline: none;
+}
+
+.xfaCheckbox:focus,
+.xfaRadio:focus {
+	outline: none;
 }

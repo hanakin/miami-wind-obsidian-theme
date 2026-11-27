@@ -12,6 +12,22 @@ export const formatConfig = {
 	closingRule: "-".repeat(74),
 	commentWidth: 80,
 	sections: {
+		"inputs.css": {
+			description:
+				"Shared inputs and comboboxes: fills, borders and keyboard focus.",
+		},
+		"multi-select.css": {
+			description:
+				"Remove-button hover colors in shared multi-select controls.",
+		},
+		"task-inputs.css": {
+			description:
+				"Task checkbox fills, borders and marker colors for each task state.",
+		},
+		"code-actions.css": {
+			description:
+				"Code copy and edit buttons, including editor-specific state ties.",
+		},
 		"graph.css": {
 			layer: "graph",
 			description:
@@ -28,7 +44,7 @@ export const formatConfig = {
 		"community-browser.css": {
 			layer: "community browser",
 			description:
-				"Disabled sidebar icon colors in the community plugin browser.",
+				"Disabled icon button colors in the community plugin browser.",
 		},
 		"palette.css": {
 			layer: "settings",
@@ -39,11 +55,6 @@ export const formatConfig = {
 			layer: "settings",
 			description:
 				"Palette colors and shared variables for note text and interface states.",
-		},
-		"legacy.css": {
-			layer: "pending legacy port",
-			description:
-				"Remaining shared controls and unported rules in their original order.",
 		},
 		"headings.css": {
 			description: "Heading colors in the editor and reading view.",

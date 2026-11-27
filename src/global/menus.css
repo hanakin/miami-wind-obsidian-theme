@@ -94,7 +94,6 @@
 	cursor: default;
 }
 
-
 .bases-toolbar-menu-item.mod-hidden:hover {
 	--interactive-normal: transparent;
 	--interactive-hover: transparent;

@@ -1,4 +1,5 @@
 /* Graph node colors for files, tags, attachments and unresolved links. */
+
 .theme-dark,
 .theme-light {
 	--graph-node: var(--magenta);

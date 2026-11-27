@@ -27,4 +27,3 @@
 body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-profile {
 	border-top-color: var(--cyan);
 }
-
