@@ -157,23 +157,79 @@ let mode: Mode = MODES.find(([m]) => m === stored("mw-viewer-view"))?.[0] ?? "bo
 
 // --- Navigation ---------------------------------------------------------------------------
 
-function navLink(name: string, count?: number): HTMLElement {
+// Items styled from more than one place in src/, with the files: the organization check's list.
+const overlapFiles = new Map(data.organization.overlaps.map((o) => [o.item, o.files]));
+
+function navLink(name: string): HTMLElement {
 	const worst = summaries.get(name)?.worst;
+	const files = overlapFiles.get(name);
 	return h(
 		"a",
 		{ href: `#${name}`, "data-name": name },
 		h("span", { class: "nav-name" }, name),
+		files &&
+			h(
+				"span",
+				{ class: "overlap", title: `Styled in more than one place:\n${files.join("\n")}` },
+				"move",
+			),
 		worst && h("span", { class: `dot ${worst}`, title: LABEL[worst] }),
-		count !== undefined && h("span", { class: "nav-count" }, String(count)),
 	);
 }
+
+/** "sections/file-explorer" → "File explorer"; "pdf" → "PDF". */
+function sectionName(id: string): string {
+	const name = (id.split("/").pop() ?? id).replaceAll("-", " ");
+	return name.length <= 3 ? name.toUpperCase() : name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+/** A collapsed section: its name, its worst state and plain counts, and its content when opened. */
+function sectionFold(label: string, items: string[], ...content: Child[]): HTMLElement {
+	const all = items.flatMap((n) => summaries.get(n) ?? []);
+	const count = (status: Status) => all.filter((s) => s.worst === status).length;
+	const worst = STATES.find(([status]) => count(status) > 0)?.[0];
+	const counts = STATES.toReversed()
+		.filter(([status]) => count(status) > 0)
+		.map(
+			([status, name]) =>
+				`${count(status)} ${status === "different" ? "differ" : name.toLowerCase()}`,
+		)
+		.join(", ");
+	return h(
+		"details",
+		{ class: "section" },
+		h(
+			"summary",
+			{},
+			h("span", { class: "section-name" }, label),
+			worst && h("span", { class: `dot ${worst}`, title: LABEL[worst] }),
+			h(
+				"span",
+				{ class: "section-counts" },
+				counts || `${items.length} ${items.length === 1 ? "item" : "items"}`,
+			),
+		),
+		...content,
+	);
+}
+
+/** The files of one section, each with the items it styles. */
+const groups = (list: { file: string; items: string[] }[]) =>
+	list.map((g) =>
+		h(
+			"div",
+			{ class: "group" },
+			g.file && h("h3", {}, g.file.split("/").pop() ?? g.file),
+			...g.items.map((n) => navLink(n)),
+		),
+	);
 
 /** What the dots mean, with how many components sit in each state. */
 function legend(): HTMLElement {
 	return h(
 		"ul",
 		{ class: "legend", "aria-label": "Left against right, by component" },
-		h("li", { class: "legend-title" }, `${names.length} components:`),
+		h("li", { class: "legend-title" }, `${names.length} items:`),
 		...STATES.toReversed().map(([status, label]) =>
 			h(
 				"li",
@@ -185,26 +241,40 @@ function legend(): HTMLElement {
 	);
 }
 
-function renderNav(): void {
-	const bySurfaceName = new Map<string, string[]>();
-	for (const n of names) {
-		const c = data.components[n];
-		if (!c || c.multiSurface) continue;
-		const surface = c.surfaces[0] ?? "other";
-		bySurfaceName.set(surface, [...(bySurfaceName.get(surface) ?? []), n]);
+/** Opens the sections that hold a link matching `show`, and closes the rest. */
+function openSections(show: (a: HTMLAnchorElement) => boolean): void {
+	for (const section of nav.querySelectorAll<HTMLDetailsElement>("details.section")) {
+		section.open = [...section.querySelectorAll("a")].some(show);
 	}
+}
+
+/**
+ * The sidebar mirrors the theme's source: one collapsed section per source folder, and inside it
+ * the items each file styles. Everything starts closed except the section of the page on screen.
+ */
+function renderNav(): void {
+	const { sections } = data.organization;
+	const itemsOf = (list: { items: string[] }[]) => list.flatMap((g) => g.items);
+	const top = (id: string) => sections.find((s) => s.id === id)?.groups ?? [];
+	const apps = sections.filter((s) => s.id.startsWith("sections/"));
+	// Items no source file styles on their own, by where they are used.
+	const rest = Map.groupBy(
+		itemsOf(top("other")),
+		(n) => data.components[n]?.surfaces[0] ?? "other",
+	);
 	const filter = h("input", {
 		type: "search",
-		placeholder: "Filter components",
-		"aria-label": "Filter components",
+		placeholder: "Filter items",
+		"aria-label": "Filter items",
 		spellcheck: "false",
 	}) as HTMLInputElement;
 	filter.addEventListener("input", () => {
 		const q = filter.value.trim().toLowerCase();
-		// Groups left with no visible link hide themselves (style.css).
 		for (const a of nav.querySelectorAll("a")) a.hidden = !a.dataset.name?.includes(q);
+		// A search opens the sections with a match; clearing it closes all but the current one.
+		openSections((a) => (q ? !a.hidden : a.getAttribute("aria-current") === "page"));
 	});
-	nav.replaceChildren(
+	const parts: Child[] = [
 		h(
 			"div",
 			{ class: "nav-top" },
@@ -219,29 +289,34 @@ function renderNav(): void {
 					h("span", { class: "nav-count" }, String(untiedCount())),
 				),
 		),
-		h(
-			"div",
-			{ class: "group" },
-			h("h2", {}, "Components", h("span", {}, String(shared.length + buildOnly.length))),
-			...shared.map((n) => navLink(n, data.components[n]?.surfaces.length)),
-			...buildOnly.map((n) => navLink(n)),
+		sectionFold("Global", itemsOf(top("global")), ...groups(top("global"))),
+		sectionFold("Markdown", itemsOf(top("markdown")), ...groups(top("markdown"))),
+		sectionFold(
+			"Sections",
+			apps.flatMap((s) => itemsOf(s.groups)),
+			...apps.map((s) => sectionFold(sectionName(s.id), itemsOf(s.groups), ...groups(s.groups))),
 		),
-		h(
-			"div",
-			{ class: "group" },
-			h("h2", {}, "Used in one place", h("span", {}, String(names.length - shared.length))),
-			...[...bySurfaceName.keys()]
+		buildOnly.length > 0 &&
+			sectionFold(
+				"Components",
+				buildOnly,
+				h("div", { class: "group" }, ...buildOnly.map((n) => navLink(n))),
+			),
+		sectionFold(
+			"Not styled directly",
+			itemsOf(top("other")),
+			...[...rest.keys()]
 				.sort(bySurface)
-				.map((s) =>
-					h(
-						"div",
-						{ class: "group" },
-						h("h3", {}, surfaceName(s)),
-						...(bySurfaceName.get(s) ?? []).map((n) => navLink(n)),
+				.map((surface) =>
+					sectionFold(
+						surfaceName(surface),
+						rest.get(surface) ?? [],
+						h("div", { class: "group" }, ...(rest.get(surface) ?? []).map((n) => navLink(n))),
 					),
 				),
 		),
-	);
+	];
+	nav.replaceChildren(...parts.filter((c): c is Node | string => Boolean(c)));
 }
 
 // --- Fixture frames -----------------------------------------------------------------------
@@ -911,6 +986,14 @@ function renderPage(): void {
 		if (a.dataset.name === name) a.setAttribute("aria-current", "page");
 		else a.removeAttribute("aria-current");
 	}
+	// The section holding this page opens; sections opened by hand stay as they are.
+	for (
+		let up = nav.querySelector('[aria-current="page"]')?.closest("details");
+		up;
+		up = up.parentElement?.closest("details")
+	) {
+		up.open = true;
+	}
 	if (name === UNTIED) {
 		renderUntied();
 		return;
@@ -943,6 +1026,17 @@ function renderPage(): void {
 			modeSwitch(),
 		),
 		h("div", { class: "sides" }, sidePicker("left"), sidePicker("right")),
+		overlapFiles.has(name) &&
+			h(
+				"div",
+				{ class: "message warn" },
+				h("p", {}, "Styled in more than one place: move to global/"),
+				h(
+					"ul",
+					{ class: "props" },
+					...(overlapFiles.get(name) ?? []).map((f) => h("li", {}, `src/${f}`)),
+				),
+			),
 		recheckNotice(name),
 		!data.appCss &&
 			h(

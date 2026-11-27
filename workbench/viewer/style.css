@@ -730,3 +730,86 @@ nav a.untied {
 	background: var(--grey-700);
 	color: var(--pink);
 }
+
+/* Sidebar sections: one per source folder, closed until opened. */
+details.section {
+	margin-top: 2px;
+}
+
+details.section > summary {
+	display: flex;
+	gap: 8px;
+	align-items: baseline;
+	width: auto;
+	margin: 0;
+	padding: 8px 12px;
+	border-radius: var(--radius);
+	color: var(--text);
+	font-size: 13px;
+	list-style: none;
+}
+
+details.section > summary::-webkit-details-marker {
+	display: none;
+}
+
+/* A plain chevron that turns when the section opens. */
+details.section > summary::before {
+	width: 8px;
+	color: var(--grey-500);
+	content: "›";
+}
+
+details.section[open] > summary::before {
+	transform: rotate(90deg);
+}
+
+.section-name {
+	font-weight: 600;
+}
+
+details.section > summary .dot {
+	flex-shrink: 0;
+	align-self: center;
+}
+
+.section-counts {
+	flex: 1;
+	overflow: hidden;
+	color: var(--grey-400);
+	font-size: 11px;
+	text-align: right;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* A section inside a section sits one step in, with a quieter name. */
+details.section details.section {
+	margin-left: 10px;
+}
+
+details.section details.section .section-name {
+	color: var(--subtext);
+	font-weight: 500;
+}
+
+details.section .group {
+	margin: 0 0 6px 10px;
+}
+
+/* A section the filter leaves empty. */
+details.section:not(:has(a:not([hidden]))) {
+	display: none;
+}
+
+/* An item styled from more than one place in src/. */
+.overlap {
+	padding: 0 6px;
+	background: color-mix(in srgb, var(--red) 16%, transparent);
+	border-radius: 4px;
+	color: var(--red);
+	font-size: 10px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	cursor: help;
+}

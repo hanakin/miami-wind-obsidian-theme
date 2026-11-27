@@ -8,6 +8,7 @@ import {
 	mkdirSync,
 	readFileSync,
 	statSync,
+	watch,
 	watchFile,
 	writeFileSync,
 } from "node:fs";
@@ -24,6 +25,7 @@ import { forceStates } from "./force-states.ts";
 import { frameCsp, frameDocument, type ImageSize } from "./frame.ts";
 import { type FixtureResult, mergeRun, pairKey, resultsFor, type Store } from "./results.ts";
 import { parseChoice, resolveSide, type Side } from "./sides.ts";
+import { organization } from "./source.ts";
 import type { CompareState, Diffs, ViewerData } from "./types.ts";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
@@ -210,9 +212,11 @@ function ingest(index: FixtureIndex): void {
 	writeFileSync(STORE, JSON.stringify(store));
 }
 
-function data(index: FixtureIndex): ViewerData {
+async function data(index: FixtureIndex): Promise<ViewerData> {
 	ingest(index);
+	const { sections, overlaps } = await organization();
 	return {
+		organization: { sections, overlaps },
 		appCss: existsSync(paths.app),
 		cmCss: existsSync(paths.cm),
 		fixtures: index.fixtures.map(({ id, file, component, surface, state, note }) => ({
@@ -284,6 +288,12 @@ export function viewer(): Plugin {
 					server.ws.send({ type: "full-reload" });
 				});
 			}
+			// The sidebar is built from src/: a change there rebuilds it.
+			let pending: ReturnType<typeof setTimeout> | undefined;
+			watch(`${ROOT}src`, { recursive: true }, () => {
+				clearTimeout(pending);
+				pending = setTimeout(() => server.ws.send({ type: "full-reload" }), 300);
+			});
 			// Theme files a side points at. A change tells the page to redraw that side, no reload.
 			const watched = new Set<string>();
 			const watchSide = (path: string | undefined) => {
@@ -391,7 +401,10 @@ export function viewer(): Plugin {
 					return send(res, 200, "application/json", JSON.stringify(resultsFor(store, key)));
 				}
 				if (url.pathname === "/api/data") {
-					return send(res, 200, "application/json", JSON.stringify(data(index)));
+					data(index)
+						.then((all) => send(res, 200, "application/json", JSON.stringify(all)))
+						.catch((e) => send(res, 500, "text/plain", String(e)));
+					return;
 				}
 				if (area === "frame" && a && sheets.has(a) && b && byId.has(b)) {
 					const nonce = randomUUID();

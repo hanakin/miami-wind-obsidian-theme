@@ -1,3 +1,4 @@
+import type { Organization } from "./organization.ts";
 // Shapes shared by the viewer server and page.
 export interface Fixture {
 	id: string;
@@ -42,6 +43,8 @@ export interface ViewerData {
 	usage: Usage[];
 	/** Why compare.json could not be used, when it exists but is not a schemaVersion 1 report. */
 	compareError?: string;
+	/** The sidebar: items grouped by the source file that styles them, and the overlaps found. */
+	organization: Organization;
 }
 
 /** One side as the page knows it: a name and the hash of its CSS, or why it cannot be shown. */
