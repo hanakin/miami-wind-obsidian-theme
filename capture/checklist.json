@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-24T08:15:02.677Z",
+	"generated": "2026-11-27T17:19:06.441Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
 		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/config/obsidian"
@@ -13375,7 +13375,7 @@
 			"target": ".modal-container"
 		},
 		{
-			"id": "extra.community.restricted",
+			"id": "extra.community.enabled",
 			"scene": "extra.community",
 			"surface": "modal",
 			"component": "settings-page",
@@ -13384,13 +13384,48 @@
 			"target": ".modal.mod-settings"
 		},
 		{
-			"id": "extra.community.enabled",
+			"id": "extra.style-settings.tab",
 			"scene": "extra.community",
 			"surface": "modal",
 			"component": "settings-page",
 			"state": "default",
 			"source": "catalog:community-browser",
-			"target": ".modal.mod-settings"
+			"target": ".modal.mod-settings .vertical-tab-content",
+			"note": "Style Settings' own settings tab. Miami Wind declares no @settings block, so it shows its empty state.",
+			"expect": ":has(.style-settings-empty)"
+		},
+		{
+			"id": "extra.style-settings.body-class",
+			"scene": "extra.community",
+			"surface": "modal",
+			"component": "workspace",
+			"state": "default",
+			"source": "catalog:community-browser",
+			"target": ".modal.mod-settings",
+			"note": "Style Settings marks the body with css-settings-manager while it runs (every window).",
+			"expect": "body.css-settings-manager .modal.mod-settings"
+		},
+		{
+			"id": "extra.community.restricted",
+			"scene": "extra.community-restricted",
+			"surface": "modal",
+			"component": "settings-page",
+			"state": "default",
+			"source": "catalog:community-browser",
+			"target": ".modal.mod-settings",
+			"note": "Restricted mode, turned on with the Community plugins tab's own button (the app reloads).",
+			"expect": ":has(.community-plugins-intro)"
+		},
+		{
+			"id": "extra.community.debug-list",
+			"scene": "extra.community-restricted",
+			"surface": "modal",
+			"component": "modal",
+			"state": "default",
+			"source": "catalog:community-browser",
+			"target": ".modal:has(.community-plugins-debug-list)",
+			"note": "Restricted mode with Style Settings enabled in the vault: the info button of 'Re-enable plugins' lists it.",
+			"expect": ":has(.community-plugins-debug-list li)"
 		},
 		{
 			"id": "extra.search-suggest",
@@ -13471,6 +13506,16 @@
 			"pseudo": [
 				"hover"
 			]
+		},
+		{
+			"id": "extra.community.theme-browser-offline",
+			"scene": "extra.community-themes-offline",
+			"surface": "community-browser",
+			"component": "community-browser",
+			"state": "default",
+			"source": "catalog:community-browser",
+			"target": ".community-modal-search-results-status-content",
+			"note": "The theme list download fails (the app's network goes through a dead proxy for this scene): the browser shows its load error and Retry."
 		},
 		{
 			"id": "extra.community.theme-browser",
@@ -13902,6 +13947,28 @@
 			"minUnobscured": 0.3
 		},
 		{
+			"id": "qc.drag.tab-split-edge",
+			"scene": "qc.drag",
+			"surface": "workspace",
+			"component": "drag-ghost",
+			"state": "default",
+			"source": "catalog:drag",
+			"target": ".workspace-fake-target-overlay:not(.is-in-sidebar)",
+			"note": "A real tab drag held near the left edge of another tab's view; evidence.record holds the overlay's box, the view's box and the overlay's computed visibility.",
+			"minUnobscured": 0.3
+		},
+		{
+			"id": "qc.drag.tab-sidebar-edge",
+			"scene": "qc.drag",
+			"surface": "left-sidebar",
+			"component": "drag-ghost",
+			"state": "default",
+			"source": "catalog:drag",
+			"target": ".workspace-fake-target-overlay.is-in-sidebar",
+			"note": "The same drag held over the lower part of the file explorer's tab group in the left sidebar (sidebars split only up or down): the overlay gets .is-in-sidebar.",
+			"minUnobscured": 0.3
+		},
+		{
 			"id": "qc.drag.kanban-column",
 			"scene": "qc.drag",
 			"surface": "bases",
@@ -14172,16 +14239,6 @@
 			"minUnobscured": 0.3
 		},
 		{
-			"id": "qc.canvas.snaps",
-			"scene": "qc.canvas",
-			"surface": "canvas",
-			"component": "canvas",
-			"state": "dragging-node",
-			"source": "catalog:canvas-qc",
-			"target": ".canvas-wrapper",
-			"expect": ":has(.canvas-snaps)"
-		},
-		{
 			"id": "qc.canvas.zoomed-out",
 			"scene": "qc.canvas",
 			"surface": "canvas",
@@ -14198,6 +14255,16 @@
 			"state": "default",
 			"source": "catalog:canvas-qc",
 			"target": ".canvas-node-placeholder"
+		},
+		{
+			"id": "qc.canvas.snaps",
+			"scene": "qc.canvas",
+			"surface": "canvas",
+			"component": "canvas",
+			"state": "dragging-node",
+			"source": "catalog:canvas-qc",
+			"target": ".canvas-wrapper",
+			"expect": ":has(.canvas-snaps)"
 		},
 		{
 			"id": "qc.pdf.find-settings",
@@ -14284,7 +14351,7 @@
 				"sel": ".annotationLayer",
 				"in": "leaf"
 			},
-			"note": "forms.pdf is a hand-written sample with AcroForm fields and annotations."
+			"excluded": "Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)"
 		},
 		{
 			"id": "qc.pdf.text-field.focus",
@@ -14299,7 +14366,21 @@
 			},
 			"pseudo": [
 				"focus"
-			]
+			],
+			"excluded": "Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)"
+		},
+		{
+			"id": "qc.pdf.annotations",
+			"scene": "qc.pdf",
+			"surface": "pdf",
+			"component": "pdf",
+			"state": "default",
+			"source": "catalog:pdf-qc",
+			"target": {
+				"sel": ".annotationLayer",
+				"in": "leaf"
+			},
+			"note": "annotations.pdf is a hand-written sample with non-form annotations only (no fillable fields)."
 		},
 		{
 			"id": "qc.pdf.annotation-popup",
@@ -14312,7 +14393,7 @@
 				"sel": ".annotationLayer .popupWrapper",
 				"in": "leaf"
 			},
-			"note": "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup.",
+			"note": "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup (a PDF without form fields).",
 			"expect": ".popupWrapper:not([hidden]):has(.popup:not([hidden]) .popupContent)"
 		},
 		{
@@ -14433,6 +14514,19 @@
 			"note": "Tags, attachments, orphans, unresolved links and a color group are on; Pixi draws them on a canvas with the colors Obsidian reads from .graph-view.color-* probes. evidence.record holds the colors the renderer read from each probe class and how many screenshot pixels have exactly that color."
 		},
 		{
+			"id": "qc.graph.arrows",
+			"scene": "qc.graph",
+			"surface": "graph",
+			"component": "graph",
+			"state": "default",
+			"source": "catalog:graph-qc",
+			"target": {
+				"sel": ".workspace-leaf-content",
+				"in": "leaf"
+			},
+			"note": "Display > Arrows on and Text fade threshold at its highest (labels faded out): the arrow heads are the only marks in the arrow color."
+		},
+		{
 			"id": "qc.graph.node-hover",
 			"scene": "qc.graph",
 			"surface": "graph",
@@ -14443,7 +14537,17 @@
 				"sel": ".workspace-leaf-content",
 				"in": "leaf"
 			},
-			"note": "The pointer on the Kitchen sink node: Obsidian highlights it and its links (focused fill, circle, highlight colors) and fades the rest."
+			"note": "Zoomed in with the wheel, then the pointer on the Kitchen sink node: Obsidian highlights it and its links (highlight fill, circle, highlight line) and fades the rest."
+		},
+		{
+			"id": "qc.graph.focused-file",
+			"scene": "qc.graph",
+			"surface": "graph",
+			"component": "graph",
+			"state": "default",
+			"source": "catalog:graph-qc",
+			"target": ".workspace-leaf-content[data-type='graph']",
+			"note": "A note opened (in the right sidebar) while the graph shows: the graph marks that file's node as focused (its own fill color). The view is panned so that node sits in the middle; the pointer stays off the graph."
 		},
 		{
 			"id": "qc.media.print",
@@ -15183,7 +15287,7 @@
 			"state": "default",
 			"source": "catalog:print-export",
 			"target": ".print",
-			"note": "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs.",
+			"note": "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs. The window has no doctype (quirks mode), so the fixture has none either.",
 			"expect": "body.theme-light > .print"
 		},
 		{
@@ -15326,6 +15430,17 @@
 			"state": "default",
 			"source": "catalog:rtl-interface-language",
 			"target": ".app-container"
+		},
+		{
+			"id": "qc.startup-snapshot.loading",
+			"scene": "qc.startup-snapshot",
+			"surface": "workspace",
+			"component": "workspace",
+			"state": "default",
+			"source": "catalog:startup-snapshot",
+			"target": "#startup-snapshot",
+			"note": "The window reloaded (a real start of it, CPU slowed 30x): the saved workspace picture with 'Loading Obsidian…', on a body colored by the saved theme variables (body style). The frame's copied stylesheets are not kept in the fixture.",
+			"expect": "#startup-snapshot[data-loaded]"
 		},
 		{
 			"id": "qc.edit-block-button.hover",
@@ -15619,7 +15734,7 @@
 			"state": "default",
 			"source": "catalog:emulated-phone",
 			"target": ".suggestion-bg",
-			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The dimmed backdrop behind a menu sheet (.suggestion-bg).",
+			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. The dimmed backdrop behind a menu sheet (.suggestion-bg); the fixture holds the whole window.",
 			"expect": ".suggestion-bg",
 			"minUnobscured": 0.2
 		},

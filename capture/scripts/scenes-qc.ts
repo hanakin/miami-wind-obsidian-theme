@@ -29,7 +29,7 @@ async function center(ctx: Ctx, t: Target): Promise<[number, number]> {
 }
 
 /** Starts a drag with Playwright's drag support (it drives Chromium's drag interception). */
-async function dragTo(ctx: Ctx, from: Target, to: Target, fx = 0.5): Promise<void> {
+async function dragTo(ctx: Ctx, from: Target, to: Target, fx = 0.5, fy = 0.5): Promise<void> {
 	await ctx.page.mouse.up().catch(() => undefined);
 	const a = await center(ctx, from);
 	await ctx.page.mouse.move(a[0], a[1]);
@@ -39,9 +39,13 @@ async function dragTo(ctx: Ctx, from: Target, to: Target, fx = 0.5): Promise<voi
 		"const r = cap.find(arg).getBoundingClientRect(); return [r.x, r.y, r.width, r.height];",
 		to,
 	);
-	await ctx.page.mouse.move(r[0] + r[2] * fx, r[1] + r[3] / 2, { steps: 8 });
+	await ctx.page.mouse.move(r[0] + r[2] * fx, r[1] + r[3] * fy, { steps: 8 });
 	await ctx.sleep(500);
 }
+
+/** Geometry and computed visibility of the tab-drag preview overlay and the view it previews. */
+const FAKE_TARGET_RECORD =
+	"const o = document.querySelector('.workspace-fake-target-overlay'); const cs = getComputedStyle(o); const r = o.getBoundingClientRect(); const host = o.closest('.workspace-fake-target-container'); const hidden = [...document.querySelectorAll('.workspace-tabs, .workspace-leaf, .workspace-split')].find((l) => l.style.opacity === '0' && !l.closest('.workspace-fake-target-container')); const h = hidden?.getBoundingClientRect(); return { overlay: [r.x, r.y, r.width, r.height].map(Math.round), visibility: cs.visibility, display: cs.display, containerVisibility: host ? getComputedStyle(host).visibility : null, inSidebar: o.classList.contains('is-in-sidebar'), previewedLeaf: h ? [h.x, h.y, h.width, h.height].map(Math.round) : null };";
 
 async function endDrag(ctx: Ctx): Promise<void> {
 	await ctx.page.keyboard.press("Escape");
@@ -355,6 +359,47 @@ const dragQc: Scene = {
 			minUnobscured: 0.3,
 		},
 		{
+			// A tab held over the left edge of another tab's view: Obsidian slides a copy of that view
+			// aside (.workspace-fake-target-overlay) to preview the split.
+			id: "qc.drag.tab-split-edge",
+			component: "drag-ghost",
+			target: ".workspace-fake-target-overlay:not(.is-in-sidebar)",
+			minUnobscured: 0.3,
+			before: async (ctx) => {
+				await endDrag(ctx);
+				await ctx.js(
+					"const ws = app.workspace; const l = ws.getLeaf('tab'); await l.openFile(app.vault.getAbstractFileByPath('Markdown/Headings.md')); ws.setActiveLeaf(l, { focus: true }); await sleep(800);",
+				);
+				await dragTo(
+					ctx,
+					{ sel: ".mod-root .workspace-tab-header", nth: 0 },
+					".mod-root .workspace-leaf.mod-active .view-content",
+					0.08,
+				);
+			},
+			record: FAKE_TARGET_RECORD,
+			note: "A real tab drag held near the left edge of another tab's view; evidence.record holds the overlay's box, the view's box and the overlay's computed visibility.",
+		},
+		{
+			id: "qc.drag.tab-sidebar-edge",
+			component: "drag-ghost",
+			surface: "left-sidebar",
+			target: ".workspace-fake-target-overlay.is-in-sidebar",
+			minUnobscured: 0.3,
+			before: async (ctx) => {
+				await endDrag(ctx);
+				await dragTo(
+					ctx,
+					{ sel: ".mod-root .workspace-tab-header", nth: 0 },
+					".mod-left-split .workspace-tabs:has(.workspace-leaf-content[data-type='file-explorer'])",
+					0.5,
+					0.9,
+				);
+			},
+			record: FAKE_TARGET_RECORD,
+			note: "The same drag held over the lower part of the file explorer's tab group in the left sidebar (sidebars split only up or down): the overlay gets .is-in-sidebar.",
+		},
+		{
 			id: "qc.drag.kanban-column",
 			// The dragged column's ghost floats over the board by design.
 			minUnobscured: 0,
@@ -560,6 +605,8 @@ const basesQc: Scene = {
 				await ctx.page.mouse.click(b[0], b[1]);
 				await ctx.page.keyboard.press("End");
 				await ctx.page.keyboard.press("ArrowLeft");
+				// The pointer off the editor: pointer events under it would close the docstring tooltip.
+				await ctx.page.mouse.move(5, 995);
 				await ctx.sleep(400);
 			},
 			note: "Typing .contains( auto-closes the bracket; with the cursor between them the formula editor marks both with .cm-matchingBracket.",
@@ -666,23 +713,6 @@ const canvasQc: Scene = {
 			},
 		},
 		{
-			id: "qc.canvas.snaps",
-			component: "canvas",
-			target: ".canvas-wrapper",
-			state: "dragging-node",
-			full: true,
-			expect: ":has(.canvas-snaps)",
-			before: async (ctx) => {
-				await ctx.page.mouse.up();
-				await ctx.js("app.workspace.activeLeaf.view.canvas.deselectAll(); await sleep(200);");
-				const b = await center(ctx, { sel: ".canvas-node", text: "Colored card 3" });
-				await ctx.page.mouse.move(b[0], b[1]);
-				await ctx.page.mouse.down();
-				await ctx.page.mouse.move(b[0] - 240, b[1] + 2, { steps: 12 });
-				await ctx.sleep(400);
-			},
-		},
-		{
 			id: "qc.canvas.zoomed-out",
 			component: "canvas",
 			target: ".canvas-wrapper.mod-zoomed-out",
@@ -697,6 +727,30 @@ const canvasQc: Scene = {
 			id: "qc.canvas.node-placeholder",
 			component: "canvas-node",
 			target: ".canvas-node-placeholder",
+		},
+		{
+			// Last: releasing the drags of the items before it leaves the canvas panned away.
+			id: "qc.canvas.snaps",
+			component: "canvas",
+			target: ".canvas-wrapper",
+			state: "dragging-node",
+			full: true,
+			expect: ":has(.canvas-snaps)",
+			before: async (ctx) => {
+				await ctx.page.mouse.up();
+				// A fresh canvas: earlier items leave it zoomed out and panned away from the cards.
+				await ctx.open("Canvas.canvas", "live");
+				await ctx.js(
+					"const c = app.workspace.getLeavesOfType('canvas').find((l) => l.view.containerEl.isShown())?.view.canvas; c.deselectAll(); c.zoomToFit(); await sleep(2000); return [c.x, c.y, c.zoom, c.nodes.size];",
+				);
+				const b = await center(ctx, { sel: ".canvas-node", text: "Colored card 3" });
+				const mid = await center(ctx, ".canvas-wrapper");
+				await ctx.page.mouse.move(b[0], b[1]);
+				await ctx.page.mouse.down();
+				// A short way toward the middle: held near the canvas edge, the canvas keeps scrolling.
+				await ctx.page.mouse.move(b[0] + Math.sign(mid[0] - b[0]) * 60, b[1] + 2, { steps: 8 });
+				await ctx.sleep(400);
+			},
 		},
 	],
 };
@@ -728,8 +782,9 @@ const pdfQc: Scene = {
 			target: leaf(".pdfViewer .spread"),
 			before: async (ctx) => {
 				await ctx.page.keyboard.press("Escape");
+				// Escape closes the find bar; the viewer slides back (a 275 ms transition) before the shot.
 				await ctx.js(
-					"const v = app.workspace.getMostRecentLeaf(app.workspace.rootSplit).view; const pv = v.viewer?.child?.pdfViewer?.pdfViewer; pv.spreadMode = 1; await sleep(800);",
+					"const v = app.workspace.getMostRecentLeaf(app.workspace.rootSplit).view; const pv = v.viewer?.child?.pdfViewer?.pdfViewer; pv.spreadMode = 1; await sleep(1500);",
 				);
 			},
 		},
@@ -779,21 +834,33 @@ const pdfQc: Scene = {
 			note: "locked.pdf is sample.pdf encrypted with qpdf (password capture-user).",
 		},
 		{
+			// Fillable-PDF form boxes (pdf.js AcroForm widgets) are out of scope: listed, never run.
 			id: "qc.pdf.forms",
 			component: "pdf",
 			target: leaf(".annotationLayer"),
+			excluded:
+				"Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)",
+		},
+		{
+			id: "qc.pdf.text-field.focus",
+			component: "text-input",
+			target: leaf(".annotationLayer .textWidgetAnnotation input"),
+			pseudo: ["focus"],
+			excluded:
+				"Fillable PDF form boxes: pdf.js writes their colors inline; out of scope (Mike, 2026-11-26)",
+		},
+		{
+			// annotations.pdf has the non-form annotations only (sticky note, free text, highlight,
+			// link, attached file).
+			id: "qc.pdf.annotations",
+			component: "pdf",
+			target: leaf(".annotationLayer"),
 			before: async (ctx) => {
-				await ctx.open("Attachments/forms.pdf", "live");
+				await ctx.open("Attachments/annotations.pdf", "live");
 				await ctx.sleep(2000);
 			},
-			note: "forms.pdf is a hand-written sample with AcroForm fields and annotations.",
+			note: "annotations.pdf is a hand-written sample with non-form annotations only (no fillable fields).",
 		},
-		p(
-			"qc.pdf.text-field.focus",
-			"text-input",
-			leaf(".annotationLayer .textWidgetAnnotation input"),
-			["focus"],
-		),
 		{
 			id: "qc.pdf.annotation-popup",
 			component: "pdf",
@@ -801,13 +868,27 @@ const pdfQc: Scene = {
 			state: "popup-open",
 			expect: ".popupWrapper:not([hidden]):has(.popup:not([hidden]) .popupContent)",
 			before: async (ctx) => {
-				await ctx.open("Attachments/forms.pdf", "live");
+				await ctx.open("Attachments/annotations.pdf", "live");
 				await ctx.sleep(2000);
-				const b = await center(ctx, leaf(".annotationLayer .textAnnotation"));
-				await ctx.page.mouse.click(b[0], b[1]);
-				await ctx.sleep(600);
+				// The annotation layer may still be redrawing after the file opens: click until the
+				// popup shows.
+				await ctx.page.keyboard.press("Escape");
+				for (let i = 0; i < 4; i++) {
+					await ctx.js(
+						"cap.ROOTS.leaf().querySelector('.annotationLayer .textAnnotation')?.scrollIntoView({ block: 'center' }); await sleep(400);",
+					);
+					const b = await center(ctx, leaf(".annotationLayer .textAnnotation"));
+					await ctx.page.mouse.click(b[0], b[1]);
+					await ctx.sleep(700);
+					if (
+						await ctx.js<boolean>(
+							"return !!cap.ROOTS.leaf().querySelector('.annotationLayer .popupWrapper:not([hidden])');",
+						)
+					)
+						break;
+				}
 			},
-			note: "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup.",
+			note: "Clicking the sticky-note (Text) annotation opens its pdf.js comment popup (a PDF without form fields).",
 		},
 		{
 			id: "qc.pdf.xfa",
@@ -821,7 +902,11 @@ const pdfQc: Scene = {
 			},
 			note: "xfa-form.pdf is a hand-written pure XFA form (template packet only); Obsidian's pdf.js has enableXfa on and draws it with its XFA layer.",
 		},
-		p("qc.pdf.xfa-text.focus", "text-input", leaf(".xfaLayer .xfaTextfield"), ["focus"]),
+		{
+			...p("qc.pdf.xfa-text.focus", "text-input", leaf(".xfaLayer .xfaTextfield"), ["focus"]),
+			// The field's XFA border frame (a sibling, drawn over it) stays in the fixture.
+			context: "document",
+		},
 	],
 };
 
@@ -953,6 +1038,14 @@ const spellQc: Scene = {
 	],
 };
 
+/** Pans the visible graph so a node (by id, or the focused one) sits in the middle of its canvas. */
+const centerNode = (which: string) =>
+	`const v = app.workspace.getLeavesOfType('graph').find((x) => x.view.contentEl.getClientRects().length).view; const rd = v.renderer; const res = rd.px?.renderer?.resolution ?? 1; for (let i = 0; i < 4; i++) { const n = ${which === "focused" ? "rd.nodes.find((x) => x.type === 'focused')" : `rd.nodes.find((x) => x.id === ${JSON.stringify(which)})`}; if (!n) break; const g = n.circle.getGlobalPosition(); rd.setPan(rd.panX + (rd.width * res) / 2 - g.x, rd.panY + (rd.height * res) / 2 - g.y); rd.changed(); await sleep(700); }`;
+
+/** Graph evidence: the colors the renderer read, where to count them, and what it really draws. */
+const GRAPH_RECORD =
+	"const l = app.workspace.getLeavesOfType('graph').find((x) => x.view.contentEl.getClientRects().length) ?? app.workspace.getLeavesOfType('graph')[0]; const v = l.view; const rd = v.renderer; const opts = v.dataEngine.getOptions(); const cv = v.contentEl.querySelector('canvas').getBoundingClientRect(); const res = rd.px?.renderer?.resolution ?? 1; const box = (n) => { const g = n.circle.getBounds(); return [cv.x + g.x / res, cv.y + g.y / res, g.width / res, g.height / res]; }; const ctrl = v.contentEl.querySelector('.graph-controls'); const cr = ctrl && !ctrl.classList.contains('is-close') ? ctrl.getBoundingClientRect() : null; const c = rd.colors ?? {}; const map = { fill: 'color-fill', fillFocused: 'color-fill-focused', fillTag: 'color-fill-tag', fillUnresolved: 'color-fill-unresolved', fillAttachment: 'color-fill-attachment', arrow: 'color-arrow', circle: 'color-circle', line: 'color-line', text: 'color-text', fillHighlight: 'color-fill-highlight', lineHighlight: 'color-line-highlight' }; const graphColors = {}; const graphAlpha = {}; for (const [k, cls] of Object.entries(map)) if (c[k]) { graphColors[cls] = c[k].rgb; graphAlpha[cls] = c[k].a; } const count = (t) => rd.nodes.filter((n) => (n.type || '') === t).length; const hovered = rd.getHighlightNode?.() ?? rd.highlightNode ?? null; const focused = rd.nodes.find((n) => n.type === 'focused') ?? null; const links = rd.links?.length ?? 0; const requires = { 'color-fill': count('') > 0, 'color-fill-tag': !!opts.showTags && count('tag') > 0, 'color-fill-attachment': !!opts.showAttachments && count('attachment') > 0, 'color-fill-unresolved': !opts.hideUnresolved && count('unresolved') > 0, 'color-fill-focused': !!focused, 'color-arrow': !!opts.showArrow && links > 0, 'color-line': links > 0, 'color-text': rd.nodes.length > 0 && (rd.textAlpha ?? 1) > 0, 'color-fill-highlight': !!hovered, 'color-line-highlight': !!hovered && links > 0, 'color-circle': !!hovered }; const classRegions = {}; if (hovered) { const b = box(hovered); classRegions['color-fill-highlight'] = b; classRegions['color-circle'] = [b[0] - 8, b[1] - 8, b[2] + 16, b[3] + 16]; } if (focused) classRegions['color-fill-focused'] = box(focused); return { graphColors, graphAlpha, requires, graphRegion: [cv.x, cv.y, cv.width, cv.height], graphExclude: cr ? [[cr.x, cr.y, cr.width, cr.height]] : [], classRegions, hovered: hovered?.id ?? null, focused: focused?.id ?? null, options: { showArrow: !!opts.showArrow, showTags: !!opts.showTags, showAttachments: !!opts.showAttachments, hideUnresolved: !!opts.hideUnresolved } };";
+
 const graphQc: Scene = {
 	id: "qc.graph",
 	surface: "graph",
@@ -979,8 +1072,24 @@ const graphQc: Scene = {
 			target: leaf(".workspace-leaf-content"),
 			full: true,
 			note: "Tags, attachments, orphans, unresolved links and a color group are on; Pixi draws them on a canvas with the colors Obsidian reads from .graph-view.color-* probes. evidence.record holds the colors the renderer read from each probe class and how many screenshot pixels have exactly that color.",
-			record:
-				"const v = app.workspace.getLeavesOfType('graph')[0]?.view; const c = v?.renderer?.colors ?? {}; const map = { fill: 'color-fill', fillFocused: 'color-fill-focused', fillTag: 'color-fill-tag', fillUnresolved: 'color-fill-unresolved', fillAttachment: 'color-fill-attachment', arrow: 'color-arrow', circle: 'color-circle', line: 'color-line', text: 'color-text', fillHighlight: 'color-fill-highlight', lineHighlight: 'color-line-highlight' }; const graphColors = {}; const graphAlpha = {}; for (const [k, cls] of Object.entries(map)) if (c[k]) { graphColors[cls] = c[k].rgb; graphAlpha[cls] = c[k].a; } return { graphColors, graphAlpha };",
+			record: GRAPH_RECORD,
+		},
+		{
+			// Arrows share the text color (at half alpha), so the labels are faded out with the
+			// graph's own text fade setting: only arrows can carry that color here.
+			id: "qc.graph.arrows",
+			component: "graph",
+			target: leaf(".workspace-leaf-content"),
+			full: true,
+			state: "default",
+			before: async (ctx) => {
+				await ctx.page.mouse.move(2, 998);
+				await ctx.js(
+					"const v = app.workspace.getLeavesOfType('graph')[0].view; const o = v.dataEngine.getOptions(); v.dataEngine.setOptions({ ...o, showArrow: true, textFadeMultiplier: 3 }); await sleep(2500);",
+				);
+			},
+			record: GRAPH_RECORD,
+			note: "Display > Arrows on and Text fade threshold at its highest (labels faded out): the arrow heads are the only marks in the arrow color.",
 		},
 		{
 			id: "qc.graph.node-hover",
@@ -989,15 +1098,47 @@ const graphQc: Scene = {
 			full: true,
 			state: "default",
 			before: async (ctx) => {
-				const at = await ctx.js<[number, number]>(
-					"const v = app.workspace.getLeavesOfType('graph')[0].view; const rd = v.renderer; const n = rd.nodes.find((x) => x.id === 'Markdown/Kitchen sink.md') ?? rd.nodes[0]; const g = n.circle.getGlobalPosition(); const c = v.contentEl.querySelector('canvas').getBoundingClientRect(); const res = rd.px?.renderer?.resolution ?? 1; return [c.x + g.x / res, c.y + g.y / res];",
+				// Zoom in with the wheel over the node (the ring is one line width: about 3 screen pixels
+				// at this zoom, so its color shows unblended), then rest the pointer on the node.
+				const at = async () =>
+					ctx.js<[number, number]>(
+						"const v = app.workspace.getLeavesOfType('graph')[0].view; const rd = v.renderer; const n = rd.nodes.find((x) => x.id === 'Markdown/Kitchen sink.md') ?? rd.nodes[0]; const g = n.circle.getGlobalPosition(); const c = v.contentEl.querySelector('canvas').getBoundingClientRect(); const res = rd.px?.renderer?.resolution ?? 1; return [c.x + g.x / res, c.y + g.y / res];",
+					);
+				await ctx.js(
+					"const v = app.workspace.getLeavesOfType('graph')[0].view; const o = v.dataEngine.getOptions(); v.dataEngine.setOptions({ ...o, showArrow: false, textFadeMultiplier: 0 }); await sleep(1500);",
 				);
-				await ctx.page.mouse.move(at[0], at[1], { steps: 4 });
+				// In the middle of the canvas first: clear of the graph settings panel.
+				await ctx.js(centerNode("Markdown/Kitchen sink.md"));
+				let p = await at();
+				await ctx.page.mouse.move(p[0], p[1], { steps: 4 });
+				for (let i = 0; i < 12; i++) {
+					await ctx.page.mouse.wheel(0, -200);
+					await ctx.sleep(80);
+				}
+				await ctx.sleep(2500);
+				await ctx.js(centerNode("Markdown/Kitchen sink.md"));
+				p = await at();
+				await ctx.page.mouse.move(p[0] + 1, p[1] + 1, { steps: 4 });
 				await ctx.sleep(1500);
 			},
-			record:
-				"const v = app.workspace.getLeavesOfType('graph')[0]?.view; const rd = v?.renderer; const c = rd?.colors ?? {}; const map = { fill: 'color-fill', fillFocused: 'color-fill-focused', fillTag: 'color-fill-tag', fillUnresolved: 'color-fill-unresolved', fillAttachment: 'color-fill-attachment', arrow: 'color-arrow', circle: 'color-circle', line: 'color-line', text: 'color-text', fillHighlight: 'color-fill-highlight', lineHighlight: 'color-line-highlight' }; const graphColors = {}; const graphAlpha = {}; for (const [k, cls] of Object.entries(map)) if (c[k]) { graphColors[cls] = c[k].rgb; graphAlpha[cls] = c[k].a; } return { graphColors, graphAlpha, hovered: rd?.highlightNode?.id ?? rd?.hoverNode?.id ?? null };",
-			note: "The pointer on the Kitchen sink node: Obsidian highlights it and its links (focused fill, circle, highlight colors) and fades the rest.",
+			record: GRAPH_RECORD,
+			note: "Zoomed in with the wheel, then the pointer on the Kitchen sink node: Obsidian highlights it and its links (highlight fill, circle, highlight line) and fades the rest.",
+		},
+		{
+			id: "qc.graph.focused-file",
+			component: "graph",
+			target: ".workspace-leaf-content[data-type='graph']",
+			full: true,
+			state: "default",
+			before: async (ctx) => {
+				await ctx.js(
+					"const ws = app.workspace; const r = ws.getRightLeaf(false); await r.openFile(app.vault.getAbstractFileByPath('Markdown/Kitchen sink.md'), { active: true }); await sleep(3000); const g0 = ws.getLeavesOfType('graph').find((x) => x.view.contentEl.getClientRects().length).view.renderer; g0.zoomTo(1); await sleep(1500);",
+				);
+				await ctx.js(centerNode("focused"));
+				await ctx.js("await sleep(300);");
+			},
+			record: GRAPH_RECORD,
+			note: "A note opened (in the right sidebar) while the graph shows: the graph marks that file's node as focused (its own fill color). The view is panned so that node sits in the middle; the pointer stays off the graph.",
 		},
 	],
 };
@@ -1021,7 +1162,7 @@ const mediaQc: Scene = {
 			before: async (ctx) => {
 				await ctx.open("Markdown/Kitchen sink.md", "live");
 				await ctx.js(
-					"let p = Object.getPrototypeOf(app.setting); let base = null; while (p && p !== Object.prototype) { if (Object.hasOwn(p, 'open')) base = p; p = Object.getPrototypeOf(p); } const open = base.open; base.open = function () { window.__capModal = this; return open.apply(this, arguments); }; app.commands.executeCommandById('workspace:export-pdf'); await sleep(600); base.open = open; const m = window.__capModal; m.close(); await m.testPrint(); await sleep(1200);",
+					"let p = Object.getPrototypeOf(app.setting); let base = null; while (p && p !== Object.prototype) { if (Object.hasOwn(p, 'open')) base = p; p = Object.getPrototypeOf(p); } const open = base.open; window.__capModal = null; base.open = function () { window.__capModal = this; return open.apply(this, arguments); }; app.commands.executeCommandById('workspace:export-pdf'); for (let i = 0; i < 50 && !window.__capModal; i++) await sleep(100); await sleep(300); base.open = open; const m = window.__capModal; m.close(); await m.testPrint(); await sleep(1200);",
 				);
 			},
 			note: "Debug view, not the export: Obsidian's testPrint() lays the print layout (body > .print) into the dark main window, with @media print emulated. Real Export to PDF renders in its own window with body.theme-light: see qc.print.export-window.",
@@ -1412,7 +1553,7 @@ const dialogsQc: Scene = {
 				await ctx.page.keyboard.press("Escape");
 				await ctx.open("Markdown/Kitchen sink.md", "reading");
 				await ctx.js(
-					`let p = Object.getPrototypeOf(app.setting); let base = null; while (p && p !== Object.prototype) { if (Object.hasOwn(p, 'open')) base = p; p = Object.getPrototypeOf(p); } const open = base.open; base.open = function () { window.__capModal = this; return open.apply(this, arguments); }; app.commands.executeCommandById('workspace:export-pdf'); await sleep(600); base.open = open; const m = window.__capModal; m.close(); const sl = window.sleep; window.__capHold = new Promise((r) => { window.__capRelease = r; }); window.sleep = async (ms) => { window.sleep = sl; await window.__capHold; return sl(ms); }; window.__capPdf = m.printToPdf({ includeName: true, pageSize: 'Letter', landscape: false, marginsType: 0, scale: 1, open: false, filepath: ${JSON.stringify(`${WORK}/export-test.pdf`)} }); for (let i = 0; i < 40 && !document.querySelector('.progress-bar-container'); i++) await sleep(25); await sleep(300);`,
+					`let p = Object.getPrototypeOf(app.setting); let base = null; while (p && p !== Object.prototype) { if (Object.hasOwn(p, 'open')) base = p; p = Object.getPrototypeOf(p); } const open = base.open; window.__capModal = null; base.open = function () { window.__capModal = this; return open.apply(this, arguments); }; app.commands.executeCommandById('workspace:export-pdf'); for (let i = 0; i < 50 && !window.__capModal; i++) await sleep(100); await sleep(300); base.open = open; const m = window.__capModal; m.close(); const sl = window.sleep; window.__capHold = new Promise((r) => { window.__capRelease = r; }); window.sleep = async (ms) => { window.sleep = sl; await window.__capHold; return sl(ms); }; window.__capPdf = m.printToPdf({ includeName: true, pageSize: 'Letter', landscape: false, marginsType: 0, scale: 1, open: false, filepath: ${JSON.stringify(`${WORK}/export-test.pdf`)} }); for (let i = 0; i < 40 && !document.querySelector('.progress-bar-container'); i++) await sleep(25); await sleep(300);`,
 				);
 			},
 			note: "Export to PDF shows Obsidian's progress bar while it prints. The export is started directly (no save dialog) into the capture work folder with open: false, and its first internal sleep() is held until the shot is taken, so the bar stays up; it is released in qc.dialogs.restore.",
@@ -2096,7 +2237,7 @@ const printExport: Scene = {
 	opener: async (main) => {
 		await main.open("Markdown/Kitchen sink.md", "reading");
 		await main.js(
-			`let p = Object.getPrototypeOf(app.setting); let base = null; while (p && p !== Object.prototype) { if (Object.hasOwn(p, 'open')) base = p; p = Object.getPrototypeOf(p); } const open = base.open; base.open = function () { window.__capModal = this; return open.apply(this, arguments); }; app.commands.executeCommandById('workspace:export-pdf'); await sleep(600); base.open = open; const m = window.__capModal; m.close(); const sl = window.sleep; let n = 0; window.__capHold = new Promise((r) => { window.__capRelease = r; }); window.sleep = async (ms) => { n++; if (n === 2) { window.sleep = sl; await window.__capHold; } return sl(ms); }; window.__capPdf = m.printToPdf({ includeName: true, pageSize: 'Letter', landscape: false, marginsType: 0, scale: 1, open: false, filepath: ${JSON.stringify(`${process.env.CAPTURE_WORK ?? `${process.env.HOME}/Work/miami-wind-obsidian-capture`}/export-test.pdf`)} });`,
+			`let p = Object.getPrototypeOf(app.setting); let base = null; while (p && p !== Object.prototype) { if (Object.hasOwn(p, 'open')) base = p; p = Object.getPrototypeOf(p); } const open = base.open; window.__capModal = null; base.open = function () { window.__capModal = this; return open.apply(this, arguments); }; app.commands.executeCommandById('workspace:export-pdf'); for (let i = 0; i < 50 && !window.__capModal; i++) await sleep(100); await sleep(300); base.open = open; const m = window.__capModal; m.close(); const sl = window.sleep; let n = 0; window.__capHold = new Promise((r) => { window.__capRelease = r; }); window.sleep = async (ms) => { n++; if (n === 2) { window.sleep = sl; await window.__capHold; } return sl(ms); }; window.__capPdf = m.printToPdf({ includeName: true, pageSize: 'Letter', landscape: false, marginsType: 0, scale: 1, open: false, filepath: ${JSON.stringify(`${process.env.CAPTURE_WORK ?? `${process.env.HOME}/Work/miami-wind-obsidian-capture`}/export-test.pdf`)} });`,
 		);
 	},
 	setup: async (ctx) => {
@@ -2118,7 +2259,7 @@ const printExport: Scene = {
 			expect: "body.theme-light > .print",
 			full: true,
 			media: { media: "print" },
-			note: "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs.",
+			note: "The real Export to PDF render: Obsidian's hidden print window (shown inactive for the shot) with body.theme-light and @media print, held after the note is laid out and before printToPDF runs. The window has no doctype (quirks mode), so the fixture has none either.",
 		},
 	],
 };
@@ -2263,6 +2404,57 @@ const rtlLanguage: Scene = {
 	],
 };
 
+/** CPU throttle held while the startup snapshot shows (released in the scene teardown). */
+let startupCdp: import("playwright").CDPSession | null = null;
+
+/**
+ * Obsidian 1.15's startup screen: on launch it shows a saved picture of the workspace (an iframe,
+ * #startup-snapshot) on a body colored by 7 saved theme variables, until the app is ready. A
+ * reload is a real launch of the window; the CPU is slowed so the screen stays long enough.
+ */
+const startupSnapshot: Scene = {
+	id: "qc.startup-snapshot",
+	surface: "workspace",
+	source: "catalog:startup-snapshot",
+	setup: async (ctx) => {
+		await baseLayout(ctx);
+		await ctx.open("Markdown/Kitchen sink.md", "live");
+		await ctx.sleep(500);
+	},
+	teardown: async (main) => {
+		await startupCdp?.send("Emulation.setCPUThrottlingRate", { rate: 1 }).catch(() => undefined);
+		await startupCdp?.detach().catch(() => undefined);
+		startupCdp = null;
+		await main.page.waitForFunction("window.app?.workspace?.layoutReady === true", null, {
+			timeout: 60000,
+		});
+		await main.page.evaluate(INPAGE);
+	},
+	items: [
+		{
+			id: "qc.startup-snapshot.loading",
+			component: "workspace",
+			// The app is starting under the screen; a retake would find the screen gone.
+			changing: true,
+			target: "#startup-snapshot",
+			expect: "#startup-snapshot[data-loaded]",
+			full: true,
+			before: async (ctx) => {
+				startupCdp = await ctx.page.context().newCDPSession(ctx.page);
+				await startupCdp.send("Emulation.setCPUThrottlingRate", { rate: 30 });
+				// Leaving the page saves the snapshot; the reloaded page shows it.
+				await ctx.page.evaluate("setTimeout(() => location.reload(), 50)");
+				await ctx.page.waitForSelector("#startup-snapshot[data-loaded]", {
+					state: "attached",
+					timeout: 60000,
+				});
+				await ctx.page.evaluate(INPAGE);
+			},
+			note: "The window reloaded (a real start of it, CPU slowed 30x): the saved workspace picture with 'Loading Obsidian…', on a body colored by the saved theme variables (body style). The frame's copied stylesheets are not kept in the fixture.",
+		},
+	],
+};
+
 /** The code-block edit button only shows while its block is hovered: real pointer, real window. */
 const editButtonWindowed: Scene = {
 	id: "qc.edit-block-windowed",
@@ -2327,6 +2519,7 @@ export function qcScenes(): Scene[] {
 		dialogsQc,
 		settingsDialogs,
 		rtlLanguage,
+		startupSnapshot,
 		editButtonWindowed,
 		settingsInWindow,
 	];

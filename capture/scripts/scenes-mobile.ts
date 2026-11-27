@@ -173,7 +173,11 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 			expect: ".suggestion-bg",
 			full: true,
 			minUnobscured: 0.2,
-			note: note("The dimmed backdrop behind a menu sheet (.suggestion-bg)."),
+			// A see-through dimmer: the fixture keeps the whole window, so the page shows under it.
+			context: "document",
+			note: note(
+				"The dimmed backdrop behind a menu sheet (.suggestion-bg); the fixture holds the whole window.",
+			),
 		},
 		{
 			id: id("menu-disabled"),
@@ -221,6 +225,9 @@ function items(size: "phone" | "tablet"): ItemDef[] {
 				);
 				if (!at) throw new Error("no file in the drawer");
 				await ctx.page.mouse.click(at[0], at[1], { button: "right" });
+				// The sheet slides up under the pointer: move it off, or its title row stays hovered
+				// (a touch screen has no pointer resting there).
+				await ctx.page.mouse.move(195, 4);
 				await ctx.sleep(900);
 			},
 			note: note(

@@ -3,7 +3,7 @@
 // the Linux fixture with the platform class swapped (synthetic, no screenshot). Only fixtures
 // that newly match a platform selector are written, greedily, until every matchable platform
 // selector has one.
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { matchable } from "./css.ts";
 import { CAPTURE, type PlatformItem, platformItems } from "./plan.ts";
@@ -65,14 +65,19 @@ export async function platformVariants(fixtures: FixtureEntry[]): Promise<Fixtur
 			const all = (hitsByFixture.get(id) ?? []).map((h) => h.id);
 			for (const h of all) left.delete(h);
 			const vid = `${f.id}.${os}`;
+			// Same format as the fixture it is made from (XHTML stays XHTML).
+			const file = `${vid}.${f.format === "xhtml" ? "xhtml" : "html"}`;
+			rmSync(`${CAPTURE}fixtures/${vid}.${f.format === "xhtml" ? "html" : "xhtml"}`, {
+				force: true,
+			});
 			writeFileSync(
-				`${CAPTURE}fixtures/${vid}.html`,
+				`${CAPTURE}fixtures/${file}`,
 				swap(readFileSync(`${CAPTURE}fixtures/${f.file}`, "utf8"), os),
 			);
 			out.push({
 				...f,
 				id: vid,
-				file: `${vid}.html`,
+				file,
 				screenshot: "",
 				surface: f.surface,
 				state: `${f.state}+${os}`,
