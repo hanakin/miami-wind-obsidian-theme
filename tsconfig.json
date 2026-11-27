@@ -21,6 +21,7 @@
 		"capture/**/*.ts",
 		"scripts/**/*.ts",
 		"test/**/*.ts",
-		"workbench/compare/**/*.ts"
+		"workbench/compare/**/*.ts",
+		"workbench/viewer/**/*.ts"
 	]
 }

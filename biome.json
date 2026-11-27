@@ -5,7 +5,8 @@
 			"scripts/**/*.ts",
 			"test/**/*.ts",
 			"capture/scripts/**/*.ts",
-			"workbench/compare/**/*.ts"
+			"workbench/compare/**/*.ts",
+			"workbench/viewer/**/*.ts"
 		]
 	},
 	"formatter": {
@@ -20,10 +21,16 @@
 	"overrides": [
 		{
 			"includes": [
-				"capture/scripts/**/*.ts"
+				"capture/scripts/**/*.ts",
+				"workbench/viewer/**/*.ts"
 			],
 			"formatter": {
 				"lineWidth": 100
+			},
+			"linter": {
+				"rules": {
+					"preset": "recommended"
+				}
 			}
 		}
 	]

@@ -9,10 +9,11 @@
 		"lint": "biome check .",
 		"fmt": "biome check --write scripts test",
 		"typecheck": "tsc --noEmit",
-		"check": "biome check capture/scripts scripts test workbench/compare && tsc --noEmit && bun run test && bun run check:css && bun run lint:css",
+		"check": "biome check capture/scripts scripts test workbench/compare workbench/viewer && tsc --noEmit && bun run test && bun run check:css && bun run lint:css",
 		"capture:variants": "bun capture/scripts/variants.ts",
 		"capture:coverage": "bun capture/scripts/coverage.ts",
 		"build": "bun scripts/build.ts",
+		"viewer": "bun --bun vite --config workbench/viewer/vite.config.ts",
 		"check:css": "bun scripts/check-css.ts",
 		"compare": "bun workbench/compare/cli.ts",
 		"compare:formatting": "bun workbench/compare/cli.ts --formatting",
@@ -41,6 +42,7 @@
 		"stylelint-config-obsidianmd": "0.1.0",
 		"stylelint-order": "8.1.3",
 		"typescript": "^7.0.2",
+		"vite": "^8.3.8",
 		"vitest": "^5.1.1"
 	}
 }
