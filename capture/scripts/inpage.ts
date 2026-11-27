@@ -801,8 +801,12 @@ export const INPAGE = String.raw`
 				if (cr.width * cr.height >= 1 && moving.size < 60) moving.add(box(cr, 1));
 			}
 		}
-		// Native resize grips of text areas: Chromium draws them itself, differently per build.
-		for (const ta of doc.querySelectorAll("textarea")) {
+		// Native resize grips (text areas, and any resizable box in the target, e.g. Bases' formula
+		// editor): Chromium draws them itself, differently per build.
+		const resizable = new Set(doc.querySelectorAll("textarea"));
+		const tgt = window.__cap?.target;
+		if (tgt?.ownerDocument === doc) for (const e of [tgt, ...tgt.querySelectorAll("*")].slice(0, 3000)) { const rc = win.getComputedStyle(e); if (rc.resize !== "none" && rc.overflow !== "visible") resizable.add(e); }
+		for (const ta of resizable) {
 			const r = ta.getBoundingClientRect();
 			if (r.width < 1 || win.getComputedStyle(ta).resize === "none" || moving.size >= 60) continue;
 			moving.add([r.right - 18, r.bottom - 18, 18, 18].map((v) => Math.round(v * 10) / 10).join(","));
@@ -917,7 +921,9 @@ export const INPAGE = String.raw`
 														for (const sh of scs.boxShadow.split(/,(?![^(]*\))/)) {
 															if (/\binset\b/.test(sh)) continue;
 															const [sx = 0, sy = 0, blur = 0, spread = 0] = (sh.replace(/rgba?\([^)]*\)|#[0-9a-f]+|[a-z]+\([^)]*\)/gi, "").match(/-?[\d.]+px/g) ?? []).map(parseFloat);
-															const r = blur + spread;
+															// Visible to about half the blur radius past the box (a Gaussian; beyond it
+															// the shadow is faint).
+															const r = blur / 2 + spread;
 															ext[0] = Math.max(ext[0], r - sy); ext[1] = Math.max(ext[1], r + sx); ext[2] = Math.max(ext[2], r + sy); ext[3] = Math.max(ext[3], r - sx);
 														}
 													if (scs.outlineStyle !== "none" && parseFloat(scs.outlineWidth) > 0) {
