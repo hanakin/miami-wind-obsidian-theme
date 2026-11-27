@@ -392,3 +392,32 @@ test("does not prove a drag ghost with a frozen JavaScript variable map", async 
 	);
 	await page.close();
 });
+
+test("does not force a recorded scrollbar over the theme's overflow", async () => {
+	const { page, cdp } = await setup();
+	const html =
+		'<div data-capture-target class="scroll-box" data-capture-scrollbar="y" style="width:100px;height:40px"><span>Item</span></div>';
+	const a = await render(
+		page,
+		cdp,
+		html,
+		{ app: "", cm: "", theme: ".scroll-box{overflow-y:auto}" },
+		base,
+	);
+	const b = await render(
+		page,
+		cdp,
+		html,
+		{ app: "", cm: "", theme: ".scroll-box{overflow-y:hidden}" },
+		base,
+	);
+	expect(
+		styleDiff(a.styles, b.styles).some(
+			(d) =>
+				d.property === "overflow-y" &&
+				d.before === "auto" &&
+				d.after === "hidden",
+		),
+	).toBe(true);
+	await page.close();
+});
