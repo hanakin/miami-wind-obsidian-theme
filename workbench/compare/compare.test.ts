@@ -3,6 +3,7 @@ import {
 	comparisonExitCode,
 	componentDiffs,
 	filterFixtures,
+	mergedCoverage,
 	styleDiff,
 } from "./model";
 
@@ -146,4 +147,24 @@ test("style differences remain different despite noisy pixels", async () => {
 	expect(outcome({ ...common, differences: 0, pixels: 50 }).status).toBe(
 		"not-proven",
 	);
+});
+
+test("merges coverage from before, after and repeats without losing before-only limits", () => {
+	const empty = { invisibleTarget: false, unsupported: [], replayIssues: [] };
+	expect(
+		mergedCoverage(
+			{
+				...empty,
+				invisibleTarget: true,
+				unsupported: ["video"],
+				replayIssues: ["before only"],
+			},
+			empty,
+			{ ...empty, unsupported: ["img", "video"], replayIssues: ["after only"] },
+		),
+	).toEqual({
+		invisible: true,
+		unsupported: ["video", "img"],
+		replayIssues: ["before only", "after only"],
+	});
 });

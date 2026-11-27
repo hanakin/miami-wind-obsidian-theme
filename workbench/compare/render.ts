@@ -4,6 +4,7 @@ import type { FixtureEntry } from "../../capture/scripts/types";
 import { captureFrame, movePointer } from "./browser";
 import type { ElementStyle, Sample } from "./model";
 import { prepareReplay } from "./replay";
+import { JS_READ_PROPERTIES } from "./variables";
 export interface ImageSize {
 	/** Zero-based document.images index in serialized fixture HTML, including spacer images. */
 	index: number;
@@ -347,10 +348,12 @@ export async function render(
 		fixture,
 		components,
 		shared,
+		runtimeProperties,
 	}: {
 		fixture: RenderFixture;
 		components: Record<string, string>;
 		shared: boolean;
+		runtimeProperties: readonly string[];
 	}) => {
 		const styles: ElementStyle[] = [],
 			samples: Sample[] = [];
@@ -358,15 +361,17 @@ export async function render(
 		const names = Array.from(getComputedStyle(document.documentElement)).filter(
 			(p) => !p.startsWith("--"),
 		);
+		const elementNames = names.concat(runtimeProperties);
 		const pool = new Map<string, Record<string, string>>();
 		const read = (el: Element, pseudo?: string) => {
 			const computed = getComputedStyle(el, pseudo);
-			const values = names.map((p) => computed.getPropertyValue(p));
+			const properties = pseudo ? names : elementNames;
+			const values = properties.map((p) => computed.getPropertyValue(p));
 			const key = JSON.stringify(values);
 			const known = pool.get(key);
 			if (known) return known;
 			const props = Object.fromEntries(
-				names.map((p, i) => [p, values[i] as string]),
+				properties.map((p, i) => [p, values[i] as string]),
 			);
 			pool.set(key, props);
 			return props;
@@ -429,6 +434,8 @@ export async function render(
 			"position:fixed;left:-10000px;top:0;visibility:hidden";
 		document.body.append(probe);
 		for (const variable of [
+			"--background-primary",
+			"--system-status-background",
 			"--graph-node",
 			"--graph-node-focused",
 			"--graph-node-tag",
@@ -472,6 +479,28 @@ export async function render(
 			});
 		}
 		probe.remove();
+		// Obsidian resolves the PDF page color in this exact hidden container context.
+		const pdfHost = document.createElementNS(
+			"http://www.w3.org/1999/xhtml",
+			"div",
+		);
+		pdfHost.style.cssText = "position:fixed;left:-10000px;visibility:hidden";
+		const pdf = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
+		pdf.className = "pdf-container mod-themed";
+		pdf.style.color = "var(--pdf-page-background)";
+		pdfHost.append(pdf);
+		document.body.append(pdfHost);
+		const pdfStyle = getComputedStyle(pdf);
+		styles.push({
+			element: "probe:pdf-container.mod-themed",
+			props: {
+				color: pdfStyle.color,
+				"--pdf-page-background": pdfStyle.getPropertyValue(
+					"--pdf-page-background",
+				),
+			},
+		});
+		pdfHost.remove();
 		const target = elements.find((el) =>
 			el.hasAttribute("data-capture-target"),
 		);
@@ -509,6 +538,11 @@ export async function render(
 					checkOpacity: true,
 					checkVisibilityCSS: true,
 				}),
+			runtimeIssues: elements.some((el) =>
+				el.matches(".drag-reorder-ghost > .mod-dragged-item"),
+			)
+				? ["drag ghost JavaScript variable copy is not reconstructed"]
+				: [],
 			unsupported: Array.from(
 				document.querySelectorAll(
 					"canvas,video,audio,iframe,img,embed,object,webview,[data-replay-mask]:not([data-replay-mask=overlay])",
@@ -516,8 +550,17 @@ export async function render(
 			)
 				.filter((e) => {
 					if (e.closest("[data-capture-placeholder]")) return false;
+					const recorded = (e.getAttribute("data-capture-size") ?? "")
+						.split(" ")
+						.map(Number);
+					// Electron webviews have no Chromium layout even when the capture saw a painted box.
+					const webview =
+						e.localName === "webview" &&
+						(recorded[0] ?? 0) > 0 &&
+						(recorded[1] ?? 0) > 0;
 					if (
 						shared &&
+						!webview &&
 						(!e.checkVisibility({
 							checkOpacity: true,
 							checkVisibilityCSS: true,
@@ -559,6 +602,7 @@ export async function render(
 	const readArgs = {
 		fixture,
 		shared: !!shared,
+		runtimeProperties: JS_READ_PROPERTIES,
 		components: { ...COMPONENTS, tooltip: ".tooltip, .cm-tooltip" },
 	};
 	const data = await page.evaluate(readDocument, readArgs);
@@ -587,6 +631,11 @@ export async function render(
 				document.head.append(el);
 			});
 		}
+
+	replayIssues.push(
+		...data.runtimeIssues,
+		...children.flatMap((c) => (c.empty ? [] : c.data.runtimeIssues)),
+	);
 
 	await page.locator("style[data-compare-suppression]").evaluate((el) => {
 		(el as HTMLStyleElement).disabled = false;

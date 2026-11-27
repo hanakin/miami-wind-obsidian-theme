@@ -182,7 +182,11 @@ writeFileSync(fixturesPath, `${JSON.stringify(file, null, "\t")}\n`);
 writeFileSync(censusPath, `${JSON.stringify([...census].sort(), null, "\t")}\n`);
 // Drop fixture files no entry points to (renamed or removed items).
 const keep = new Set(
-	fixtures.flatMap((f) => [f.file, ...(f.canvasPixels ?? []).map((c) => c.file)]),
+	fixtures.flatMap((f) => [
+		f.file,
+		...(f.canvasPixels ?? []).map((c) => c.file),
+		...(f.imageSizes ?? []).flatMap((i) => (i.file ? [i.file] : [])),
+	]),
 );
 for (const name of readdirSync(FIXTURES))
 	if (name !== "pixels" && !keep.has(name)) rmSync(`${FIXTURES}${name}`);
@@ -191,7 +195,9 @@ const sheetsUsed = new Set(fixtures.flatMap((f) => f.runtimeStyles ?? []));
 for (const f of fixtures) {
 	const path = `${FIXTURES}${f.file}`;
 	if (!existsSync(path)) continue;
-	for (const m of readFileSync(path, "utf8").matchAll(/data-capture-frame-styles="([^"]*)"/g))
+	for (const m of readFileSync(path, "utf8").matchAll(
+		/data-capture-frame-styles=(?:"|(?:&amp;)*&quot;)([^"&]*)/g,
+	))
 		for (const t of (m[1] ?? "").split(" ")) sheetsUsed.add(t);
 }
 if (existsSync(RUNTIME_DIR))

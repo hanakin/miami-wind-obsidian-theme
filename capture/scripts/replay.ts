@@ -12,18 +12,64 @@ export interface Replayed {
 	entries?: { live: number[]; now: number[] }[];
 	/** The first part around the target (outermost first) that is not where it was live. */
 	moved?: string | null;
+	/** Boxes of visible text (glyphs differ slightly between Chromium builds): x, y, w, h. */
+	text?: number[][];
+	/**
+	 * Elements the replay would size from their recorded live size: media stand-ins
+	 * (data-capture-size) and absolutely placed ancestors of the target. natural is the replay's own
+	 * box before any forcing (x, y, w, h); recorded is the live size (w, h); forced says whether it
+	 * was applied (see ReplayOptions.forceRecordedGeometry). Empty stand-ins (data-capture-placeholder)
+	 * are always sized and not listed.
+	 */
+	geometry?: {
+		what: string;
+		path: string;
+		natural: number[];
+		recorded: number[];
+		forced: boolean;
+	}[];
+}
+
+export interface ReplayOptions {
+	/**
+	 * Size media stand-ins and absolutely placed ancestors of the target to their recorded live size
+	 * (default true: the coverage check proves a fixture reproduces its screenshot). A comparison of
+	 * another stylesheet passes false, so its own sizes show, and reads Replayed.geometry.
+	 */
+	forceRecordedGeometry?: boolean;
 }
 
 export async function replayFixture(
 	page: Page,
 	html: string,
-	sizes: { index: number; width: number; height: number }[],
-	canvases: { index: number; b64: string }[],
+	sizes: { index: number; width: number; height: number; url: string | null }[],
+	canvases: { index: number; frame: string | null; b64: string }[],
 	frames: Record<string, string> = {},
 	trimSelector: string | null = null,
+	options: ReplayOptions = {},
 ): Promise<Replayed> {
+	const force = options.forceRecordedGeometry ?? true;
 	return (await page.evaluate(
-		async ([html, sizes, canvases, frames, trimSelector]) => {
+		async ([html, sizes, canvases, frames, trimSelector, force]) => {
+			const geometry: NonNullable<Replayed["geometry"]> = [];
+			const pathOf = (e: Element) => {
+				const parts: string[] = [];
+				for (let x: Element | null = e; x && x !== document.documentElement; x = x.parentElement)
+					parts.unshift(
+						`${x.localName}:nth-child(${x.parentElement ? [...x.parentElement.children].indexOf(x) + 1 : 1})`,
+					);
+				return parts.join(" > ");
+			};
+			const note = (e: Element, recorded: number[], forced: boolean) => {
+				const r = e.getBoundingClientRect();
+				geometry.push({
+					what: `${e.localName}${[...e.classList].map((c) => `.${c}`).join("")}`,
+					path: pathOf(e),
+					natural: [r.x, r.y, r.width, r.height],
+					recorded,
+					forced,
+				});
+			};
 			const d = new DOMParser().parseFromString(
 				html,
 				html.startsWith("<?xml") ? "application/xhtml+xml" : "text/html",
@@ -42,30 +88,43 @@ export async function replayFixture(
 			document.body.replaceChildren(
 				...[...d.body.childNodes].map((n) => document.importNode(n, true)),
 			);
-			// Frames get their own stylesheets back (data-capture-frame-styles), then load.
-			const loads: Promise<unknown>[] = [];
-			for (const fr of document.querySelectorAll<HTMLIFrameElement>(
-				"iframe[data-capture-frame-styles]",
-			)) {
-				const css = frames[fr.getAttribute("data-capture-frame-styles") ?? ""];
-				if (css === undefined) continue;
-				const sd = fr.getAttribute("srcdoc") ?? "";
-				loads.push(new Promise((ok) => fr.addEventListener("load", ok, { once: true })));
-				fr.setAttribute("data-replay-frame", "");
-				// Its Content-Security-Policy allowed the app's own font origin; the replay serves the
-				// same files from another one, so the policy is left out.
-				fr.srcdoc = sd
-					.replace(/<meta[^>]*http-equiv=["']?Content-Security-Policy[^>]*>/gi, "")
-					.replace(
-						/<head([^>]*)>/i,
-						(m) => `${m}<style>${css.replace(/<\/style/gi, "<\\/style")}</style>`,
+			// Frames get their own stylesheets back (data-capture-frame-styles), then load; frames
+			// inside them the same way once they have loaded.
+			const loadFrames = (root: Document): Promise<unknown> => {
+				const loads: Promise<unknown>[] = [];
+				for (const fr of root.querySelectorAll<HTMLIFrameElement>(
+					"iframe[data-capture-frame-styles]",
+				)) {
+					const css = frames[fr.getAttribute("data-capture-frame-styles") ?? ""];
+					if (css === undefined) continue;
+					const sd = fr.getAttribute("srcdoc") ?? "";
+					loads.push(
+						new Promise((ok) => fr.addEventListener("load", ok, { once: true })).then(() =>
+							fr.contentDocument ? loadFrames(fr.contentDocument) : null,
+						),
 					);
-			}
-			await Promise.race([Promise.all(loads), new Promise((ok) => setTimeout(ok, 3000))]);
-			// Offline images get same-size stand-ins from the recorded imageSizes.
-			for (const { index, width, height } of sizes) {
+					fr.setAttribute("data-replay-frame", "");
+					// Its Content-Security-Policy allowed the app's own font origin; the replay serves the
+					// same files from another one, so the policy is left out.
+					fr.srcdoc = sd
+						.replace(/<meta[^>]*http-equiv=["']?Content-Security-Policy[^>]*>/gi, "")
+						.replace(
+							/<head([^>]*)>/i,
+							(m) => `${m}<style>${css.replace(/<\/style/gi, "<\\/style")}</style>`,
+						);
+				}
+				return Promise.all(loads);
+			};
+			await Promise.race([loadFrames(document), new Promise((ok) => setTimeout(ok, 3000))]);
+			// Images the fixture keeps are drawn as they were; other offline images get same-size
+			// stand-ins from the recorded imageSizes.
+			const decoding: Promise<unknown>[] = [];
+			for (const { index, width, height, url } of sizes) {
 				const im = document.images[index];
-				if (im) {
+				if (im && url) {
+					im.src = url;
+					decoding.push(im.decode().catch(() => null));
+				} else if (im) {
 					im.width = width;
 					im.height = height;
 					// A broken image ignores its size; a transparent stand-in of that size does not.
@@ -73,10 +132,17 @@ export async function replayFixture(
 					im.setAttribute("data-replay-standin", "");
 				}
 			}
+			await Promise.all(decoding);
 			// Recorded canvas pixels, then recorded scroll offsets (after layout).
-			const cvs = document.querySelectorAll("canvas");
-			for (const { index, b64 } of canvases) {
-				const cv = cvs[index];
+			// A canvas inside a frame: follow its frame path (iframe indexes, outermost first).
+			const docOf = (path: string | null): Document | null => {
+				let d: Document | null = document;
+				for (const i of path ? path.split("/") : [])
+					d = d?.querySelectorAll("iframe")[Number(i)]?.contentDocument ?? null;
+				return d;
+			};
+			for (const { index, frame, b64 } of canvases) {
+				const cv = docOf(frame)?.querySelectorAll("canvas")[index];
 				if (!cv) continue;
 				const bmp = await createImageBitmap(
 					await (await fetch(`data:image/png;base64,${b64}`)).blob(),
@@ -87,6 +153,14 @@ export async function replayFixture(
 			// Empty stand-ins take their recorded live size.
 			for (const e of document.querySelectorAll<HTMLElement>("[data-capture-size]")) {
 				const [w = 0, h = 0] = (e.getAttribute("data-capture-size") ?? "").split(" ").map(Number);
+				// A restored frame and a kept image lay out from their own content, like live.
+				if (e.hasAttribute("data-replay-frame")) continue;
+				if (e.localName === "img" && !e.hasAttribute("data-replay-standin")) continue;
+				// Empty stand-ins are always sized (their content is not in the fixture); media
+				// stand-ins only when forcing recorded geometry. Both natural sizes are reported.
+				const empty = e.hasAttribute("data-capture-placeholder");
+				if (!empty) note(e, [w, h], force);
+				if (!empty && !force) continue;
 				// Unknown outside Electron (<webview>) or empty and inline: a size needs a box.
 				const disp =
 					e.getAttribute("data-capture-display") ??
@@ -142,6 +216,8 @@ export async function replayFixture(
 					if (!want || !/^(absolute|fixed)$/.test(getComputedStyle(a).position)) continue;
 					const r = a.getBoundingClientRect();
 					if (Math.abs(r.width - (want[2] ?? 0)) > 1 || Math.abs(r.height - (want[3] ?? 0)) > 1) {
+						note(a, [want[2] ?? 0, want[3] ?? 0], force);
+						if (!force) continue;
 						(a as HTMLElement).style.setProperty("box-sizing", "border-box", "important");
 						(a as HTMLElement).style.setProperty("width", `${want[2]}px`, "important");
 						(a as HTMLElement).style.setProperty("height", `${want[3]}px`, "important");
@@ -240,9 +316,61 @@ export async function replayFixture(
 				const list =
 					e.getAttribute("data-capture-paints") ?? e.getAttribute("data-capture-animated");
 				for (const box of (list ?? "").split(" ").filter(Boolean)) {
+					// Grown by 1 px: hit tests place these boxes to about a pixel.
 					const [x = 0, y = 0, w = 0, h = 0] = box.split(",").map(Number);
 					const o = document.createElement("div");
-					o.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:${w}px;height:${h}px;z-index:2147483647;visibility:hidden;pointer-events:none`;
+					o.style.cssText = `position:fixed;left:${x - 1}px;top:${y - 1}px;width:${w + 2}px;height:${h + 2}px;z-index:2147483647;visibility:hidden;pointer-events:none`;
+					document.body.appendChild(o);
+					mark(o, "overlay");
+				}
+			}
+			// Neighbors in the compared ring (8 px around the target): whatever another element paints
+			// there (a sibling menu item, the next highlight's rounded corner) is left out pixel by
+			// pixel. The target's own outline, border and shadow, and its ancestors' paint, stay
+			// compared. Hit tests see through layers that paint nothing; integer points hit a pixel's
+			// own content (a point inside a pixel can hit the box starting at the next one).
+			if (!trimSelector) {
+				const cp = (window as unknown as { cap: { clear(w: Window, e: Element): boolean } }).cap;
+				const tr = t.getBoundingClientRect();
+				const hitStyle = document.createElement("style");
+				hitStyle.textContent = "*, *::before, *::after { pointer-events: auto !important; }";
+				document.head.appendChild(hitStyle);
+				const runs: number[][] = [];
+				const x0 = Math.max(0, Math.floor(tr.left) - 8);
+				const x1 = Math.min(innerWidth, Math.ceil(tr.right) + 8);
+				for (
+					let y = Math.max(0, Math.floor(tr.top) - 8);
+					y < Math.min(innerHeight, Math.ceil(tr.bottom) + 8);
+					y++
+				) {
+					let start = -1;
+					for (let x = x0; x <= x1; x++) {
+						let hit = false;
+						const inBox =
+							x >= Math.ceil(tr.left) &&
+							x < Math.floor(tr.right) &&
+							y >= Math.ceil(tr.top) &&
+							y < Math.floor(tr.bottom);
+						if (x < x1 && !inBox)
+							for (const h of document.elementsFromPoint(x, y)) {
+								if (h.hasAttribute("data-replay-mask")) continue;
+								if (h === t || t.contains(h) || h.contains(t)) break;
+								if (cp.clear(window, h)) continue;
+								hit = true;
+								break;
+							}
+						if (hit && start < 0) start = x;
+						if (!hit && start >= 0) {
+							runs.push([start, y, x - start]);
+							start = -1;
+						}
+					}
+				}
+				hitStyle.remove();
+				for (const [x, y, w] of runs.slice(0, 20000)) {
+					const o = document.createElement("div");
+					o.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:${w}px;height:1px;z-index:2147483647;visibility:hidden;pointer-events:none`;
+					o.setAttribute("data-replay-neighbor", "");
 					document.body.appendChild(o);
 					mark(o, "overlay");
 				}
@@ -296,8 +424,46 @@ export async function replayFixture(
 					}
 				}
 			}
-			return { why: "", inView: cap.visibleRect(t), masked, entries, moved };
+			// Where text is drawn: text runs, the text inside fields, MathJax characters.
+			const text: number[][] = [];
+			const vw = innerWidth;
+			const vh = innerHeight;
+			const keep = (r: DOMRect) => {
+				if (
+					text.length < 6000 &&
+					r.width >= 1 &&
+					r.height >= 1 &&
+					r.right > 0 &&
+					r.bottom > 0 &&
+					r.x < vw &&
+					r.y < vh
+				)
+					text.push([r.x, r.y, r.width, r.height]);
+			};
+			const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+			const range = document.createRange();
+			for (let n = walker.nextNode(); n && text.length < 6000; n = walker.nextNode()) {
+				if (!n.nodeValue?.trim() || !n.parentElement) continue;
+				const pcs = getComputedStyle(n.parentElement);
+				if (pcs.visibility !== "visible" || pcs.display === "none") continue;
+				range.selectNodeContents(n);
+				for (const r of range.getClientRects()) keep(r);
+			}
+			for (const e of document.querySelectorAll<HTMLElement>("input, textarea, select, mjx-c")) {
+				const r = e.getBoundingClientRect();
+				if (e.localName === "mjx-c") {
+					keep(r);
+					continue;
+				}
+				const cs = getComputedStyle(e);
+				const l = (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.paddingLeft) || 0);
+				const tp = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.paddingTop) || 0);
+				const rr = (parseFloat(cs.borderRightWidth) || 0) + (parseFloat(cs.paddingRight) || 0);
+				const bt = (parseFloat(cs.borderBottomWidth) || 0) + (parseFloat(cs.paddingBottom) || 0);
+				keep(new DOMRect(r.x + l, r.y + tp, r.width - l - rr, r.height - tp - bt));
+			}
+			return { why: "", inView: cap.visibleRect(t), masked, entries, moved, text, geometry };
 		},
-		[html, sizes, canvases, frames, trimSelector] as const,
+		[html, sizes, canvases, frames, trimSelector, force] as const,
 	)) as Replayed;
 }
