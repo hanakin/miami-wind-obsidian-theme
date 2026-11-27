@@ -61,3 +61,8 @@
 .drag-reorder-ghost.mod-sheet .filter-row .filter-operator {
 	background-color: var(--grey-11);
 }
+
+/* Editable table values otherwise reset their inputs with background shorthand. */
+.bases-rendered-value input {
+	background-color: var(--grey-11);
+}

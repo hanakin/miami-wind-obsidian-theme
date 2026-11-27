@@ -42,7 +42,10 @@
 .metadata-property .metadata-property-key-input:active,
 .metadata-property .metadata-property-key-input:focus,
 .metadata-property-value .metadata-input-text,
-.metadata-property-value .metadata-input-number {
+.metadata-property-value .metadata-input-text:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .metadata-input-number,
+.metadata-property-value .metadata-input-number:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .multi-select-container input {
 	background-color: var(--grey-11);
-	border-color: var(--background-modifier-border);
+	border-color: var(--mw-input-border);
 }

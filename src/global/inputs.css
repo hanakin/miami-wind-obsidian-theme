@@ -5,9 +5,7 @@ input,
 	--background-modifier-form-field: var(--grey-11);
 	--background-modifier-form-field-hover: var(--grey-11);
 	--slider-track-background: var(--grey-11);
-	--background-modifier-border: var(--grey-9);
-	--background-modifier-border-hover: var(--grey-9);
-	--background-modifier-border-focus: var(--grey-9);
+	--mw-input-border: var(--grey-9);
 	--checkbox-border-color: var(--grey-9);
 	--checkbox-border-color-hover: var(--grey-9);
 	--checkbox-color: var(--grey-11);
@@ -26,9 +24,7 @@ textarea:focus-within,
 .combobox-button:focus,
 .combobox-button:focus-visible,
 .combobox-button:focus-within {
-	--background-modifier-border: var(--cyan);
-	--background-modifier-border-hover: var(--cyan);
-	--background-modifier-border-focus: var(--cyan);
+	--mw-input-border: var(--cyan);
 	--checkbox-border-color: var(--cyan);
 	--checkbox-border-color-hover: var(--cyan);
 	border-color: var(--cyan);
@@ -37,7 +33,7 @@ textarea:focus-within,
 
 /* Invalid-field border paint is literal in the app; match its selector and use the input-local state token. */
 .form-field.is-invalid input {
-	border-color: var(--background-modifier-border);
+	border-color: var(--mw-input-border);
 }
 
 input[type='checkbox']:checked,
@@ -51,11 +47,28 @@ input[type='radio']:checked:hover {
 .combobox .search-input-container input[type='search'],
 .bases-toolbar-menu-container .search-input-container input[type='search'] {
 	background-color: var(--grey-11);
-	border-color: var(--background-modifier-border);
+	border-color: var(--mw-input-border);
 }
 
 /* Combobox hover and focus fills read dropdown tokens rather than text-field tokens. */
 .combobox-button {
 	--dropdown-background: var(--grey-11);
 	--dropdown-background-hover: var(--grey-11);
+	--metadata-label-background-active: var(--grey-11);
+}
+
+/* Keep border paint separate from app border variables, which also color focus shadows. */
+input[type]:is(:hover, :active, :focus, :focus-visible, :focus-within) {
+	border-color: var(--mw-input-border);
+}
+
+/* Color controls reset their native fill and border literally in app.css. */
+input[type='color'] {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}
+
+/* Match app type selectors for default border paint as well as interactive states. */
+input[type] {
+	border-color: var(--mw-input-border);
 }

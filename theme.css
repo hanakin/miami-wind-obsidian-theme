@@ -434,9 +434,7 @@ input,
 
 	--slider-track-background: var(--grey-11);
 
-	--background-modifier-border: var(--grey-9);
-	--background-modifier-border-hover: var(--grey-9);
-	--background-modifier-border-focus: var(--grey-9);
+	--mw-input-border: var(--grey-9);
 
 	--checkbox-border-color: var(--grey-9);
 	--checkbox-border-color-hover: var(--grey-9);
@@ -456,9 +454,7 @@ textarea:focus-within,
 .combobox-button:focus,
 .combobox-button:focus-visible,
 .combobox-button:focus-within {
-	--background-modifier-border: var(--cyan);
-	--background-modifier-border-hover: var(--cyan);
-	--background-modifier-border-focus: var(--cyan);
+	--mw-input-border: var(--cyan);
 
 	--checkbox-border-color: var(--cyan);
 	--checkbox-border-color-hover: var(--cyan);
@@ -471,7 +467,7 @@ textarea:focus-within,
  * the input-local state token.
  */
 .form-field.is-invalid input {
-	border-color: var(--background-modifier-border);
+	border-color: var(--mw-input-border);
 }
 
 input[type='checkbox']:checked,
@@ -488,7 +484,7 @@ input[type='radio']:checked:hover {
 .combobox .search-input-container input[type='search'],
 .bases-toolbar-menu-container .search-input-container input[type='search'] {
 	background-color: var(--grey-11);
-	border-color: var(--background-modifier-border);
+	border-color: var(--mw-input-border);
 }
 
 /*
@@ -498,6 +494,32 @@ input[type='radio']:checked:hover {
 .combobox-button {
 	--dropdown-background: var(--grey-11);
 	--dropdown-background-hover: var(--grey-11);
+
+	--metadata-label-background-active: var(--grey-11);
+}
+
+/*
+ * Keep border paint separate from app border variables, which also color focus
+ * shadows.
+ */
+input[type]:is(:hover, :active, :focus, :focus-visible, :focus-within) {
+	border-color: var(--mw-input-border);
+}
+
+/*
+ * Color controls reset their native fill and border literally in app.css.
+ */
+input[type='color'] {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}
+
+/*
+ * Match app type selectors for default border paint as well as interactive
+ * states.
+ */
+input[type] {
+	border-color: var(--mw-input-border);
 }
 
 
@@ -1956,9 +1978,12 @@ hr {
 .metadata-property .metadata-property-key-input:active,
 .metadata-property .metadata-property-key-input:focus,
 .metadata-property-value .metadata-input-text,
-.metadata-property-value .metadata-input-number {
+.metadata-property-value .metadata-input-text:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .metadata-input-number,
+.metadata-property-value .metadata-input-number:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .multi-select-container input {
 	background-color: var(--grey-11);
-	border-color: var(--background-modifier-border);
+	border-color: var(--mw-input-border);
 }
 
 
@@ -2067,6 +2092,13 @@ hr {
 	background-color: var(--grey-11);
 }
 
+/*
+ * Editable table values otherwise reset their inputs with background shorthand.
+ */
+.bases-rendered-value input {
+	background-color: var(--grey-11);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @graph: Graph
@@ -2097,12 +2129,15 @@ hr {
  * @source: src/sections/pdf-forms.css
  * @description:
  *
- * PDF annotation form controls: focus and disabled colors.
+ * PDF toolbar loading fill and annotation focus states; form boxes keep their inline colors.
  *
  * -------------------------------------------------------------------------- */
 
 /*
- * PDF form control overrides for the app’s PDF renderer.
+ * PDF toolbar and form focus states in the app’s PDF renderer.
+ *
+ * Fillable PDF boxes retain their own inline colors, including text, checks,
+ * radios and dropdowns.
  *
  * Obsidian 1.15.1 PDF forms use background:none at 0,3,1; tie only its color.
  */
@@ -2116,6 +2151,18 @@ hr {
  */
 .pdf-page-input.mod-page-loading {
 	background-color: var(--grey-11);
+}
+
+/*
+ * pdf.js reads these only for borders and focus outlines, not widget inline
+ * colors.
+ */
+.annotationLayer input {
+	--input-unfocused-border-color: var(--mw-input-border);
+	--input-hover-border-color: var(--mw-input-border);
+	--input-focus-border-color: var(--mw-input-border);
+	--input-disabled-border-color: var(--mw-input-border);
+	--input-focus-outline: none;
 }
 
 
@@ -2155,6 +2202,15 @@ hr {
 .xfaCheckbox:focus,
 .xfaRadio:focus {
 	outline: none;
+}
+
+/*
+ * XFA’s layer reset also clears checkbox fills; its inputs have no inline fill
+ * literals.
+ */
+.xfaLayer input {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
 }
 
 

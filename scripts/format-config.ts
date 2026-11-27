@@ -35,7 +35,8 @@ export const formatConfig = {
 		},
 		"pdf-forms.css": {
 			layer: "PDF",
-			description: "PDF annotation form controls: focus and disabled colors.",
+			description:
+				"PDF toolbar loading fill and annotation focus states; form boxes keep their inline colors.",
 		},
 		"pdf-xfa.css": {
 			layer: "PDF",
