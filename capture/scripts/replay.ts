@@ -14,6 +14,29 @@ export interface Replayed {
 	moved?: string | null;
 	/** Boxes of visible text (glyphs differ slightly between Chromium builds): x, y, w, h. */
 	text?: number[][];
+	/**
+	 * Elements the replay would size from their recorded live size: media stand-ins
+	 * (data-capture-size) and absolutely placed ancestors of the target. natural is the replay's own
+	 * box before any forcing (x, y, w, h); recorded is the live size (w, h); forced says whether it
+	 * was applied (see ReplayOptions.forceRecordedGeometry). Empty stand-ins (data-capture-placeholder)
+	 * are always sized and not listed.
+	 */
+	geometry?: {
+		what: string;
+		path: string;
+		natural: number[];
+		recorded: number[];
+		forced: boolean;
+	}[];
+}
+
+export interface ReplayOptions {
+	/**
+	 * Size media stand-ins and absolutely placed ancestors of the target to their recorded live size
+	 * (default true: the coverage check proves a fixture reproduces its screenshot). A comparison of
+	 * another stylesheet passes false, so its own sizes show, and reads Replayed.geometry.
+	 */
+	forceRecordedGeometry?: boolean;
 }
 
 export async function replayFixture(
@@ -23,9 +46,30 @@ export async function replayFixture(
 	canvases: { index: number; frame: string | null; b64: string }[],
 	frames: Record<string, string> = {},
 	trimSelector: string | null = null,
+	options: ReplayOptions = {},
 ): Promise<Replayed> {
+	const force = options.forceRecordedGeometry ?? true;
 	return (await page.evaluate(
-		async ([html, sizes, canvases, frames, trimSelector]) => {
+		async ([html, sizes, canvases, frames, trimSelector, force]) => {
+			const geometry: NonNullable<Replayed["geometry"]> = [];
+			const pathOf = (e: Element) => {
+				const parts: string[] = [];
+				for (let x: Element | null = e; x && x !== document.documentElement; x = x.parentElement)
+					parts.unshift(
+						`${x.localName}:nth-child(${x.parentElement ? [...x.parentElement.children].indexOf(x) + 1 : 1})`,
+					);
+				return parts.join(" > ");
+			};
+			const note = (e: Element, recorded: number[], forced: boolean) => {
+				const r = e.getBoundingClientRect();
+				geometry.push({
+					what: `${e.localName}${[...e.classList].map((c) => `.${c}`).join("")}`,
+					path: pathOf(e),
+					natural: [r.x, r.y, r.width, r.height],
+					recorded,
+					forced,
+				});
+			};
 			const d = new DOMParser().parseFromString(
 				html,
 				html.startsWith("<?xml") ? "application/xhtml+xml" : "text/html",
@@ -109,6 +153,14 @@ export async function replayFixture(
 			// Empty stand-ins take their recorded live size.
 			for (const e of document.querySelectorAll<HTMLElement>("[data-capture-size]")) {
 				const [w = 0, h = 0] = (e.getAttribute("data-capture-size") ?? "").split(" ").map(Number);
+				// A restored frame and a kept image lay out from their own content, like live.
+				if (e.hasAttribute("data-replay-frame")) continue;
+				if (e.localName === "img" && !e.hasAttribute("data-replay-standin")) continue;
+				// Empty stand-ins are always sized (their content is not in the fixture); media
+				// stand-ins only when forcing recorded geometry. Both natural sizes are reported.
+				const empty = e.hasAttribute("data-capture-placeholder");
+				if (!empty) note(e, [w, h], force);
+				if (!empty && !force) continue;
 				// Unknown outside Electron (<webview>) or empty and inline: a size needs a box.
 				const disp =
 					e.getAttribute("data-capture-display") ??
@@ -164,6 +216,8 @@ export async function replayFixture(
 					if (!want || !/^(absolute|fixed)$/.test(getComputedStyle(a).position)) continue;
 					const r = a.getBoundingClientRect();
 					if (Math.abs(r.width - (want[2] ?? 0)) > 1 || Math.abs(r.height - (want[3] ?? 0)) > 1) {
+						note(a, [want[2] ?? 0, want[3] ?? 0], force);
+						if (!force) continue;
 						(a as HTMLElement).style.setProperty("box-sizing", "border-box", "important");
 						(a as HTMLElement).style.setProperty("width", `${want[2]}px`, "important");
 						(a as HTMLElement).style.setProperty("height", `${want[3]}px`, "important");
@@ -408,8 +462,8 @@ export async function replayFixture(
 				const bt = (parseFloat(cs.borderBottomWidth) || 0) + (parseFloat(cs.paddingBottom) || 0);
 				keep(new DOMRect(r.x + l, r.y + tp, r.width - l - rr, r.height - tp - bt));
 			}
-			return { why: "", inView: cap.visibleRect(t), masked, entries, moved, text };
+			return { why: "", inView: cap.visibleRect(t), masked, entries, moved, text, geometry };
 		},
-		[html, sizes, canvases, frames, trimSelector] as const,
+		[html, sizes, canvases, frames, trimSelector, force] as const,
 	)) as Replayed;
 }
