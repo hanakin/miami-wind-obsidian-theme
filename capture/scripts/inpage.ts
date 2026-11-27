@@ -603,7 +603,7 @@ export const INPAGE = String.raw`
 		// A reorder drag's ghost holds a copy of the dragged element, with its custom properties
 		// frozen inline. Pair the copy with its live source (the one .is-being-dragged element of the
 		// same tag and classes, state classes aside) by the source's live path, written on both, so a
-		// comparison can recompute the source's values; no marker when the source is not certain.
+		// comparison can recompute the source's values; "unknown" when the source is not certain.
 		const livePath = (e) => {
 			const parts = [];
 			for (let x = e; x && x !== doc.documentElement; x = x.parentElement) parts.unshift(x.localName + ":nth-child(" + ([...x.parentElement.children].indexOf(x) + 1) + ")");
@@ -612,7 +612,7 @@ export const INPAGE = String.raw`
 		const shape = (e) => e.localName + "." + [...e.classList].filter((c) => !/^(is|mod|has)-/.test(c)).sort().join(".");
 		for (const g of doc.querySelectorAll(".drag-reorder-ghost > .mod-dragged-item")) {
 			const src = [...doc.querySelectorAll(".is-being-dragged")].filter((x) => !g.contains(x) && !x.closest(".drag-reorder-ghost") && shape(x) === shape(g));
-			if (src.length !== 1) continue;
+			if (src.length !== 1) { twin.get(g)?.setAttribute("data-capture-ghost-of", "unknown"); continue; }
 			const path = livePath(src[0]);
 			twin.get(g)?.setAttribute("data-capture-ghost-of", path);
 			twin.get(src[0])?.setAttribute("data-capture-drag-source", path);
