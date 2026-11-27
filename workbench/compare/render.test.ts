@@ -49,8 +49,14 @@ test("replays hover, compares pseudo elements and catches changed theme pixels",
 	await page.close();
 });
 
+const hasAppCss = existsSync("capture/.app/app.css");
+if (!hasAppCss)
+	console.warn(
+		"SKIPPED: app-CSS render tests require capture/.app/app.css; run bun run capture:extract-app-css to enable them.",
+	);
+
 test
-	.skipIf(!existsSync("capture/.app/app.css"))
+	.skipIf(!hasAppCss)
 	.each([
 		"command.workspace:export-pdf",
 		"extra.community.plugin-browser",

@@ -1,0 +1,7 @@
+/* Reusable menu item state styles controlled by local variables. */
+
+@define-mixin menu-item-state {
+	background-color: var(--mw-item-background);
+	color: var(--mw-item-color);
+	cursor: pointer;
+}

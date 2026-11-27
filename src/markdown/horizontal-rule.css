@@ -1,0 +1,5 @@
+/* Horizontal divider colors in notes. */
+
+hr {
+	border-color: var(--cyan);
+}

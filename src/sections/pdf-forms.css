@@ -1,0 +1,23 @@
+/* PDF toolbar and form focus states in the app’s PDF renderer. */
+
+/* Fillable PDF boxes retain their own inline colors, including text, checks, radios and dropdowns. */
+
+/* Obsidian 1.15.1 PDF forms use background:none at 0,3,1; tie only its color. */
+.annotationLayer .choiceWidgetAnnotation select:focus,
+.annotationLayer .choiceWidgetAnnotation select[disabled] {
+	background-color: var(--magenta);
+}
+
+/* The page-number loading state belongs to the toolbar, not the PDF form. */
+.pdf-page-input.mod-page-loading {
+	background-color: var(--grey-11);
+}
+
+/* pdf.js reads these only for borders and focus outlines, not widget inline colors. */
+.annotationLayer input {
+	--input-unfocused-border-color: var(--mw-input-border);
+	--input-hover-border-color: var(--mw-input-border);
+	--input-focus-border-color: var(--mw-input-border);
+	--input-disabled-border-color: var(--mw-input-border);
+	--input-focus-outline: none;
+}

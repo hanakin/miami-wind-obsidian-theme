@@ -1,0 +1,46 @@
+/* Editor task states: marker colors, text colors and completion styling. */
+
+/* Keep custom task states editor-only for Reading-view parity. */
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] {
+	text-decoration: line-through;
+	color: var(--red);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] {
+	text-decoration: underline;
+	color: var(--magenta);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] {
+	text-decoration: none;
+	color: var(--orange);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] {
+	text-decoration: none;
+	color: var(--blue);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] {
+	text-decoration: none;
+	color: var(--green);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] {
+	text-decoration: none;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] {
+	text-decoration: none;
+	color: var(--yellow);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] {
+	text-decoration: none;
+	color: var(--grey-3);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] {
+	text-decoration: none;
+	color: var(--purple);
+}

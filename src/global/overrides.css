@@ -1,0 +1,30 @@
+/* Final state overrides for settings tabs, scrollbars and disabled icons. */
+
+body:not(.is-phone) .horizontal-tab-nav-item.is-active,
+body:not(.is-phone) .vertical-tab-nav-item.is-active,
+.modal .vertical-tab-nav-item.is-active,
+.modal .vertical-tab-nav-item.is-active:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--text-normal);
+	cursor: pointer;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	cursor: pointer;
+}
+
+/* Disabled paint must follow surface states; cursor keeps its original cascade position. */
+
+/* The zero-weight modal-close exclusion preserves its separate hover rule’s precedence. */
+.clickable-icon[aria-disabled='true'],
+.clickable-icon[aria-disabled='true']:hover,
+.clickable-icon[aria-disabled='true']:active,
+.clickable-icon[aria-disabled='true'].is-active,
+.clickable-icon[aria-disabled='true'].has-active-menu {
+	background-color: transparent;
+}
+
+.clickable-icon[aria-disabled='true'],
+.clickable-icon[aria-disabled='true']:is(:hover, :active, .is-active, .has-active-menu):where(:not(.modal-close-button:hover)) {
+	color: var(--text-disabled);
+}

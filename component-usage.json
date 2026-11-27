@@ -1,7 +1,54 @@
 [
 	{
+		"component": "icon-background",
+		"usages": [
+			{
+				"surface": "ribbon.css",
+				"selector": ".workspace-ribbon .clickable-icon:hover",
+				"properties": {
+					"--mw-icon-background": "var(--icon-background-hover)"
+				}
+			},
+			{
+				"surface": "ribbon.css",
+				"selector": ".workspace-ribbon .clickable-icon:active",
+				"properties": {
+					"--mw-icon-background": "var(--icon-background-active)"
+				}
+			},
+			{
+				"surface": "sidebars.css",
+				"selector": ".workspace-drawer-vault-actions .clickable-icon:hover",
+				"properties": {
+					"--mw-icon-background": "var(--icon-background-hover)"
+				}
+			},
+			{
+				"surface": "tabs.css",
+				"selector": ".workspace-tabs .clickable-icon:hover",
+				"properties": {
+					"--mw-icon-background": "var(--icon-background-hover)"
+				}
+			},
+			{
+				"surface": "tabs.css",
+				"selector": ".workspace-tabs .clickable-icon:active,\n.workspace-tabs .clickable-icon.has-active-menu,\n.workspace-tabs .clickable-icon.is-active",
+				"properties": {
+					"--mw-icon-background": "var(--icon-background-active)"
+				}
+			}
+		]
+	},
+	{
 		"component": "surface-background",
 		"usages": [
+			{
+				"surface": "tabs.css",
+				"selector": ".workspace .mod-root .workspace-tab-header",
+				"properties": {
+					"--mw-surface-background": "var(--grey-10)"
+				}
+			},
 			{
 				"surface": "code.css",
 				"selector": ".markdown-rendered code",
@@ -24,10 +71,134 @@
 				}
 			},
 			{
-				"surface": "tabs.css",
-				"selector": ".workspace .mod-root .workspace-tab-header",
+				"surface": "tables.css",
+				"selector": ".markdown-rendered th",
 				"properties": {
-					"--mw-surface-background": "var(--grey-10)"
+					"--mw-surface-background": "var(--code-background)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ".cm-callout [data-callout='note']",
+				"properties": {
+					"--mw-surface-background": "var(--blue-bright-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ".cm-callout [data-callout='info']",
+				"properties": {
+					"--mw-surface-background": "var(--cyan-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ".cm-callout [data-callout='todo']",
+				"properties": {
+					"--mw-surface-background": "var(--magenta-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ".cm-callout [data-callout='warning']",
+				"properties": {
+					"--mw-surface-background": "var(--orange-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ".cm-callout [data-callout='tip']",
+				"properties": {
+					"--mw-surface-background": "var(--green-transparent)"
+				}
+			},
+			{
+				"surface": "callouts.css",
+				"selector": ".cm-callout [data-callout='example']",
+				"properties": {
+					"--mw-surface-background": "var(--purple-transparent)"
+				}
+			}
+		]
+	},
+	{
+		"component": "menu-item-state",
+		"usages": [
+			{
+				"surface": "suggestions.css",
+				"selector": ".suggestion-container.mod-property-value .suggestion-item:hover,\n.suggestion-item.is-selected,\n.suggestion-item.mobile-tap",
+				"properties": {
+					"--mw-item-background": "var(--magenta-transparent)",
+					"--mw-item-color": "var(--magenta)"
+				}
+			},
+			{
+				"surface": "menus.css",
+				"selector": ".menu-item:hover,\n.menu-item:focus,\n.menu-item:active,\n.menu-item.selected,\n.bases-toolbar-menu-item:hover,\n.bases-toolbar-menu-item:focus,\n.bases-toolbar-menu-item:active,\n.bases-toolbar-menu-item.selected",
+				"properties": {
+					"--mw-item-background": "var(--cyan-transparent)",
+					"--mw-item-color": "var(--magenta)"
+				}
+			}
+		]
+	},
+	{
+		"component": "action-button",
+		"usages": [
+			{
+				"surface": "modals.css",
+				"selector": ".modal .vertical-tab-nav-item:hover",
+				"properties": {
+					"--mw-action-color": "var(--magenta)",
+					"--mw-action-background": "var(--magenta-transparent)"
+				}
+			},
+			{
+				"surface": "modals.css",
+				"selector": ".modal button",
+				"properties": {
+					"--mw-action-color": "var(--cyan)",
+					"--mw-action-background": "var(--cyan-transparent)"
+				}
+			},
+			{
+				"surface": "modals.css",
+				"selector": ".modal button.mod-cta",
+				"properties": {
+					"--mw-action-color": "var(--grey-9)",
+					"--mw-action-background": "var(--cyan)"
+				}
+			},
+			{
+				"surface": "menus.css",
+				"selector": ".menu .clickable-icon",
+				"properties": {
+					"--mw-action-color": "var(--cyan)",
+					"--mw-action-background": "var(--black)"
+				}
+			},
+			{
+				"surface": "menus.css",
+				"selector": ".menu .clickable-icon:hover,\n.menu .back-button:hover",
+				"properties": {
+					"--mw-action-color": "var(--magenta)",
+					"--mw-action-background": "var(--magenta-transparent)"
+				}
+			},
+			{
+				"surface": "code-actions.css",
+				"selector": ".code-block-flair:hover,\n.edit-block-button:hover,\n.markdown-source-view.mod-cm6 .code-block-flair:hover,\n.markdown-source-view.mod-cm6 .edit-block-button:hover",
+				"properties": {
+					"--mw-action-background": "var(--cyan-transparent)",
+					"--mw-action-color": "var(--magenta)"
+				}
+			},
+			{
+				"surface": "bases.css",
+				"selector": ".bases-toolbar-item .text-icon-button,\n.bases-toolbar-section-content .text-icon-button",
+				"properties": {
+					"--mw-action-color": "var(--cyan)",
+					"--mw-action-background": "var(--cyan-transparent)"
 				}
 			}
 		]

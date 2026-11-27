@@ -5,6 +5,7 @@ import { parseArgs } from "node:util";
 import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import type { FixtureEntry } from "../../capture/scripts/types";
+import { compile } from "../../scripts/pipeline";
 import {
 	acceptanceScope,
 	acceptedOutcome,
@@ -26,6 +27,8 @@ const { values } = parseArgs({
 	args: process.argv.slice(2),
 	options: {
 		before: { type: "string" },
+		out: { type: "string" },
+		formatting: { type: "boolean" },
 		after: { type: "string" },
 		id: { type: "string" },
 		component: { type: "string" },
@@ -39,9 +42,11 @@ if (values.help) {
 	);
 	process.exit(0);
 }
+if (values.formatting && (values.before || values.after))
+	throw new Error("--formatting cannot be combined with --before or --after");
 const started = performance.now();
 const generated = new Date().toISOString();
-const out = "workbench/out";
+const out = values.out ?? "workbench/out";
 for (const file of ["compare.json", "compare.md", "component-diffs.json"])
 	rmSync(`${out}/${file}`, { force: true });
 rmSync(`${out}/diffs`, { recursive: true, force: true });
@@ -53,10 +58,17 @@ const registry = (await Bun.file("capture/fixtures.json").json()) as {
 const fixtures = filterFixtures(registry.fixtures, values);
 if (!fixtures.length)
 	throw new Error("No fixtures match the requested filters");
+if (values.formatting)
+	await Bun.write(
+		`${out}/before-format.css`,
+		(await compile({ format: false })).css,
+	);
 if (!values.after) execFileSync("bun", ["run", "build"], { stdio: "inherit" });
-const before = values.before
-	? await Bun.file(values.before).text()
-	: execFileSync("git", ["show", "b478dc8:theme.css"], { encoding: "utf8" });
+const before = values.formatting
+	? await Bun.file(`${out}/before-format.css`).text()
+	: values.before
+		? await Bun.file(values.before).text()
+		: execFileSync("git", ["show", "b478dc8:theme.css"], { encoding: "utf8" });
 const after = await Bun.file(values.after ?? "theme.css").text();
 mkdirSync(`${out}/themes`, { recursive: true });
 const snapshotTheme = async (

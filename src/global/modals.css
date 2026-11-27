@@ -1,0 +1,66 @@
+/* Dialog surfaces, navigation, action buttons and close-button states. */
+
+/* Shared component adjustments: action-button.
+ * Local --mw-* variables below set this section’s colors and backgrounds. */
+
+.modal {
+	--modal-border-width: 2px;
+	--modal-border-color: var(--magenta);
+	background-color: var(--background-primary);
+}
+
+.modal-close-button.clickable-icon:hover {
+	background-color: var(--icon-background-hover);
+	color: var(--magenta);
+}
+
+.modal .vertical-tab-header-group-title {
+	color: var(--magenta);
+}
+
+.modal .vertical-tab-nav-item:hover {
+	--mw-action-color: var(--magenta);
+	--mw-action-background: var(--magenta-transparent);
+	@mixin action-button;
+}
+
+.modal button {
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--cyan-transparent);
+	@mixin action-button;
+}
+
+.modal button:hover,
+.modal .clickable-icon:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--magenta);
+}
+
+.modal button.mod-cta {
+	--mw-action-color: var(--grey-9);
+	--mw-action-background: var(--cyan);
+	@mixin action-button;
+}
+
+.modal button.mod-cta:hover {
+	background-color: var(--magenta);
+}
+
+.modal .checkbox-container.is-enabled {
+	background-color: var(--magenta);
+}
+
+.modal .setting-hotkey {
+	background-color: var(--yellow-transparent);
+	color: var(--yellow);
+	padding: 4px 8px 2px;
+}
+
+.modal .setting-hotkey:hover {
+	background-color: var(--purple-transparent);
+	color: var(--purple);
+}
+
+.modal input:hover {
+	border-color: var(--cyan-transparent);
+}

@@ -1,0 +1,43 @@
+/* Dropdown controls and option states, including onboarding. */
+
+.modal .dropdown,
+.dropdown,
+select,
+select:hover,
+select:focus,
+select:focus-visible,
+select:focus-within,
+select:active {
+	--dropdown-background: var(--magenta);
+	--dropdown-background-hover: var(--magenta);
+	color: var(--black);
+	cursor: pointer;
+}
+
+.modal .dropdown option,
+.dropdown option,
+select option {
+	background-color: var(--magenta-transparent);
+	color: var(--black);
+	cursor: pointer;
+}
+
+.dropdown,
+select {
+	--scrollbar-thumb-bg: var(--black);
+	--scrollbar-active-thumb-bg: var(--black);
+}
+
+.modal .dropdown option:hover,
+.modal .dropdown option:checked,
+.dropdown option:hover,
+.dropdown option:checked,
+select option:hover,
+select option:checked {
+	background-color: var(--cyan);
+}
+
+/* Onboarding uses a literal transparent fill at 0,2,1. */
+.mobile-onboarding .language-dropdown select {
+	background-color: var(--magenta);
+}

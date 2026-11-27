@@ -1,0 +1,29 @@
+/* Drawer actions, sidebar tab states and the vault profile border. */
+
+/* Shared component adjustments: icon-background.
+ * Local --mw-* variables below set this section’s colors and backgrounds. */
+
+/* @heading Drawers */
+.workspace-drawer-vault-actions .clickable-icon:hover {
+	--mw-icon-background: var(--icon-background-hover);
+	@mixin icon-background;
+}
+
+/* @heading Sidebar tabs */
+
+/* Pointerless devices lack Obsidian's stronger hover rivals. */
+@media (hover: none) {
+	.mod-left-split .workspace-tab-header:hover,
+	.mod-right-split .workspace-tab-header:hover {
+		background-color: var(--icon-background-hover);
+	}
+
+	.mod-left-split .workspace-tab-header.is-active:hover,
+	.mod-right-split .workspace-tab-header.is-active:hover {
+		background-color: var(--icon-background-active);
+	}
+}
+
+body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-profile {
+	border-top-color: var(--cyan);
+}

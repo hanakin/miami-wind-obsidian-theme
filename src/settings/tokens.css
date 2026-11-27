@@ -1,0 +1,183 @@
+/* Shared variables grouped by the note content and application controls they style. */
+
+.theme-dark,
+.theme-light {
+	/* @heading Application backgrounds */
+	--background-primary: var(--grey-9);
+	--background-primary-alt: var(--grey-10);
+	--background-secondary: var(--grey-10);
+	--background-secondary-alt: var(--grey-11);
+
+	/* @heading Shared color aliases */
+	--color-black: var(--black);
+	--color-blue: var(--blue);
+	--color-cyan: var(--cyan);
+	--color-green: var(--green);
+	--color-orange: var(--orange);
+	--color-pink: var(--magenta);
+	--color-purple: var(--purple);
+	--color-red: var(--red);
+	--color-white: var(--white);
+	--color-yellow: var(--yellow);
+
+	/* @heading Borders and dividers */
+	--border-color: transparent;
+
+	--divider-color: transparent;
+
+	/* @heading Text and selection */
+	--text-normal: var(--white);
+	--text-disabled: var(--grey-5);
+	--text-selection: var(--magenta);
+	--text-selection-fg: var(--background-primary);
+
+	/* @heading Headings and titles */
+	--header: var(--purple);
+	--header-alt: var(--blue);
+
+	--inline-title-color: var(--magenta);
+
+	--text-title-h1: var(--header);
+	--text-title-h2: var(--header);
+	--text-title-h3: var(--header);
+	--text-title-h4: var(--header-alt);
+	--text-title-h5: var(--header-alt);
+	--text-title-h6: var(--header-alt);
+
+	/* @heading Code and formatting */
+	--code-background: var(--black);
+	--code-comment: var(--blue);
+	--code-foreground: var(--inline-code);
+	--code-function: var(--green);
+	--code-important: var(--magenta);
+	--code-keyword: var(--magenta);
+	--code-normal: var(--orange);
+	--code-operator: var(--magenta);
+	--code-property: var(--cyan-bright);
+	--code-punctuation: var(--magenta);
+	--code-string: var(--yellow);
+	--code-tag: var(--magenta);
+	--code-value: var(--orange);
+	--code-variable: var(--cyan-bright);
+
+	--inline-code: var(--green);
+
+	--markup-code: var(--orange);
+
+	/* @heading Markdown formatting */
+	--alt-text: var(--magenta);
+
+	--bold: var(--orange);
+
+	--highlight: var(--magenta);
+
+	--italic: var(--yellow);
+
+	--strikethrough: var(--red);
+
+	/* @heading Lists */
+	--list-item: var(--purple);
+	--list-marker-color: var(--purple);
+
+	/* @heading Links */
+	--link: var(--cyan-bright);
+	--link-color: var(--cyan-bright);
+	--link-color-hover: var(--magenta);
+	--link-decoration: none;
+	--link-decoration-hover: none;
+	--link-external-color: var(--cyan-bright);
+	--link-external-color-hover: var(--magenta);
+	--link-external-decoration: none;
+	--link-external-decoration-hover: none;
+	--link-unresolved-color: var(--cyan);
+	--link-unresolved-decoration-color: none;
+	--link-unresolved-decoration-style: none;
+
+	--text-link: var(--cyan-bright);
+
+	/* @heading Blockquotes */
+	--blockquote: var(--yellow);
+	--blockquote-background-color: var(--grey-10);
+	--blockquote-border-color: var(--yellow);
+	--blockquote-color: var(--yellow);
+
+	/* @heading Horizontal rules */
+	--hr: var(--blue);
+
+	/* @heading Icons */
+	--icon-background-hover: var(--magenta-transparent);
+	--icon-background-active: var(--cyan-transparent);
+	--icon-color: var(--cyan);
+	--icon-color-hover: var(--magenta);
+	--icon-color-active: var(--magenta);
+	--icon-color-focused: var(--magenta);
+	--icon-cursor: pointer;
+
+	/* @heading Navigation */
+	--nav-collapse-icon-color: var(--magenta);
+	--nav-collapse-icon-color-collapsed: var(--magenta);
+	--nav-indentation-guide-color: var(--magenta);
+	--nav-item-background-hover: var(--magenta-transparent);
+	--nav-item-background-active: var(--magenta-transparent);
+	--nav-item-background-selected: var(--magenta-transparent);
+	--nav-item-color: var(--text-normal);
+	--nav-item-color-hover: var(--magenta);
+	--nav-item-color-active: var(--text-normal);
+	--nav-item-color-selected: var(--text-normal);
+	--nav-item-color-highlighted: var(--magenta);
+
+	/* @heading Inputs */
+	--ui-input-background: var(--black-bright);
+	--ui-input-hover-background: var(--black-bright);
+	--ui-input-active-background: var(--black-bright);
+	--ui-input-disabled-background: var(--black-bright);
+	--ui-input-foreground: var(--text-normal);
+	--ui-input-hover-foreground: var(--text-normal);
+	--ui-input-active-foreground: var(--text-normal);
+	--ui-input-disabled-foreground: var(--text-normal);
+
+	/* @heading Tabs */
+	--tab-active-background: var(--magenta-transparent);
+	--tab-divider-color: var(--magenta);
+	--tab-outline-color: transparent;
+	--tab-text-color: var(--text-normal);
+	--tab-text-color-active: var(--magenta);
+	--tab-text-color-focused: var(--text-normal);
+	--tab-text-color-focused-active: var(--magenta);
+	--tab-text-color-focused-active-current: var(--magenta);
+	--tab-text-color-focused-highlighted: var(--purple);
+
+	/* @heading Checkboxes and checklists */
+	--checkbox-border-color: var(--cyan);
+	--checkbox-border-color-hover: var(--magenta);
+	--checkbox-color: var(--magenta);
+	--checkbox-color-hover: var(--magenta);
+	--checkbox-marker-color: var(--black);
+
+	--checklist-canceled-color: var(--red);
+	--checklist-done-color: var(--green);
+	--checklist-done-decoration: none;
+
+	/* @heading Scrollbars */
+	--scrollbar-bg: var(--grey-11);
+	--scrollbar-thumb-bg: var(--grey-8);
+	--scrollbar-active-thumb-bg: var(--magenta);
+
+	/* @heading Tags */
+
+	/* Legacy tag aliases complement Obsidian’s tag variables without replacing them. */
+	--tag-background: var(--cyan);
+	--tag-background-hover: var(--magenta);
+	--tag-color: var(--black);
+
+	/* @heading Fonts */
+	--font-interface-theme: 'Liberation Sans';
+	--font-monospace-theme: 'CaskaydiaMono Nerd Font';
+	--font-text-theme: 'Liberation Sans';
+
+	/* @heading Ribbon */
+	--ribbon-background: var(--grey-11);
+
+	/* @heading Status bar */
+	--status-bar-background: var(--grey-11);
+}

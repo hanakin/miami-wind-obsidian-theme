@@ -113,6 +113,19 @@ const CASES: { name: string; html: string; seen: boolean }[] = [
 		seen: true,
 	},
 	{
+		// A fixed box inside zero-size, overflow: hidden copies of the layout (Obsidian's tab-drag
+		// preview) is not clipped by them.
+		name: "fixed box inside a zero-size clipping parent",
+		html: `<div style="position:absolute;width:0;height:0;overflow:hidden;visibility:hidden"><div id="t" style="position:fixed;visibility:visible;left:20px;top:20px;width:100px;height:50px;background:blue"></div></div>`,
+		seen: true,
+	},
+	{
+		// A transformed parent becomes the fixed box's containing block, and its clip applies.
+		name: "fixed box inside a transformed zero-size clipping parent",
+		html: `<div style="position:absolute;width:0;height:0;overflow:hidden;transform:translate(0)"><div id="t" style="position:fixed;left:20px;top:20px;width:100px;height:50px;background:blue"></div></div>`,
+		seen: false,
+	},
+	{
 		// Inline text wrapping onto two lines: its box center can fall between fragments.
 		name: "wrapped inline element",
 		html: `<p style="width:120px;font:16px sans-serif">aaaa <span id="t" style="color:blue">bbbbbbb ccccccccc</span> dd</p>`,

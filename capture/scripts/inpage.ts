@@ -194,14 +194,26 @@ export const INPAGE = String.raw`
 		});
 	}
 	/** The part of el inside the window and inside every clipping ancestor, or null. */
-	function visibleRect(el) {
+	/**
+	 * r clipped by el's ancestors that clip overflow. A position: fixed box escapes them, up to an
+	 * ancestor that becomes its containing block (transform, filter, perspective, contain).
+	 */
+	function ancestorClip(el, r) {
 		const win = el.ownerDocument.defaultView;
-		let r = inter(box(el), [0, 0, win.innerWidth, win.innerHeight]);
-		for (let a = el.parentElement; r && a && a !== el.ownerDocument.documentElement; a = a.parentElement) {
+		let fixed = false;
+		for (let a = el; r && a && a !== el.ownerDocument.documentElement; a = a.parentElement) {
 			const cs = win.getComputedStyle(a);
-			if (cs.overflowX !== "visible" || cs.overflowY !== "visible") r = inter(r, box(a));
+			if (a !== el) {
+				if (fixed && (cs.transform !== "none" || cs.filter !== "none" || cs.perspective !== "none" || /paint|layout|strict|content/.test(cs.contain))) fixed = false;
+				if (!fixed && (cs.overflowX !== "visible" || cs.overflowY !== "visible")) r = inter(r, box(a));
+			}
+			if (cs.position === "fixed") fixed = true;
 		}
 		return r;
+	}
+	function visibleRect(el) {
+		const win = el.ownerDocument.defaultView;
+		return ancestorClip(el, inter(box(el), [0, 0, win.innerWidth, win.innerHeight]));
 	}
 	/**
 	 * Records which elements of the fixture scope are visibly painted inside the screenshot clip:
@@ -294,11 +306,8 @@ export const INPAGE = String.raw`
 		const st = window.__cap;
 		const doc = el.ownerDocument;
 		const win = doc.defaultView;
-		let start = inter(clip, [0, 0, win.innerWidth, win.innerHeight]);
-		for (let a = el.parentElement; start && a && a !== doc.documentElement; a = a.parentElement) {
-			const cs = win.getComputedStyle(a);
-			if (cs.overflowX !== "visible" || cs.overflowY !== "visible") start = inter(start, box(a));
-		}
+		const view = inter(clip, [0, 0, win.innerWidth, win.innerHeight]);
+		const start = view && ancestorClip(el, view);
 		if (!start) return 0;
 		let n = 0;
 		withHitTesting(el, () => {
@@ -315,7 +324,9 @@ export const INPAGE = String.raw`
 				let next = cl;
 				if (cs.overflowX !== "visible" || cs.overflowY !== "visible") next = inter(cl, b);
 				if (!next) return;
-				for (const c of e.children) walk(c, next, op);
+				// Fixed children escape this clip unless e is their containing block.
+				const holds = cs.transform !== "none" || cs.filter !== "none" || cs.perspective !== "none" || /paint|layout|strict|content/.test(cs.contain);
+				for (const c of e.children) walk(c, !holds && win.getComputedStyle(c).position === "fixed" ? view : next, op);
 			};
 			walk(el, start, true);
 		});
@@ -400,6 +411,35 @@ export const INPAGE = String.raw`
 	 * theme selectors there (real siblings and ancestors, marks for states, seen elements only) and
 	 * returns the fixture: the target with its ancestor wrappers and the html/body attributes.
 	 */
+	/**
+	 * Layout border-box size in CSS px: unrounded (a 0.1 px spacer must not become 0, or margins
+	 * collapse through it) and before any transform of it or its ancestors (a scaled PDF form).
+	 */
+	function layoutSize(win, o) {
+		const cs = win.getComputedStyle(o);
+		const extra = (a, b) => cs.boxSizing === "border-box" ? 0 : ["padding" + a, "padding" + b, "border" + a + "Width", "border" + b + "Width"].reduce((n, k) => n + (parseFloat(cs[k]) || 0), 0);
+		let w = parseFloat(cs.width) + extra("Left", "Right");
+		let h = parseFloat(cs.height) + extra("Top", "Bottom");
+		if (!Number.isFinite(w)) w = o.offsetWidth ?? o.getBoundingClientRect().width;
+		if (!Number.isFinite(h)) h = o.offsetHeight ?? o.getBoundingClientRect().height;
+		return Math.round(w * 1000) / 1000 + " " + Math.round(h * 1000) / 1000;
+	}
+	/** The margin on one side of e after margins of its first / last children collapse through it. */
+	function escMargin(win, e, side) {
+		const cs = win.getComputedStyle(e);
+		const own = parseFloat(cs["margin" + side]) || 0;
+		const shut = (parseFloat(cs["padding" + side]) || 0) + (parseFloat(cs["border" + side + "Width"]) || 0);
+		if (shut || cs.display !== "block" || cs.overflowX !== "visible" || cs.overflowY !== "visible" || cs.float !== "none" || /absolute|fixed/.test(cs.position)) return own;
+		const kids = [...e.childNodes].filter((n) => {
+			if (n.nodeType === 3) return n.data.trim() !== "";
+			if (n.nodeType !== 1) return false;
+			const k = win.getComputedStyle(n);
+			return k.display !== "none" && k.float === "none" && !/absolute|fixed/.test(k.position);
+		});
+		const k = side === "Top" ? kids[0] : kids[kids.length - 1];
+		if (!k || k.nodeType !== 1) return own;
+		return Math.max(own, escMargin(win, k, side));
+	}
 	function snapshot(opts) {
 		const st = window.__cap;
 		const el = st.target;
@@ -415,10 +455,33 @@ export const INPAGE = String.raw`
 			syncControl(o, c);
 			const s = st.states.get(o);
 			if (s) c.setAttribute("data-capture-state", s.join(" "));
+			// Text selected inside a field is not a document selection: keep its range.
+			if (o === doc.activeElement && typeof o.selectionStart === "number" && o.selectionStart !== o.selectionEnd) c.setAttribute("data-capture-input-selection", o.selectionStart + " " + o.selectionEnd + " " + (o.selectionDirection ?? "none"));
+			// Scroll offsets are not part of the markup; a viewer restores them from this mark.
+			if (o.scrollTop || o.scrollLeft) c.setAttribute("data-capture-scroll", o.scrollTop + " " + o.scrollLeft);
+			// Media and frames get their size from content that does not load offline.
+			if (/^(video|audio|iframe|object|embed|webview)$/.test(o.localName) && o.getClientRects().length) c.setAttribute("data-capture-size", layoutSize(doc.defaultView, o));
 			if (st.seen.has(o)) c.setAttribute("data-capture-seen", "");
 		}
 		const t = twin.get(el);
 		if (!t) return { lost: true };
+		// The native text selection, as child index + offset on the nearest element (child index -1:
+		// the offset counts that element's children). A viewer restores it with setBaseAndExtent.
+		const sel = doc.getSelection();
+		if (sel && sel.rangeCount && !sel.isCollapsed) {
+			for (const [node, offset, name] of [[sel.anchorNode, sel.anchorOffset, "anchor"], [sel.focusNode, sel.focusOffset, "focus"]]) {
+				const host = node?.nodeType === 1 ? node : node?.parentElement;
+				const c = host && twin.get(host);
+				if (c) c.setAttribute("data-capture-sel-" + name, (node === host ? -1 : [...host.childNodes].indexOf(node)) + " " + offset);
+			}
+		}
+		// CodeMirror's own selection (anchor/head per range) on each markdown editor, for reference:
+		// the editor draws it as .cm-selectionBackground boxes, which the fixture already holds.
+		const views = typeof app !== "undefined" ? app.workspace.getLeavesOfType("markdown").map((l) => l.view?.editor?.cm).filter(Boolean) : [];
+		for (const v of views) {
+			const c = twin.get(v.dom);
+			if (c) c.setAttribute("data-capture-cm-selection", JSON.stringify({ main: v.state.selection.mainIndex, ranges: v.state.selection.ranges.map((r) => [r.anchor, r.head]) }));
+		}
 		t.setAttribute("data-capture-target", "");
 		if (opts.label) t.setAttribute("data-capture-label", opts.label);
 		if (opts.synthetic) t.setAttribute("data-capture-synthetic", opts.synthetic);
@@ -453,16 +516,43 @@ export const INPAGE = String.raw`
 			if (!hits.size) continue;
 			if ([...hits].some((e) => st.seen.has(e))) live.push(s.id); else domOnly.push(s.id);
 		}
+		// Live boxes of the target, its ancestors and their direct children (the parts the layout
+		// around the target is made of), so a replay can name the first part that moved.
+		const boxOf = (o) => { const r = o.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map((v) => Math.round(v * 10) / 10).join(" "); };
+		for (let a = el; a && a !== doc.documentElement; a = a.parentElement) {
+			for (const o of a.parentElement && a !== doc.body ? a.parentElement.children : [a]) {
+				const c = twin.get(o);
+				if (c && !c.hasAttribute("data-capture-box")) c.setAttribute("data-capture-box", boxOf(o));
+			}
+		}
+		// And inside the target (the first 300 elements), to find a part that grew or shrank.
+		for (const o of [...el.querySelectorAll("*")].slice(0, 300)) {
+			const c = twin.get(o);
+			if (c && !c.hasAttribute("data-capture-box")) c.setAttribute("data-capture-box", boxOf(o));
+		}
 		const trimmed = applyTrim(t, opts.trim);
 		const back = new Map();
 		for (const [o, c] of twin) back.set(c, o);
 		// Same-origin iframes Obsidian fills by script (no src/srcdoc, e.g. a canvas card being
 		// edited): their live document goes into srcdoc. Stylesheets are not copied (Obsidian's CSS
 		// is proprietary); their origins are listed in data-capture-iframe-styles instead.
-		for (const fc of t.querySelectorAll("iframe")) {
+		for (const fc of [t, ...t.querySelectorAll("iframe")].filter((x) => x.localName === "iframe")) {
 			const fo = back.get(fc);
 			let idoc = null;
 			try { idoc = fo?.contentDocument; } catch {}
+			// A srcdoc of Obsidian's own making (the startup snapshot) carries copies of the window's
+			// stylesheets: keep its markup, drop the copied styles, note what was there.
+			if (fc.hasAttribute("srcdoc") && /<style|<link/i.test(fc.getAttribute("srcdoc"))) {
+				const sd = new DOMParser().parseFromString(fc.getAttribute("srcdoc"), "text/html");
+				const dropped = [];
+				for (const st of sd.querySelectorAll("style, link[rel=stylesheet]")) {
+					dropped.push(st.localName === "link" ? "link " + st.getAttribute("href") : "style (" + st.textContent.length + " chars)");
+					st.remove();
+				}
+				fc.setAttribute("srcdoc", "<!DOCTYPE html>" + sd.documentElement.outerHTML);
+				fc.setAttribute("data-capture-iframe-styles", dropped.join("; "));
+				continue;
+			}
 			if (!idoc?.documentElement || fc.hasAttribute("srcdoc") || (fc.getAttribute("src") && fc.getAttribute("src") !== "about:blank")) continue;
 			const ir = idoc.documentElement.cloneNode(true);
 			const styles = [];
@@ -475,6 +565,25 @@ export const INPAGE = String.raw`
 			fc.setAttribute("srcdoc", "<!doctype html>" + ir.outerHTML);
 			fc.setAttribute("data-capture-iframe-styles", styles.join("; "));
 		}
+		// Canvas pixels are not part of the markup either: keep each painted canvas as a PNG (by index
+		// in the fixture's canvas order). WebGL canvases read back empty; the capture script takes
+		// those from the screen instead (rect in window coordinates).
+		const canvases = [];
+		for (const cc of copy.querySelectorAll("canvas")) {
+			const co = back.get(cc);
+			if (!co || !co.width || !co.height || !co.getClientRects().length) continue;
+			let url = null;
+			try {
+				url = co.toDataURL("image/png");
+				const empty = doc.createElement("canvas");
+				empty.width = co.width;
+				empty.height = co.height;
+				if (url === empty.toDataURL("image/png")) url = null;
+			} catch {}
+			const r = co.getBoundingClientRect();
+			cc.setAttribute("data-capture-canvas", String(canvases.length));
+			canvases.push({ url, rect: [r.x, r.y, r.width, r.height] });
+		}
 		// Intrinsic sizes of images that will not load offline (app:, https:, file:), by index in
 		// the fixture's document.images order, so a viewer can stand in same-size placeholders.
 		// Tag every image of the copy with its live size, so indexes can be taken on the final document.
@@ -484,6 +593,8 @@ export const INPAGE = String.raw`
 			const src = ic.getAttribute("src") ?? "";
 			if (!io || !/^(app|https?|file):/i.test(src) || !(io.naturalWidth > 0 && io.naturalHeight > 0)) continue;
 			ic.setAttribute("data-capture-img", String(sizes.length));
+			// Its shown size too: a broken stand-in does not lay out like the loaded image.
+			if (io.getClientRects().length) ic.setAttribute("data-capture-size", layoutSize(doc.defaultView, io));
 			sizes.push([io.naturalWidth, io.naturalHeight]);
 		}
 		// Build the fixture as a DOM tree: the target with its ancestors. The parent keeps all its
@@ -492,20 +603,93 @@ export const INPAGE = String.raw`
 		// element order still counts.
 		const out = document.implementation.createHTMLDocument("");
 		for (const [from, to] of [[root, out.documentElement], [copy.body, out.body]]) for (const x of [...from.attributes]) to.setAttribute(x.name, x.value);
-		if (el === doc.body || el === doc.documentElement) {
+		// Which stylesheets this window really applies, and its size: a starter or print window has
+		// no theme; popouts and emulated phones have their own size.
+		const styles = [];
+		for (const sh of doc.querySelectorAll("link[rel=stylesheet], style")) {
+			const href = sh.getAttribute("href") ?? "";
+			const text = sh.localName === "style" ? sh.textContent : "";
+			const kind = /(^|\/)app\.css$/.test(href) ? "app" : text.startsWith("/* Miami Wind Theme") ? "theme" : text.trim() || href ? "runtime" : "";
+			if (kind && !styles.includes(kind)) styles.push(kind);
+		}
+		// Every stylesheet of the window, in document order: app.css, the theme, and the texts of the
+		// runtime ones (CodeMirror, MathJax, the slides' linked reveal.js sheet...), which can exist
+		// only while their view shows.
+		const sheets = [];
+		for (const sh of doc.querySelectorAll("link[rel=stylesheet], style")) {
+			if (sh.localName === "link" && /(^|\/)app\.css$/.test(sh.getAttribute("href") ?? "")) { sheets.push({ kind: "app" }); continue; }
+			if (sh.localName === "style" && sh.textContent.startsWith("/* Miami Wind Theme")) { sheets.push({ kind: "theme" }); continue; }
+			let text = sh.textContent;
+			try { text = [...sh.sheet.cssRules].map((r) => r.cssText).join("\n"); } catch {}
+			if (text.trim()) sheets.push({ kind: "runtime", text });
+		}
+		for (const sh of doc.adoptedStyleSheets ?? []) { const text = [...sh.cssRules].map((r) => r.cssText).join("\n"); if (text.trim()) sheets.push({ kind: "runtime", text }); }
+		const win = doc.defaultView;
+		const viewport = [win.innerWidth, win.innerHeight];
+		out.documentElement.setAttribute("data-capture-viewport", viewport.join(" "));
+		out.documentElement.setAttribute("data-capture-styles", styles.join(" "));
+		// A see-through overlay shows the page under it: keep the whole window. That is a target in
+		// a positioned layer (a modal backdrop, a PDF highlight, a canvas handle, a code block's
+		// edit button) with no solid background between it and that layer.
+		// It is also see-through when something between them is faded or blended (a PDF text
+		// layer at 20% opacity over the page canvas).
+		let layer = false;
+		let solid = false;
+		let veiled = false;
+		for (let a = el; a && a !== doc.body; a = a.parentElement) {
+			const cs = win.getComputedStyle(a);
+			if (!layer && (alphaOf(cs.backgroundColor) >= 0.99 || cs.backgroundImage !== "none")) solid = true;
+			// A fade at or above the solid part composites it over what is behind (a faded row
+			// below its menu's own background does not).
+			if (solid && (parseFloat(cs.opacity) < 1 || cs.mixBlendMode !== "normal")) veiled = true;
+			if (/^(absolute|fixed)$/.test(cs.position)) layer = true;
+		}
+		const seeThrough = layer && (!solid || veiled);
+		const whole = opts.context === "document" || seeThrough;
+		if (el === doc.body || el === doc.documentElement || whole) {
 			for (const c of copy.body.childNodes) out.body.appendChild(out.importNode(c, true));
 		} else {
 			let node = out.importNode(t, true);
 			let child = t;
 			for (let a = t.parentElement; a && a !== copy.documentElement; a = a.parentElement) {
-				const deep = a === t.parentElement && a.querySelectorAll("*").length <= 800;
+				// Inline children sit in their parent's line flow: keep the whole paragraph around them.
+				const co = back.get(child);
+				const inline = !!co && /^(inline|contents)/.test(win.getComputedStyle(co).display);
+				const deep = (a === t.parentElement || inline) && a.querySelectorAll("*").length <= 800;
 				const box = a === copy.body ? out.body : out.importNode(a, false);
 				for (const c of a.childNodes) {
 					if (c === child) box.appendChild(node);
-					else if (c.nodeType === 3) { if (deep) box.appendChild(out.createTextNode(c.data)); }
+					// Text is kept at every level: it makes the line boxes the branch sits after.
+					else if (c.nodeType === 3) box.appendChild(out.createTextNode(c.data));
 					else if (c.nodeType === 1) {
 						if (deep) box.appendChild(out.importNode(c, true));
-						else { const ph = out.importNode(c, false); ph.setAttribute("data-capture-placeholder", ""); box.appendChild(ph); }
+						else {
+							const o = back.get(c);
+							const disp = o ? win.getComputedStyle(o).display : "none";
+							// An inline-level box sits on a text line by its baseline, which comes from its
+							// content: a small one keeps its content (hidden, and not counted as painted).
+							const keep = /^inline-/.test(disp) && c.querySelectorAll("*").length <= 60;
+							const ph = out.importNode(c, keep);
+							if (keep) for (const d of ph.querySelectorAll("*")) { d.removeAttribute("data-capture-seen"); d.removeAttribute("data-capture-state"); }
+							ph.setAttribute("data-capture-placeholder", "");
+							// Shown live (visible, not transparent, with a box): a floating one painted over things.
+							if (o) { const cs = win.getComputedStyle(o); const r = o.getBoundingClientRect(); if (cs.visibility === "visible" && parseFloat(cs.opacity) > 0 && r.width * r.height > 0) ph.setAttribute("data-capture-shown", ""); }
+							// The stand-in is empty, so keep its live border-box size for the layout around it.
+							if (o && disp !== "inline" && disp !== "contents" && disp !== "none") {
+								ph.setAttribute("data-capture-size", layoutSize(win, o));
+								// Rules like :empty would change an empty stand-in's display.
+								ph.setAttribute("data-capture-display", disp);
+								// Children's margins that collapsed through it into the flow are gone with them.
+								const pd = o.parentElement ? win.getComputedStyle(o.parentElement).display : "";
+								if (/^(block|flow-root|list-item)$/.test(pd)) {
+									const cs = win.getComputedStyle(o);
+									const mt = escMargin(win, o, "Top");
+									const mb = escMargin(win, o, "Bottom");
+									if (mt !== parseFloat(cs.marginTop) || mb !== parseFloat(cs.marginBottom)) ph.setAttribute("data-capture-margin", mt + " " + mb);
+								}
+							}
+							box.appendChild(ph);
+						}
 					}
 				}
 				if (a === copy.body) break;
@@ -513,12 +697,38 @@ export const INPAGE = String.raw`
 				child = a;
 			}
 		}
+		const canvasPixels = [];
+		[...out.querySelectorAll("canvas")].forEach((cv, index) => {
+			const k = cv.getAttribute("data-capture-canvas");
+			if (k !== null) { canvasPixels.push({ index, ...canvases[+k] }); cv.removeAttribute("data-capture-canvas"); }
+		});
 		// Intrinsic sizes of images that will not load offline, by index in document.images order.
 		const imageSizes = [];
 		[...out.images].forEach((im, index) => {
 			const k = im.getAttribute("data-capture-img");
 			if (k !== null) { imageSizes.push({ index, width: sizes[+k][0], height: sizes[+k][1] }); im.removeAttribute("data-capture-img"); }
 		});
+		// MathJax keeps a CSS rule per character, only for what is on screen now (it drops the rest
+		// on the next render). Keep the fixture's own glyph rules in its <head>.
+		const glyphs = new Set([...out.querySelectorAll("mjx-c")].flatMap((e) => [...e.classList].filter((c) => /^mjx-c[0-9A-F]+$/.test(c))));
+		let mathCss = "";
+		if (glyphs.size) {
+			const rules = [];
+			for (const sh of [...doc.styleSheets, ...(doc.adoptedStyleSheets ?? [])]) {
+				let rs = [];
+				try { rs = [...sh.cssRules]; } catch {}
+				for (const r of rs) {
+					const sel = r.selectorText ?? "";
+					if (sel.includes("mjx-c.mjx-c") && sel.split(",").some((x) => [...glyphs].some((g) => new RegExp("\\." + g + "(?![0-9A-F])").test(x)))) rules.push(r.cssText);
+				}
+			}
+			mathCss = [...new Set(rules)].join("\n");
+			const st = out.createElement("style");
+			st.setAttribute("data-capture-runtime", "mathjax");
+			st.textContent = mathCss;
+			out.head.appendChild(st);
+		}
+		const headExtra = mathCss ? '<style data-capture-runtime="mathjax">' + mathCss.replace(/<\/style/gi, "<\\/style") + "</style>" : "";
 		// HTML text cannot hold every tree Obsidian builds (a <div> inside a <p>, as in reading-view
 		// embeds): the parser would close the <p> early. Save as HTML when it parses back to the same
 		// tree, else as XHTML, whose XML parser keeps the tree exactly.
@@ -528,9 +738,9 @@ export const INPAGE = String.raw`
 		const format = same ? "html" : "xhtml";
 		const contains = Object.entries(opts.components).filter(([, sel]) => t.matches?.(sel) || t.querySelector(sel)).map(([k]) => k);
 		const fixture = same
-			? "<!doctype html>\n<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8"></head>\n<body' + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
+			? "<!doctype html>\n<html" + attrs(out.documentElement) + '>\n<head><meta charset="utf-8">' + headExtra + "</head>\n<body" + attrs(out.body) + ">\n" + body + "\n</body>\n</html>\n"
 			: '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(out) + "\n";
-		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes };
+		return { html: fixture, format, live, domOnly, trimmed, contains, seen: st.seen.size, imageSizes, canvasPixels, viewport, styles, sheets, whole: whole && opts.context !== "document" ? "see-through" : null };
 	}
 	/** Painted style of the target and pseudo subtrees (colors, borders, shadows, decorations, ::before/::after), for a before/after state diff. */
 	const PAINT = ["color", "background-color", "background-image", "border-top-color", "border-right-color", "border-bottom-color", "border-left-color", "outline-color", "outline-style", "outline-width", "box-shadow", "text-decoration-line", "text-decoration-color", "opacity", "filter", "transform", "visibility", "fill", "stroke"];

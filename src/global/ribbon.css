@@ -1,0 +1,14 @@
+/* Ribbon icon backgrounds in hover and active states. */
+
+/* Shared component adjustments: icon-background.
+ * Local --mw-* variables below set this section’s colors and backgrounds. */
+
+.workspace-ribbon .clickable-icon:hover {
+	--mw-icon-background: var(--icon-background-hover);
+	@mixin icon-background;
+}
+
+.workspace-ribbon .clickable-icon:active {
+	--mw-icon-background: var(--icon-background-active);
+	@mixin icon-background;
+}

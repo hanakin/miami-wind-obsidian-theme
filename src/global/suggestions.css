@@ -1,0 +1,50 @@
+/* Suggestion lists, selected rows, property fields and complex-item flair. */
+
+/* Shared component adjustments: menu-item-state.
+ * Local --mw-* variables below set this section’s colors and backgrounds. */
+
+.suggestion-container {
+	border: 1px solid var(--magenta);
+	margin: 0;
+	padding: 0;
+	cursor: pointer;
+}
+
+.suggestion {
+	margin: 0;
+	padding: 0;
+	cursor: pointer;
+}
+
+.suggestion-container.mod-property-value .suggestion-item,
+.suggestion-container.mod-property-key .suggestion-item {
+	margin: 0;
+	padding: 8px 16px;
+	cursor: pointer;
+}
+
+.suggestion-container.mod-property-key .suggestion-item {
+	background-color: var(--black);
+	padding-left: 8px;
+}
+
+.suggestion-item.mod-complex .suggestion-flair {
+	color: var(--cyan);
+}
+
+.suggestion-container.mod-property-key .suggestion-item:hover {
+	background-color: var(--magenta-transparent);
+}
+
+.mod-property-key .mod-complex:hover .suggestion-flair {
+	color: var(--magenta);
+}
+
+.suggestion-container.mod-property-value .suggestion-item:hover,
+.suggestion-item.is-selected,
+.suggestion-item.mobile-tap {
+	--mw-item-background: var(--magenta-transparent);
+	--mw-item-color: var(--magenta);
+	@mixin menu-item-state;
+	border-radius: 0;
+}

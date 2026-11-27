@@ -1,0 +1,17 @@
+/* Search clear buttons and result sorting dropdown states. */
+
+.search-input-clear-button {
+	color: var(--cyan);
+	cursor: pointer;
+}
+
+.search-input-clear-button:hover {
+	color: var(--magenta);
+}
+
+/* Search-result sorting also uses literal fills and separate rest/hover text colors. */
+.search-results-info .dropdown,
+.search-results-info .dropdown:hover {
+	background-color: var(--magenta);
+	color: var(--black);
+}

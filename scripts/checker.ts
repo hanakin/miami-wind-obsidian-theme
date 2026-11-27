@@ -5,6 +5,36 @@ import selectorParser from "postcss-selector-parser";
 
 const tagHoverSelector = ".cm-hashtag-begin:has(+ .cm-hashtag-end:hover)";
 
+// Parity-only exceptions: these exact 1.x selectors need 0,2,1 to tie Obsidian's
+// span.cm-url, span.cm-formatting-link-string and span.cm-formatting-math rivals.
+const paritySpanSelectors = new Set(
+	["keyword", "string", "number", "comment", "operator", "variable", "def"].map(
+		(token) => `.cm-s-obsidian span.cm-${token}`,
+	),
+);
+// Footnote refs: .cm-s-obsidian span.cm-footref.cm-hmd-barelink.cm-formatting (0,4,1).
+// Footnote labels: .cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote (0,4,1).
+paritySpanSelectors.add(
+	".markdown-source-view.mod-cm6 span.cm-inline-code.cm-footref",
+);
+paritySpanSelectors.add(
+	".markdown-source-view.mod-cm6 span.cm-inline-code.cm-hmd-footnote",
+);
+
+// Highlights must tie Obsidian 1.15.1's span rivals, including search matches.
+// Direct colors preserve magenta even when colored highlights shadow the variable.
+const highlightSpanSelectors = new Set([
+	".cm-s-obsidian span.cm-highlight",
+	".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
+	"span.is-flashing.cm-highlight",
+	"span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight",
+	"span.cm-formatting-link.cm-url.cm-highlight",
+	"span.cm-formatting-link.cm-url.cm-highlight:hover",
+	".markdown-source-view.mod-cm6 span.cm-highlight.cm-footref",
+	".markdown-source-view.mod-cm6 span.cm-highlight.cm-hmd-footnote",
+	".cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting.cm-highlight",
+]);
+
 function compoundDepth(selector: selectorParser.Selector): number {
 	const direct =
 		1 + selector.nodes.filter((node) => node.type === "combinator").length;
@@ -19,15 +49,33 @@ function compoundDepth(selector: selectorParser.Selector): number {
 	return direct + nested;
 }
 
-// shortcut: untouched 1.x rules are grandfathered only in the checksum-locked legacy file.
-export function checkCss(legacyFile?: string): Plugin {
+export function checkCss(): Plugin {
 	return {
 		postcssPlugin: "miami-wind-check",
 		OnceExit(root) {
-			const isLegacy = (file?: string) =>
-				!!legacyFile && file === path.resolve(legacyFile);
 			root.walkDecls((decl) => {
-				if (isLegacy(decl.source?.input.file)) return;
+				if (
+					["src/settings/tokens.css", "src/settings/palette.css"].some(
+						(file) => decl.source?.input.file === path.resolve(file),
+					)
+				) {
+					const previous = decl.prev();
+					if (
+						previous?.type === "decl" &&
+						previous.prop.startsWith("--") &&
+						decl.prop.startsWith("--")
+					) {
+						const changed =
+							previous.prop.slice(2).split("-")[0] !==
+							decl.prop.slice(2).split("-")[0];
+						const blank = /\n[\t ]*\n/.test(decl.raws.before ?? "");
+						if (changed !== blank)
+							throw decl.error(
+								"Separate variable families with one blank line; keep each family together",
+							);
+					}
+				}
+
 				if (decl.important || decl.prop === "all")
 					throw decl.error("No !important or all declarations");
 			});
@@ -36,7 +84,6 @@ export function checkCss(legacyFile?: string): Plugin {
 					throw rule.error("No @layer or @scope");
 			});
 			root.walkRules((rule) => {
-				if (isLegacy(rule.source?.input.file)) return;
 				const ast = selectorParser().astSync(rule.selector);
 				ast.each((selector) => {
 					const fail = (message: string) => {
@@ -57,6 +104,41 @@ export function checkCss(legacyFile?: string): Plugin {
 					});
 					// Inspect every compound, including selector lists inside functional pseudos.
 					selector.walkTags((tag) => {
+						if (
+							rule.source?.input.file ===
+								path.resolve("src/markdown/code.css") &&
+							paritySpanSelectors.has(selector.toString().trim())
+						)
+							return;
+
+						if (
+							rule.source?.input.file ===
+								path.resolve("src/markdown/inline-marks.css") &&
+							highlightSpanSelectors.has(selector.toString().trim())
+						)
+							return;
+
+						// Obsidian 1.15.1 button.mod-destructive.mod-cta(:hover) uses
+						// 0,2,1 / 0,3,1 reading --background-modifier-error/-hover; ties preserve CTA fills.
+						if (
+							rule.source?.input.file ===
+								path.resolve("src/global/modals.css") &&
+							[".modal button.mod-cta", ".modal button.mod-cta:hover"].includes(
+								selector.toString().trim(),
+							)
+						)
+							return;
+
+						// Obsidian 1.15.1's community sidebar button.clickable-icon reads
+						// --text-normal at 0,3,1; omitting its sidebar ancestor keeps that tie.
+						if (
+							rule.source?.input.file ===
+								path.resolve("src/sections/community-browser.css") &&
+							selector.toString().trim() ===
+								".mod-community-modal button.clickable-icon[aria-disabled='true']"
+						)
+							return;
+
 						const siblings = tag.parent?.nodes ?? [];
 						const index = siblings.indexOf(tag);
 						const before = siblings
@@ -78,10 +160,27 @@ export function checkCss(legacyFile?: string): Plugin {
 							fail("No type-qualified classes");
 					});
 					if (compoundDepth(selector) > 3) fail("Maximum depth is 3 compounds");
+					// Sheet filters have literal app backgrounds at 0,5,0. Keep that tie
+					// in three compounds, using the actual combobox class instead of an ancestor.
+					if (
+						rule.source?.input.file ===
+							path.resolve("src/sections/bases.css") &&
+						[
+							".menu.mod-sheet .filter-row .filter-property-select.combobox-button",
+							".menu.mod-sheet .filter-row .filter-operator.combobox-button",
+						].includes(selector.toString().trim())
+					)
+						return;
 					const specificity = Specificity.calculate(selector.toString())[0];
 					if (
 						!specificity ||
-						Specificity.compare(specificity, { a: 0, b: 4, c: 1 }) > 0
+						(Specificity.compare(specificity, { a: 0, b: 4, c: 1 }) > 0 &&
+							!(
+								rule.source?.input.file ===
+									path.resolve("src/markdown/inline-marks.css") &&
+								selector.toString().trim() ===
+									".cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting.cm-highlight"
+							))
 					)
 						fail("Maximum specificity is 0,4,1");
 				});

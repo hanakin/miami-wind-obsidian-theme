@@ -20,6 +20,12 @@ try {
 			["bases", { file: "Base.base" }],
 			["pdf", { file: "Attachments/sample.pdf" }],
 		]) { await l.setViewState({ type, state, active: true }); await sleep(1200); }
+		// Every note in both modes: MathJax adds a rule for each character it draws.
+		for (const f of app.vault.getMarkdownFiles())
+			for (const state of [{ mode: "source", source: false }, { mode: "preview" }]) {
+				await l.setViewState({ type: "markdown", state: { file: f.path, ...state }, active: true });
+				await sleep(500);
+			}
 		app.commands.executeCommandById("graph:open");
 		await sleep(1500);
 	})()`);
