@@ -224,6 +224,10 @@ export async function checkFixture(
 ): Promise<Result> {
 	const st = f.quirks ? env.stages.quirks : env.stages.standards;
 	const { page, cdp } = st;
+	// A mutation left by an earlier check that returned early must not carry over.
+	await page.evaluate(() => {
+		for (const e of document.querySelectorAll("[data-mutation]")) e.remove();
+	});
 	const touch = f.id.startsWith("mobile.");
 	const lost = (f.runtimeStyles ?? []).filter(
 		(t) => t !== "app" && t !== "theme" && !existsSync(`${RUNTIME_DIR}${t}.css`),
@@ -342,6 +346,49 @@ export async function checkFixture(
 	// Text is allowed to differ by anti-aliasing only while it is drawn with the same fonts: the
 	// font properties of the target's text runs must be those recorded live (a trimmed list keeps
 	// only some runs, so it may have fewer).
+	// Paint colors recorded live where raster differences between builds are allowed (borders
+	// under a scale, image-mask icons, rounded inline backgrounds) must be the replay's own.
+	const paintDiff = (await page.evaluate(() => {
+		const cap = (window as unknown as { cap: { paintOf(e: Element): string } }).cap;
+		for (const e of document.querySelectorAll(
+			"[data-capture-paint]:not([data-capture-placeholder])",
+		)) {
+			const now = cap.paintOf(e);
+			const was = e.getAttribute("data-capture-paint") ?? "";
+			if (now !== was)
+				return `${e.localName}${[...e.classList].map((c) => `.${c}`).join("")}: ${now} (live ${was})`;
+		}
+		return null;
+	})) as string | null;
+	if (paintDiff)
+		return { status: "fail", why: `paint colors differ from live: ${paintDiff.slice(0, 300)}` };
+	// The graph is drawn from colors Obsidian reads off probe elements (.graph-view.color-fill,
+	// ...); its pixels are saved, so the probes' colors must be the ones recorded live.
+	const graphColors = (f.evidence?.record as { graphColors?: Record<string, number> } | undefined)
+		?.graphColors;
+	if (graphColors) {
+		const bad = (await page.evaluate((want) => {
+			const host =
+				document.querySelector(".graph-controls")?.parentElement ??
+				document.querySelector("canvas")?.parentElement ??
+				document.body;
+			for (const [cls, rgb] of Object.entries(want)) {
+				const p = document.createElement("div");
+				p.className = `graph-view ${cls}`;
+				host.appendChild(p);
+				const m =
+					getComputedStyle(p)
+						.color.match(/\d+(\.\d+)?/g)
+						?.map(Number) ?? [];
+				p.remove();
+				const now = ((m[0] ?? 0) << 16) | ((m[1] ?? 0) << 8) | (m[2] ?? 0);
+				if (now !== rgb)
+					return `${cls}: #${now.toString(16).padStart(6, "0")} (live #${rgb.toString(16).padStart(6, "0")})`;
+			}
+			return null;
+		}, graphColors)) as string | null;
+		if (bad) return { status: "fail", why: `graph colors differ from live: ${bad}` };
+	}
 	const liveText = f.evidence?.textStyles;
 	if (liveText) {
 		const now = (await page.evaluate(() =>
@@ -715,73 +762,34 @@ async function compare([
 			}
 		return false;
 	};
-	// Forced colors take their palette from the browser build: learn the color substitution from
-	// the pixels themselves (each live color to the replay color it most often lands on) and map
-	// the live shot through it; shapes are then compared like anywhere else.
+	// Live color -> replay color: Electron 43 paints table borders in forced colors #333333 where
+	// the replay's Chromium paints them CanvasText (white); both compute white.
+	const FORCED_PAINT: [number[], number[]][] = [
+		[
+			[51, 51, 51],
+			[255, 255, 255],
+		],
+	];
+	// Forced colors: the two builds paint some system colors differently, though both compute
+	// the same value. The substitutions are fixed, measured once on qc.media.forced-colors (live
+	// Electron 43 against the replay's Chromium), never learned from the fixture under test.
 	let A = a;
 	if (FORCED) {
-		const key = (d: ImageData, p: number) =>
-			((d.data[p] ?? 0) >> 3) * 1024 +
-			((d.data[p + 1] ?? 0) >> 3) * 32 +
-			((d.data[p + 2] ?? 0) >> 3);
-		const exact = (d: ImageData, p: number) =>
-			(d.data[p] ?? 0) * 65536 + (d.data[p + 1] ?? 0) * 256 + (d.data[p + 2] ?? 0);
-		// A solid pixel (a line or fill: the same exact color on both sides of it, across or down)
-		// teaches its exact color; anti-aliased edges, which share coarse buckets with lines (a #333
-		// table border and text edges), teach only the coarse map.
-		const solid = (x: number, y: number) => {
-			const c = exact(a, (y * a.width + x) * 4);
-			const at = (i: number, j: number) =>
-				i >= 0 && j >= 0 && i < a.width && j < a.height && exact(a, (j * a.width + i) * 4) === c;
-			return (at(x - 1, y) && at(x + 1, y)) || (at(x, y - 1) && at(x, y + 1));
-		};
-		const pairsExact = new Map<number, Map<number, number>>();
-		const pairs = new Map<number, Map<number, number>>();
-		const sample = new Map<number, number>();
-		for (const [lx0 = 0, ly0 = 0, rx0 = 0, ry0 = 0, w0 = 0, h0 = 0] of pixelRegions)
-			for (let j = 0; j < Math.round(h0); j++)
-				for (let i = 0; i < Math.round(w0); i++) {
-					const X = Math.round(rx0) + i;
-					const Y = Math.round(ry0) + j;
-					const x = Math.round(lx0) + i;
-					const y = Math.round(ly0) + j;
-					if (X < 0 || Y < 0 || X >= W || Y >= H || x < 0 || y < 0 || x >= a.width || y >= a.height)
-						continue;
-					if (masked[Y * W + X]) continue;
-					const ka = key(a, (y * a.width + x) * 4);
-					const kb = key(b, (Y * W + X) * 4);
-					const m = pairs.get(ka) ?? new Map<number, number>();
-					m.set(kb, (m.get(kb) ?? 0) + 1);
-					pairs.set(ka, m);
-					sample.set(kb, (Y * W + X) * 4);
-					if (solid(x, y)) {
-						const ea = exact(a, (y * a.width + x) * 4);
-						const me = pairsExact.get(ea) ?? new Map<number, number>();
-						me.set(kb, (me.get(kb) ?? 0) + 1);
-						pairsExact.set(ea, me);
-					}
-				}
-		const most = (src: Map<number, Map<number, number>>) => {
-			const to = new Map<number, number>();
-			for (const [ka, m] of src) {
-				let best = -1;
-				let n = 0;
-				for (const [kb, c] of m) if (c > n) [best, n] = [kb, c];
-				to.set(ka, best);
-			}
-			return to;
-		};
-		const to = most(pairs);
-		const toExact = most(pairsExact);
 		const out = new ImageData(new Uint8ClampedArray(a.data), a.width, a.height);
-		for (let i = 0; i < a.width * a.height; i++) {
-			const kb = toExact.get(exact(a, i * 4)) ?? to.get(key(a, i * 4));
-			const src = kb === undefined ? undefined : sample.get(kb);
-			if (src === undefined) continue;
-			out.data[i * 4] = b.data[src] ?? 0;
-			out.data[i * 4 + 1] = b.data[src + 1] ?? 0;
-			out.data[i * 4 + 2] = b.data[src + 2] ?? 0;
-		}
+		for (let i = 0; i < a.width * a.height; i++)
+			for (const [from, to] of FORCED_PAINT) {
+				const p = i * 4;
+				if (
+					Math.abs((a.data[p] ?? 0) - from[0]) <= 2 &&
+					Math.abs((a.data[p + 1] ?? 0) - from[1]) <= 2 &&
+					Math.abs((a.data[p + 2] ?? 0) - from[2]) <= 2
+				) {
+					out.data[p] = to[0];
+					out.data[p + 1] = to[1];
+					out.data[p + 2] = to[2];
+					break;
+				}
+			}
 		A = out;
 	}
 	let pxN = 0;

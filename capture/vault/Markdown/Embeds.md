@@ -21,12 +21,6 @@ PDF embed:
 PDF page embed:
 ![[sample.pdf#page=2]]
 
-Audio embed:
-![[sample-audio.wav]]
-
-Video embed:
-![[sample-video.mp4]]
-
 Canvas embed:
 ![[Canvas.canvas]]
 
@@ -52,3 +46,9 @@ views:
     order:
       - file.name
 ```
+
+Audio embed:
+![[sample-audio.wav]]
+
+Video embed:
+![[sample-video.mp4]]
