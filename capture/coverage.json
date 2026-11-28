@@ -3,10 +3,10 @@
 	"summary": [
 		"Obsidian 1.15.1 · 1200 fixtures, 1200 with valid evidence (6 synthetic macOS/Windows variants)",
 		"Checklist items shown in their claimed state: 1213/1222 (99.3%); 29 of them scripted or synthetic (labeled); state applied but its change not visible (limitation, listed): 3; excluded with reason: 6; missing: 0",
-		"theme.css selectors visibly matched (fixture and live agree, on painted elements): 240/247 (97.2%); excluded with reason: 4; scripted only (labeled): 3; missing: 0 (0 only on hidden/clipped elements, 0 only in scripted fixtures); fixture/live disagreements: 3",
+		"theme.css selectors visibly matched (fixture and live agree, on painted elements): 240/247 (97.2%); excluded with reason: 4; scripted only (labeled): 3; missing: 0 (0 only on hidden/clipped elements, 0 only in scripted fixtures); fixture/live disagreements: 2",
 		"App CSS classes visibly captured: 1182 (11 of them classes credited by screenshot pixels (graph probes)), excluded 226, not theme-affected (accepted gaps) 244, theme-affected but out of scope (labeled) 26, theme-affected missing 0, of 1678; of the theme-affected missing: 0 in the DOM but never painted, 0 only in scripted fixtures, 0 seen in the runtime census only",
-		"Screenshots: files re-checked against recorded hashes; 66 groups of identical screenshots (64 explained by their fixtures, 2 where a state applies but does not show (limitation), 0 unexplained)",
-		"Replay alone: 1182 fixtures rendered from their own files (recorded window size and stylesheets, canvas pixels, stand-in sizes, scroll offsets) matched their live screenshot in at least 97% of 16 px blocks (lowest 99.7%; images, media and iframes masked); replay limits (labeled, not compared): 13"
+		"Screenshots: files re-checked against recorded hashes; 68 groups of identical screenshots (66 explained by their fixtures, 2 where a state applies but does not show (limitation), 0 unexplained)",
+		"Replay alone: 1194 fixtures rendered from their own files (recorded window size and stylesheets, canvas pixels, stand-in sizes, scroll offsets) matched their live screenshot block by block (at least 97% of 16 px blocks, lowest 100.0%) and pixel by pixel; replay limits (labeled, not compared): 0; synthetic variants (no screenshot, not replayed): 6"
 	],
 	"missingItems": [],
 	"invalidFixtures": {},
@@ -5891,7 +5891,9 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"popover.footnote"
+			],
 			"synthetic": []
 		},
 		{
@@ -6029,7 +6031,17 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"popover.tooltip",
+				"qc.gap.pdf-outline",
+				"qc.pdf.find-settings",
+				"suggest.block",
+				"suggest.embed",
+				"suggest.heading",
+				"suggest.link",
+				"suggest.slash",
+				"suggest.tag"
+			],
 			"synthetic": [
 				"inwindow.modal.clickable-icon.hover.macos"
 			]
@@ -6646,7 +6658,9 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"popover.tooltip"
+			],
 			"synthetic": []
 		},
 		{
@@ -7055,7 +7069,16 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"qc.gap.pdf-outline",
+				"qc.pdf.find-settings",
+				"suggest.block",
+				"suggest.embed",
+				"suggest.heading",
+				"suggest.link",
+				"suggest.slash",
+				"suggest.tag"
+			],
 			"synthetic": []
 		},
 		{
@@ -7101,6 +7124,7 @@
 			"matchable": ".workspace-tabs .clickable-icon.is-active",
 			"fixtures": [
 				"chrome.workspace-tabs-icon.is-active",
+				"qc.gap.pdf-zoom-min",
 				"sidebar.tags",
 				"view.type.tag"
 			],
@@ -7116,7 +7140,16 @@
 				"extra.modal.close-button.hover",
 				"pdf.highlight",
 				"qc.gap.pdf-outline",
+				"qc.pdf.annotation-popup",
+				"qc.pdf.annotations",
 				"qc.pdf.find-settings",
+				"qc.pdf.horizontal",
+				"qc.pdf.password",
+				"qc.pdf.spread",
+				"qc.pdf.themed",
+				"qc.pdf.wrapped",
+				"qc.pdf.xfa",
+				"qc.pdf.xfa-text.focus",
 				"sidebar.search-options"
 			],
 			"synthetic": []
@@ -8822,13 +8855,16 @@
 			"context": "",
 			"matchable": ".bases-toolbar-item .text-icon-button[data-capture-state~=\"hover\"]",
 			"fixtures": [
-				"extra.bases.toolbar-button.hover"
-			],
-			"fixtureOnly": [],
-			"liveOnly": [
+				"extra.bases.toolbar-button.hover",
 				"md.embed-base-codeblock.reading"
 			],
-			"domOnly": [],
+			"fixtureOnly": [],
+			"liveOnly": [],
+			"domOnly": [
+				"mobile.tablet.bases-filter",
+				"mobile.tablet.bases-properties",
+				"qc.gap.bases-search"
+			],
 			"synthetic": []
 		},
 		{
@@ -9555,7 +9591,19 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"command.webviewer:save-to-vault",
+				"command.webviewer:toggle-reader-mode",
+				"inwindow.modal.clickable-icon.hover",
+				"inwindow.modal.search-clear.hover",
+				"modal.clickable-icon.hover",
+				"modal.search-clear.hover",
+				"pdf.highlight",
+				"prompt.clear-button",
+				"prompt.clear-button.hover",
+				"prompt.instructions",
+				"qc.hotkeys.filter"
+			],
 			"synthetic": []
 		},
 		{
@@ -9649,7 +9697,19 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"command.webviewer:save-to-vault",
+				"command.webviewer:toggle-reader-mode",
+				"inwindow.modal.clickable-icon.hover",
+				"inwindow.modal.search-clear.hover",
+				"modal.clickable-icon.hover",
+				"modal.search-clear.hover",
+				"pdf.highlight",
+				"prompt.clear-button",
+				"prompt.clear-button.hover",
+				"prompt.instructions",
+				"qc.hotkeys.filter"
+			],
 			"synthetic": []
 		},
 		{
@@ -9743,7 +9803,19 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"command.webviewer:save-to-vault",
+				"command.webviewer:toggle-reader-mode",
+				"inwindow.modal.clickable-icon.hover",
+				"inwindow.modal.search-clear.hover",
+				"modal.clickable-icon.hover",
+				"modal.search-clear.hover",
+				"pdf.highlight",
+				"prompt.clear-button",
+				"prompt.clear-button.hover",
+				"prompt.instructions",
+				"qc.hotkeys.filter"
+			],
 			"synthetic": []
 		},
 		{
@@ -9764,7 +9836,10 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"extra.modal.header-button",
+				"extra.modal.header-button.hover"
+			],
 			"synthetic": []
 		},
 		{
@@ -9785,7 +9860,10 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"extra.modal.header-button",
+				"extra.modal.header-button.hover"
+			],
 			"synthetic": []
 		},
 		{
@@ -9806,7 +9884,10 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"extra.modal.header-button",
+				"extra.modal.header-button.hover"
+			],
 			"synthetic": []
 		},
 		{
@@ -17674,7 +17755,9 @@
 				"extra.settings-search-results",
 				"modal.search-setting"
 			],
-			"domOnly": [],
+			"domOnly": [
+				"inwindow.modal.search-clear.hover"
+			],
 			"synthetic": []
 		},
 		{
@@ -18104,7 +18187,11 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"prompt.clear-button",
+				"prompt.clear-button.hover",
+				"prompt.instructions"
+			],
 			"synthetic": []
 		},
 		{
@@ -18139,7 +18226,11 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"prompt.clear-button",
+				"prompt.clear-button.hover",
+				"prompt.instructions"
+			],
 			"synthetic": []
 		},
 		{
@@ -20418,7 +20509,11 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [],
+			"domOnly": [
+				"md.code-json.live",
+				"md.code-markdown.live",
+				"md.code-ruby.live"
+			],
 			"synthetic": []
 		},
 		{
@@ -27539,9 +27634,8 @@
 		},
 		{
 			"name": "search-empty-state",
-			"fixture": "qc.rtl-language.window",
+			"fixture": "qc.media.hover-none",
 			"dom": "chrome.resize-handle",
-			"synthetic": "qc.rtl-language.window.macos",
 			"census": true
 		},
 		{
@@ -27593,7 +27687,7 @@
 			"name": "search-result",
 			"fixture": "chrome.backlinks-pane",
 			"dom": "chrome.resize-handle",
-			"synthetic": "qc.translucent",
+			"synthetic": "qc.rtl-language.window.macos",
 			"census": true
 		},
 		{
@@ -27651,7 +27745,7 @@
 			"name": "search-result-file-title",
 			"fixture": "chrome.backlinks-pane",
 			"dom": "chrome.resize-handle",
-			"synthetic": "qc.translucent",
+			"synthetic": "qc.rtl-language.window.macos",
 			"census": true
 		},
 		{
@@ -30002,6 +30096,13 @@
 			},
 			{
 				"ids": [
+					"md.callout-help.live",
+					"md.callout-metadata.live"
+				],
+				"reason": "the same target element"
+			},
+			{
+				"ids": [
 					"md.code-yaml.live",
 					"md.code-yaml.source"
 				],
@@ -30079,8 +30180,29 @@
 			},
 			{
 				"ids": [
-					"md.highlight-yellow.live",
-					"md.highlight-yellow.reading"
+					"md.highlight-blue.live",
+					"md.highlight-blue.reading"
+				],
+				"reason": "the same element in another editor mode"
+			},
+			{
+				"ids": [
+					"md.highlight-green.live",
+					"md.highlight-green.reading"
+				],
+				"reason": "the same element in another editor mode"
+			},
+			{
+				"ids": [
+					"md.highlight-purple.live",
+					"md.highlight-purple.reading"
+				],
+				"reason": "the same element in another editor mode"
+			},
+			{
+				"ids": [
+					"md.highlight-red.live",
+					"md.highlight-red.reading"
 				],
 				"reason": "the same element in another editor mode"
 			},
@@ -30180,20 +30302,6 @@
 				"ids": [
 					"md.property-description.live",
 					"md.property-description.reading"
-				],
-				"reason": "the same target element"
-			},
-			{
-				"ids": [
-					"md.property-due.live",
-					"md.property-due.reading"
-				],
-				"reason": "the same target element"
-			},
-			{
-				"ids": [
-					"md.property-empty.live",
-					"md.property-empty.reading"
 				],
 				"reason": "the same target element"
 			},
@@ -30657,6 +30765,8 @@
 			"canvas.node-color-custom": 1,
 			"canvas.node-editing": 1,
 			"canvas.node-file": 1,
+			"canvas.node-image": 1,
+			"canvas.node-link": 1,
 			"canvas.node-missing-file": 1,
 			"canvas.node-selected": 1,
 			"canvas.node-text": 1,
@@ -31115,8 +31225,10 @@
 			"md.combo-unresolved-link-code.source": 1,
 			"md.comment-block.live": 1,
 			"md.comment-block.source": 1,
+			"md.embed-audio.live": 1,
+			"md.embed-audio.reading": 1,
 			"md.embed-base-codeblock.live": 1,
-			"md.embed-base-codeblock.reading": 0.997,
+			"md.embed-base-codeblock.reading": 1,
 			"md.embed-base.live": 1,
 			"md.embed-base.reading": 1,
 			"md.embed-block.live": 1,
@@ -31125,6 +31237,12 @@
 			"md.embed-canvas.reading": 1,
 			"md.embed-heading.live": 1,
 			"md.embed-heading.reading": 1,
+			"md.embed-image-markdown.live": 1,
+			"md.embed-image-markdown.reading": 1,
+			"md.embed-image-resized.live": 1,
+			"md.embed-image-resized.reading": 1,
+			"md.embed-image.live": 1,
+			"md.embed-image.reading": 1,
 			"md.embed-image.source": 1,
 			"md.embed-missing.live": 1,
 			"md.embed-missing.reading": 1,
@@ -31211,6 +31329,7 @@
 			"md.html-block.source": 1,
 			"md.html-details.live": 1,
 			"md.html-details.reading": 1,
+			"md.html-iframe.reading": 1,
 			"md.inline-code.live": 1,
 			"md.inline-code.reading": 1,
 			"md.inline-code.source": 1,
@@ -31575,6 +31694,7 @@
 			"qc.canvas.connecting": 1,
 			"qc.canvas.connection-point": 1,
 			"qc.canvas.interaction-layer": 1,
+			"qc.canvas.node-placeholder": 1,
 			"qc.canvas.resizer": 1,
 			"qc.canvas.selection-box": 1,
 			"qc.canvas.snaps": 1,
@@ -31789,20 +31909,6 @@
 			"view.video": 1,
 			"view.window-unfocused": 1
 		},
-		"limits": {
-			"canvas.node-image": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"canvas.node-link": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"md.embed-audio.live": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"md.embed-audio.reading": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"md.embed-image-markdown.live": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"md.embed-image-markdown.reading": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"md.embed-image-resized.live": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"md.embed-image-resized.reading": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"md.embed-image.live": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"md.embed-image.reading": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"md.html-iframe.reading": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"qc.canvas.node-placeholder": "nothing to compare: every part of the target is left out (images, media or frames that do not replay offline, animated parts, or other parts drawn over it live)",
-			"qc.media.forced-colors": "forced colors: the system palette differs between Electron's Chromium and the replay's, so only block colors are judged"
-		}
+		"limits": {}
 	}
 }
