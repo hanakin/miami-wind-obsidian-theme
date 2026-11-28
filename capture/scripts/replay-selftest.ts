@@ -188,6 +188,37 @@ const CASES: { id: string; name: string; mutate?: Mutation; pass: boolean }[] = 
 		mutate: { js: `${CLEAR_FRAME_CANVASES}` },
 		pass: false,
 	},
+	// QC round 7: recolors where raster differences are allowed, forced colors, graph colors.
+	{ id: "qc.gap.canvas-readonly", name: "unchanged", pass: true },
+	{
+		id: "qc.gap.canvas-readonly",
+		name: "scaled card border #555555",
+		mutate: { css: ".canvas-node-container { border-color: #555555 !important; }" },
+		pass: false,
+	},
+	{ id: "mobile.tablet.settings", name: "unchanged", pass: true },
+	{
+		id: "mobile.tablet.settings",
+		name: "search icon (image mask) purple",
+		mutate: { css: ".search-input-container::before { background-color: #c586f7 !important; }" },
+		pass: false,
+	},
+	{
+		id: "qc.media.forced-colors",
+		name: "table borders red (forced-color-adjust none)",
+		mutate: {
+			css: ".markdown-rendered th, .markdown-rendered td { forced-color-adjust: none !important; border-color: red !important; color: CanvasText !important; background-color: Canvas !important; }",
+		},
+		pass: false,
+	},
+	{
+		id: "qc.graph.all-node-kinds",
+		name: "graph node colors lime",
+		mutate: {
+			css: "body { --graph-node: lime !important; --graph-node-tag: lime !important; --graph-node-attachment: lime !important; --graph-node-unresolved: lime !important; }",
+		},
+		pass: false,
+	},
 	{ id: "qc.graph.all-node-kinds", name: "unchanged", pass: true },
 	{
 		id: "qc.graph.all-node-kinds",
