@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-27T17:19:06.441Z",
+	"generated": "2026-11-28T00:26:20.430Z",
 	"isolation": [
 		"8 processes checked: none reference /home/hanakin/.config/obsidian, none can reach the desktop session (no display, bus or runtime dir)",
 		"Obsidian writes its app data to /home/hanakin/Work/miami-wind-obsidian-capture/config/obsidian"

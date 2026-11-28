@@ -134,6 +134,13 @@ export interface ChecklistItem {
  * - data-capture-input-selection="START END DIRECTION" on the focused field: its selected text.
  * - data-capture-cm-selection: CodeMirror's own selection ranges (reference only; the editor
  *   draws them as .cm-selectionBackground boxes, which are in the markup).
+ * - data-capture-canvas-blank on a <canvas> that read back blank (fully transparent) live: replayed
+ *   as it is, not masked.
+ * - data-capture-ghost-of="PATH" on the copy a reorder drag's ghost holds (.drag-reorder-ghost >
+ *   .mod-dragged-item), and data-capture-drag-source="PATH" on its live source: the same live path
+ *   (nth-child steps from <html>), in whichever fixtures hold them. The source is the one
+ *   .is-being-dragged element of the same tag and classes (state classes aside); with none or
+ *   several, the copy says data-capture-ghost-of="unknown" (not proven).
  * - data-capture-frame-styles="TOKENS" on an iframe: its document's stylesheets in order, like
  *   runtimeStyles below (its srcdoc holds the markup without them); data-capture-frame-empty: the
  *   frame showed nothing live (a resize helper), so it hides nothing.
@@ -168,18 +175,22 @@ export interface FixtureEntry {
 	evidence?: Evidence;
 	/**
 	 * Intrinsic size (naturalWidth/naturalHeight) of each image whose source does not load offline
-	 * (app:, https:, file:), by zero-based index in the saved fixture's document.images order.
+	 * (app:, https:, file:), by zero-based index in the saved fixture's document.images order. An
+	 * image from the capture vault also names its file (under capture/fixtures/, by content), which
+	 * a replay draws in its place.
 	 */
-	imageSizes?: { index: number; width: number; height: number }[];
+	imageSizes?: { index: number; width: number; height: number; file?: string }[];
 	/** "xhtml" when the tree cannot be written as HTML text (e.g. a <div> inside a <p>); parse it as application/xhtml+xml. */
 	format?: "xhtml";
 	/**
 	 * Pixels of each painted <canvas>, by zero-based index in the saved fixture's canvas order:
 	 * a PNG under capture/fixtures/ to draw into it. source "canvas" is the canvas's own pixels;
-	 * "screen" is a crop of the window (WebGL canvases read back empty), so it also holds anything
-	 * drawn over the canvas.
+	 * "screen" is a crop of the window (a canvas that cannot be read), so it also holds anything
+	 * drawn over the canvas. A canvas that read back blank has none (data-capture-canvas-blank). A canvas inside a frame names the frame by its path: the index of each
+	 * frame in its document's iframe order, outermost first ("0", "0/1"); index is then the canvas's
+	 * index in that frame's document.
 	 */
-	canvasPixels?: { index: number; file: string; source: "canvas" | "screen" }[];
+	canvasPixels?: { index: number; frame?: string; file: string; source: "canvas" | "screen" }[];
 	/** Size in CSS pixels of the window the target lived in (also data-capture-viewport on <html>). */
 	viewport?: [number, number];
 	/**
@@ -226,6 +237,12 @@ export interface Evidence {
 	expect?: string;
 	/** theme.css selector ids that hit a seen element in the off-page copy of the live document. */
 	live: string[];
+	/**
+	 * Font properties of the target's elements with visible text of their own (family, size, weight,
+	 * style, stretch, variant, features, variations, letter and word spacing, transform, decoration,
+	 * stroke, shadow), joined with "|", and how many elements have each. A replay must have the same.
+	 */
+	textStyles?: Record<string, number>;
 	/** Selector ids that only hit elements in the scope that were not visibly painted. */
 	domOnly?: string[];
 	/** Number of elements recorded as visibly painted inside the screenshot clip. */

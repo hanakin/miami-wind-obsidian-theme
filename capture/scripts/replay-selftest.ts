@@ -28,6 +28,10 @@ const DROP_ONE_BORDER = `(() => {
 	return null;
 })()`;
 
+/** Clears every canvas inside the document's frames. */
+const CLEAR_FRAME_CANVASES =
+	"for (const f of document.querySelectorAll('iframe')) for (const c of f.contentDocument?.querySelectorAll('canvas') ?? []) c.getContext('2d')?.clearRect(0, 0, c.width, c.height);";
+
 const CASES: { id: string; name: string; mutate?: Mutation; pass: boolean }[] = [
 	{ id: "command.app:open-vault", name: "unchanged", pass: true },
 	{
@@ -75,12 +79,121 @@ const CASES: { id: string; name: string; mutate?: Mutation; pass: boolean }[] = 
 		},
 		pass: false,
 	},
+	// QC round 6: small icon and label changes, focus rings, sparse regions, forced colors.
+	{
+		id: "command.app:open-vault",
+		name: "one icon #666 to #878787",
+		mutate: {
+			js: "document.querySelector('[data-capture-target] svg.svg-icon').style.setProperty('color', '#878787', 'important')",
+		},
+		pass: false,
+	},
+	{
+		id: "command.app:open-vault",
+		name: "one icon shifted 2 px",
+		mutate: {
+			js: "document.querySelector('[data-capture-target] svg.svg-icon').style.setProperty('transform', 'translateX(2px)', 'important')",
+		},
+		pass: false,
+	},
+	{
+		id: "command.app:open-vault",
+		name: "version label pink",
+		mutate: { css: ".splash-brand-version { color: #c586f7 !important; }" },
+		pass: false,
+	},
+	{
+		id: "command.app:open-vault",
+		name: "one control shifted 2 px",
+		mutate: {
+			js: "[...document.querySelectorAll('[data-capture-target] button')].find((x) => x.getBoundingClientRect().width > 8).style.setProperty('transform', 'translateX(2px)', 'important')",
+		},
+		pass: false,
+	},
+	{ id: "chrome.sidebar-tab.hover", name: "unchanged", pass: true },
+	{
+		id: "chrome.sidebar-tab.hover",
+		name: "cyan icon to purple",
+		mutate: { css: "[data-capture-target] svg { color: #c586f7 !important; }" },
+		pass: false,
+	},
+	{ id: "modal.toggle.focus-visible", name: "unchanged", pass: true },
+	{
+		id: "modal.toggle.focus-visible",
+		name: "focus ring 1 px",
+		mutate: { css: "[data-capture-target] { outline-width: 1px !important; }" },
+		pass: false,
+	},
+	{
+		id: "modal.toggle.focus-visible",
+		name: "focus ring removed",
+		mutate: { css: "[data-capture-target] { outline: none !important; }" },
+		pass: false,
+	},
+	{ id: "md.embed-audio.reading", name: "unchanged", pass: true },
+	{
+		id: "md.embed-audio.reading",
+		name: "background around the player changed",
+		mutate: { css: "[data-capture-target] { background-color: #c586f7 !important; }" },
+		pass: false,
+	},
+	{ id: "canvas.node-image", name: "unchanged", pass: true },
+	{
+		id: "canvas.node-image",
+		name: "node border color changed",
+		mutate: {
+			css: "[data-capture-target], [data-capture-target] .canvas-node-container { border-color: #c586f7 !important; }",
+		},
+		pass: false,
+	},
+	{ id: "qc.canvas.node-placeholder", name: "unchanged", pass: true },
+	{
+		id: "qc.canvas.node-placeholder",
+		name: "placeholder color changed",
+		mutate: {
+			css: "[data-capture-target] { background-color: #c586f7 !important; }",
+		},
+		pass: false,
+	},
+	{ id: "qc.media.forced-colors", name: "unchanged", pass: true },
+	{
+		id: "qc.media.forced-colors",
+		name: "every svg hidden",
+		mutate: { css: "svg { opacity: 0 !important; }" },
+		pass: false,
+	},
+	{
+		id: "qc.media.forced-colors",
+		name: "icons shifted 2 px",
+		mutate: { css: "svg { transform: translateX(2px) !important; }" },
+		pass: false,
+	},
+	{
+		id: "qc.media.forced-colors",
+		name: "paragraphs italic",
+		mutate: { css: ".markdown-rendered p { font-style: italic !important; }" },
+		pass: false,
+	},
+	{
+		id: "command.app:open-vault",
+		name: "button labels italic",
+		mutate: { css: "button { font-style: italic !important; }" },
+		pass: false,
+	},
+	// The graph draws in a canvas inside its frame, with its own saved pixels.
+	{ id: "graph.view", name: "unchanged", pass: true },
+	{
+		id: "graph.view",
+		name: "frame canvas cleared",
+		mutate: { js: `${CLEAR_FRAME_CANVASES}` },
+		pass: false,
+	},
 	{ id: "qc.graph.all-node-kinds", name: "unchanged", pass: true },
 	{
 		id: "qc.graph.all-node-kinds",
 		name: "saved graph pixels blanked",
 		mutate: {
-			js: "for (const c of document.querySelectorAll('canvas')) c.getContext('2d')?.clearRect(0, 0, c.width, c.height)",
+			js: `for (const c of document.querySelectorAll('canvas')) c.getContext('2d')?.clearRect(0, 0, c.width, c.height); ${CLEAR_FRAME_CANVASES}`,
 		},
 		pass: false,
 	},
