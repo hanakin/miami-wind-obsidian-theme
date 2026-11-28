@@ -4,6 +4,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { afterAll, beforeAll, expect, it } from "vitest";
+import { addresses } from "./address.ts";
 import { validator } from "./inputs.ts";
 import { entries, type FixtureIndex, frameHandler } from "./plugin.ts";
 
@@ -14,7 +15,7 @@ let origin = "";
 beforeAll(async () => {
 	await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
 	const { port } = server.address() as AddressInfo;
-	handle = frameHandler(port - 1, new Map());
+	handle = frameHandler(addresses({ PORT: String(port - 1) }), new Map());
 	origin = `http://127.0.0.1:${port}`;
 });
 afterAll(() => {

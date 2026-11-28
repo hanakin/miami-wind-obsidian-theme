@@ -77,3 +77,16 @@ it("accepts only the known kinds of side from the page", () => {
 		expect(() => parseChoice(bad)).toThrow("Unknown kind");
 	}
 });
+
+it("reads ~/ as the home folder of whoever runs the workbench", () => {
+	const home = process.env.HOME;
+	process.env.HOME = root;
+	try {
+		const side = resolveSide(root, { kind: "path", path: "~/my-theme" });
+		expect(side.css).toBe(css);
+		expect(side.label).toBe("my-theme/theme.css");
+		expect(() => resolveSide(root, { kind: "path", path: "~other/x.css" })).toThrow(/full path/);
+	} finally {
+		process.env.HOME = home;
+	}
+});

@@ -1,0 +1,18 @@
+# The Miami Wind workbench as a user service on a server. It listens on 127.0.0.1 only;
+# `tailscale serve` puts it on the tailnet over HTTPS (see deploy.sh for the two commands).
+# Installed by deploy.sh into ~/.config/systemd/user/.
+[Unit]
+Description=Miami Wind workbench
+After=network-online.target remote-fs.target
+
+[Service]
+WorkingDirectory=%h/Work/miami-wind-workbench
+Environment=PATH=%h/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin
+# PORT, WORKBENCH_ORIGIN and WORKBENCH_FRAME_ORIGIN (workbench/app/address.ts).
+EnvironmentFile=%h/.config/miami-wind-workbench.env
+ExecStart=%h/.local/share/mise/shims/bun --bun vite --config workbench/app/vite.config.ts
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

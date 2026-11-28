@@ -4,6 +4,7 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join } from "node:path";
 
 /** What a side is pointed at, as chosen in the page. */
@@ -38,8 +39,10 @@ const side = (label: string, css: string, watch?: string): Side => ({
 });
 
 /** A theme file on disk: a regular .css file of sane size, read once. */
-function file(path: string, label: string): Side {
-	if (!isAbsolute(path)) throw new Error("Give the full path, starting with /.");
+function file(typed: string, label: string): Side {
+	// "~/Holocron/…" means the home folder of whoever runs the workbench.
+	const path = typed === "~" || typed.startsWith("~/") ? join(homedir(), typed.slice(1)) : typed;
+	if (!isAbsolute(path)) throw new Error("Give the full path, starting with / or ~/.");
 	if (!existsSync(path)) throw new Error("Nothing is at that path.");
 	// A folder means the theme.css inside it, the way Obsidian's theme folders are laid out.
 	const target = statSync(path).isDirectory() ? join(path, "theme.css") : path;

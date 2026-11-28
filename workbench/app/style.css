@@ -904,3 +904,11 @@ details.section .group {
 .used a:focus-visible {
 	text-decoration: underline;
 }
+
+/* What a path may be, under the path box. */
+.side-hint {
+	width: 100%;
+	margin: 0 0 0 48px;
+	color: var(--grey-500);
+	font-size: 12px;
+}

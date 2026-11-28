@@ -1050,7 +1050,7 @@ function sidePicker(which: Which): HTMLElement {
 		placeholder:
 			choice.kind === "git"
 				? "tag or commit, for example 1.2.1"
-				: "/full/path/to/theme folder or .css file",
+				: "/full/path or ~/path to a theme folder or .css file",
 		value: choice.kind === "git" ? choice.ref : choice.kind === "path" ? choice.path : "",
 	}) as HTMLInputElement;
 	const set = (next: SideChoice) => {
@@ -1079,6 +1079,12 @@ function sidePicker(which: Which): HTMLElement {
 		h("span", { class: "side-name" }, which === "left" ? "Left" : "Right"),
 		kind,
 		typed && detail,
+		choice.kind === "path" &&
+			h(
+				"p",
+				{ class: "side-hint" },
+				"A theme folder or .css file on the machine the workbench runs on. ~/Holocron/… paths work.",
+			),
 		"error" in side && !empty && h("p", { class: "side-error" }, side.error),
 	);
 }

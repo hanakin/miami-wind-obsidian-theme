@@ -24,6 +24,7 @@ import Specificity from "@bramus/specificity";
 import type { Plugin } from "vite";
 import { replayCss } from "../../capture/scripts/css.ts";
 import { COMPONENTS } from "../../capture/scripts/engine.ts";
+import { type Addresses, addresses } from "./address.ts";
 import { changes, compareStates } from "./compare-states.ts";
 import { touchedComponents } from "./elements.ts";
 import { type Focus, frameCsp, frameDocument, replayCall } from "./frame.ts";
@@ -415,14 +416,17 @@ function guarded(handle: Handler): Handler {
 }
 
 /**
- * Answers the fixture frames' own address (the port after the workbench's): a frame's document,
+ * Answers the fixture frames' own address (the port after the workbench's, or the frames' public
+ * origin when a proxy stands in front): a frame's document,
  * the stylesheet it links, and Obsidian's own fonts and images. GET only, this host only.
  */
-export function frameHandler(port: number, byId: Map<string, Captured>): Handler {
-	const pageOrigin = `http://127.0.0.1:${port}`;
-	const origin = `http://127.0.0.1:${port + 1}`;
+export function frameHandler(at: Addresses, byId: Map<string, Captured>): Handler {
+	const pageOrigin = at.page;
+	const origin = at.frames;
+	// Asked for by one of the frames' own two names only: the local one, or the public one.
+	const hosts = [new URL(at.local.frames).host, new URL(at.frames).host];
 	return guarded((req, res) => {
-		if (req.headers.host !== `127.0.0.1:${port + 1}` || req.method !== "GET") {
+		if (!hosts.includes(req.headers.host ?? "") || req.method !== "GET") {
 			return void send(res, 404, "text/plain", "Not found");
 		}
 		const url = new URL(req.url ?? "/", origin);
@@ -521,18 +525,20 @@ export function viewer(): Plugin {
 				watched.add(path);
 				watchPath(path, () => server.ws.send({ type: "custom", event: "mw:side-changed" }));
 			};
-			// Requests that act on the machine must come from the viewer's own page.
+			// Requests that act on the machine must come from the workbench's own page: its origin as
+			// the browser sees it, or its local one. Nothing else, whatever Host the request names.
+			const at = addresses();
 			const fromPage = (req: IncomingMessage) =>
 				req.method === "POST" &&
-				req.headers.origin === `http://${req.headers.host}` &&
+				[at.page, at.local.page].includes(req.headers.origin ?? "") &&
 				(req.headers["content-type"] ?? "").startsWith("application/json");
 
 			// Fixture frames live at an address of their own: the next port. They never share the
 			// workbench's origin, so nothing in a frame can read the workbench or call its API, while
 			// the replay can still reach the frames nested inside its own document.
-			const port = server.config.server.port ?? 5175;
-			const origin = `http://127.0.0.1:${port + 1}`;
-			const frames = createServer(frameHandler(port, byId));
+			const port = at.port;
+			const origin = at.frames;
+			const frames = createServer(frameHandler(at, byId));
 			// Vite restarts itself when this plugin's files change: the frame server it had must be
 			// gone before the new one takes the port, so wait for the old one and retry if needed.
 			const held = globalThis as { mwFrames?: ReturnType<typeof createServer> };
