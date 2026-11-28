@@ -5,7 +5,7 @@
 		"Checklist items shown in their claimed state: 1213/1222 (99.3%); 29 of them scripted or synthetic (labeled); state applied but its change not visible (limitation, listed): 3; excluded with reason: 6; missing: 0",
 		"theme.css selectors visibly matched (fixture and live agree, on painted elements): 240/247 (97.2%); excluded with reason: 4; scripted only (labeled): 3; missing: 0 (0 only on hidden/clipped elements, 0 only in scripted fixtures); fixture/live disagreements: 2",
 		"App CSS classes visibly captured: 1182 (11 of them classes credited by screenshot pixels (graph probes)), excluded 226, not theme-affected (accepted gaps) 244, theme-affected but out of scope (labeled) 26, theme-affected missing 0, of 1678; of the theme-affected missing: 0 in the DOM but never painted, 0 only in scripted fixtures, 0 seen in the runtime census only",
-		"Screenshots: files re-checked against recorded hashes; 68 groups of identical screenshots (66 explained by their fixtures, 2 where a state applies but does not show (limitation), 0 unexplained)",
+		"Screenshots: files re-checked against recorded hashes; 64 groups of identical screenshots (62 explained by their fixtures, 2 where a state applies but does not show (limitation), 0 unexplained)",
 		"Replay alone: 1194 fixtures rendered from their own files (recorded window size and stylesheets, canvas pixels, stand-in sizes, scroll offsets) matched their live screenshot block by block (at least 97% of 16 px blocks, lowest 100.0%) and pixel by pixel; replay limits (labeled, not compared): 0; synthetic variants (no screenshot, not replayed): 6"
 	],
 	"missingItems": [],
@@ -2733,7 +2733,6 @@
 				"command.editor:open-link-in-new-window",
 				"editor.heading-collapsed",
 				"editor.reading-selection",
-				"extra.community.plugin-details",
 				"md.blocks.reading.view",
 				"md.callouts.reading.view",
 				"md.code.reading.view",
@@ -2792,7 +2791,6 @@
 				"canvas.node-color-custom",
 				"canvas.node-editing",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"command.canvas:export-as-image",
@@ -2946,6 +2944,7 @@
 			"context": "",
 			"matchable": ".markdown-rendered h2",
 			"fixtures": [
+				"extra.community.plugin-details",
 				"md.combinations.reading.view",
 				"md.combo-heading-link.reading",
 				"md.embed-heading.live",
@@ -2965,7 +2964,6 @@
 			"liveOnly": [],
 			"domOnly": [
 				"editor.heading-collapsed",
-				"extra.community.plugin-details",
 				"extra.image-lightbox",
 				"extra.modal.close-button",
 				"extra.modal.close-button.hover",
@@ -3119,7 +3117,6 @@
 			"fixtureOnly": [],
 			"liveOnly": [],
 			"domOnly": [
-				"extra.community.plugin-details",
 				"md.embed-block.live",
 				"md.embed-heading.live",
 				"md.embed-pdf.live",
@@ -3399,7 +3396,6 @@
 				"canvas.node-editing",
 				"canvas.node-file",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -3774,7 +3770,6 @@
 				"canvas.node-editing",
 				"canvas.node-file",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -3782,6 +3777,7 @@
 				"command.canvas:export-as-image",
 				"command.canvas:jump-to-group",
 				"extra.canvas.help",
+				"extra.community.plugin-details",
 				"md.links.reading.view",
 				"md.mermaid.reading.view",
 				"md.properties.reading.view",
@@ -3892,7 +3888,6 @@
 				"canvas.node-editing",
 				"canvas.node-file",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -3900,6 +3895,7 @@
 				"command.canvas:export-as-image",
 				"command.canvas:jump-to-group",
 				"extra.canvas.help",
+				"extra.community.plugin-details",
 				"md.links.reading.view",
 				"md.mermaid.reading.view",
 				"md.properties.reading.view",
@@ -5148,7 +5144,6 @@
 				"canvas.node-color-custom",
 				"canvas.node-editing",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -5441,7 +5436,6 @@
 				"canvas.node-color-custom",
 				"canvas.node-editing",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -5825,7 +5819,6 @@
 				"canvas.node-editing",
 				"canvas.node-file",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"command.canvas:export-as-image",
@@ -7124,7 +7117,6 @@
 			"matchable": ".workspace-tabs .clickable-icon.is-active",
 			"fixtures": [
 				"chrome.workspace-tabs-icon.is-active",
-				"qc.gap.pdf-zoom-min",
 				"sidebar.tags",
 				"view.type.tag"
 			],
@@ -7140,16 +7132,7 @@
 				"extra.modal.close-button.hover",
 				"pdf.highlight",
 				"qc.gap.pdf-outline",
-				"qc.pdf.annotation-popup",
-				"qc.pdf.annotations",
 				"qc.pdf.find-settings",
-				"qc.pdf.horizontal",
-				"qc.pdf.password",
-				"qc.pdf.spread",
-				"qc.pdf.themed",
-				"qc.pdf.wrapped",
-				"qc.pdf.xfa",
-				"qc.pdf.xfa-text.focus",
 				"sidebar.search-options"
 			],
 			"synthetic": []
@@ -8855,8 +8838,7 @@
 			"context": "",
 			"matchable": ".bases-toolbar-item .text-icon-button[data-capture-state~=\"hover\"]",
 			"fixtures": [
-				"extra.bases.toolbar-button.hover",
-				"md.embed-base-codeblock.reading"
+				"extra.bases.toolbar-button.hover"
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
@@ -10256,7 +10238,6 @@
 				"canvas.node-color-custom",
 				"canvas.node-editing",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -10543,7 +10524,6 @@
 				"canvas.node-color-custom",
 				"canvas.node-editing",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -10799,7 +10779,6 @@
 				"canvas.node-color-custom",
 				"canvas.node-editing",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -11178,7 +11157,6 @@
 				"canvas.node-color-custom",
 				"canvas.node-editing",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -13203,7 +13181,6 @@
 				"canvas.node-editing",
 				"canvas.node-file",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -13247,7 +13224,6 @@
 				"extra.image-lightbox",
 				"extra.modal.close-button",
 				"extra.modal.close-button.hover",
-				"md.code-block-language-flair.live",
 				"mobile.phone.bases",
 				"mobile.phone.bases-filter",
 				"mobile.phone.bases-properties",
@@ -15399,7 +15375,6 @@
 				"canvas.node-editing",
 				"canvas.node-file",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -15558,7 +15533,6 @@
 				"canvas.node-editing",
 				"canvas.node-file",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -15716,7 +15690,6 @@
 				"canvas.node-editing",
 				"canvas.node-file",
 				"canvas.node-image",
-				"canvas.node-link",
 				"canvas.node-missing-file",
 				"canvas.node-selected",
 				"canvas.node-text",
@@ -18703,7 +18676,6 @@
 				"extra.bases.toolbar-button.hover",
 				"extra.canvas.help",
 				"extra.code-block-flair.hover",
-				"extra.community.plugin-details",
 				"extra.external-link.visited",
 				"extra.file-recovery.modal",
 				"extra.graph-color-group",
@@ -20509,11 +20481,7 @@
 			],
 			"fixtureOnly": [],
 			"liveOnly": [],
-			"domOnly": [
-				"md.code-json.live",
-				"md.code-markdown.live",
-				"md.code-ruby.live"
-			],
+			"domOnly": [],
 			"synthetic": []
 		},
 		{
@@ -20633,7 +20601,7 @@
 		{
 			"name": "audio-embed",
 			"fixture": "md.embed-audio.live",
-			"dom": "extra.image-lightbox",
+			"dom": "md.embed-base-codeblock.live",
 			"census": true
 		},
 		{
@@ -21343,7 +21311,7 @@
 		{
 			"name": "block-language-base",
 			"fixture": "md.embed-base-codeblock.live",
-			"dom": "md.embed-missing.live",
+			"dom": "md.embed-audio.live",
 			"census": true
 		},
 		{
@@ -21549,7 +21517,7 @@
 		{
 			"name": "canvas-minimap",
 			"fixture": "md.embed-canvas.live",
-			"dom": "md.embed-audio.live",
+			"dom": "extra.image-lightbox",
 			"census": true
 		},
 		{
@@ -22284,7 +22252,7 @@
 		{
 			"name": "cm-lang-base",
 			"fixture": "md.embed-base-codeblock.live",
-			"dom": "md.embed-base.live",
+			"dom": "md.embed-audio.live",
 			"census": true
 		},
 		{
@@ -22373,7 +22341,7 @@
 		{
 			"name": "cm-preview-code-block",
 			"fixture": "md.embed-base-codeblock.live",
-			"dom": "md.embed-base.live",
+			"dom": "md.embed-audio.live",
 			"census": true
 		},
 		{
@@ -23376,7 +23344,7 @@
 		{
 			"name": "file-embed-icon",
 			"fixture": "md.embed-canvas.live",
-			"dom": "md.embed-audio.live",
+			"dom": "extra.image-lightbox",
 			"census": true
 		},
 		{
@@ -24287,25 +24255,25 @@
 		{
 			"name": "internal-query",
 			"fixture": "md.embed-query.live",
-			"dom": "md.embed-missing.live",
+			"dom": "md.embed-audio.live",
 			"census": true
 		},
 		{
 			"name": "internal-query-header",
 			"fixture": "md.embed-query.live",
-			"dom": "md.embed-missing.live",
+			"dom": "md.embed-audio.live",
 			"census": true
 		},
 		{
 			"name": "internal-query-header-icon",
 			"fixture": "md.embed-query.live",
-			"dom": "md.embed-missing.live",
+			"dom": "md.embed-audio.live",
 			"census": true
 		},
 		{
 			"name": "internal-query-header-title",
 			"fixture": "md.embed-query.live",
-			"dom": "md.embed-missing.live",
+			"dom": "md.embed-audio.live",
 			"census": true
 		},
 		{
@@ -27634,7 +27602,7 @@
 		},
 		{
 			"name": "search-empty-state",
-			"fixture": "qc.media.hover-none",
+			"fixture": "sidebar.search-results",
 			"dom": "chrome.resize-handle",
 			"census": true
 		},
@@ -27700,7 +27668,7 @@
 		{
 			"name": "search-result-file-match",
 			"fixture": "extra.search-explain",
-			"dom": "md.embed-missing.live",
+			"dom": "md.embed-audio.live",
 			"census": true
 		},
 		{
@@ -27732,7 +27700,7 @@
 		{
 			"name": "search-result-file-matched-text",
 			"fixture": "extra.search-explain",
-			"dom": "md.embed-missing.live",
+			"dom": "md.embed-audio.live",
 			"census": true
 		},
 		{
@@ -28023,38 +27991,38 @@
 		{
 			"name": "setting-search-result-group",
 			"fixture": "extra.settings-search-results",
-			"dom": "extra.community.enabled",
+			"dom": "extra.style-settings.body-class",
 			"census": true
 		},
 		{
 			"name": "setting-search-result-item",
 			"fixture": "extra.settings-search-results",
-			"dom": "extra.community.enabled",
+			"dom": "extra.style-settings.body-class",
 			"census": true
 		},
 		{
 			"name": "setting-search-result-tab",
 			"excluded": "Emulated mobile pass (capture:run --mobile phone|tablet) captures the reachable mobile UI; real devices are out of scope",
 			"fixture": "extra.settings-search-results",
-			"dom": "extra.community.enabled",
+			"dom": "extra.style-settings.body-class",
 			"census": true
 		},
 		{
 			"name": "setting-search-result-tab-label",
 			"fixture": "extra.settings-search-results",
-			"dom": "extra.community.enabled",
+			"dom": "extra.style-settings.body-class",
 			"census": true
 		},
 		{
 			"name": "setting-search-result-tab-sublabel",
 			"fixture": "extra.settings-search-results",
-			"dom": "extra.community.enabled",
+			"dom": "extra.style-settings.body-class",
 			"census": true
 		},
 		{
 			"name": "setting-search-result-tab-text",
 			"fixture": "extra.settings-search-results",
-			"dom": "extra.community.enabled",
+			"dom": "extra.style-settings.body-class",
 			"census": true
 		},
 		{
@@ -29207,7 +29175,7 @@
 		},
 		{
 			"name": "video-container",
-			"fixture": "view.stacked-tabs",
+			"fixture": "view.type.video",
 			"dom": "view.empty.action.hover",
 			"census": true
 		},
@@ -29259,14 +29227,14 @@
 		{
 			"name": "view-header-breadcrumb",
 			"fixture": "chrome.root-split",
-			"dom": "chrome.backlinks-pane",
+			"dom": "canvas.node-link",
 			"synthetic": "qc.rtl-language.window.macos",
 			"census": true
 		},
 		{
 			"name": "view-header-breadcrumb-separator",
 			"fixture": "chrome.root-split",
-			"dom": "chrome.backlinks-pane",
+			"dom": "canvas.node-link",
 			"synthetic": "qc.rtl-language.window.macos",
 			"census": true
 		},
@@ -30117,13 +30085,6 @@
 			},
 			{
 				"ids": [
-					"md.embed-audio.live",
-					"md.embed-audio.reading"
-				],
-				"reason": "the same element in another editor mode"
-			},
-			{
-				"ids": [
 					"md.embed-block.live",
 					"md.embed-block.reading"
 				],
@@ -30142,13 +30103,6 @@
 					"md.embed-pdf.reading"
 				],
 				"reason": "the same element box and screenshot area"
-			},
-			{
-				"ids": [
-					"md.embed-video.live",
-					"md.embed-video.reading"
-				],
-				"reason": "the same element in another editor mode"
 			},
 			{
 				"ids": [
@@ -30182,27 +30136,6 @@
 				"ids": [
 					"md.highlight-blue.live",
 					"md.highlight-blue.reading"
-				],
-				"reason": "the same element in another editor mode"
-			},
-			{
-				"ids": [
-					"md.highlight-green.live",
-					"md.highlight-green.reading"
-				],
-				"reason": "the same element in another editor mode"
-			},
-			{
-				"ids": [
-					"md.highlight-purple.live",
-					"md.highlight-purple.reading"
-				],
-				"reason": "the same element in another editor mode"
-			},
-			{
-				"ids": [
-					"md.highlight-red.live",
-					"md.highlight-red.reading"
 				],
 				"reason": "the same element in another editor mode"
 			},
@@ -30323,6 +30256,13 @@
 				"ids": [
 					"md.property-list.live",
 					"md.property-list.reading"
+				],
+				"reason": "the same target element"
+			},
+			{
+				"ids": [
+					"md.property-not-done.live",
+					"md.property-not-done.reading"
 				],
 				"reason": "the same target element"
 			},

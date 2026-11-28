@@ -1897,11 +1897,14 @@ const gapsQc: Scene = {
 			component: "bases-cards",
 			surface: "bases",
 			target: leaf(
-				".bases-cards-item:has(.bases-cards-cover img), .bases-cards-item:has(.bases-cards-cover[style*='background'])",
+				".bases-cards-item:has(.bases-cards-cover img), .bases-cards-item:has(.bases-cards-cover[style*='url('])",
 			),
 			expect: ":has(.bases-cards-cover)",
 			before: async (ctx) => {
-				await click(ctx, leaf("[aria-label='Toggle sidebar']"));
+				// Closes the PDF sidebar the item before opened (when it ran).
+				await ctx.js(
+					"cap.ROOTS.leaf()?.querySelector(\"[aria-label='Toggle sidebar']\")?.click(); await sleep(300);",
+				);
 				await openBase("Cards view")(ctx);
 			},
 			note: "The Cards view uses note.cover as its image property; Gaps.md has a cover.",

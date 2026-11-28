@@ -289,6 +289,41 @@ export const INPAGE = String.raw`
 		}
 		return false;
 	}
+	/**
+	 * The colors e paints with (text, background, the four borders, and a shown ::before/::after's
+	 * background, text and image), as one string: recorded live where the replay check allows
+	 * raster differences, so a recolor there still fails.
+	 */
+	function paintOf(e) {
+		const win = e.ownerDocument.defaultView;
+		const cs = win.getComputedStyle(e);
+		const hash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+		const out = [cs.color, cs.backgroundColor, cs.borderTopColor, cs.borderRightColor, cs.borderBottomColor, cs.borderLeftColor];
+		for (const pe of ["::before", "::after"]) {
+			const p = win.getComputedStyle(e, pe);
+			if (p.content === "none" || p.content === "normal") continue;
+			out.push(pe, p.color, p.backgroundColor, hash(p.getPropertyValue("-webkit-mask-image") + " " + p.maskImage + " " + p.backgroundImage));
+		}
+		return out.join(" ");
+	}
+	/**
+	 * What else changes how e's paint comes out: opacity, filter and blend mode of e, of its shown
+	 * ::before/::after, and of every ancestor that sets one (recorded next to paintOf).
+	 */
+	function paintFx(e) {
+		const win = e.ownerDocument.defaultView;
+		const fx = (c) => [c.opacity, c.filter, c.mixBlendMode].join("/");
+		const out = [fx(win.getComputedStyle(e))];
+		for (const pe of ["::before", "::after"]) {
+			const p = win.getComputedStyle(e, pe);
+			if (p.content !== "none" && p.content !== "normal") out.push(pe + fx(p));
+		}
+		for (let a = e.parentElement; a; a = a.parentElement) {
+			const c = win.getComputedStyle(a);
+			if (c.opacity !== "1" || c.filter !== "none" || c.mixBlendMode !== "normal") out.push(a.localName + ":" + fx(c));
+		}
+		return out.join(" ");
+	}
 	/** True when h paints a background (color with alpha, or an image) over its area. */
 	function paintsBackground(win, h) {
 		const cs = win.getComputedStyle(h);
@@ -647,6 +682,27 @@ export const INPAGE = String.raw`
 			twin.get(g)?.setAttribute("data-capture-ghost-of", path);
 			twin.get(src[0])?.setAttribute("data-capture-drag-source", path);
 		}
+		// Where the replay check allows raster differences between builds, it needs the live paint
+		// colors: borders under a scale transform, image-mask icons on pseudo-elements, rounded
+		// inline backgrounds (see replay.ts, soft bands).
+		{
+			const dv = doc.defaultView;
+			const paint = new Set();
+			const all = [...doc.body.querySelectorAll("*")];
+			for (const e of all) {
+				const cs = dv.getComputedStyle(e);
+				const m = cs.transform.match(/^matrix\(([^,]+),\s*([^,]+)/);
+				if (m && Math.abs(Math.hypot(Number(m[1]), Number(m[2])) - 1) > 0.01)
+					for (const d of [e, ...e.querySelectorAll("*")].slice(0, 2000)) { const dc = dv.getComputedStyle(d); if (["Top", "Right", "Bottom", "Left"].some((k) => parseFloat(dc["border" + k + "Width"]) > 0)) paint.add(d); }
+				if (cs.position !== "static")
+					for (const pe of ["::before", "::after"]) { const p = dv.getComputedStyle(e, pe); if (p.content !== "none" && p.content !== "normal" && p.position === "absolute" && (p.getPropertyValue("-webkit-mask-image") + p.maskImage + p.backgroundImage).includes("url(")) paint.add(e); }
+				if (/^(span|mark|code|a|em|strong)$/.test(e.localName) && cs.display.startsWith("inline") && cs.borderRadius !== "0px" && (cs.backgroundColor !== "rgba(0, 0, 0, 0)" || cs.backgroundImage !== "none")) paint.add(e);
+			}
+			for (const e of paint) {
+				twin.get(e)?.setAttribute("data-capture-paint", paintOf(e));
+				twin.get(e)?.setAttribute("data-capture-paint-fx", paintFx(e));
+			}
+		}
 		const trimmed = applyTrim(t, opts.trim);
 		const back = new Map();
 		for (const [o, c] of twin) back.set(c, o);
@@ -682,7 +738,10 @@ export const INPAGE = String.raw`
 		function keepFrame(fc, fo, ox, oy, path) {
 			let idoc = null;
 			try { idoc = fo?.contentDocument; } catch {}
-			if (idoc?.body && ![...idoc.body.querySelectorAll("*")].some((e) => e.getClientRects().length) && !idoc.body.innerText?.trim()) {
+			// A sandboxed frame with no src and no srcdoc (Obsidian strips an HTML block's srcdoc)
+			// shows the blank document, though its document cannot be read.
+			const blank = !idoc && fo && !fc.getAttribute("src") && !fc.hasAttribute("srcdoc");
+			if (blank || (idoc?.body && ![...idoc.body.querySelectorAll("*")].some((e) => e.getClientRects().length) && !idoc.body.innerText?.trim())) {
 				fc.setAttribute("data-capture-frame-empty", "");
 				return;
 			}
@@ -1212,6 +1271,6 @@ export const INPAGE = String.raw`
 		const r = scroller.getBoundingClientRect();
 		return scroller.scrollHeight > scroller.clientHeight && x > r.left + scroller.clientLeft + scroller.clientWidth && x < r.right && y > r.top && y < r.bottom;
 	}
-	window.cap = { clear, textStyles, canvasesStill, sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges, candidates, stackAt };
+	window.cap = { clear, textStyles, canvasesStill, paintOf, paintFx, sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges, candidates, stackAt };
 })();
 `;
