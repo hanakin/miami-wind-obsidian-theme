@@ -4,8 +4,11 @@ input,
 .combobox-button {
 	--background-modifier-form-field: var(--grey-11);
 	--background-modifier-form-field-hover: var(--grey-11);
+
 	--slider-track-background: var(--grey-11);
+
 	--mw-input-border: var(--grey-9);
+
 	--checkbox-border-color: var(--grey-9);
 	--checkbox-border-color-hover: var(--grey-9);
 	--checkbox-color: var(--grey-11);
@@ -25,6 +28,7 @@ textarea:focus-within,
 .combobox-button:focus-visible,
 .combobox-button:focus-within {
 	--mw-input-border: var(--cyan);
+
 	--checkbox-border-color: var(--cyan);
 	--checkbox-border-color-hover: var(--cyan);
 	border-color: var(--cyan);
@@ -43,9 +47,8 @@ input[type='radio']:checked:hover {
 	border-color: var(--checkbox-border-color);
 }
 
-/* These search inputs reset borders literally; preserve their old computed border colors. */
-.combobox .search-input-container input[type='search'],
-.bases-toolbar-menu-container .search-input-container input[type='search'] {
+/* Search inputs use the shared field fill and state border color. */
+.combobox .search-input-container input[type='search'] {
 	background-color: var(--grey-11);
 	border-color: var(--mw-input-border);
 }
@@ -54,6 +57,7 @@ input[type='radio']:checked:hover {
 .combobox-button {
 	--dropdown-background: var(--grey-11);
 	--dropdown-background-hover: var(--grey-11);
+
 	--metadata-label-background-active: var(--grey-11);
 }
 
@@ -73,42 +77,7 @@ input[type] {
 	border-color: var(--mw-input-border);
 }
 
-/* Shared icon controls in Bases. */
-
-/* Sheet filter buttons have literal app fills; tie only those exact selectors. */
-.menu.mod-sheet .filter-row .filter-property-select.combobox-button,
-.drag-reorder-ghost.mod-sheet .filter-row .filter-property-select,
-.menu.mod-sheet .filter-row .filter-operator.combobox-button,
-.drag-reorder-ghost.mod-sheet .filter-row .filter-operator {
-	background-color: var(--grey-11);
-}
-
-/* Editable table values otherwise reset their inputs with background shorthand. */
-.bases-rendered-value input {
-	background-color: var(--grey-11);
-}
-
-/* Shared text fields in the Properties editor. */
-.metadata-property-key-input {
-	--metadata-label-text-color: var(--magenta);
-}
-
-/* Tie Obsidian’s literal transparent property-input fills without affecting pills. */
-
-.metadata-property .metadata-property-key-input,
-.metadata-property .metadata-property-key-input:hover,
-.metadata-property .metadata-property-key-input:active,
-.metadata-property .metadata-property-key-input:focus,
-.metadata-property-value .metadata-input-text,
-.metadata-property-value .metadata-input-text:is(:hover, :active, :focus, :focus-within),
-.metadata-property-value .metadata-input-number,
-.metadata-property-value .metadata-input-number:is(:hover, :active, :focus, :focus-within),
-.metadata-property-value .multi-select-container input {
-	background-color: var(--grey-11);
-	border-color: var(--mw-input-border);
-}
-
-/* The former modal hover color was hidden by the global important border; keep that paint. */
+/* Modal input hover retains the shared field border. */
 .modal input:hover {
 	border-color: var(--mw-input-border);
 }
@@ -116,19 +85,6 @@ input[type] {
 /* Phone prompt inputs set a separate border shorthand; preserve the shared field border paint. */
 .is-phone .prompt-input[type='text'] {
 	border-color: var(--mw-input-border);
-}
-
-/* Shared inputs in the XFA layer. */
-
-/* XFA’s layer reset also clears checkbox fills; its inputs have no inline fill literals. */
-.xfaLayer input {
-	background-color: var(--grey-11);
-	border-color: var(--mw-input-border);
-}
-
-/* The sort-direction divider reads this border token; focus shadows use a separate token. */
-.bases-sort-direction {
-	--background-modifier-border: var(--mw-input-border);
 }
 
 /* Tie the app’s literal transparent Vim command-line focus fill at 0,6,1. */

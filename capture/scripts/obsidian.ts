@@ -33,7 +33,7 @@ const SESSION_VARS = [
 	"SWAYSOCK",
 ];
 const REPO = new URL("../../", import.meta.url).pathname;
-const ELECTRON = "/usr/lib/electron43/electron";
+const ELECTRON = process.env.OBSIDIAN_ELECTRON ?? "/usr/lib/electron43/electron";
 // The Arch package's loader. It runs the newest obsidian-<version>.asar found in the user-data
 // dir, so dropping a copy of Mike's self-updated 1.15.1 asar there runs 1.15.1.
 const APP = "/usr/lib/obsidian/app.asar";

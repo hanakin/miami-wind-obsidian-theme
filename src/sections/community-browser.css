@@ -1,0 +1,7 @@
+/* Disabled community-browser sidebar button text. */
+
+/* Shared component adjustment: clickable-icon in the community browser.
+ * Tie Obsidian 1.15.1’s 0,3,1 disabled sidebar button color. */
+.mod-community-modal button.clickable-icon[aria-disabled='true'] {
+	color: var(--text-disabled);
+}

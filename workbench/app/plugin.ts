@@ -40,7 +40,7 @@ const paths = {
 	diffs: `${ROOT}workbench/out/component-diffs.json`,
 	compare: `${ROOT}workbench/out/compare.json`,
 	fixtures: `${ROOT}capture/fixtures.json`,
-	usage: `${ROOT}component-usage.json`,
+	usage: `${ROOT}workbench/component-usage.json`,
 };
 
 // The highest specificity in a component's selector list.
@@ -465,6 +465,7 @@ export function frameHandler(port: number, byId: Map<string, Captured>): Handler
 			// The app's own fonts and images, from the files extracted beside app.css. The real
 			// path must be a file inside that folder.
 			const root = `${APP}/assets`;
+			if (!existsSync(root)) return void send(res, 404, "text/plain", "Not found");
 			const path = resolve(root, decodeURIComponent(url.pathname.slice("/assets/".length)));
 			if (!existsSync(path)) return void send(res, 404, "text/plain", "Not found");
 			const real = realpathSync(path);

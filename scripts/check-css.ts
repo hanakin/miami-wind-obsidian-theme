@@ -5,7 +5,7 @@ const result = await compile();
 await lintPublished(result.css);
 for (const [file, expected] of [
 	["theme.css", result.css],
-	["component-usage.json", result.usage],
+	["workbench/component-usage.json", result.usage],
 ] as const) {
 	if ((await readFile(file, "utf8")) !== expected)
 		throw new Error(`${file} is stale; run bun run build`);

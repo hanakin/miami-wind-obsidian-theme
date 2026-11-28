@@ -15,7 +15,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"preset": "none"
+			"preset": "recommended"
 		}
 	},
 	"overrides": [

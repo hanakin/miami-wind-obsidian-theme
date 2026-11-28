@@ -46,7 +46,8 @@ test("records stable differences and unstable pixels separately without hiding e
 	expect(r.count).toBe(1);
 	expect(r.rawCount).toBe(2);
 	expect(r.noise).toEqual({ before: 1, after: 0, pixels: 1 });
-	const p = PNG.sync.read(r.png!);
+	if (!r.png) throw new Error("Missing difference image");
+	const p = PNG.sync.read(r.png);
 	expect([...p.data]).toEqual([255, 0, 0, 255, 255, 165, 0, 255]);
 	expect(
 		outcome({

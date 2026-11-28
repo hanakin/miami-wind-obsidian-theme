@@ -1,7 +1,6 @@
 /* Suggestion lists, selected rows, property fields and complex-item flair. */
 
-/* Shared component adjustments: menu-item-state.
- * Local --mw-* variables below set this section’s colors and backgrounds. */
+/* Uses component: menu-item-state. */
 
 .suggestion-container {
 	border: 1px solid var(--magenta);

@@ -24,7 +24,7 @@ export interface Probe {
 	line: number;
 	/**
 	 * True for a section's labeled, scoped adjustment of a shared item: the rule sits under a
-	 * "Shared component adjustment" comment and reaches the item through a container.
+	 * "Shared component adjustment: <piece> in <section>" comment and reaches the item through a container.
 	 */
 	adjustment: boolean;
 	/**
@@ -95,7 +95,7 @@ export const RULES = [
 	"States (is-*, mod-*, has-*, :hover and the like) and context (.theme-dark, body and platform classes) are not items and never cause an overlap.",
 	"Rules that only set variables (--name) belong to the file they are in and never cause an overlap.",
 	"An overlap is one item styled from two top-level places: global, markdown, or one app section (sections/<x>, with pdf-*.css counted as PDF). Several files inside one place are fine. The fix is always to move its rules into global/.",
-	'A section may adjust a shared item: a rule under a "Shared component adjustment" comment that reaches the item through a container (.bases-view .clickable-icon) is allowed and is not an overlap.',
+	'A section may adjust a shared item: a rule under a "Shared component adjustment: <piece> in <section>" comment that reaches the item through a container (.bases-view .clickable-icon) is allowed and is not an overlap.',
 ];
 
 /**
@@ -113,7 +113,7 @@ function lastPart(last: selectorParser.Node[]): "name" | "attribute" | undefined
 	return last.some((node) => node.type === "attribute") ? "attribute" : undefined;
 }
 
-const ADJUSTMENT = /shared component adjustment/i;
+const ADJUSTMENT = /^shared component adjustment:\s+\S[^\n]*?\s+in\s+\S/i;
 
 /** Every selector in the source files that can own an item (see RULES). */
 export function probes(

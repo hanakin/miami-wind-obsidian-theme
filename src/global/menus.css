@@ -1,7 +1,7 @@
 /* Menu surfaces, icons, selected items and mobile action rows. */
 
-/* Shared component adjustments: action-button, menu-item-state.
- * Local --mw-* variables below set this section’s colors and backgrounds. */
+/* Uses component: action-button.
+ * Uses component: menu-item-state. */
 
 .menu {
 	--menu-background: var(--black);
@@ -14,20 +14,6 @@
 	--mw-action-color: var(--cyan);
 	--mw-action-background: var(--black);
 	@mixin action-button;
-}
-
-.menu .clickable-icon.bases-toolbar-menu-item-icon {
-	background-color: transparent;
-}
-
-.menu .clickable-icon.bases-toolbar-menu-item-icon:hover {
-	background-color: transparent;
-}
-
-.menu .bases-toolbar-menu-item:hover .clickable-icon,
-.menu .bases-toolbar-menu-item.is-selected .clickable-icon {
-	--text-on-accent: var(--magenta);
-	color: var(--magenta);
 }
 
 .menu .clickable-icon:hover,
@@ -52,29 +38,10 @@
 .menu-item:hover,
 .menu-item:focus,
 .menu-item:active,
-.menu-item.selected,
-.bases-toolbar-menu-item:hover,
-.bases-toolbar-menu-item:focus,
-.bases-toolbar-menu-item:active,
-.bases-toolbar-menu-item.selected {
+.menu-item.selected {
 	--mw-item-background: var(--cyan-transparent);
 	--mw-item-color: var(--magenta);
 	@mixin menu-item-state;
-}
-
-/* Tie the app’s editing-row focus-within fill only when a theme item state applies. */
-.bases-toolbar-menu-item.is-editing:focus-within:is(:hover, :focus, :active, .selected) {
-	background-color: var(--mw-item-background);
-}
-
-/* Phone action/suggestion rows read these variables at higher specificity.
-   Scope them to the row states so their descendants keep the existing paint. */
-.bases-toolbar-menu-item:hover,
-.bases-toolbar-menu-item:focus,
-.bases-toolbar-menu-item:active,
-.bases-toolbar-menu-item.selected {
-	--interactive-normal: var(--cyan-transparent);
-	--interactive-hover: var(--cyan-transparent);
 }
 
 /* Tie phone fills without raising text specificity over warning items. */
@@ -85,23 +52,15 @@
 	background-color: var(--cyan-transparent);
 }
 
-/* Disabled selected/focus/active used the normal fill; hover still wins below. */
+/* Disabled selected, focused and active items keep the normal fill until hovered. */
 .menu-item.is-disabled.selected,
 .menu-item.is-disabled:focus,
 .menu-item.is-disabled:active {
 	background-color: var(--cyan-transparent);
 }
 
-.menu-item.is-disabled:hover,
-.bases-toolbar-menu-item.mod-hidden:hover {
+.menu-item.is-disabled:hover {
 	background-color: transparent;
 	color: var(--text-disabled);
 	cursor: default;
-}
-
-.bases-toolbar-menu-item.mod-hidden:hover {
-	--mw-item-background: transparent;
-
-	--interactive-normal: transparent;
-	--interactive-hover: transparent;
 }

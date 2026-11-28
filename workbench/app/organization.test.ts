@@ -137,7 +137,7 @@ it("reads the selectors that can own an item, and leaves out states and context"
 					".workspace-leaf.mod-active .is-active { color: red }",
 					".theme-dark, body.is-mobile { color: red }",
 					".canvas-wrapper { --canvas-dot-pattern: red }",
-					"/* Shared component adjustments: icons in Canvas. */",
+					"/* Shared component adjustment: clickable-icon in Canvas. */",
 					".canvas-wrapper .clickable-icon { color: red }",
 					".clickable-icon { color: red }",
 					"/* Canvas cards. */",
@@ -233,4 +233,23 @@ it("gives an item its home from a rule that only sets variables, without making 
 	});
 	const both = organize([variables, hit("heading", "sections/canvas.css")], ["heading"], paths);
 	expect(both.overlaps).toEqual([]);
+});
+
+it("does not treat mixin usage or an unnamed adjustment as a shared-item exemption", () => {
+	for (const label of [
+		"Uses component: action-button.",
+		"Shared component adjustment: icons.",
+		"Shared component adjustments: icons in Canvas.",
+	]) {
+		const result = probes(
+			[
+				{
+					path: "sections/canvas.css",
+					css: `/* ${label} */ .canvas-view .clickable-icon { color: red; }`,
+				},
+			],
+			(s) => s,
+		);
+		expect(result[0]?.adjustment).toBe(false);
+	}
 });

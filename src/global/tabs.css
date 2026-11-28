@@ -1,7 +1,7 @@
 /* Workspace tab icons, header backgrounds and active, hover and close states. */
 
-/* Shared component adjustments: icon-background, surface-background.
- * Local --mw-* variables below set this section’s colors and backgrounds. */
+/* Uses component: icon-background.
+ * Uses component: surface-background. */
 
 /* @heading Tab icons */
 .workspace-tabs .clickable-icon:hover {

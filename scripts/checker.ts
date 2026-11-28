@@ -5,13 +5,12 @@ import selectorParser from "postcss-selector-parser";
 
 const tagHoverSelector = ".cm-hashtag-begin:has(+ .cm-hashtag-end:hover)";
 
-// Parity-only exceptions: these exact 1.x selectors need 0,2,1 to tie Obsidian's
-// span.cm-url, span.cm-formatting-link-string and span.cm-formatting-math rivals.
-const paritySpanSelectors = new Set(
-	["keyword", "string", "number", "comment", "operator", "variable", "def"].map(
-		(token) => `.cm-s-obsidian span.cm-${token}`,
-	),
-);
+// Multi-token spans also match Obsidian's .cm-s-obsidian span.cm-formatting-math
+// and span.cm-url / span.cm-formatting-link-string (0,2,1), not just .cm-keyword.
+const paritySpanSelectors = new Set([
+	".cm-s-obsidian span.cm-keyword",
+	".cm-s-obsidian span.cm-string",
+]);
 // Footnote refs: .cm-s-obsidian span.cm-footref.cm-hmd-barelink.cm-formatting (0,4,1).
 // Footnote labels: .cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote (0,4,1).
 paritySpanSelectors.add(
@@ -26,7 +25,6 @@ paritySpanSelectors.add(
 const highlightSpanSelectors = new Set([
 	".cm-s-obsidian span.cm-highlight",
 	".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
-	"span.is-flashing.cm-highlight",
 	"span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight",
 	"span.cm-formatting-link.cm-url.cm-highlight",
 	"span.cm-formatting-link.cm-url.cm-highlight:hover",
@@ -133,7 +131,7 @@ export function checkCss(): Plugin {
 						// --text-normal at 0,3,1; omitting its sidebar ancestor keeps that tie.
 						if (
 							rule.source?.input.file ===
-								path.resolve("src/global/icons.css") &&
+								path.resolve("src/sections/community-browser.css") &&
 							selector.toString().trim() ===
 								".mod-community-modal button.clickable-icon[aria-disabled='true']"
 						)
@@ -163,7 +161,8 @@ export function checkCss(): Plugin {
 					// Sheet filters have literal app backgrounds at 0,5,0. Keep that tie
 					// in three compounds, using the actual combobox class instead of an ancestor.
 					if (
-						rule.source?.input.file === path.resolve("src/global/inputs.css") &&
+						rule.source?.input.file ===
+							path.resolve("src/sections/bases.css") &&
 						[
 							".menu.mod-sheet .filter-row .filter-property-select.combobox-button",
 							".menu.mod-sheet .filter-row .filter-operator.combobox-button",

@@ -32,7 +32,7 @@ export function repeatedPixels(
 			diff.data.set([255, 0, 0, 255], i);
 		} else {
 			const gray = Math.round(
-				(a.data[i]! + a.data[i + 1]! + a.data[i + 2]!) / 3,
+				((a.data[i] ?? 0) + (a.data[i + 1] ?? 0) + (a.data[i + 2] ?? 0)) / 3,
 			);
 			diff.data.set([gray, gray, gray, 60], i);
 		}

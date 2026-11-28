@@ -6,19 +6,19 @@
 	cursor: pointer;
 }
 
-/* Tie the editor’s own button selectors; 1.x hover also painted on touch devices. */
+/* Copy and edit buttons retain hover colors on both pointer and touch devices. */
 .markdown-source-view.mod-cm6 .code-block-flair,
 .markdown-source-view.mod-cm6 .edit-block-button {
 	color: var(--cyan);
 	cursor: pointer;
 }
 
-/* Shared component adjustments: action-button hover colors in Markdown. */
+/* Uses component: action-button. */
 .code-block-flair:hover,
 .edit-block-button:hover,
 .markdown-source-view.mod-cm6 .code-block-flair:hover,
 .markdown-source-view.mod-cm6 .edit-block-button:hover {
-	--mw-action-background: var(--cyan-transparent);
 	--mw-action-color: var(--magenta);
+	--mw-action-background: var(--cyan-transparent);
 	@mixin action-button;
 }
