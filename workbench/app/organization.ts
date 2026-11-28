@@ -27,6 +27,11 @@ export interface Probe {
 	 * "Shared component adjustment" comment and reaches the item through a container.
 	 */
 	adjustment: boolean;
+	/**
+	 * True for a rule that only sets variables (--name). It styles nothing by itself and never
+	 * causes an overlap, but it does say which file an item's styling lives in.
+	 */
+	variables: boolean;
 }
 
 /** The tag, classes and attribute tests written on one element of a selector. */
@@ -36,20 +41,45 @@ export interface Compound {
 	attributes: string[];
 }
 
-/** The last compound of a selector, or of each alternative in a selector list. */
+/**
+ * The ways a selector's last part can be read. Usually one: the nodes after its last combinator.
+ * `:is()` and `:where()` name their element inside the brackets, so each alternative there is
+ * read as if written out: `:is(button, .tag).big` is `button.big` and `.tag.big`.
+ */
+function lastParts(nodes: selectorParser.Node[]): selectorParser.Node[][] {
+	const last: selectorParser.Node[] = [];
+	for (const node of nodes) {
+		if (node.type === "combinator") last.length = 0;
+		else last.push(node);
+	}
+	let out: selectorParser.Node[][] = [[]];
+	for (const node of last) {
+		if (node.type === "pseudo" && /^:(is|where)$/i.test(node.value) && node.nodes.length > 0) {
+			const inner = node.nodes.flatMap((alternative) => lastParts(alternative.nodes));
+			// Far more alternatives than any real rule has: stop multiplying, keep what is read.
+			out = out.flatMap((o) => inner.map((i) => [...o, ...i])).slice(0, 64);
+		} else {
+			out = out.map((o) => [...o, node]);
+		}
+	}
+	return out;
+}
+
+function compound(nodes: selectorParser.Node[]): Compound {
+	const out: Compound = { classes: [], attributes: [] };
+	for (const node of nodes) {
+		if (node.type === "tag") out.tag = node.value.toLowerCase();
+		else if (node.type === "class") out.classes.push(node.value);
+		else if (node.type === "attribute") out.attributes.push(node.toString().trim());
+	}
+	return out;
+}
+
+/** The last compound of a selector: one for each alternative in a list, `:is()` or `:where()`. */
 export function lastCompounds(selectorList: string): Compound[] {
 	const out: Compound[] = [];
 	selectorParser((root) => {
-		for (const selector of root.nodes) {
-			let last: Compound = { classes: [], attributes: [] };
-			for (const node of selector.nodes) {
-				if (node.type === "combinator") last = { classes: [], attributes: [] };
-				else if (node.type === "tag") last.tag = node.value.toLowerCase();
-				else if (node.type === "class") last.classes.push(node.value);
-				else if (node.type === "attribute") last.attributes.push(node.toString().trim());
-			}
-			out.push(last);
-		}
+		for (const selector of root.nodes) out.push(...lastParts(selector.nodes).map(compound));
 	}).processSync(selectorList);
 	return out;
 }
@@ -60,7 +90,7 @@ const STATE_OR_CONTEXT = /^(is-|mod-|has-|theme-|show-|hide-)/;
 
 /** The rules the check follows, in plain words. Printed with its result. */
 export const RULES = [
-	"An item is a component named by its own class or element: the last part of a selector.",
+	"An item is a component named by its own class or element: the last part of a selector. A name inside :is() or :where() counts as if written out.",
 	"A rule counts for an item only when it selects the item's own element in a capture and names it by the item's own class or element. A section's own class on that element (.xfaSelect on a select) is the section's, not the item's.",
 	"States (is-*, mod-*, has-*, :hover and the like) and context (.theme-dark, body and platform classes) are not items and never cause an overlap.",
 	"Rules that only set variables (--name) belong to the file they are in and never cause an overlap.",
@@ -72,12 +102,7 @@ export const RULES = [
  * What a selector's last compound is written with: "name" for a tag or a class that is not a
  * state, "attribute" for attribute tests only, undefined for states and context alone.
  */
-function lastPart(selector: selectorParser.Selector): "name" | "attribute" | undefined {
-	const last: selectorParser.Node[] = [];
-	for (const node of selector.nodes) {
-		if (node.type === "combinator") last.length = 0;
-		else last.push(node);
-	}
+function lastPart(last: selectorParser.Node[]): "name" | "attribute" | undefined {
 	const named = last.some(
 		(node) =>
 			(node.type === "tag" && !/^(body|html)$/i.test(node.value)) ||
@@ -113,15 +138,15 @@ export function probes(
 					return;
 				}
 			}
-			// A rule that only sets variables styles nothing by itself.
+			// A rule that only sets variables styles nothing by itself: kept apart (see Probe.variables).
 			const declarations = rule.nodes.filter((n) => n.type === "decl");
-			if (declarations.length > 0 && declarations.every((d) => d.prop.startsWith("--"))) return;
+			const variables =
+				declarations.length > 0 && declarations.every((d) => d.prop.startsWith("--"));
 			selectorParser((root) => {
 				for (const selector of root.nodes) {
 					const text = selector.toString().trim();
 					// `.view ::selection` styles selected text anywhere inside: it names no item.
-					const part = lastPart(selector);
-					if (/(^|[\s>+~])::[\w-]+$/.test(text) || !part) continue;
+					if (/(^|[\s>+~])::[\w-]+$/.test(text)) continue;
 					const scoped = selector.nodes.some((n) => n.type === "combinator");
 					const prefixes: string[] = [];
 					let sofar = "";
@@ -129,19 +154,25 @@ export function probes(
 						if (node.type === "combinator" && sofar.trim()) prefixes.push(sofar.trim());
 						sofar += node.toString();
 					}
-					try {
-						out.push({
-							file,
-							full: rewrite(text),
-							last: lastCompounds(text)[0] as Compound,
-							prefixes: prefixes.map(rewrite),
-							weak: part === "attribute",
-							selector: text,
-							line: rule.source?.start?.line ?? 0,
-							adjustment: scoped && ADJUSTMENT.test(label),
-						});
-					} catch {
-						// A selector the rewrite cannot read names nothing we can test.
+					// One probe for each way the last part can be read (see lastParts).
+					for (const last of lastParts(selector.nodes)) {
+						const part = lastPart(last);
+						if (!part) continue;
+						try {
+							out.push({
+								file,
+								full: rewrite(text),
+								last: compound(last),
+								prefixes: prefixes.map(rewrite),
+								weak: part === "attribute",
+								selector: text,
+								line: rule.source?.start?.line ?? 0,
+								adjustment: scoped && ADJUSTMENT.test(label),
+								variables,
+							});
+						} catch {
+							// A selector the rewrite cannot read names nothing we can test.
+						}
 					}
 				}
 			}).processSync(rule.selector);
@@ -178,6 +209,8 @@ export interface RuleHit {
 	 */
 	how: "named" | "through" | "selected";
 	adjustment: boolean;
+	/** True when the rule only sets variables: it counts for the item's home, never for an overlap. */
+	variables?: boolean;
 }
 
 export interface Group {
@@ -210,12 +243,17 @@ function namedAfter(file: string, item: string): boolean {
  * One place for every item, from the rules that reach it. Two separate questions:
  *
  * Overlap (strict): an item named from more than one top-level place has its base styling split.
- * A section's labeled, scoped adjustment of a shared item is not an overlap; it is noted.
+ * A section's labeled, scoped adjustment of a shared item is not an overlap; it is noted. Rules
+ * that only set variables never count here.
  *
  * Home (generous): the item is listed under the file whose rules name it or pass through it;
  * failing that the file whose last part selects its element; and under "other" only when no rule
  * reaches it at all. Between several files, the one named after the item wins, then the one with
- * more rules. An overlap is listed under Global, where its rules belong.
+ * more rules. An overlap is listed under Global, where its rules belong. A rule that only sets
+ * variables for the item (`.markdown-rendered h1 { --h1-color }`) counts for its home like any
+ * other: that file is where the item's look is decided.
+ *
+ * Every source file in global/, markdown/ and sections/ is listed, also one no item lives in yet.
  */
 export function organize(hits: RuleHit[], items: string[], paths: string[]): Organization {
 	// Only folders whose files style elements own items; settings and components hold no rules of their own.
@@ -227,7 +265,7 @@ export function organize(hits: RuleHit[], items: string[], paths: string[]): Org
 	const placed = new Map<string, Map<string, string[]>>();
 	for (const item of [...items].sort()) {
 		const mine = owning.filter((h) => h.item === item);
-		const base = mine.filter((h) => h.how === "named" && !h.adjustment);
+		const base = mine.filter((h) => h.how === "named" && !h.adjustment && !h.variables);
 		const named = filesOf(base);
 		const overlap = placesOf(named).length > 1;
 		if (overlap) {
@@ -267,6 +305,13 @@ export function organize(hits: RuleHit[], items: string[], paths: string[]): Org
 		const groups = placed.get(section) ?? new Map<string, string[]>();
 		placed.set(section, groups);
 		groups.set(home, [...(groups.get(home) ?? []), item]);
+	}
+	// The whole source tree shows: a file no item lives in yet is listed with nothing under it.
+	for (const path of paths.filter((p) => /^(global|markdown|sections)\//.test(p))) {
+		const section = placeOf(path, paths);
+		const groups = placed.get(section) ?? new Map<string, string[]>();
+		placed.set(section, groups);
+		if (!groups.has(path)) groups.set(path, []);
 	}
 	const order = (id: string) => ["global", "markdown"].indexOf(id) + (id === "other" ? 99 : 0);
 	const rank = (id: string) => (order(id) === -1 ? 50 : order(id));

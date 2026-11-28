@@ -29,6 +29,8 @@ const CONTENT: Record<string, string> = {
 	audio: "audio the tool cannot replay",
 	iframe: "an embedded page the tool cannot rebuild",
 	img: "an image the tool cannot load",
+	webview: "an embedded web page the tool cannot rebuild",
+	"background image": "a background image the tool cannot load",
 };
 
 const REASONS: Record<string, string> = {
@@ -40,7 +42,7 @@ const REASONS: Record<string, string> = {
 
 /** A compare tool not-proven reason, said plainly. Unknown reasons pass through unchanged. */
 export function plainReason(reason: string): string {
-	const content = /^(\w+) content is not reconstructed$/.exec(reason);
+	const content = /^([\w ]+) content is not reconstructed$/.exec(reason);
 	if (content) {
 		return `contains ${CONTENT[content[1] ?? ""] ?? `${content[1]} content the tool cannot rebuild`}`;
 	}
@@ -69,8 +71,26 @@ export function plainProperty(prop: string): string {
 	return prop.replace(/^-webkit-/, "").replaceAll("-", " ");
 }
 
+/** "expanded-after-click" → "expanded after click": a capture's state as plain words. */
+export const stateName = (state: string) => state.replaceAll("-", " ");
+
+/**
+ * A CSS value as shown. Obsidian writes "??" in a font list where a font is left for the user to
+ * pick; those entries say nothing, so they are dropped: `"??", Inter, "??", sans-serif` → `Inter,
+ * sans-serif`.
+ */
+export function plainValue(value: string | null): string | null {
+	if (!value?.includes("??")) return value;
+	return value
+		.split(",")
+		.map((part) => part.trim())
+		.filter((part) => !/^["']?\?\?["']?$/.test(part))
+		.join(", ");
+}
+
 // Plain names for the items a change can sit on, by class first, then by tag. First match wins.
 const ITEMS: [RegExp, string][] = [
+	[/^(body|html)\b/, "the whole window"],
 	[/\.cm-formatting-link/, "link brackets"],
 	[/\.cm-formatting-math|\.cm-math/, "math"],
 	[/\.cm-formatting-code|\.cm-inline-code/, "inline code"],
@@ -97,5 +117,8 @@ const ITEMS: [RegExp, string][] = [
 
 /** "span.cm-formatting.cm-formatting-link-string" → "link brackets"; unknown items keep their code name. */
 export function itemName(code: string): string {
+	// The compare tool reads some theme values through a stand-in it names "probe:--name".
+	const probe = /^probe:(--[\w-]+)/.exec(code);
+	if (probe) return `the theme value ${probe[1]}`;
 	return ITEMS.find(([re]) => re.test(code))?.[1] ?? code;
 }

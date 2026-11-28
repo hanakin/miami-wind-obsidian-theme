@@ -10,6 +10,8 @@ export interface Fixture {
 	size: number;
 	/** The window size it was captured at, when not the desktop default (emulated mobile). */
 	viewport?: [number, number];
+	/** Where the captured element sat in the live window: x, y, width, height. */
+	box?: [number, number, number, number];
 }
 
 export interface ComponentEntry {
@@ -43,8 +45,12 @@ export interface ViewerData {
 	usage: Usage[];
 	/** Why compare.json could not be used, when it exists but is not a schemaVersion 1 report. */
 	compareError?: string;
+	/** Where fixture frames are served: an address of their own, apart from the workbench's. */
+	frameOrigin: string;
 	/** The sidebar: items grouped by the source file that styles them, and the overlaps found. */
 	organization: Organization;
+	/** The items each shared build component is used on, found from the rules that include it. */
+	componentItems: Record<string, string[]>;
 }
 
 /** One side as the page knows it: a name and the hash of its CSS, or why it cannot be shown. */

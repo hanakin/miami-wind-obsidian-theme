@@ -1,6 +1,6 @@
 import { matchesElement, mayMatchElement } from "./elements.ts";
 import type { CompareState } from "./types.ts";
-import { itemName, kinds, plainProperty } from "./words.ts";
+import { itemName, plainProperty, plainValue } from "./words.ts";
 
 interface CompareFixture {
 	id: string;
@@ -61,10 +61,18 @@ function tally(states: CompareState[]): [string, number][] {
 	return [...counts].sort((a, b) => b[1] - a[1]);
 }
 
-const NOT_COMPARED: CompareState = {
-	status: "not-proven",
-	reasons: ["not checked with these sides"],
-};
+/** The reason a capture carries when no check was made with the two sides now shown. */
+export const NOT_CHECKED = "not checked with these sides";
+const NOT_COMPARED: CompareState = { status: "not-proven", reasons: [NOT_CHECKED] };
+
+/**
+ * True when a verdict is "not proven" only because nothing was checked with these sides. The
+ * page shows that apart from a real not-proven result. It is a way of showing, not a verdict.
+ */
+export const unchecked = (state: CompareState) =>
+	state.status === "not-proven" &&
+	state.reasons.length > 0 &&
+	state.reasons.every((r) => r === NOT_CHECKED);
 /** Said when a capture differs, but not on an element that is surely the component's. */
 export const changedElsewhere = (component: string) =>
 	`a change in this capture, not on the ${component} itself`;
@@ -93,14 +101,49 @@ export function rowState(
 	const here = fixtures.filter((f) => f.surface === surface);
 	if (here.length === 0) return undefined;
 	const own = here.filter((f) => f.component === component);
-	const judged = own.length ? own : here;
-	const states = judged.map((f) => stateFor(component, f.id, compare, touched));
+	// The component's own captures, or every capture that contains it when it has none. Either
+	// way, a larger capture with a difference on this component's own elements is counted too:
+	// a real change to the component is never left out because it was seen inside something else.
+	const judged = own.length
+		? [...own, ...here.filter((f) => changedIn(component, f, compare, touched))]
+		: here;
+	const states = [...new Set(judged)].map((f) => stateFor(component, f.id, compare, touched));
 	return {
 		state: combine(states),
 		inside: own.length === 0,
-		captures: judged.length,
+		captures: states.length,
 		reasons: tally(states),
 	};
+}
+
+/** True for a larger capture that differs on this component's own elements. */
+export function changedIn(
+	component: string,
+	capture: Place,
+	compare: Record<string, CompareState> | null,
+	touched: Record<string, string[]>,
+): boolean {
+	return (
+		capture.component !== component &&
+		compare?.[capture.id]?.status === "different" &&
+		(touched[capture.id]?.includes(component) ?? false)
+	);
+}
+
+/**
+ * Which larger captures a place shows for a component: every one that differs on the component's
+ * own elements (`changed`), so no recorded change goes unshown, and the others (`rest`), of which
+ * one picture is enough.
+ */
+export function insidePictures<P extends Place>(
+	component: string,
+	here: P[],
+	compare: Record<string, CompareState> | null,
+	touched: Record<string, string[]>,
+): { changed: P[]; rest: P[] } {
+	const larger = here.filter((f) => f.component !== component);
+	const changed = larger.filter((f) => changedIn(component, f, compare, touched));
+	return { changed, rest: larger.filter((f) => !changed.includes(f)) };
 }
 
 /** What one capture says about one component: its change counts only when it is on the component. */
@@ -117,16 +160,19 @@ export function stateFor(
 }
 
 // Worst first: what a page's dot and a group of captures report.
-const SEVERITY = ["different", "not-proven", "same"] as const;
+const SEVERITY = ["different", "not-proven", "unchecked", "same"] as const;
 
 export interface PageSummary {
 	same: number;
 	different: number;
+	/** Places a check could not prove either way. */
 	"not-proven": number;
+	/** Places never checked with the two sides shown. Not a verdict: nothing is known yet. */
+	unchecked: number;
 	/** Places no capture contains the component in. */
 	noCapture: number;
-	/** The worst verdict among the places that have one. */
-	worst: CompareState["status"] | undefined;
+	/** The worst among the places that have captures; "unchecked" ranks under a real not-proven. */
+	worst: CompareState["status"] | "unchecked" | undefined;
 }
 
 /** Counts a component's places by verdict. The page header and the sidebar dot both read this. */
@@ -141,13 +187,15 @@ export function pageSummary(
 		same: 0,
 		different: 0,
 		"not-proven": 0,
+		unchecked: 0,
 		noCapture: 0,
 		worst: undefined,
 	};
 	for (const surface of surfaces) {
 		const place = rowState(component, surface, fixtures, compare, touched);
-		if (place) out[place.state.status]++;
-		else out.noCapture++;
+		if (!place) out.noCapture++;
+		else if (unchecked(place.state)) out.unchecked++;
+		else out[place.state.status]++;
 	}
 	out.worst = SEVERITY.find((s) => out[s] > 0);
 	return out;
@@ -163,7 +211,7 @@ export function combine(states: CompareState[]): CompareState {
 	if (states.some((s) => s.status === "not-proven") || states.length === 0) {
 		return {
 			status: "not-proven",
-			reasons: reasons.length ? reasons : ["not checked with these sides"],
+			reasons: reasons.length ? reasons : [NOT_CHECKED],
 		};
 	}
 	return { status: "same" };
@@ -187,6 +235,11 @@ export interface Change {
 	code: string[];
 	/** Components with one of these items surely among their own elements. */
 	components: string[];
+	/**
+	 * Components these items themselves are: the change is on the component's own element, not on
+	 * something else in its capture. Lines about anything else name the item they are on.
+	 */
+	own?: string[];
 	/** Components one of these items might belong to; the report cannot tell (no attributes). */
 	maybe: string[];
 	/** Every property that changes this way, most common first. */
@@ -224,13 +277,18 @@ export const itemCode = (key: string) =>
  */
 function nameOf(properties: string[]): string {
 	if (properties.includes("color")) return "Text color";
-	const [only] = properties;
-	const plain =
-		properties.length === 1 && only
-			? plainProperty(only)
-			: `${kinds(properties)} (${properties.length} properties)`;
+	// The properties by name: "Height", "Padding top, padding bottom", "Margin top, margin bottom
+	// and 2 more".
+	const named = properties.slice(0, properties.length > 3 ? 2 : 3).map(plainProperty);
+	const more = properties.length - named.length;
+	const plain = `${named.join(", ")}${more > 0 ? ` and ${more} more` : ""}`;
 	return plain.charAt(0).toUpperCase() + plain.slice(1);
 }
+
+// The point an element turns and scales around sits at its middle, so it moves whenever the
+// element's size does. Beside a recorded size change it says nothing new.
+const FOLLOWS_SIZE = /^(transform-origin|perspective-origin)$/;
+const SIZE = /^(width|height|block-size|inline-size)$/;
 
 /**
  * A capture's style differences boiled down to distinct changes, most common first: every one of
@@ -252,12 +310,19 @@ export function changes(
 	const names = Object.keys(selectors);
 	// What was recorded for each item, to tell a logical property that only repeats a physical one.
 	const recorded = new Set(
-		differences.map((d) => `${d.element}\n${d.property}\n${d.before}\n${d.after}`),
+		differences.map(
+			(d) => `${d.element}\n${d.property}\n${plainValue(d.before)}\n${plainValue(d.after)}`,
+		),
 	);
+	const resized = new Set(differences.filter((d) => SIZE.test(d.property)).map((d) => d.element));
 	const byChange = new Map<string, Group>();
-	for (const { element, property, before, after } of differences) {
+	for (const { element, property, ...raw } of differences) {
+		// Font lists are read without Obsidian's "??" placeholders; a change only in those is none.
+		const [before, after] = [plainValue(raw.before), plainValue(raw.after)];
+		if (before === after && raw.before !== raw.after) continue;
 		const twin = physicalOf(property);
 		if (twin && recorded.has(`${element}\n${twin}\n${before}\n${after}`)) continue;
+		if (FOLLOWS_SIZE.test(property) && resized.has(element)) continue;
 		const item = element?.split("::")[0] ?? "";
 		const components = names.filter((c) => matchesElement(selectors[c] ?? "", item));
 		const maybe = names.filter(

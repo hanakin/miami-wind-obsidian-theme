@@ -5,12 +5,15 @@ import {
 	changes,
 	combine,
 	compareStates,
+	insidePictures,
 	itemCode,
 	pageSummary,
 	rowState,
+	unchecked,
 } from "./compare-states.ts";
 import { touchedComponents } from "./elements.ts";
 import type { CompareState } from "./types.ts";
+import { plainValue } from "./words.ts";
 
 it("reads the three statuses and keeps not-proven reasons", () => {
 	expect(
@@ -125,11 +128,24 @@ it("counts a page's places, and its dot is the worst of them", () => {
 	expect(pageSummary("button", surfaces, fixtures, compare, { "own-b": ["button"] })).toEqual({
 		same: 0,
 		different: 1,
-		"not-proven": 2,
+		// One place is really not proven; one was never checked, which is shown apart.
+		"not-proven": 1,
+		unchecked: 1,
 		noCapture: 1,
 		worst: "different",
 	});
 	expect(pageSummary("button", ["canvas"], fixtures, compare).worst).toBeUndefined();
+	// With no results for the sides on screen, every place is "not checked", never "not proven".
+	const fresh = pageSummary("button", surfaces, fixtures, null);
+	expect([fresh["not-proven"], fresh.unchecked, fresh.worst]).toEqual([0, 3, "unchecked"]);
+	// A real not-proven result outranks "not checked"; "not checked" outranks same.
+	expect(unchecked({ status: "not-proven", reasons: ["not checked with these sides"] })).toBe(true);
+	expect(
+		unchecked({ status: "not-proven", reasons: ["canvas content is not reconstructed"] }),
+	).toBe(false);
+	expect(unchecked({ status: "same" })).toBe(false);
+	// A not-proven result that gives no reason is still a result: never shown as "not checked".
+	expect(unchecked({ status: "not-proven", reasons: [] })).toBe(false);
 });
 
 const d = (element: string, property: string, before: string, after: string) => ({
@@ -209,11 +225,25 @@ it("drops a logical property only when its physical twin is recorded too", () =>
 	expect(twins.list.reduce((n, c) => n + c.count, 0)).toBe(2);
 });
 
-/** True when a recorded difference shows up in the boiled-down list, itself or as its physical twin. */
+/**
+ * True when a recorded difference shows up in the boiled-down list, itself or as its physical
+ * twin. Two kinds are left out on purpose and count as covered: a font list that differs only in
+ * Obsidian's "??" placeholders, and a turning point that only follows a recorded size change of
+ * the same element (`all` is every difference of the capture).
+ */
 function covered(
 	list: ReturnType<typeof changes>["list"],
 	x: { element: string; property: string; before: string | null; after: string | null },
+	all: { element: string; property: string }[] = [],
 ): boolean {
+	if (x.before !== x.after && plainValue(x.before) === plainValue(x.after)) return true;
+	if (
+		/^(transform|perspective)-origin$/.test(x.property) &&
+		all.some(
+			(o) => o.element === x.element && /^(width|height|block-size|inline-size)$/.test(o.property),
+		)
+	)
+		return true;
 	const logical: Record<string, string> = {
 		"block-start": "top",
 		"block-end": "bottom",
@@ -225,8 +255,8 @@ function covered(
 	const twin = Object.entries(logical).reduce((p, [from, to]) => p.replace(from, to), x.property);
 	return list.some(
 		(c) =>
-			c.before === x.before &&
-			c.after === x.after &&
+			c.before === plainValue(x.before) &&
+			c.after === plainValue(x.after) &&
 			c.code.includes(itemCode(x.element)) &&
 			(c.properties.includes(x.property) || c.properties.includes(twin)),
 	);
@@ -259,7 +289,8 @@ it.skipIf(!existsSync(REPORT))(
 				tag: "a.tag, .cm-hashtag",
 			});
 			for (const x of f.differences ?? []) {
-				if (!covered(found.list, x)) throw new Error(`${f.id}: lost ${JSON.stringify(x)}`);
+				if (!covered(found.list, x, f.differences))
+					throw new Error(`${f.id}: lost ${JSON.stringify(x)}`);
 				checked++;
 			}
 		}
@@ -320,4 +351,84 @@ it("does not read a checkbox as same when a change sits on an input the key cann
 	expect(
 		rowState("checkbox", "editor-reading-view", captures, { around: different }, touched)?.state,
 	).toEqual({ status: "not-proven", reasons: [changedElsewhere("checkbox")] });
+});
+
+it("counts a change to the component seen inside a larger capture, even beside its own captures", () => {
+	const captures = [
+		{ id: "own", component: "combobox", surface: "menu" },
+		{ id: "sort-menu", component: "menu", surface: "menu" },
+	];
+	const results: Record<string, CompareState> = { own: same, "sort-menu": different };
+	for (const list of [captures, captures.toReversed()]) {
+		// The larger capture differs on the combobox itself: the place differs.
+		expect(rowState("combobox", "menu", list, results, { "sort-menu": ["combobox"] })).toEqual({
+			state: different,
+			inside: false,
+			captures: 2,
+			reasons: [],
+		});
+		// It differs on something else: the combobox's own capture decides.
+		expect(rowState("combobox", "menu", list, results, { "sort-menu": ["button"] })?.state).toEqual(
+			same,
+		);
+	}
+});
+
+it("shows every larger capture that changes the component, not only the first", () => {
+	// A place with no capture of the button itself: two larger captures hold one.
+	const here = [
+		{ id: "menu.first", component: "menu", surface: "menu" },
+		{ id: "menu.second", component: "menu", surface: "menu" },
+		{ id: "menu.third", component: "menu", surface: "menu" },
+	];
+	const compare: Record<string, CompareState> = {
+		"menu.first": { status: "same" },
+		"menu.second": { status: "different" },
+		"menu.third": { status: "different" },
+	};
+	// The second changes the button; the third changes something else in the menu.
+	const touched = { "menu.second": ["button"], "menu.third": ["menu"] };
+	expect(rowState("button", "menu", here, compare, touched)?.state.status).toBe("different");
+	const { changed, rest } = insidePictures("button", here, compare, touched);
+	expect(changed.map((f) => f.id)).toEqual(["menu.second"]);
+	expect(rest.map((f) => f.id)).toEqual(["menu.first", "menu.third"]);
+});
+
+it("names changed properties in plain words, and leaves out what only follows a size change", () => {
+	const found = changes([
+		d("1:hr", "height", "1px", "3px"),
+		d("1:hr", "block-size", "1px", "3px"),
+		// The turning point sits at the middle, so it moves with the height: nothing new.
+		d("1:hr", "transform-origin", "350px 0.5px", "350px 1.5px"),
+		d("1:hr", "perspective-origin", "350px 0.5px", "350px 1.5px"),
+		d("2:div.box", "padding-top", "4px", "8px"),
+		d("2:div.box", "padding-bottom", "4px", "8px"),
+		// No size change on this one: its turning point is a change of its own.
+		d("3:div.spin", "transform-origin", "0px 0px", "5px 5px"),
+	]);
+	expect(found.list.map((c) => `${c.what}: ${c.before} → ${c.after}`).sort()).toEqual([
+		"Height: 1px → 3px",
+		"Padding top, padding bottom: 4px → 8px",
+		"Transform origin: 0px 0px → 5px 5px",
+	]);
+});
+
+it("reads font lists without Obsidian's placeholders, and tells a component apart by its own name", () => {
+	const found = changes(
+		[
+			// Only the placeholders differ: no change at all.
+			d("1:body", "font-family", '"??", "??", Inter', '"??", Inter'),
+			d("2:div.x", "font-family", '"??", "??", Inter', '"??", "Liberation Sans", Inter'),
+			d("1:body", "color", "rgb(1, 1, 1)", "rgb(2, 2, 2)"),
+			d("57:hr", "border-top-color", "rgb(51, 51, 51)", "rgb(34, 211, 238)"),
+		],
+		// As the workbench passes them for a component with no selector of its own.
+		{ hr: "hr, .hr" },
+	);
+	expect(found.list.map((c) => [c.what, c.before, c.after, c.components])).toEqual([
+		["Font family", "Inter", '"Liberation Sans", Inter', []],
+		["Text color", "rgb(1, 1, 1)", "rgb(2, 2, 2)", []],
+		["Border top color", "rgb(51, 51, 51)", "rgb(34, 211, 238)", ["hr"]],
+	]);
+	expect(found.list[1]?.items).toBe("the whole window");
 });

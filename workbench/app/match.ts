@@ -6,6 +6,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { matchable } from "../../capture/scripts/css.ts";
 import { COMPONENTS } from "../../capture/scripts/engine.ts";
+import { fixtureHashes } from "./inputs.ts";
 import { type Compound, lastCompounds, type Probe, probes, type RuleHit } from "./organization.ts";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
@@ -99,16 +100,28 @@ function hits(args: {
 }
 
 /**
+ * Names one answer by everything it depends on: the selectors tested, the capture list, the
+ * content of every capture's markup, the items' own selectors, and how they are matched.
+ */
+export const cacheKey = (parts: unknown[]) =>
+	createHash("sha256").update(JSON.stringify(parts)).digest("hex");
+
+/**
  * Every source rule that reaches an item, found by testing the rules against the captures.
  * `files` are the source files as "folder/file.css" with their text.
  */
 export async function styledBy(files: { path: string; css: string }[]): Promise<RuleHit[]> {
 	const index = readFileSync(`${ROOT}capture/fixtures.json`, "utf8");
+	const captures = (JSON.parse(index) as { fixtures: (Capture & { id: string })[] }).fixtures;
 	const list = probes(files, matchable);
-	// Everything the answer depends on: the selectors tested, the captures, and how they are matched.
-	const key = createHash("sha256")
-		.update(JSON.stringify([files.map((f) => f.path), list, index, COMPONENTS, hits.toString()]))
-		.digest("hex");
+	const key = cacheKey([
+		files.map((f) => f.path),
+		list,
+		index,
+		fixtureHashes(ROOT, captures),
+		COMPONENTS,
+		hits.toString(),
+	]);
 	if (existsSync(CACHE)) {
 		const cached = JSON.parse(readFileSync(CACHE, "utf8")) as {
 			key: string;
@@ -119,7 +132,6 @@ export async function styledBy(files: { path: string; css: string }[]): Promise<
 	const names = Object.fromEntries(
 		Object.entries(COMPONENTS).map(([item, selector]) => [item, lastCompounds(selector)]),
 	);
-	const captures = (JSON.parse(index) as { fixtures: Capture[] }).fixtures;
 	const browser = await chromium.launch();
 	const pairs = new Set<string>();
 	try {
@@ -174,6 +186,7 @@ export async function styledBy(files: { path: string; css: string }[]): Promise<
 			selector: probe.selector,
 			how: way,
 			adjustment: probe.adjustment,
+			variables: probe.variables,
 		});
 	}
 	const styled = [...byRule.values()];
