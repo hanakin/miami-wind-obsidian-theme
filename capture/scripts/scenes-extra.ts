@@ -596,8 +596,20 @@ const pluginBrowser: Scene = {
 			},
 			full: true,
 			before: async (ctx) => {
-				await ctx.js("document.querySelector('.community-item')?.click(); await sleep(5000);");
+				// The first plugin (of the first 25) whose README has no remote images: those do not
+				// replay offline, and the subject here is the details pane, not a plugin's screenshots.
+				const chosen = await ctx.js<string | null>(
+					"for (const it of [...document.querySelectorAll('.community-item')].slice(0, 25)) { it.click(); let last = -1; for (let i = 0; i < 40; i++) { await sleep(250); const d = document.querySelector('.community-modal-details'); const n = d?.textContent?.length ?? 0; if (n > 200 && n === last) break; last = n; } const imgs = [...document.querySelectorAll('.community-modal-details img')].filter((m) => !m.src.startsWith('data:')); if (!imgs.length) return it.querySelector('.community-item-name')?.textContent ?? '?'; } return null;",
+				);
+				if (!chosen) console.error("\nplugin details: every plugin tried has README images");
+				// The list back at its top: the chosen plugin may sit far down, and trimming the
+				// entries above it would move it by a sub-pixel remainder.
+				await ctx.js(
+					"let s = document.querySelector('.community-item')?.parentElement; while (s && s.scrollHeight <= s.clientHeight) s = s.parentElement; s?.scrollTo(0, 0); await sleep(500);",
+				);
+				await ctx.sleep(1000);
 			},
+			note: "The details of the first listed plugin whose README has no remote images (they do not replay offline).",
 		},
 		p("extra.community.item.hover", "community-browser", ".community-item", ["hover"]),
 	],
@@ -643,6 +655,10 @@ const themeBrowser: Scene = {
 	opener: communityOpener("appearance", /manage/i),
 	setup: async (ctx) => {
 		await ctx.sleep(5000);
+		// Every visible theme screenshot loaded (one still loading stays a remote stand-in).
+		await ctx.js(
+			"for (let i = 0; i < 60; i++) { const vis = [...document.querySelectorAll('.community-item-screenshot')].filter((m) => { const r = m.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }); if (vis.every((m) => m.complete && m.naturalWidth > 0 && m.src.startsWith('data:'))) break; await sleep(250); }",
+		);
 	},
 	items: [
 		{

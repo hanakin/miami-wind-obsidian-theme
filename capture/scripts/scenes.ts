@@ -1961,6 +1961,35 @@ const lightMode: Scene = {
 	],
 };
 
+/**
+ * The canvas web-link node, alone on a throwaway canvas: its page loads in a webview that does not
+ * replay, so the general canvas scenes leave it out (it would sit in every canvas fixture).
+ */
+const canvasLink: Scene = {
+	id: "canvas-link",
+	surface: "canvas",
+	source: "catalog:canvas",
+	setup: async (ctx) => {
+		await ctx.js(
+			`const v = app.vault; if (!v.getAbstractFileByPath('Scratch')) await v.createFolder('Scratch'); if (!v.getAbstractFileByPath('Scratch/Link node.canvas')) await v.create('Scratch/Link node.canvas', JSON.stringify({ nodes: [{ id: 'link1', type: 'link', x: 0, y: 0, width: 400, height: 200, url: 'https://obsidian.md' }], edges: [] }));`,
+		);
+		await ctx.open("Scratch/Link node.canvas", "live");
+		await ctx.js("app.workspace.activeLeaf.view.canvas?.zoomToFit?.(); await sleep(800);");
+	},
+	items: [
+		{
+			id: "canvas.node-link",
+			component: "canvas-node",
+			target: ".canvas-node:has(.canvas-link)",
+		},
+	],
+	teardown: async (ctx) => {
+		await ctx.js(
+			"const f = app.vault.getAbstractFileByPath('Scratch/Link node.canvas'); for (const l of app.workspace.getLeavesOfType('canvas')) if (l.view.file === f) l.detach(); if (f) await app.vault.delete(f);",
+		);
+	},
+};
+
 const canvas: Scene = {
 	id: "canvas",
 	surface: "canvas",
@@ -2011,11 +2040,6 @@ const canvas: Scene = {
 			id: "canvas.node-missing-file",
 			component: "canvas-node",
 			target: { sel: ".canvas-node", text: "Missing on purpose" },
-		},
-		{
-			id: "canvas.node-link",
-			component: "canvas-node",
-			target: ".canvas-node:has(.canvas-link)",
 		},
 		{
 			id: "canvas.group",
@@ -2478,6 +2502,10 @@ const mediaAndOther: Scene = {
 			state: "stacked",
 			full: true,
 			before: async (ctx) => {
+				// Tabs of the media items before (a video, an audio file) would show in the stack.
+				await ctx.js(
+					"for (const l of [...app.workspace.getLeavesOfType('video'), ...app.workspace.getLeavesOfType('audio')]) l.detach(); await sleep(300);",
+				);
 				await ctx.open("Markdown/Headings.md", "live", { newLeaf: true });
 				await ctx.command("workspace:toggle-stacked-tabs");
 				await ctx.sleep(600);
@@ -2680,6 +2708,7 @@ export function catalogScenes(): Scene[] {
 		prompts,
 		modalControls,
 		canvas,
+		canvasLink,
 		bases,
 		graph,
 		pdf,
