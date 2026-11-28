@@ -134,6 +134,11 @@ export interface ChecklistItem {
  * - data-capture-input-selection="START END DIRECTION" on the focused field: its selected text.
  * - data-capture-cm-selection: CodeMirror's own selection ranges (reference only; the editor
  *   draws them as .cm-selectionBackground boxes, which are in the markup).
+ * - data-capture-paint="COLORS" and data-capture-paint-fx="FX" on parts where the replay check
+ *   allows raster differences between builds (borders under a scale transform, pseudo-element
+ *   image-mask icons, rounded inline backgrounds): the live text, background, border and
+ *   pseudo-element colors and image hash, and the opacity, filter and blend mode of the part, its
+ *   pseudo-elements and every ancestor that sets one. The replay must compute the same.
  * - data-capture-canvas-blank on a <canvas> that read back blank (fully transparent) live: replayed
  *   as it is, not masked.
  * - data-capture-ghost-of="PATH" on the copy a reorder drag's ghost holds (.drag-reorder-ghost >

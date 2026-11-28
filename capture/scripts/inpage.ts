@@ -306,6 +306,24 @@ export const INPAGE = String.raw`
 		}
 		return out.join(" ");
 	}
+	/**
+	 * What else changes how e's paint comes out: opacity, filter and blend mode of e, of its shown
+	 * ::before/::after, and of every ancestor that sets one (recorded next to paintOf).
+	 */
+	function paintFx(e) {
+		const win = e.ownerDocument.defaultView;
+		const fx = (c) => [c.opacity, c.filter, c.mixBlendMode].join("/");
+		const out = [fx(win.getComputedStyle(e))];
+		for (const pe of ["::before", "::after"]) {
+			const p = win.getComputedStyle(e, pe);
+			if (p.content !== "none" && p.content !== "normal") out.push(pe + fx(p));
+		}
+		for (let a = e.parentElement; a; a = a.parentElement) {
+			const c = win.getComputedStyle(a);
+			if (c.opacity !== "1" || c.filter !== "none" || c.mixBlendMode !== "normal") out.push(a.localName + ":" + fx(c));
+		}
+		return out.join(" ");
+	}
 	/** True when h paints a background (color with alpha, or an image) over its area. */
 	function paintsBackground(win, h) {
 		const cs = win.getComputedStyle(h);
@@ -680,7 +698,10 @@ export const INPAGE = String.raw`
 					for (const pe of ["::before", "::after"]) { const p = dv.getComputedStyle(e, pe); if (p.content !== "none" && p.content !== "normal" && p.position === "absolute" && (p.getPropertyValue("-webkit-mask-image") + p.maskImage + p.backgroundImage).includes("url(")) paint.add(e); }
 				if (/^(span|mark|code|a|em|strong)$/.test(e.localName) && cs.display.startsWith("inline") && cs.borderRadius !== "0px" && (cs.backgroundColor !== "rgba(0, 0, 0, 0)" || cs.backgroundImage !== "none")) paint.add(e);
 			}
-			for (const e of paint) twin.get(e)?.setAttribute("data-capture-paint", paintOf(e));
+			for (const e of paint) {
+				twin.get(e)?.setAttribute("data-capture-paint", paintOf(e));
+				twin.get(e)?.setAttribute("data-capture-paint-fx", paintFx(e));
+			}
 		}
 		const trimmed = applyTrim(t, opts.trim);
 		const back = new Map();
@@ -1250,6 +1271,6 @@ export const INPAGE = String.raw`
 		const r = scroller.getBoundingClientRect();
 		return scroller.scrollHeight > scroller.clientHeight && x > r.left + scroller.clientLeft + scroller.clientWidth && x < r.right && y > r.top && y < r.bottom;
 	}
-	window.cap = { clear, textStyles, canvasesStill, paintOf, sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges, candidates, stackAt };
+	window.cap = { clear, textStyles, canvasesStill, paintOf, paintFx, sleep, find, locate, open, clean, overlays, last, ROOTS, clearSettingsSearch, reveal, visibility, visibleRect, witness, markStates, snapshot, hasSelection, overScrollbar, styleBefore, styleChanges, candidates, stackAt };
 })();
 `;
