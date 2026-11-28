@@ -602,6 +602,11 @@ const pluginBrowser: Scene = {
 					"for (const it of [...document.querySelectorAll('.community-item')].slice(0, 25)) { it.click(); let last = -1; for (let i = 0; i < 40; i++) { await sleep(250); const d = document.querySelector('.community-modal-details'); const n = d?.textContent?.length ?? 0; if (n > 200 && n === last) break; last = n; } const imgs = [...document.querySelectorAll('.community-modal-details img')].filter((m) => !m.src.startsWith('data:')); if (!imgs.length) return it.querySelector('.community-item-name')?.textContent ?? '?'; } return null;",
 				);
 				if (!chosen) console.error("\nplugin details: every plugin tried has README images");
+				// The list back at its top: the chosen plugin may sit far down, and trimming the
+				// entries above it would move it by a sub-pixel remainder.
+				await ctx.js(
+					"let s = document.querySelector('.community-item')?.parentElement; while (s && s.scrollHeight <= s.clientHeight) s = s.parentElement; s?.scrollTo(0, 0); await sleep(500);",
+				);
 				await ctx.sleep(1000);
 			},
 			note: "The details of the first listed plugin whose README has no remote images (they do not replay offline).",
