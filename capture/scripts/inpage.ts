@@ -717,7 +717,10 @@ export const INPAGE = String.raw`
 		function keepFrame(fc, fo, ox, oy, path) {
 			let idoc = null;
 			try { idoc = fo?.contentDocument; } catch {}
-			if (idoc?.body && ![...idoc.body.querySelectorAll("*")].some((e) => e.getClientRects().length) && !idoc.body.innerText?.trim()) {
+			// A sandboxed frame with no src and no srcdoc (Obsidian strips an HTML block's srcdoc)
+			// shows the blank document, though its document cannot be read.
+			const blank = !idoc && fo && !fc.getAttribute("src") && !fc.hasAttribute("srcdoc");
+			if (blank || (idoc?.body && ![...idoc.body.querySelectorAll("*")].some((e) => e.getClientRects().length) && !idoc.body.innerText?.trim())) {
 				fc.setAttribute("data-capture-frame-empty", "");
 				return;
 			}

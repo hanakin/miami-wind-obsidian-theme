@@ -224,6 +224,10 @@ export async function checkFixture(
 ): Promise<Result> {
 	const st = f.quirks ? env.stages.quirks : env.stages.standards;
 	const { page, cdp } = st;
+	// A mutation left by an earlier check that returned early must not carry over.
+	await page.evaluate(() => {
+		for (const e of document.querySelectorAll("[data-mutation]")) e.remove();
+	});
 	const touch = f.id.startsWith("mobile.");
 	const lost = (f.runtimeStyles ?? []).filter(
 		(t) => t !== "app" && t !== "theme" && !existsSync(`${RUNTIME_DIR}${t}.css`),
