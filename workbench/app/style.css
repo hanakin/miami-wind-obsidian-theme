@@ -372,17 +372,18 @@ main h2 {
 	padding-block: 10px;
 }
 
-.surface.bare header,
-.surface.bare .captures {
-	display: inline-flex;
+/* A place with no picture: its name and verdict on one line, each reason on a line below. */
+.surface.bare header {
+	display: flex;
 	flex-wrap: wrap;
 	gap: 4px 12px;
 	align-items: baseline;
-	vertical-align: baseline;
 }
 
-.surface.bare header {
-	margin-right: 12px;
+.surface.bare header > .reason,
+.surface.bare .captures {
+	flex-basis: 100%;
+	margin-top: 4px;
 }
 
 .surface.bare h3,
@@ -398,8 +399,9 @@ main h2 {
 	font-size: 12px;
 }
 
+/* A notice that asks for attention. Yellow is kept for "not proven" alone. */
 .message.warn {
-	color: var(--yellow);
+	color: var(--text);
 }
 
 .props {
@@ -507,10 +509,6 @@ figcaption[title] {
 	color: var(--grey-300);
 }
 
-.state.forced {
-	color: var(--cyan);
-}
-
 .aside {
 	color: var(--grey-500);
 }
@@ -544,10 +542,15 @@ figcaption[title] {
 	color: var(--grey-400);
 }
 
+/* The changed pixels, marked in red by the compare tool: kept small and toned down. */
 .differs img {
 	display: block;
 	max-width: 100%;
+	max-height: 280px;
 	height: auto;
+	object-fit: contain;
+	opacity: 0.75;
+	filter: saturate(0.6);
 	margin-top: 8px;
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
@@ -759,15 +762,19 @@ details.section > summary::-webkit-details-marker {
 	display: none;
 }
 
-/* A plain chevron that turns when the section opens. */
-details.section > summary::before {
+/* A plain chevron that turns when the section opens. It stays on the name's line. */
+.chevron {
+	display: inline-block;
 	width: 8px;
 	color: var(--grey-500);
-	content: "›";
 }
 
-details.section[open] > summary::before {
+details.section[open] > summary .chevron {
 	transform: rotate(90deg);
+}
+
+details.section details.section:not([open]) > summary .chevron {
+	transform: none;
 }
 
 .section-head {

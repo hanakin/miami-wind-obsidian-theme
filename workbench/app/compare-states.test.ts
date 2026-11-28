@@ -13,6 +13,7 @@ import {
 } from "./compare-states.ts";
 import { touchedComponents } from "./elements.ts";
 import type { CompareState } from "./types.ts";
+import { plainValue } from "./words.ts";
 
 it("reads the three statuses and keeps not-proven reasons", () => {
 	expect(
@@ -224,11 +225,25 @@ it("drops a logical property only when its physical twin is recorded too", () =>
 	expect(twins.list.reduce((n, c) => n + c.count, 0)).toBe(2);
 });
 
-/** True when a recorded difference shows up in the boiled-down list, itself or as its physical twin. */
+/**
+ * True when a recorded difference shows up in the boiled-down list, itself or as its physical
+ * twin. Two kinds are left out on purpose and count as covered: a font list that differs only in
+ * Obsidian's "??" placeholders, and a turning point that only follows a recorded size change of
+ * the same element (`all` is every difference of the capture).
+ */
 function covered(
 	list: ReturnType<typeof changes>["list"],
 	x: { element: string; property: string; before: string | null; after: string | null },
+	all: { element: string; property: string }[] = [],
 ): boolean {
+	if (x.before !== x.after && plainValue(x.before) === plainValue(x.after)) return true;
+	if (
+		/^(transform|perspective)-origin$/.test(x.property) &&
+		all.some(
+			(o) => o.element === x.element && /^(width|height|block-size|inline-size)$/.test(o.property),
+		)
+	)
+		return true;
 	const logical: Record<string, string> = {
 		"block-start": "top",
 		"block-end": "bottom",
@@ -240,8 +255,8 @@ function covered(
 	const twin = Object.entries(logical).reduce((p, [from, to]) => p.replace(from, to), x.property);
 	return list.some(
 		(c) =>
-			c.before === x.before &&
-			c.after === x.after &&
+			c.before === plainValue(x.before) &&
+			c.after === plainValue(x.after) &&
 			c.code.includes(itemCode(x.element)) &&
 			(c.properties.includes(x.property) || c.properties.includes(twin)),
 	);
@@ -274,7 +289,8 @@ it.skipIf(!existsSync(REPORT))(
 				tag: "a.tag, .cm-hashtag",
 			});
 			for (const x of f.differences ?? []) {
-				if (!covered(found.list, x)) throw new Error(`${f.id}: lost ${JSON.stringify(x)}`);
+				if (!covered(found.list, x, f.differences))
+					throw new Error(`${f.id}: lost ${JSON.stringify(x)}`);
 				checked++;
 			}
 		}
@@ -395,4 +411,24 @@ it("names changed properties in plain words, and leaves out what only follows a 
 		"Padding top, padding bottom: 4px → 8px",
 		"Transform origin: 0px 0px → 5px 5px",
 	]);
+});
+
+it("reads font lists without Obsidian's placeholders, and tells a component apart by its own name", () => {
+	const found = changes(
+		[
+			// Only the placeholders differ: no change at all.
+			d("1:body", "font-family", '"??", "??", Inter', '"??", Inter'),
+			d("2:div.x", "font-family", '"??", "??", Inter', '"??", "Liberation Sans", Inter'),
+			d("1:body", "color", "rgb(1, 1, 1)", "rgb(2, 2, 2)"),
+			d("57:hr", "border-top-color", "rgb(51, 51, 51)", "rgb(34, 211, 238)"),
+		],
+		// As the workbench passes them for a component with no selector of its own.
+		{ hr: "hr, .hr" },
+	);
+	expect(found.list.map((c) => [c.what, c.before, c.after, c.components])).toEqual([
+		["Font family", "Inter", '"Liberation Sans", Inter', []],
+		["Text color", "rgb(1, 1, 1)", "rgb(2, 2, 2)", []],
+		["Border top color", "rgb(51, 51, 51)", "rgb(34, 211, 238)", ["hr"]],
+	]);
+	expect(found.list[1]?.items).toBe("the whole window");
 });

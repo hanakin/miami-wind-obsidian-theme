@@ -1,6 +1,6 @@
 import { matchesElement, mayMatchElement } from "./elements.ts";
 import type { CompareState } from "./types.ts";
-import { itemName, plainProperty } from "./words.ts";
+import { itemName, plainProperty, plainValue } from "./words.ts";
 
 interface CompareFixture {
 	id: string;
@@ -235,6 +235,11 @@ export interface Change {
 	code: string[];
 	/** Components with one of these items surely among their own elements. */
 	components: string[];
+	/**
+	 * Components these items themselves are: the change is on the component's own element, not on
+	 * something else in its capture. Lines about anything else name the item they are on.
+	 */
+	own?: string[];
 	/** Components one of these items might belong to; the report cannot tell (no attributes). */
 	maybe: string[];
 	/** Every property that changes this way, most common first. */
@@ -305,11 +310,16 @@ export function changes(
 	const names = Object.keys(selectors);
 	// What was recorded for each item, to tell a logical property that only repeats a physical one.
 	const recorded = new Set(
-		differences.map((d) => `${d.element}\n${d.property}\n${d.before}\n${d.after}`),
+		differences.map(
+			(d) => `${d.element}\n${d.property}\n${plainValue(d.before)}\n${plainValue(d.after)}`,
+		),
 	);
 	const resized = new Set(differences.filter((d) => SIZE.test(d.property)).map((d) => d.element));
 	const byChange = new Map<string, Group>();
-	for (const { element, property, before, after } of differences) {
+	for (const { element, property, ...raw } of differences) {
+		// Font lists are read without Obsidian's "??" placeholders; a change only in those is none.
+		const [before, after] = [plainValue(raw.before), plainValue(raw.after)];
+		if (before === after && raw.before !== raw.after) continue;
 		const twin = physicalOf(property);
 		if (twin && recorded.has(`${element}\n${twin}\n${before}\n${after}`)) continue;
 		if (FOLLOWS_SIZE.test(property) && resized.has(element)) continue;

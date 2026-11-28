@@ -135,6 +135,7 @@ export type FixtureIndex = Pick<ViewerData, "components"> & {
 		trimSelector?: string;
 		imageSizes?: { index: number; width: number; height: number; file?: string }[];
 		canvasPixels?: { index: number; frame?: string | null; file: string }[];
+		evidence?: { box?: unknown };
 	})[];
 };
 
@@ -163,8 +164,10 @@ export function entries(
 		const state = states[f.id];
 		if (!state || !byId.has(f.id) || !valid(f.inputs)) continue;
 		const differences = f.differences ?? [];
+		// A component with no selector of its own is still told apart from the rest of its capture
+		// where it can be: an element or class with the component's own name (hr, .gutter).
 		const selectors = Object.fromEntries(
-			(contains.get(f.id) ?? []).flatMap((c) => (COMPONENTS[c] ? [[c, COMPONENTS[c]]] : [])),
+			(contains.get(f.id) ?? []).map((c) => [c, COMPONENTS[c] ?? `${c}, .${c}`]),
 		);
 		const found = differences.length ? changes(differences, selectors) : undefined;
 		out[f.id] = {
@@ -178,7 +181,11 @@ export function entries(
 				: [],
 			changes: found && {
 				...found,
-				list: found.list.map((c) => ({ ...c, components: [...c.components, ...ownWhole(f.id)] })),
+				list: found.list.map((c) => ({
+					...c,
+					own: c.components,
+					components: [...new Set([...c.components, ...ownWhole(f.id)])],
+				})),
 			},
 			diffImage: Boolean(f.images?.diff) && existsSync(`${OUT}/diffs/${f.id}.diff.png`),
 		};
@@ -238,15 +245,24 @@ async function data(index: FixtureIndex, frameOrigin: string): Promise<ViewerDat
 		componentItems: await componentItems(usage),
 		appCss: existsSync(paths.app),
 		cmCss: existsSync(`${ROOT}capture/.app/runtime`),
-		fixtures: index.fixtures.map(({ id, file, component, surface, state, note, viewport }) => ({
-			id,
-			component,
-			surface,
-			state,
-			note,
-			size: statSync(`${ROOT}capture/fixtures/${file}`).size,
-			viewport,
-		})),
+		fixtures: index.fixtures.map(
+			({ id, file, component, surface, state, note, viewport, evidence }) => {
+				const box = evidence?.box;
+				return {
+					id,
+					component,
+					surface,
+					state,
+					note,
+					size: statSync(`${ROOT}capture/fixtures/${file}`).size,
+					viewport,
+					box:
+						Array.isArray(box) && box.length === 4 && box.every((n) => Number.isFinite(n))
+							? (box as [number, number, number, number])
+							: undefined,
+				};
+			},
+		),
 		components: index.components,
 		usage,
 		compareError: reportError,

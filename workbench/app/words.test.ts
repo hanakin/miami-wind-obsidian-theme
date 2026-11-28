@@ -1,5 +1,14 @@
 import { expect, it } from "vitest";
-import { bySurface, kinds, plainProperty, plainReason, surfaceName } from "./words.ts";
+import {
+	bySurface,
+	itemName,
+	kinds,
+	plainProperty,
+	plainReason,
+	plainValue,
+	stateName,
+	surfaceName,
+} from "./words.ts";
 
 it("names surfaces plainly and puts phone and tablet last", () => {
 	expect(surfaceName("editor-live-preview")).toBe("Live preview");
@@ -29,4 +38,19 @@ it("sums up property lists as kinds of change", () => {
 	);
 	expect(kinds(["display"])).toBe("layout");
 	expect(plainProperty("-webkit-text-fill-color")).toBe("text fill color");
+});
+
+it("says states in plain words and drops Obsidian's font placeholders", () => {
+	expect(stateName("expanded-after-click")).toBe("expanded after click");
+	expect(plainValue('"??", "Liberation Sans", "??", ui-sans-serif')).toBe(
+		'"Liberation Sans", ui-sans-serif',
+	);
+	expect(plainValue("'??', Inter")).toBe("Inter");
+	expect(plainValue("rgb(1, 2, 3)")).toBe("rgb(1, 2, 3)");
+	expect(plainValue(null)).toBeNull();
+});
+
+it("names the compare tool's stand-in for a theme value", () => {
+	expect(itemName("probe:--canvas-color-1")).toBe("the theme value --canvas-color-1");
+	expect(itemName("body.theme-dark.mod-linux")).toBe("the whole window");
 });

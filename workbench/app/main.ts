@@ -14,7 +14,7 @@ import { latest } from "./latest.ts";
 import type { Results } from "./results.ts";
 import type { SideChoice } from "./sides.ts";
 import type { CompareState, Fixture, ResolvedSide, ViewerData, Which } from "./types.ts";
-import { bySurface, kinds, plainReason, surfaceName } from "./words.ts";
+import { bySurface, kinds, plainReason, stateName, surfaceName } from "./words.ts";
 
 type Mode = Which | "both";
 type Status = CompareState["status"];
@@ -78,7 +78,6 @@ const data = (await (await fetch("/api/data")).json()) as ViewerData;
 const fixtures = new Map(data.fixtures.map((f) => [f.id, f]));
 const usage = new Map(data.usage.map((u) => [u.component, u]));
 const names = Object.keys(data.components).sort();
-const shared = names.filter((n) => data.components[n]?.multiSurface);
 // Shared components the build knows that no capture is tagged with still get a page.
 const buildOnly = [...usage.keys()].filter((n) => !data.components[n]).sort();
 
@@ -257,6 +256,7 @@ function sectionFold(label: string, items: string[], ...content: Child[]): HTMLE
 			h(
 				"span",
 				{ class: "section-head" },
+				h("span", { class: "chevron", "aria-hidden": "true" }, "›"),
 				h("span", { class: "section-name" }, label),
 				worst && h("span", { class: `dot ${worst}`, title: LABEL[worst] }),
 			),
@@ -463,6 +463,10 @@ function shot(f: Fixture, which: Which, label: boolean, focus?: string): HTMLEle
 		tabindex: "-1",
 	});
 	const crop = h("div", { class: "crop", "data-note": "Loading picture…" }, frame);
+	// The box takes its final size before the picture arrives, from where the element sat when
+	// captured, so pictures loading later do not push the page around. Known only for a capture
+	// of the component itself.
+	if (f.box && (!focus || focus === f.component)) rects.set(crop, f.box);
 	lazy.observe(crop);
 	return h("div", { class: "shot" }, label && name, crop);
 }
@@ -474,6 +478,8 @@ const arounds = new WeakMap<Element, [number, number]>();
 // A surrounding line is shown whole when it is no wider than this; wider ones are cut around the item.
 const MAX_AROUND = 760;
 const onMissing = new WeakMap<Element, () => void>();
+/** Crops whose frame has reported: the picture is there to show. */
+const drawn = new WeakSet<Element>();
 
 /** A span of at least `min` around [start, start + size], kept inside [0, limit]. */
 function span(
@@ -512,7 +518,8 @@ function layout(figure: Element): void {
 		b.crop.style.width = `${b.width * scale}px`;
 		b.crop.style.height = `${b.height * scale}px`;
 		b.frame.style.transform = `scale(${scale}) translate(${-b.left}px, ${-b.top}px)`;
-		b.crop.classList.add("ready");
+		// A box sized ahead from the recorded position shows its picture only once it is drawn.
+		if (drawn.has(b.crop)) b.crop.classList.add("ready");
 	}
 }
 
@@ -526,6 +533,7 @@ addEventListener("message", (e: MessageEvent<{ mwRect?: unknown; mwAround?: unkn
 	const r = e.data.mwRect;
 	if (Array.isArray(r) && r.length === 4 && r.every((n) => Number.isFinite(n) && n >= 0)) {
 		rects.set(crop, r as Rect);
+		drawn.add(crop);
 		const a = e.data.mwAround;
 		if (Array.isArray(a) && a.length === 2 && a.every((n) => Number.isFinite(n))) {
 			arounds.set(crop, [Math.max(0, a[0]), a[1]]);
@@ -573,8 +581,9 @@ function value(v: string | null): HTMLElement {
 /** One change in plain words: what changed, from what to what, and on which item. */
 function changeLine(c: Change, component: string): HTMLElement {
 	// Which item changed, relative to the component this page is about.
-	// A change on the component itself needs no "on the …": the page is about it.
-	const where = c.components.includes(component)
+	// A change on the component's own element needs no "on the …": the page is about it. Every
+	// other line names the item it is on.
+	const where = c.own?.includes(component)
 		? ""
 		: c.maybe.includes(component)
 			? ` on ${c.items} (can't tell if this is the ${component})`
@@ -606,7 +615,9 @@ function whatDiffers(
 ): HTMLElement | false {
 	const all = live.changes[f.id];
 	if (!all) return false;
-	const list = only ? all.list.filter(only) : all.list;
+	// The component's own changes come first; the rest keep their order (most common first).
+	const mine = (c: Change) => Number(c.own?.includes(component) ?? false);
+	const list = (only ? all.list.filter(only) : all.list).toSorted((a, b) => mine(b) - mine(a));
 	// A filtered list is complete as shown; the full one may have been cut by the server.
 	const found = { ...all, list, total: only ? list.length : all.total };
 	if (list.length === 0) return false;
@@ -687,10 +698,15 @@ function capture(f: Fixture, focus?: string, only?: (c: Change) => boolean): HTM
 		around && !changedIn(component, f, live.compare, live.touched)
 			? undefined
 			: stateFor(component, f.id, live.compare, live.touched);
-	return h(
+	const shots = h(
+		"div",
+		{ class: "shots" },
+		...themes.map((t) => shot(f, t, mode === "both", focus)),
+	);
+	const figure = h(
 		"figure",
 		{ class: "capture" },
-		h("div", { class: "shots" }, ...themes.map((t) => shot(f, t, mode === "both", focus))),
+		shots,
 		h(
 			"figcaption",
 			// The capture's own name is for looking it up, not for reading: it shows on hover.
@@ -699,11 +715,14 @@ function capture(f: Fixture, focus?: string, only?: (c: Change) => boolean): HTM
 					.filter(Boolean)
 					.join("\n"),
 			},
-			h("span", { class: f.state === "default" ? "state" : "state forced" }, f.state),
+			h("span", { class: "state" }, stateName(f.state)),
 		),
 		verdict && verdictLines(verdict),
 		whatDiffers(f, component, only),
 	);
+	// Sized once it is on the page: the room it has is known only then.
+	requestAnimationFrame(() => layout(figure));
+	return figure;
 }
 
 /**
@@ -1196,7 +1215,9 @@ function renderUntied(): void {
 }
 
 function renderPage(): void {
-	const name = decodeURIComponent(location.hash.slice(1)) || shared[0] || names[0] || "";
+	// With no page asked for, the first item of the sidebar's first section opens.
+	const first = data.organization.sections.flatMap((s) => s.groups).flatMap((g) => g.items)[0];
+	const name = decodeURIComponent(location.hash.slice(1)) || first || names[0] || "";
 	for (const a of nav.querySelectorAll("a")) {
 		if (a.dataset.name === name) a.setAttribute("aria-current", "page");
 		else a.removeAttribute("aria-current");

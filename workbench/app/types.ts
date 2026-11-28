@@ -10,6 +10,8 @@ export interface Fixture {
 	size: number;
 	/** The window size it was captured at, when not the desktop default (emulated mobile). */
 	viewport?: [number, number];
+	/** Where the captured element sat in the live window: x, y, width, height. */
+	box?: [number, number, number, number];
 }
 
 export interface ComponentEntry {
