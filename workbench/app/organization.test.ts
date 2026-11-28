@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { organize, probes } from "./organization.ts";
+import { lastCompounds, organize, probes } from "./organization.ts";
 
 const paths = [
 	"components/action-button.css",
@@ -154,4 +154,52 @@ it("reads the selectors that can own an item, and leaves out states, context and
 		(s) => s,
 	);
 	expect(weak?.weak).toBe(true);
+});
+
+it("reads an item named inside :is() or :where() as if written out", () => {
+	const names = (css: string) =>
+		probes([{ path: "sections/canvas.css", css }], (s) => s).map(
+			(p) => `${p.last.tag ?? ""}${p.last.classes.map((c) => `.${c}`).join("")}`,
+		);
+	// The review's case: `button {}` in global/ and `:is(button) {}` in a section must both name button.
+	expect(names(":is(button) { color: red }")).toEqual(["button"]);
+	expect(names(".canvas :where(button, .tag).big { color: red }")).toEqual([
+		"button.big",
+		".tag.big",
+	]);
+	// Nested, and with a complex alternative: the alternative's own last part is the name.
+	expect(names(":is(:where(.menu .menu-item), kbd) { color: red }")).toEqual([".menu-item", "kbd"]);
+	// Only states inside: still names nothing. :not() is not a name.
+	expect(names(":is(.is-active, .mod-cta) { color: red }")).toEqual([]);
+	expect(names(".tag:not(button) { color: red }")).toEqual([".tag"]);
+	expect(lastCompounds(":is(button, .x)").map((c) => c.tag ?? c.classes[0])).toEqual([
+		"button",
+		"x",
+	]);
+});
+
+it("reports an overlap made through :is()", () => {
+	const [inner] = probes(
+		[{ path: "sections/canvas.css", css: ":is(button) { color: red }" }],
+		(s) => s,
+	);
+	// The matcher calls a rule "named" when its last part carries the item's own name.
+	const named = (item: string, file: string, selector: string) => ({
+		item,
+		file,
+		line: 1,
+		selector,
+		how: "named" as const,
+		adjustment: false,
+	});
+	expect(inner?.last.tag).toBe("button");
+	const out = organize(
+		[
+			named("button", "global/inputs.css", "button"),
+			named("button", "sections/canvas.css", ":is(button)"),
+		],
+		["button"],
+		paths,
+	);
+	expect(out.overlaps.map((o) => o.item)).toEqual(["button"]);
 });

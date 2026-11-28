@@ -5,6 +5,7 @@ import {
 	changes,
 	combine,
 	compareStates,
+	insidePictures,
 	itemCode,
 	pageSummary,
 	rowState,
@@ -341,4 +342,24 @@ it("counts a change to the component seen inside a larger capture, even beside i
 			same,
 		);
 	}
+});
+
+it("shows every larger capture that changes the component, not only the first", () => {
+	// A place with no capture of the button itself: two larger captures hold one.
+	const here = [
+		{ id: "menu.first", component: "menu", surface: "menu" },
+		{ id: "menu.second", component: "menu", surface: "menu" },
+		{ id: "menu.third", component: "menu", surface: "menu" },
+	];
+	const compare: Record<string, CompareState> = {
+		"menu.first": { status: "same" },
+		"menu.second": { status: "different" },
+		"menu.third": { status: "different" },
+	};
+	// The second changes the button; the third changes something else in the menu.
+	const touched = { "menu.second": ["button"], "menu.third": ["menu"] };
+	expect(rowState("button", "menu", here, compare, touched)?.state.status).toBe("different");
+	const { changed, rest } = insidePictures("button", here, compare, touched);
+	expect(changed.map((f) => f.id)).toEqual(["menu.second"]);
+	expect(rest.map((f) => f.id)).toEqual(["menu.first", "menu.third"]);
 });

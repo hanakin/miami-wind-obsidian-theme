@@ -36,20 +36,45 @@ export interface Compound {
 	attributes: string[];
 }
 
-/** The last compound of a selector, or of each alternative in a selector list. */
+/**
+ * The ways a selector's last part can be read. Usually one: the nodes after its last combinator.
+ * `:is()` and `:where()` name their element inside the brackets, so each alternative there is
+ * read as if written out: `:is(button, .tag).big` is `button.big` and `.tag.big`.
+ */
+function lastParts(nodes: selectorParser.Node[]): selectorParser.Node[][] {
+	const last: selectorParser.Node[] = [];
+	for (const node of nodes) {
+		if (node.type === "combinator") last.length = 0;
+		else last.push(node);
+	}
+	let out: selectorParser.Node[][] = [[]];
+	for (const node of last) {
+		if (node.type === "pseudo" && /^:(is|where)$/i.test(node.value) && node.nodes.length > 0) {
+			const inner = node.nodes.flatMap((alternative) => lastParts(alternative.nodes));
+			// Far more alternatives than any real rule has: stop multiplying, keep what is read.
+			out = out.flatMap((o) => inner.map((i) => [...o, ...i])).slice(0, 64);
+		} else {
+			out = out.map((o) => [...o, node]);
+		}
+	}
+	return out;
+}
+
+function compound(nodes: selectorParser.Node[]): Compound {
+	const out: Compound = { classes: [], attributes: [] };
+	for (const node of nodes) {
+		if (node.type === "tag") out.tag = node.value.toLowerCase();
+		else if (node.type === "class") out.classes.push(node.value);
+		else if (node.type === "attribute") out.attributes.push(node.toString().trim());
+	}
+	return out;
+}
+
+/** The last compound of a selector: one for each alternative in a list, `:is()` or `:where()`. */
 export function lastCompounds(selectorList: string): Compound[] {
 	const out: Compound[] = [];
 	selectorParser((root) => {
-		for (const selector of root.nodes) {
-			let last: Compound = { classes: [], attributes: [] };
-			for (const node of selector.nodes) {
-				if (node.type === "combinator") last = { classes: [], attributes: [] };
-				else if (node.type === "tag") last.tag = node.value.toLowerCase();
-				else if (node.type === "class") last.classes.push(node.value);
-				else if (node.type === "attribute") last.attributes.push(node.toString().trim());
-			}
-			out.push(last);
-		}
+		for (const selector of root.nodes) out.push(...lastParts(selector.nodes).map(compound));
 	}).processSync(selectorList);
 	return out;
 }
@@ -60,7 +85,7 @@ const STATE_OR_CONTEXT = /^(is-|mod-|has-|theme-|show-|hide-)/;
 
 /** The rules the check follows, in plain words. Printed with its result. */
 export const RULES = [
-	"An item is a component named by its own class or element: the last part of a selector.",
+	"An item is a component named by its own class or element: the last part of a selector. A name inside :is() or :where() counts as if written out.",
 	"A rule counts for an item only when it selects the item's own element in a capture and names it by the item's own class or element. A section's own class on that element (.xfaSelect on a select) is the section's, not the item's.",
 	"States (is-*, mod-*, has-*, :hover and the like) and context (.theme-dark, body and platform classes) are not items and never cause an overlap.",
 	"Rules that only set variables (--name) belong to the file they are in and never cause an overlap.",
@@ -72,12 +97,7 @@ export const RULES = [
  * What a selector's last compound is written with: "name" for a tag or a class that is not a
  * state, "attribute" for attribute tests only, undefined for states and context alone.
  */
-function lastPart(selector: selectorParser.Selector): "name" | "attribute" | undefined {
-	const last: selectorParser.Node[] = [];
-	for (const node of selector.nodes) {
-		if (node.type === "combinator") last.length = 0;
-		else last.push(node);
-	}
+function lastPart(last: selectorParser.Node[]): "name" | "attribute" | undefined {
 	const named = last.some(
 		(node) =>
 			(node.type === "tag" && !/^(body|html)$/i.test(node.value)) ||
@@ -120,8 +140,7 @@ export function probes(
 				for (const selector of root.nodes) {
 					const text = selector.toString().trim();
 					// `.view ::selection` styles selected text anywhere inside: it names no item.
-					const part = lastPart(selector);
-					if (/(^|[\s>+~])::[\w-]+$/.test(text) || !part) continue;
+					if (/(^|[\s>+~])::[\w-]+$/.test(text)) continue;
 					const scoped = selector.nodes.some((n) => n.type === "combinator");
 					const prefixes: string[] = [];
 					let sofar = "";
@@ -129,19 +148,24 @@ export function probes(
 						if (node.type === "combinator" && sofar.trim()) prefixes.push(sofar.trim());
 						sofar += node.toString();
 					}
-					try {
-						out.push({
-							file,
-							full: rewrite(text),
-							last: lastCompounds(text)[0] as Compound,
-							prefixes: prefixes.map(rewrite),
-							weak: part === "attribute",
-							selector: text,
-							line: rule.source?.start?.line ?? 0,
-							adjustment: scoped && ADJUSTMENT.test(label),
-						});
-					} catch {
-						// A selector the rewrite cannot read names nothing we can test.
+					// One probe for each way the last part can be read (see lastParts).
+					for (const last of lastParts(selector.nodes)) {
+						const part = lastPart(last);
+						if (!part) continue;
+						try {
+							out.push({
+								file,
+								full: rewrite(text),
+								last: compound(last),
+								prefixes: prefixes.map(rewrite),
+								weak: part === "attribute",
+								selector: text,
+								line: rule.source?.start?.line ?? 0,
+								adjustment: scoped && ADJUSTMENT.test(label),
+							});
+						} catch {
+							// A selector the rewrite cannot read names nothing we can test.
+						}
 					}
 				}
 			}).processSync(rule.selector);

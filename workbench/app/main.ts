@@ -2,11 +2,13 @@
 import {
 	type Change,
 	changedIn,
+	insidePictures,
 	type PlaceVerdict,
 	pageSummary,
 	rowState,
 	stateFor,
 } from "./compare-states.ts";
+import { latest } from "./latest.ts";
 import type { Results } from "./results.ts";
 import type { SideChoice } from "./sides.ts";
 import type { CompareState, Fixture, ResolvedSide, ViewerData, Which } from "./types.ts";
@@ -110,10 +112,8 @@ async function resolveSides(): Promise<Record<Which, ResolvedSide>> {
 	return (await res.json()) as Record<Which, ResolvedSide>;
 }
 let sides = await resolveSides();
-const hashOf = (which: Which) => {
-	const side = sides[which];
-	return "sha256" in side ? side.sha256 : undefined;
-};
+const shaOf = (side: ResolvedSide) => ("sha256" in side ? side.sha256 : undefined);
+const hashOf = (which: Which) => shaOf(sides[which]);
 const labelOf = (which: Which) => {
 	const side = sides[which];
 	return "label" in side ? side.label : which === "left" ? "Left" : "Right";
@@ -123,8 +123,8 @@ const labelOf = (which: Which) => {
  * What is on record for the two sides now shown: each capture's result from a check made with
  * exactly this CSS on both sides. Captures never checked with these sides have no entry.
  */
-async function fetchResults(): Promise<Results | null> {
-	const [before, after] = [hashOf("left"), hashOf("right")];
+async function fetchResults(of: Record<Which, ResolvedSide>): Promise<Results | null> {
+	const [before, after] = [shaOf(of.left), shaOf(of.right)];
 	if (!before || !after) return null;
 	return (await (
 		await fetch(`/api/results?before=${before}&after=${after}`)
@@ -132,7 +132,7 @@ async function fetchResults(): Promise<Results | null> {
 }
 const none = { generated: "", compare: null, touched: {}, changes: {}, diffs: {} };
 let live: Omit<Results, "compare"> & { compare: Results["compare"] | null } =
-	(await fetchResults()) ?? none;
+	(await fetchResults(sides)) ?? none;
 
 /** A component's places counted by verdict: the page header and the sidebar dot both use this. */
 const summaryOf = (name: string) =>
@@ -145,10 +145,27 @@ const summaryOf = (name: string) =>
 	);
 let summaries = new Map(names.map((n) => [n, summaryOf(n)]));
 
-/** Re-reads everything that depends on the sides after they change. */
-async function refresh(): Promise<void> {
-	live = (await fetchResults()) ?? none;
+const newest = latest();
+/**
+ * Re-reads what each side points at and the results for exactly those two sides, and puts both
+ * on the page together. An answer that comes back after a newer request started is dropped whole
+ * (null): sides and results on screen always belong to the same request. Otherwise returns what
+ * was on screen before.
+ */
+async function load(): Promise<{ hashes: Record<Which, string | undefined>; had: boolean } | null> {
+	const loaded = await newest(async () => {
+		const next = await resolveSides();
+		return { next, results: await fetchResults(next) };
+	});
+	if (!loaded) return null;
+	const was = {
+		hashes: { left: hashOf("left"), right: hashOf("right") },
+		had: live.compare !== null,
+	};
+	sides = loaded.value.next;
+	live = loaded.value.results ?? none;
 	summaries = new Map(names.map((n) => [n, summaryOf(n)]));
+	return was;
 }
 
 /** Why something is not proven, in plain words. */
@@ -681,21 +698,25 @@ function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLEle
 		captures,
 	);
 	// The component's own captures; failing that, one close-up from a larger capture. With no
-	// close-up to show, the row shrinks to a single line.
+	// close-up to show, the row shrinks to a single line. Either way, every larger capture that
+	// differs on this item itself is shown, with only those changes: none is left to a stand-in.
+	const { changed, rest } = insidePictures(component, here, live.compare, live.touched);
+	const changedPictures = changed.map((f) =>
+		capture(f, component, (c) => c.components.includes(component)),
+	);
 	captures.append(
 		...(place?.inside
 			? [
-					firstShowing(here.toSorted(bySize).slice(0, MAX_TRIES), component, () => {
+					...changedPictures,
+					firstShowing(rest.toSorted(bySize).slice(0, MAX_TRIES), component, () => {
+						if (changed.length > 0) return document.createComment("the changes are shown");
 						row.classList.add("bare");
 						return h("p", { class: "reason" }, "No close-up to show.");
 					}),
 				]
 			: [
 					...here.filter((f) => f.component === component).map((f) => capture(f)),
-					// Larger captures that differ on this item itself: shown with only those changes.
-					...here
-						.filter((f) => changedIn(component, f, live.compare, live.touched))
-						.map((f) => capture(f, component, (c) => c.components.includes(component))),
+					...changedPictures,
 				]),
 	);
 	return row;
@@ -801,8 +822,7 @@ const KINDS: [SideChoice["kind"], string][] = [
 /** Points both sides at the current choices, then redraws everything that depends on them. */
 async function applySides(): Promise<void> {
 	store("mw-viewer-sides", JSON.stringify(choices));
-	sides = await resolveSides();
-	await refresh();
+	if (!(await load())) return;
 	renderNav();
 	renderPage();
 }
@@ -1097,12 +1117,11 @@ void watchRecheck();
 
 // A theme file one side points at changed on disk: redraw that side's pictures in place.
 import.meta.hot?.on("mw:side-changed", async () => {
-	const before = { left: hashOf("left"), right: hashOf("right") };
-	sides = await resolveSides();
+	const was = await load();
+	if (!was) return;
+	const { hashes: before, had } = was;
 	const changed = WHICH.filter((w) => hashOf(w) !== before[w]);
 	if (changed.length === 0) return;
-	const had = live.compare !== null;
-	await refresh();
 	if (had || live.compare !== null || changed.some((w) => !before[w] || !hashOf(w))) {
 		// The results on screen were made with other CSS (or results exist for the new CSS):
 		// everything is redrawn.

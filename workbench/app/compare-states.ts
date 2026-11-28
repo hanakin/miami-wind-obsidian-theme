@@ -122,6 +122,22 @@ export function changedIn(
 	);
 }
 
+/**
+ * Which larger captures a place shows for a component: every one that differs on the component's
+ * own elements (`changed`), so no recorded change goes unshown, and the others (`rest`), of which
+ * one picture is enough.
+ */
+export function insidePictures<P extends Place>(
+	component: string,
+	here: P[],
+	compare: Record<string, CompareState> | null,
+	touched: Record<string, string[]>,
+): { changed: P[]; rest: P[] } {
+	const larger = here.filter((f) => f.component !== component);
+	const changed = larger.filter((f) => changedIn(component, f, compare, touched));
+	return { changed, rest: larger.filter((f) => !changed.includes(f)) };
+}
+
 /** What one capture says about one component: its change counts only when it is on the component. */
 export function stateFor(
 	component: string,

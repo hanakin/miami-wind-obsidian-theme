@@ -129,7 +129,8 @@ export function frameCsp(origin: string, page: string, nonce: string): string {
 		"default-src 'none'",
 		`style-src ${origin}/css/ 'unsafe-inline'`,
 		`font-src ${origin}/assets/ data:`,
-		`img-src ${origin}/assets/ data: blob:`,
+		// Images: the app's own icons, the PDF viewer's, and pictures the replay writes as data:.
+		`img-src ${origin}/assets/public/ ${origin}/assets/lib/pdfjs/images/ data:`,
 		// The replay reads recorded canvas pixels from data: URLs.
 		"connect-src data:",
 		`script-src 'nonce-${nonce}'`,

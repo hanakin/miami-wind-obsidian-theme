@@ -68,7 +68,9 @@ it("allows only the nonce'd script and the frame address's own paths", () => {
 	expect(csp).not.toContain("unsafe-eval");
 	expect(csp).toContain("default-src 'none'");
 	expect(csp).toContain("connect-src data:;");
-	expect(csp).toContain("img-src http://127.0.0.1:5176/assets/ data: blob:");
+	expect(csp).toContain(
+		"img-src http://127.0.0.1:5176/assets/public/ http://127.0.0.1:5176/assets/lib/pdfjs/images/ data:;",
+	);
 	// Nothing in it names the workbench's own address except who may show the frame.
 	expect(csp.split("5175")).toHaveLength(2);
 	expect(csp).toContain("frame-ancestors http://127.0.0.1:5175");

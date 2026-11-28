@@ -1,5 +1,9 @@
-// The viewer's local asset handling, as a Vite plugin: the data for the page, the fixtures wrapped
+// The workbench's local server side, as a Vite plugin: the data for the page, the fixtures drawn
 // with Obsidian's CSS plus one theme, and a reload when the built theme or the compare result changes.
+//
+// Nothing here sets or reads a cookie. The page and the fixture frames sit on two ports of one
+// host, which keeps their DOM and storage apart but not host cookies, so no decision in this file
+// may ever depend on one: requests are judged by their Origin, Host and content only.
 import { type ChildProcess, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import {
@@ -9,6 +13,7 @@ import {
 	readFileSync,
 	realpathSync,
 	statSync,
+	unwatchFile,
 	watch,
 	watchFile,
 	writeFileSync,
@@ -22,6 +27,7 @@ import { COMPONENTS } from "../../capture/scripts/engine.ts";
 import { changes, compareStates } from "./compare-states.ts";
 import { touchedComponents } from "./elements.ts";
 import { type Focus, frameCsp, frameDocument, replayCall } from "./frame.ts";
+import { fingerprints } from "./inputs.ts";
 import { type FixtureResult, mergeRun, pairKey, resultsFor, type Store } from "./results.ts";
 import { parseChoice, resolveSide, type Side, sha256 } from "./sides.ts";
 import { organization } from "./source.ts";
@@ -31,10 +37,6 @@ const ROOT = new URL("../../", import.meta.url).pathname;
 
 const paths = {
 	app: `${ROOT}capture/.app/app.css`,
-	// Obsidian's runtime stylesheets (CodeMirror's rules among them), which the compare tool also
-	// loads first. Extracted locally by `bun run capture:extract-runtime-css`; never committed.
-	cm: `${ROOT}capture/.app/runtime-styles.css`,
-	new: `${ROOT}theme.css`,
 	diffs: `${ROOT}workbench/out/component-diffs.json`,
 	compare: `${ROOT}workbench/out/compare.json`,
 	fixtures: `${ROOT}capture/fixtures.json`,
@@ -135,7 +137,12 @@ type FixtureIndex = Pick<ViewerData, "components"> & {
 };
 
 /** What a compare report found for each of its captures, in the form the workbench keeps. */
-function entries(report: ReportMeta, index: FixtureIndex, states: Record<string, CompareState>) {
+function entries(
+	report: ReportMeta,
+	index: FixtureIndex,
+	states: Record<string, CompareState>,
+	inputs: Record<string, string>,
+) {
 	const byId = new Map(index.fixtures.map((f) => [f.id, f]));
 	const contains = new Map(index.fixtures.map((f) => [f.id, [f.component, ...f.contains]]));
 	// A component with no selector of its own (a whole view, the gutter) is its capture: every
@@ -154,6 +161,7 @@ function entries(report: ReportMeta, index: FixtureIndex, states: Record<string,
 		);
 		const found = differences.length ? changes(differences, selectors) : undefined;
 		out[f.id] = {
+			inputs: inputs[f.id] ?? "",
 			state,
 			touched: differences.length
 				? [
@@ -196,18 +204,32 @@ function ingest(index: FixtureIndex): void {
 	reportError = typeof states === "string" ? states : undefined;
 	// A report that does not say which themes it compared cannot be filed under any pair.
 	if (typeof states === "string" || !before || !after) return;
-	const found = entries(report, index, states);
+	// Each result is filed with the fingerprint of what its capture is drawn from. A capture whose
+	// inputs changed after the report was written was checked with something else: not filed.
+	const now = fingerprints(ROOT, index.fixtures);
+	const stale = (id: string) => (now.changed[id] ?? Number.POSITIVE_INFINITY) > mtime;
+	const found = Object.fromEntries(
+		Object.entries(entries(report, index, states, now.fixtures)).filter(([id]) => !stale(id)),
+	);
 	const dir = pictures(before, after);
 	mkdirSync(dir, { recursive: true });
 	for (const [id, f] of Object.entries(found)) {
 		if (f.diffImage) copyFileSync(`${OUT}/diffs/${id}.diff.png`, `${dir}/${id}.diff.png`);
 	}
+	const staleComponents = new Set(
+		index.fixtures.filter((f) => stale(f.id)).map((f) => f.component),
+	);
 	store = mergeRun(
 		store,
 		pairKey(before, after),
 		report.generated ?? new Date(mtime).toISOString(),
 		found,
-		(json(paths.diffs) as Diffs | null) ?? {},
+		now,
+		Object.fromEntries(
+			Object.entries((json(paths.diffs) as Diffs | null) ?? {}).filter(
+				([component]) => !staleComponents.has(component),
+			),
+		),
 	);
 	writeFileSync(STORE, JSON.stringify(store));
 }
@@ -353,6 +375,94 @@ function send(res: ServerResponse, status: number, type: string, body: string | 
 	res.end(body);
 }
 
+type Handler = (req: IncomingMessage, res: ServerResponse) => void;
+
+/**
+ * Keeps a handler's own failures inside it: an address that cannot be read (a broken %-escape, a
+ * malformed URL) answers 400, anything else 500. Nothing thrown here reaches the process.
+ */
+function guarded(handle: Handler): Handler {
+	return (req, res) => {
+		try {
+			handle(req, res);
+		} catch (e) {
+			if (res.headersSent) return void res.end();
+			const bad = e instanceof URIError || e instanceof TypeError;
+			send(res, bad ? 400 : 500, "text/plain", bad ? "Bad request" : "Server error");
+		}
+	};
+}
+
+/**
+ * Answers the fixture frames' own address (the port after the workbench's): a frame's document,
+ * the stylesheet it links, and Obsidian's own fonts and images. GET only, this host only.
+ */
+export function frameHandler(port: number, byId: Map<string, Captured>): Handler {
+	const pageOrigin = `http://127.0.0.1:${port}`;
+	const origin = `http://127.0.0.1:${port + 1}`;
+	return guarded((req, res) => {
+		if (req.headers.host !== `127.0.0.1:${port + 1}` || req.method !== "GET") {
+			return void send(res, 404, "text/plain", "Not found");
+		}
+		const url = new URL(req.url ?? "/", origin);
+		const [, area, a, b] = url.pathname.split("/").map(decodeURIComponent);
+		if (area === "frame" && a && sheets.has(a) && b && byId.has(b)) {
+			const fixture = byId.get(b) as Captured;
+			const nonce = randomUUID();
+			const component = url.searchParams.get("focus") ?? "";
+			const selector = COMPONENTS[component];
+			const focus: Focus | null = selector ? { is: selector, not: moreSpecific(component) } : null;
+			const { stylesheet, input } = replayInput(fixture, a, origin);
+			replayCall(input)
+				.then((call) => {
+					res.setHeader("Content-Security-Policy", frameCsp(origin, pageOrigin, nonce));
+					res.setHeader("Cache-Control", "no-store");
+					send(
+						res,
+						200,
+						"text/html; charset=utf-8",
+						frameDocument({
+							call,
+							stylesheet: `${origin}/css/replay/${stylesheet}.css`,
+							focus,
+							nonce,
+							quirks: Boolean(fixture.quirks),
+						}),
+					);
+				})
+				.catch((e) => send(res, 500, "text/plain", String(e)));
+			return;
+		}
+		if (area === "css" && a === "replay" && b) {
+			// A frame's stylesheet, named by the hash of its text: only text the workbench built.
+			const css = replaySheets.get(b.replace(/\.css$/, ""));
+			if (css === undefined) return void send(res, 404, "text/plain", "Not found");
+			res.setHeader("Cache-Control", "max-age=31536000, immutable");
+			return send(res, 200, "text/css; charset=utf-8", css);
+		}
+		if (url.pathname.startsWith("/assets/")) {
+			// The app's own fonts and images, from the files extracted beside app.css. The real
+			// path must be a file inside that folder.
+			const root = `${APP}/assets`;
+			const path = resolve(root, decodeURIComponent(url.pathname.slice("/assets/".length)));
+			if (!existsSync(path)) return void send(res, 404, "text/plain", "Not found");
+			const real = realpathSync(path);
+			if (!real.startsWith(realpathSync(root) + sep) || !statSync(real).isFile()) {
+				return void send(res, 404, "text/plain", "Not found");
+			}
+			// Frames are sandboxed (origin "null"), and fonts are fetched with CORS.
+			res.setHeader("Access-Control-Allow-Origin", "null");
+			res.setHeader("Cache-Control", "max-age=31536000, immutable");
+			const type =
+				{ svg: "image/svg+xml", woff2: "font/woff2", ttf: "font/ttf", png: "image/png" }[
+					real.split(".").pop() ?? ""
+				] ?? "application/octet-stream";
+			return send(res, 200, type, readFileSync(real));
+		}
+		send(res, 404, "text/plain", "Not found");
+	});
+}
+
 export function viewer(): Plugin {
 	return {
 		name: "miami-wind-workbench",
@@ -361,14 +471,19 @@ export function viewer(): Plugin {
 			const byId = new Map(index.fixtures.map((f) => [f.id, f]));
 			// The compare tool's font embedding reads paths relative to the repository root.
 			process.chdir(ROOT);
+			// Everything watched here is let go when this server closes (Vite restarts itself when the
+			// plugin's files change), so no old watcher keeps talking to a closed server.
+			const watching = new Map<string, () => void>();
+			const watchPath = (path: string, changed: () => void) => {
+				watching.set(path, changed);
+				watchFile(path, { interval: 300 }, changed);
+			};
 			for (const path of [paths.diffs, paths.compare, paths.app]) {
-				watchFile(path, { interval: 300 }, () => {
-					server.ws.send({ type: "full-reload" });
-				});
+				watchPath(path, () => server.ws.send({ type: "full-reload" }));
 			}
 			// The sidebar is built from src/: a change there rebuilds it.
 			let pending: ReturnType<typeof setTimeout> | undefined;
-			watch(`${ROOT}src`, { recursive: true }, () => {
+			const source = watch(`${ROOT}src`, { recursive: true }, () => {
 				clearTimeout(pending);
 				pending = setTimeout(() => server.ws.send({ type: "full-reload" }), 300);
 			});
@@ -377,9 +492,7 @@ export function viewer(): Plugin {
 			const watchSide = (path: string | undefined) => {
 				if (!path || watched.has(path)) return;
 				watched.add(path);
-				watchFile(path, { interval: 300 }, () =>
-					server.ws.send({ type: "custom", event: "mw:side-changed" }),
-				);
+				watchPath(path, () => server.ws.send({ type: "custom", event: "mw:side-changed" }));
 			};
 			// Requests that act on the machine must come from the viewer's own page.
 			const fromPage = (req: IncomingMessage) =>
@@ -391,71 +504,8 @@ export function viewer(): Plugin {
 			// workbench's origin, so nothing in a frame can read the workbench or call its API, while
 			// the replay can still reach the frames nested inside its own document.
 			const port = server.config.server.port ?? 5175;
-			const pageOrigin = `http://127.0.0.1:${port}`;
 			const origin = `http://127.0.0.1:${port + 1}`;
-			const frames = createServer((req, res) => {
-				if (req.headers.host !== `127.0.0.1:${port + 1}` || req.method !== "GET") {
-					return void send(res, 404, "text/plain", "Not found");
-				}
-				const url = new URL(req.url ?? "/", origin);
-				const [, area, a, b] = url.pathname.split("/").map(decodeURIComponent);
-				if (area === "frame" && a && sheets.has(a) && b && byId.has(b)) {
-					const fixture = byId.get(b) as Captured;
-					const nonce = randomUUID();
-					const component = url.searchParams.get("focus") ?? "";
-					const selector = COMPONENTS[component];
-					const focus: Focus | null = selector
-						? { is: selector, not: moreSpecific(component) }
-						: null;
-					const { stylesheet, input } = replayInput(fixture, a, origin);
-					replayCall(input)
-						.then((call) => {
-							res.setHeader("Content-Security-Policy", frameCsp(origin, pageOrigin, nonce));
-							res.setHeader("Cache-Control", "no-store");
-							send(
-								res,
-								200,
-								"text/html; charset=utf-8",
-								frameDocument({
-									call,
-									stylesheet: `${origin}/css/replay/${stylesheet}.css`,
-									focus,
-									nonce,
-									quirks: Boolean(fixture.quirks),
-								}),
-							);
-						})
-						.catch((e) => send(res, 500, "text/plain", String(e)));
-					return;
-				}
-				if (area === "css" && a === "replay" && b) {
-					// A frame's stylesheet, named by the hash of its text: only text the workbench built.
-					const css = replaySheets.get(b.replace(/\.css$/, ""));
-					if (css === undefined) return void send(res, 404, "text/plain", "Not found");
-					res.setHeader("Cache-Control", "max-age=31536000, immutable");
-					return send(res, 200, "text/css; charset=utf-8", css);
-				}
-				if (url.pathname.startsWith("/assets/")) {
-					// The app's own fonts and images, from the files extracted beside app.css. The real
-					// path must be a file inside that folder.
-					const root = `${APP}/assets`;
-					const path = resolve(root, decodeURIComponent(url.pathname.slice("/assets/".length)));
-					if (!existsSync(path)) return void send(res, 404, "text/plain", "Not found");
-					const real = realpathSync(path);
-					if (!real.startsWith(realpathSync(root) + sep) || !statSync(real).isFile()) {
-						return void send(res, 404, "text/plain", "Not found");
-					}
-					// Frames are sandboxed (origin "null"), and fonts are fetched with CORS.
-					res.setHeader("Access-Control-Allow-Origin", "null");
-					res.setHeader("Cache-Control", "max-age=31536000, immutable");
-					const type =
-						{ svg: "image/svg+xml", woff2: "font/woff2", ttf: "font/ttf", png: "image/png" }[
-							real.split(".").pop() ?? ""
-						] ?? "application/octet-stream";
-					return send(res, 200, type, readFileSync(real));
-				}
-				send(res, 404, "text/plain", "Not found");
-			});
+			const frames = createServer(frameHandler(port, byId));
 			// Vite restarts itself when this plugin's files change: the frame server it had must be
 			// gone before the new one takes the port, so wait for the old one and retry if needed.
 			const held = globalThis as { mwFrames?: ReturnType<typeof createServer> };
@@ -469,9 +519,14 @@ export function viewer(): Plugin {
 			const listen = () => frames.listen(port + 1, "127.0.0.1");
 			if (previous?.listening) previous.close(listen);
 			else listen();
-			server.httpServer?.on("close", () => frames.close());
+			server.httpServer?.on("close", () => {
+				frames.close();
+				source.close();
+				clearTimeout(pending);
+				for (const [path, changed] of watching) unwatchFile(path, changed);
+			});
 
-			server.middlewares.use((req, res, next) => {
+			const api: Handler = (req, res) => {
 				const url = new URL(req.url ?? "/", "http://viewer");
 				const [, area] = url.pathname.split("/").map(decodeURIComponent);
 				if (url.pathname === "/api/sides") {
@@ -557,7 +612,8 @@ export function viewer(): Plugin {
 						url.searchParams.get("before") ?? "",
 						url.searchParams.get("after") ?? "",
 					);
-					return send(res, 200, "application/json", JSON.stringify(resultsFor(store, key)));
+					const now = fingerprints(ROOT, index.fixtures);
+					return send(res, 200, "application/json", JSON.stringify(resultsFor(store, key, now)));
 				}
 				if (url.pathname === "/api/data") {
 					data(index, origin)
@@ -578,7 +634,14 @@ export function viewer(): Plugin {
 				if (["frame", "css", "diff", "lib", "assets"].includes(area ?? "")) {
 					return send(res, 404, "text/plain", "Not found");
 				}
-				next();
+				passed.add(req);
+			};
+			// A request the workbench does not answer itself goes on to Vite.
+			const passed = new WeakSet<IncomingMessage>();
+			const safeApi = guarded(api);
+			server.middlewares.use((req, res, next) => {
+				safeApi(req, res);
+				if (passed.has(req)) next();
 			});
 		},
 	};
