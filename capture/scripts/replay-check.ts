@@ -319,9 +319,17 @@ export async function checkFixture(
 	await page.evaluate(() => {
 		(document.getElementById("replay-mask") as HTMLStyleElement).textContent = "";
 	});
+	// Vault files inline styles use as images, in place of their app: URLs.
+	let replayHtml = html;
+	for (const [url, file] of Object.entries(f.styleImages ?? {}))
+		replayHtml = replayHtml
+			.split(url)
+			.join(
+				`data:${IMAGE_TYPES[file.split(".").pop() ?? ""] ?? "image/png"};base64,${readFileSync(`${CAPTURE}fixtures/${file}`).toString("base64")}`,
+			);
 	const got = await replayFixture(
 		page,
-		html,
+		replayHtml,
 		(f.imageSizes ?? []).map((im) => ({
 			...im,
 			url: im.file

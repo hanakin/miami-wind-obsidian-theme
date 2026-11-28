@@ -185,6 +185,12 @@ export interface FixtureEntry {
 	 * a replay draws in its place.
 	 */
 	imageSizes?: { index: number; width: number; height: number; file?: string }[];
+	/**
+	 * Capture-vault files that inline styles use as images (url(app:...) in a style attribute, e.g.
+	 * a Bases card cover), by the exact URL in the fixture: the file under capture/fixtures/, by
+	 * content. A replay puts the file in place of the URL.
+	 */
+	styleImages?: Record<string, string>;
 	/** "xhtml" when the tree cannot be written as HTML text (e.g. a <div> inside a <p>); parse it as application/xhtml+xml. */
 	format?: "xhtml";
 	/**
