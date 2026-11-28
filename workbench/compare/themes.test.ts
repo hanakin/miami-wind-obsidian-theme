@@ -9,6 +9,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { PNG } from "pngjs";
 import { expect, test } from "vitest";
 
 test("reports the run date and preserves the exact compared CSS with hashes and source paths", () => {
@@ -19,10 +20,22 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 	};
 	try {
 		mkdirSync(join(cwd, "capture/fixtures"), { recursive: true });
-		mkdirSync(join(cwd, "capture/.app"));
+		mkdirSync(join(cwd, "capture/.app/runtime"), { recursive: true });
+		writeFileSync(
+			join(cwd, "capture/.app/runtime/test-sheet.css"),
+			"button {font-size:12px}",
+		);
+		writeFileSync(
+			join(cwd, "capture/fixtures/saved.png"),
+			PNG.sync.write(new PNG({ width: 1, height: 1 })),
+		);
 		writeFileSync(
 			join(cwd, "capture/coverage.json"),
 			JSON.stringify({ replay: { limits: {} } }),
+		);
+		writeFileSync(
+			join(cwd, "capture/fixtures/canvas.png"),
+			readFileSync(join(cwd, "capture/fixtures/saved.png")),
 		);
 		mkdirSync(join(cwd, "workbench/out/themes"), { recursive: true });
 		writeFileSync(
@@ -33,6 +46,9 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 					{
 						id: "test",
 						file: "test.html",
+						runtimeStyles: ["app", "runtime", "test-sheet", "theme"],
+						imageSizes: [{ index: 0, width: 1, height: 1, file: "saved.png" }],
+						canvasPixels: [{ index: 0, file: "canvas.png" }],
 						component: "button",
 						surface: "test",
 						state: "default",
@@ -43,7 +59,7 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 		);
 		writeFileSync(
 			join(cwd, "capture/fixtures/test.html"),
-			"<button data-capture-target>Test</button>",
+			"<button data-capture-target>Test</button><img><canvas></canvas>",
 		);
 		writeFileSync(
 			join(cwd, "capture/.app/package.json"),
@@ -72,6 +88,39 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 			readFileSync(join(cwd, "workbench/out/compare.json"), "utf8"),
 		);
 		expect(report.schemaVersion).toBe(1);
+		for (const file of [
+			"capture/fixtures/test.html",
+			"capture/fixtures/saved.png",
+			"capture/fixtures/canvas.png",
+			"capture/fixtures.json",
+			"capture/coverage.json",
+			"capture/.app/app.css",
+			"capture/.app/runtime-styles.css",
+			"capture/.app/runtime/test-sheet.css",
+		]) {
+			const hash = createHash("sha256")
+				.update(readFileSync(join(cwd, file)))
+				.digest("hex");
+			expect(report.inputs[file], file).toBe(hash);
+			expect(report.fixtures[0].inputs[file], file).toBe(hash);
+		}
+		for (const file of ["replay.ts", "css.ts", "inpage.ts"]) {
+			const path = resolve("capture/scripts", file);
+			expect(report.inputs[path]).toBe(
+				createHash("sha256").update(readFileSync(path)).digest("hex"),
+			);
+			expect(report.fixtures[0].inputs[path]).toBe(report.inputs[path]);
+		}
+		const fixtureHash = report.fixtures[0].inputs["capture/fixtures/test.html"];
+		rmSync(join(cwd, "capture/fixtures/test.html"));
+		expect(report.fixtures[0].inputs["capture/fixtures/test.html"]).toBe(
+			fixtureHash,
+		);
+		writeFileSync(
+			join(cwd, "capture/fixtures/test.html"),
+			"<button data-capture-target>Test</button><img><canvas></canvas>",
+		);
+
 		expect(report.status).toBe("different");
 		expect(report).not.toHaveProperty("accepted");
 		expect(report.summary).not.toHaveProperty("accepted");

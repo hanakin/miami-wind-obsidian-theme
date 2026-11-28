@@ -2,6 +2,7 @@ import type { CDPSession, Page } from "playwright";
 import { COMPONENTS } from "../../capture/scripts/engine";
 import type { FixtureEntry } from "../../capture/scripts/types";
 import { captureFrame, movePointer } from "./browser";
+import type { Inputs } from "./inputs";
 import type { ElementStyle, Sample } from "./model";
 import { prepareReplay } from "./replay";
 import { JS_READ_PROPERTIES } from "./variables";
@@ -44,7 +45,7 @@ export async function render(
 	page: Page,
 	cdp: CDPSession,
 	html: string,
-	css: { cm: string; app: string; theme: string },
+	css: { cm: string; app: string; theme: string; inputs?: Inputs },
 	fixture: RenderFixture,
 ): Promise<Rendered> {
 	await cdp.send("Animation.enable");
