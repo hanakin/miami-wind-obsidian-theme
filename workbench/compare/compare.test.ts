@@ -3,6 +3,7 @@ import {
 	comparisonExitCode,
 	componentDiffs,
 	filterFixtures,
+	mergedCoverage,
 	styleDiff,
 } from "./model";
 
@@ -41,6 +42,27 @@ test("finds longhand differences and missing elements", () => {
 	expect(
 		styleDiff([{ element: "button", props: { color: "red" } }], []),
 	).toHaveLength(1);
+});
+test("retains every element when computed-style vectors are shared", () => {
+	const old = { color: "red" },
+		next = { color: "blue" };
+	expect(
+		styleDiff(
+			[
+				{ element: "a", props: old },
+				{ element: "b", props: old },
+				{ element: "c", props: old },
+			],
+			[
+				{ element: "a", props: next },
+				{ element: "b", props: next },
+			],
+		),
+	).toEqual([
+		{ element: "a", property: "color", before: "red", after: "blue" },
+		{ element: "b", property: "color", before: "red", after: "blue" },
+		{ element: "c", property: "color", before: "red", after: null },
+	]);
 });
 test("component shared look uses modal value and retains surface exceptions", () => {
 	const samples = ["a", "b", "c"].map((surface, i) => ({
@@ -125,4 +147,24 @@ test("style differences remain different despite noisy pixels", async () => {
 	expect(outcome({ ...common, differences: 0, pixels: 50 }).status).toBe(
 		"not-proven",
 	);
+});
+
+test("merges coverage from before, after and repeats without losing before-only limits", () => {
+	const empty = { invisibleTarget: false, unsupported: [], replayIssues: [] };
+	expect(
+		mergedCoverage(
+			{
+				...empty,
+				invisibleTarget: true,
+				unsupported: ["video"],
+				replayIssues: ["before only"],
+			},
+			empty,
+			{ ...empty, unsupported: ["img", "video"], replayIssues: ["after only"] },
+		),
+	).toEqual({
+		invisible: true,
+		unsupported: ["video", "img"],
+		replayIssues: ["before only", "after only"],
+	});
 });

@@ -1,3 +1,5 @@
+import { propertyValueKey } from "./css-values";
+
 export interface ElementStyle {
 	element: string;
 	props: Record<string, string>;
@@ -19,18 +21,40 @@ export function styleDiff(
 	const result: Difference[] = [];
 	const a = new Map(before.map((e) => [e.element, e.props]));
 	const b = new Map(after.map((e) => [e.element, e.props]));
+	const empty: Record<string, string> = {};
+	// Browser snapshots intern equal style vectors. Compare each pair once, but
+	// retain a separate difference for every element that uses that pair.
+	const pairs = new Map<
+		Record<string, string>,
+		Map<Record<string, string>, Omit<Difference, "element">[]>
+	>();
 	for (const element of new Set([...a.keys(), ...b.keys()])) {
-		const x = a.get(element) ?? {},
-			y = b.get(element) ?? {};
-		for (const property of new Set([...Object.keys(x), ...Object.keys(y)])) {
-			if (x[property] !== y[property])
-				result.push({
-					element,
-					property,
-					before: x[property] ?? null,
-					after: y[property] ?? null,
-				});
+		const x = a.get(element) ?? empty,
+			y = b.get(element) ?? empty;
+		let matches = pairs.get(x);
+		if (!matches) {
+			matches = new Map();
+			pairs.set(x, matches);
 		}
+		let changes = matches.get(y);
+		if (!changes) {
+			changes = [];
+			for (const property of new Set([...Object.keys(x), ...Object.keys(y)]))
+				if (
+					x[property] !== y[property] &&
+					(x[property] === undefined ||
+						y[property] === undefined ||
+						propertyValueKey(property, x[property]!) !==
+							propertyValueKey(property, y[property]!))
+				)
+					changes.push({
+						property,
+						before: x[property] ?? null,
+						after: y[property] ?? null,
+					});
+			matches.set(y, changes);
+		}
+		for (const change of changes) result.push({ element, ...change });
 	}
 	return result;
 }
@@ -67,12 +91,12 @@ export function componentDiffs(
 					continue;
 				const counts = new Map<string, number>();
 				for (const s of group) {
-					const v = s.props[prop] ?? "";
+					const v = propertyValueKey(prop, s.props[prop] ?? "");
 					counts.set(v, (counts.get(v) ?? 0) + 1);
 				}
 				const shared = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
 				for (const s of group)
-					if ((s.props[prop] ?? "") !== shared)
+					if (propertyValueKey(prop, s.props[prop] ?? "") !== shared)
 						exceptions.get(s.surface)?.add(prop);
 			}
 		}
@@ -113,6 +137,19 @@ export function filterFixtures<
 	);
 }
 
+export function mergedCoverage(
+	...sides: {
+		invisibleTarget: boolean;
+		unsupported: string[];
+		replayIssues: string[];
+	}[]
+) {
+	return {
+		invisible: sides.some((s) => s.invisibleTarget),
+		unsupported: [...new Set(sides.flatMap((s) => s.unsupported))],
+		replayIssues: [...new Set(sides.flatMap((s) => s.replayIssues))],
+	};
+}
 export function outcome(input: {
 	differences: number;
 	pixels: number;
@@ -126,9 +163,17 @@ export function outcome(input: {
 	if (input.invisible) reasons.push("target has no visible box");
 	for (const kind of new Set(input.unsupported))
 		if (
-			["canvas", "video", "audio", "iframe", "embed", "object", "img"].includes(
-				kind,
-			)
+			[
+				"canvas",
+				"video",
+				"audio",
+				"iframe",
+				"embed",
+				"object",
+				"img",
+				"webview",
+				"background image",
+			].includes(kind)
 		)
 			reasons.push(`${kind} content is not reconstructed`);
 	const status = input.differences

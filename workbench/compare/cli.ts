@@ -11,12 +11,14 @@ import {
 	comparisonExitCode,
 	componentDiffs,
 	filterFixtures,
+	mergedCoverage,
 	outcome,
 	type Sample,
 	styleDiff,
 } from "./model";
 import { repeatedPixels } from "./pixels";
 import { render } from "./render";
+import { loadReplayLimits } from "./replay";
 import { runtimeCss } from "./runtime";
 
 const { values } = parseArgs({
@@ -47,6 +49,12 @@ for (const file of ["compare.json", "compare.md", "component-diffs.json"])
 	rmSync(`${out}/${file}`, { force: true });
 rmSync(`${out}/diffs`, { recursive: true, force: true });
 mkdirSync(`${out}/diffs`, { recursive: true });
+for (const side of ["before", "after"] as const)
+	if (values[side] !== undefined && !values[side]?.trim())
+		throw new Error(
+			`Expected non-empty --${side} path; pass an empty CSS file for Default Obsidian.`,
+		);
+loadReplayLimits();
 const registry = (await Bun.file("capture/fixtures.json").json()) as {
 	obsidianVersion: string;
 	fixtures: FixtureEntry[];
@@ -114,13 +122,6 @@ if (appVersion !== registry.obsidianVersion)
 const app = await Bun.file("capture/.app/app.css").text();
 const cm = await runtimeCss();
 const browser = await chromium.launch(BROWSER_OPTIONS);
-const context = await browser.newContext({
-	viewport: { width: 1600, height: 1000 },
-	deviceScaleFactor: 1,
-	colorScheme: "dark",
-	reducedMotion: "reduce",
-});
-await context.route("**/*", (route) => route.abort());
 type Result = {
 	id: string;
 	component: string;
@@ -149,8 +150,13 @@ let next = 0;
 try {
 	await Promise.all(
 		Array.from({ length: 4 }, async () => {
-			const page = await context.newPage();
-			const cdp = await context.newCDPSession(page);
+			const page = await browser.newPage({
+				viewport: { width: 1600, height: 1000 },
+				deviceScaleFactor: 1,
+				colorScheme: "dark",
+				reducedMotion: "reduce",
+			});
+			const cdp = await page.context().newCDPSession(page);
 			await cdp.send("DOM.enable");
 			await cdp.send("CSS.enable");
 			while (next < fixtures.length) {
@@ -215,13 +221,12 @@ try {
 					);
 				}
 				const differences = styleDiff(a.styles, b.styles);
+				const coverage = mergedCoverage(a, sanity, b, afterRepeat);
 				const verdict = outcome({
 					differences: differences.length,
 					pixels: pixel.count,
 					noise: !!(styleNoise || pixel.noise.pixels),
-					invisible: b.invisibleTarget,
-					unsupported: b.unsupported,
-					replayIssues: b.replayIssues,
+					...coverage,
 				});
 				const result: Result = {
 					id: f.id,
@@ -239,8 +244,8 @@ try {
 					pixelDiff: pixel.count,
 					rawPixelDiff: pixel.rawCount,
 					differences,
-					invisibleTarget: b.invisibleTarget,
-					unsupported: b.unsupported,
+					invisibleTarget: coverage.invisible,
+					unsupported: coverage.unsupported,
 				};
 				if (verdict.status === "different") {
 					const prefix = `diffs/${f.id}`;
@@ -253,7 +258,13 @@ try {
 					await Bun.write(`${out}/${result.images.after}`, b.png);
 					await Bun.write(
 						`${out}/${result.images.diff}`,
-						pixel.png ?? PNG.sync.write(new PNG({ width: 1600, height: 1000 })),
+						pixel.png ??
+							PNG.sync.write(
+								new PNG({
+									width: PNG.sync.read(a.png).width,
+									height: PNG.sync.read(a.png).height,
+								}),
+							),
 					);
 				}
 				results.push(result);
@@ -318,11 +329,11 @@ const summary = {
 	invisibleTargets: results.filter((r) => r.invisibleTarget).length,
 };
 const limitations = [
-	"Serialized DOM only: canvas pixels, media playback/native controls, iframe contents and Obsidian runtime behavior are not reconstructed.",
+	"Capture replay restores recorded canvas pixels and frame documents. Missing image/media interiors, unrecorded canvas/frame content and capture-declared limits remain not proven.",
 	"MathJax fonts load from the matching local Obsidian archive; other fonts use host fallbacks. External requests remain blocked. Missing MathJax fonts or glyph metrics are not proven.",
 	"Computed standard properties and applicable selection, placeholder, scrollbar, marker, generated-content and file-button pseudos are compared. Runtime graph/canvas/PDF colors are probed. Animation declarations are read without suppression; suppression is enabled only for screenshots.",
 	"Repeated pixel checks use exact RGBA equality: red marks stable changes, orange marks same-CSS instability. Each fixture records two captures per side.",
-	"Invisible targets remain in style comparisons; screenshots show the 1600×1000 viewport and may not paint them.",
+	"Screenshots use each fixture’s recorded window size, color scheme, ordered stylesheets, scrolling and selection. Invisible targets remain in style comparisons.",
 	"Component diffs describe after-theme surface consistency, not before/after parity; filtered runs only cover selected uses.",
 ];
 const status =
