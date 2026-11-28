@@ -1,8 +1,6 @@
 /* Clickable icon hover fills and disabled pointer behavior. */
 
-.clickable-icon:hover,
-.mod-left-split .workspace-tab-header,
-.mod-right-split .workspace-tab-header {
+.clickable-icon:hover {
 	cursor: var(--icon-cursor);
 }
 

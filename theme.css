@@ -605,6 +605,11 @@ input[type] {
  * -----------------------------------------------------------------------------
  */
 
+.mod-left-split .workspace-tab-header,
+.mod-right-split .workspace-tab-header {
+	cursor: var(--icon-cursor);
+}
+
 /*
  * Pointerless devices lack Obsidian's stronger hover rivals.
  */
@@ -1123,9 +1128,7 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
  *
  * -------------------------------------------------------------------------- */
 
-.clickable-icon:hover,
-.mod-left-split .workspace-tab-header,
-.mod-right-split .workspace-tab-header {
+.clickable-icon:hover {
 	cursor: var(--icon-cursor);
 }
 
@@ -1926,10 +1929,8 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustment: disabled icon text.
- *
- * Tie Obsidian 1.15.1's 0,3,1 sidebar button color without changing child
- * variables.
+ * Shared component adjustment: tie Obsidian 1.15.1's 0,3,1 disabled sidebar
+ * button color.
  */
 .mod-community-modal button.clickable-icon[aria-disabled='true'] {
 	color: var(--text-disabled);

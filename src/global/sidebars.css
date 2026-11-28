@@ -11,6 +11,11 @@
 
 /* @heading Sidebar tabs */
 
+.mod-left-split .workspace-tab-header,
+.mod-right-split .workspace-tab-header {
+	cursor: var(--icon-cursor);
+}
+
 /* Pointerless devices lack Obsidian's stronger hover rivals. */
 @media (hover: none) {
 	.mod-left-split .workspace-tab-header:hover,

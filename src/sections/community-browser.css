@@ -1,8 +1,6 @@
 /* Disabled community-browser sidebar button text. */
 
-/* Shared component adjustment: disabled icon text. */
-
-/* Tie Obsidian 1.15.1's 0,3,1 sidebar button color without changing child variables. */
+/* Shared component adjustment: tie Obsidian 1.15.1's 0,3,1 disabled sidebar button color. */
 .mod-community-modal button.clickable-icon[aria-disabled='true'] {
 	color: var(--text-disabled);
 }
