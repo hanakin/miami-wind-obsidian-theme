@@ -1,16 +1,23 @@
 import { expect, it } from "vitest";
 import { mergeRun, pairKey, resultsFor, type Store } from "./results.ts";
 
-const same = { state: { status: "same" as const }, touched: [], diffImage: false, inputs: "i1" };
+// Recorded inputs stand in as { file: hash }; `now` says which hash each file has on disk.
+const made = (hash = "h1") => ({ "capture/fixtures/x.html": hash });
+const same = {
+	state: { status: "same" as const },
+	touched: [],
+	diffImage: false,
+	inputs: made(),
+};
 const differs = {
 	state: { status: "different" as const },
 	touched: ["kbd"],
 	diffImage: true,
-	inputs: "i1",
+	inputs: made(),
 };
-// The inputs on disk now: every capture and component at fingerprint "i1".
-const all = (print: string) => new Proxy({}, { get: () => print }) as Record<string, string>;
-const now = { fixtures: all("i1"), components: all("i1") };
+const on = (hash: string) => (inputs: unknown) =>
+	typeof inputs === "object" && inputs !== null && Object.values(inputs).every((h) => h === hash);
+const now = on("h1");
 const ab = pairKey("a", "b");
 
 it("adds or replaces only the captures a run covered", () => {
@@ -61,41 +68,41 @@ it("merges shared-look results by component", () => {
 		tag: look(true),
 	});
 	store = mergeRun(store, ab, "2026-11-26T02:00:00Z", { one: same }, now, { kbd: look(false) });
-	expect(resultsFor(store, ab, now)?.diffs).toEqual({ kbd: look(false), tag: look(true) });
+	const own = { kbd: ["one"], tag: ["one"] };
+	expect(resultsFor(store, ab, now, own)?.diffs).toEqual({ kbd: look(false), tag: look(true) });
 });
 
-it("stops showing a result once the inputs it was made with have changed", () => {
+it("stops showing a result once a file it was made from has changed", () => {
 	let store: Store = { pairs: {} };
 	const look = { modal: { same: true, props: [] } };
-	store = mergeRun(store, ab, "2026-11-26T01:00:00Z", { one: same, two: same }, now, {
+	const stale = { ...same, inputs: made("h0") };
+	store = mergeRun(store, ab, "2026-11-26T01:00:00Z", { one: stale, two: same }, now, {
 		kbd: look,
 		tag: look,
 	});
-	// Obsidian's CSS or the capture "one" changed: its fingerprint is no longer "i1".
-	const changed = {
-		fixtures: { one: "i2", two: "i1" },
-		components: { kbd: "i2", tag: "i1" },
-	};
-	const shown = resultsFor(store, ab, changed);
+	// "one" was made from bytes that are no longer on disk.
+	const own = { kbd: ["one"], tag: ["two"] };
+	const shown = resultsFor(store, ab, now, own);
 	expect(shown?.compare).toEqual({ two: { status: "same" } });
+	// A component's standard-look result stands only while all its own captures do.
 	expect(shown?.diffs).toEqual({ tag: look });
 	// With every input changed, the pair counts as never checked.
-	expect(resultsFor(store, ab, { fixtures: all("i2"), components: all("i2") })).toBeNull();
-	// A result saved before fingerprints existed is never shown.
+	expect(resultsFor(store, ab, on("h2"), own)).toBeNull();
+	// A result saved without recorded inputs is never shown.
 	const { inputs: _, ...unmarked } = same;
 	const old = {
 		pairs: {
 			[ab]: { generated: "x", fixtures: { one: { ...unmarked, generated: "x" } }, diffs: {} },
 		},
 	} as unknown as Store;
-	expect(resultsFor(old, ab, { fixtures: {}, components: {} })).toBeNull();
+	expect(resultsFor(old, ab, (inputs) => inputs !== undefined)).toBeNull();
 });
 
 it("a partial run keeps only earlier results whose inputs still match", () => {
 	let store: Store = { pairs: {} };
-	store = mergeRun(store, ab, "2026-11-26T01:00:00Z", { one: same, two: same, three: same }, now);
-	// "one" changed on disk, then only "two" is re-checked.
-	const changed = { fixtures: { one: "i2", two: "i1", three: "i1" }, components: {} };
-	store = mergeRun(store, ab, "2026-11-26T02:00:00Z", { two: differs }, changed);
+	const first = { one: { ...same, inputs: made("h0") }, two: same, three: same };
+	store = mergeRun(store, ab, "2026-11-26T01:00:00Z", first, now);
+	// "one" changed on disk since; then only "two" is re-checked.
+	store = mergeRun(store, ab, "2026-11-26T02:00:00Z", { two: differs }, now);
 	expect(Object.keys(store.pairs[ab]?.fixtures ?? {}).sort()).toEqual(["three", "two"]);
 });

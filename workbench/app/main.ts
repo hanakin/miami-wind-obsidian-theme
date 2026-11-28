@@ -1209,7 +1209,8 @@ function renderPage(): void {
 	) {
 		up.open = true;
 	}
-	// Pictures of the page being left no longer wait their turn.
+	// Pictures of the page being left no longer wait their turn, and are no longer watched.
+	lazy.disconnect();
 	waiting.length = 0;
 	loading.clear();
 	if (name === UNTIED) {

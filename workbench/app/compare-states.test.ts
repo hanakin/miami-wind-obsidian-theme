@@ -143,6 +143,8 @@ it("counts a page's places, and its dot is the worst of them", () => {
 		unchecked({ status: "not-proven", reasons: ["canvas content is not reconstructed"] }),
 	).toBe(false);
 	expect(unchecked({ status: "same" })).toBe(false);
+	// A not-proven result that gives no reason is still a result: never shown as "not checked".
+	expect(unchecked({ status: "not-proven", reasons: [] })).toBe(false);
 });
 
 const d = (element: string, property: string, before: string, after: string) => ({

@@ -27,7 +27,7 @@ import { COMPONENTS } from "../../capture/scripts/engine.ts";
 import { changes, compareStates } from "./compare-states.ts";
 import { touchedComponents } from "./elements.ts";
 import { type Focus, frameCsp, frameDocument, replayCall } from "./frame.ts";
-import { fingerprints } from "./inputs.ts";
+import { type Valid, validator } from "./inputs.ts";
 import { type FixtureResult, mergeRun, pairKey, resultsFor, type Store } from "./results.ts";
 import { parseChoice, resolveSide, type Side, sha256 } from "./sides.ts";
 import { componentItems, organization } from "./source.ts";
@@ -63,7 +63,7 @@ const json = (path: string): unknown =>
 	existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
 
 /** What a compare.json says about itself. Older reports record none of this. */
-interface ReportMeta {
+export interface ReportMeta {
 	generated?: string;
 	themes?: { before?: { sha256?: string }; after?: { sha256?: string } };
 	fixtures?: ReportFixture[];
@@ -116,9 +116,11 @@ interface ReportFixture {
 		after: string | null;
 	}[];
 	images?: { diff?: string };
+	/** Every file the compare tool read for this capture, with the SHA-256 of the bytes it read. */
+	inputs?: unknown;
 }
 
-type FixtureIndex = Pick<ViewerData, "components"> & {
+export type FixtureIndex = Pick<ViewerData, "components"> & {
 	fixtures: (ViewerData["fixtures"][number] & {
 		/** File name under capture/fixtures; ".xhtml" for trees HTML text cannot hold. */
 		file: string;
@@ -136,12 +138,17 @@ type FixtureIndex = Pick<ViewerData, "components"> & {
 	})[];
 };
 
-/** What a compare report found for each of its captures, in the form the workbench keeps. */
-function entries(
+/**
+ * What a compare report found for each of its captures, in the form the workbench keeps. A
+ * capture is taken only with the inputs the compare tool recorded for it at read time, and only
+ * when those files still have those bytes (`valid`): a report without them, a file changed since
+ * it was read, or a file since deleted gives no result.
+ */
+export function entries(
 	report: ReportMeta,
 	index: FixtureIndex,
 	states: Record<string, CompareState>,
-	inputs: Record<string, string>,
+	valid: Valid,
 ) {
 	const byId = new Map(index.fixtures.map((f) => [f.id, f]));
 	const contains = new Map(index.fixtures.map((f) => [f.id, [f.component, ...f.contains]]));
@@ -154,14 +161,14 @@ function entries(
 	const out: Record<string, Omit<FixtureResult, "generated">> = {};
 	for (const f of report.fixtures ?? []) {
 		const state = states[f.id];
-		if (!state || !byId.has(f.id)) continue;
+		if (!state || !byId.has(f.id) || !valid(f.inputs)) continue;
 		const differences = f.differences ?? [];
 		const selectors = Object.fromEntries(
 			(contains.get(f.id) ?? []).flatMap((c) => (COMPONENTS[c] ? [[c, COMPONENTS[c]]] : [])),
 		);
 		const found = differences.length ? changes(differences, selectors) : undefined;
 		out[f.id] = {
-			inputs: inputs[f.id] ?? "",
+			inputs: f.inputs as Record<string, string>,
 			state,
 			touched: differences.length
 				? [
@@ -204,32 +211,20 @@ function ingest(index: FixtureIndex): void {
 	reportError = typeof states === "string" ? states : undefined;
 	// A report that does not say which themes it compared cannot be filed under any pair.
 	if (typeof states === "string" || !before || !after) return;
-	// Each result is filed with the fingerprint of what its capture is drawn from. A capture whose
-	// inputs changed after the report was written was checked with something else: not filed.
-	const now = fingerprints(ROOT, index.fixtures);
-	const stale = (id: string) => (now.changed[id] ?? Number.POSITIVE_INFINITY) > mtime;
-	const found = Object.fromEntries(
-		Object.entries(entries(report, index, states, now.fixtures)).filter(([id]) => !stale(id)),
-	);
+	const valid = validator(ROOT);
+	const found = entries(report, index, states, valid);
 	const dir = pictures(before, after);
 	mkdirSync(dir, { recursive: true });
 	for (const [id, f] of Object.entries(found)) {
 		if (f.diffImage) copyFileSync(`${OUT}/diffs/${id}.diff.png`, `${dir}/${id}.diff.png`);
 	}
-	const staleComponents = new Set(
-		index.fixtures.filter((f) => stale(f.id)).map((f) => f.component),
-	);
 	store = mergeRun(
 		store,
 		pairKey(before, after),
 		report.generated ?? new Date(mtime).toISOString(),
 		found,
-		now,
-		Object.fromEntries(
-			Object.entries((json(paths.diffs) as Diffs | null) ?? {}).filter(
-				([component]) => !staleComponents.has(component),
-			),
-		),
+		valid,
+		(json(paths.diffs) as Diffs | null) ?? {},
 	);
 	writeFileSync(STORE, JSON.stringify(store));
 }
@@ -471,6 +466,11 @@ export function viewer(): Plugin {
 		configureServer(server) {
 			const index = json(paths.fixtures) as FixtureIndex;
 			const byId = new Map(index.fixtures.map((f) => [f.id, f]));
+			// Each component's own captures, by id.
+			const ownCaptures: Record<string, string[]> = {};
+			for (const f of index.fixtures) {
+				ownCaptures[f.component] = [...(ownCaptures[f.component] ?? []), f.id];
+			}
 			// The compare tool's font embedding reads paths relative to the repository root.
 			process.chdir(ROOT);
 			// Everything watched here is let go when this server closes (Vite restarts itself when the
@@ -614,8 +614,8 @@ export function viewer(): Plugin {
 						url.searchParams.get("before") ?? "",
 						url.searchParams.get("after") ?? "",
 					);
-					const now = fingerprints(ROOT, index.fixtures);
-					return send(res, 200, "application/json", JSON.stringify(resultsFor(store, key, now)));
+					const shown = resultsFor(store, key, validator(ROOT), ownCaptures);
+					return send(res, 200, "application/json", JSON.stringify(shown));
 				}
 				if (url.pathname === "/api/data") {
 					data(index, origin)

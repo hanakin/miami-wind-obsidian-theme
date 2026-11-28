@@ -70,7 +70,9 @@ const NOT_COMPARED: CompareState = { status: "not-proven", reasons: [NOT_CHECKED
  * page shows that apart from a real not-proven result. It is a way of showing, not a verdict.
  */
 export const unchecked = (state: CompareState) =>
-	state.status === "not-proven" && state.reasons.every((r) => r === NOT_CHECKED);
+	state.status === "not-proven" &&
+	state.reasons.length > 0 &&
+	state.reasons.every((r) => r === NOT_CHECKED);
 /** Said when a capture differs, but not on an element that is surely the component's. */
 export const changedElsewhere = (component: string) =>
 	`a change in this capture, not on the ${component} itself`;
