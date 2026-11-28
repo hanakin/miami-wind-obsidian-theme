@@ -20,3 +20,10 @@
 .xfaRadio:focus {
 	outline: none;
 }
+
+/* Shared component adjustment: inputs within XFA. */
+
+.xfaLayer input {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}

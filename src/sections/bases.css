@@ -1,0 +1,123 @@
+/* Bases toolbar buttons, filter fields, query groups and menu states. */
+
+/* Shared component adjustment: toolbar icons and filter actions. */
+
+.bases-toolbar-section-content .filter-group-actions .text-icon-button,
+.filter-row-actions .clickable-icon {
+	margin-right: 4px;
+}
+
+.filter-row-actions .clickable-icon {
+	--text-faint: transparent;
+	background-color: transparent;
+}
+
+.filter-row-actions .clickable-icon:hover {
+	--text-faint: var(--magenta-transparent);
+	background-color: var(--magenta-transparent);
+	color: var(--magenta);
+}
+
+/* Shared component adjustment: disabled filter actions keep the 0,3,0 hover tie. */
+.filter-row-actions [aria-disabled='true']:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--text-disabled);
+}
+
+/* Sheet actions read accent text directly at 0,5,0 / 0,6,0. */
+.filter-row-actions [aria-disabled='true'],
+.filter-group-header-actions [aria-disabled='true'] {
+	--text-on-accent: var(--text-disabled);
+}
+
+.filter-group-header-actions [aria-disabled='true'] {
+	--text-faint: transparent;
+}
+
+/* Bases toolbar actions and filter-row controls in normal and hover states. */
+
+/* Shared component adjustments: action-button.
+ * Local --mw-* variables below set this section’s colors and backgrounds. */
+
+.bases-toolbar-item .text-icon-button,
+.bases-toolbar-section-content .text-icon-button {
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--cyan-transparent);
+	@mixin action-button;
+}
+
+.bases-toolbar-item .text-icon-button:hover,
+.bases-toolbar-section-content .text-icon-button:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--magenta);
+}
+
+/* Shared component adjustment: inputs within bases. */
+
+.bases-toolbar-menu-container .search-input-container input[type='search'] {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}
+
+.menu.mod-sheet .filter-row .filter-property-select.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-property-select,
+.menu.mod-sheet .filter-row .filter-operator.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-operator {
+	background-color: var(--grey-11);
+}
+
+.bases-rendered-value input {
+	background-color: var(--grey-11);
+}
+
+.bases-sort-direction {
+	--background-modifier-border: var(--mw-input-border);
+}
+
+/* Shared component adjustment: menus within bases. */
+
+.menu .clickable-icon.bases-toolbar-menu-item-icon {
+	background-color: transparent;
+}
+
+.menu .clickable-icon.bases-toolbar-menu-item-icon:hover {
+	background-color: transparent;
+}
+
+.menu .bases-toolbar-menu-item:hover .clickable-icon,
+.menu .bases-toolbar-menu-item.is-selected .clickable-icon {
+	--text-on-accent: var(--magenta);
+	color: var(--magenta);
+}
+
+.bases-toolbar-menu-item:hover,
+.bases-toolbar-menu-item:focus,
+.bases-toolbar-menu-item:active,
+.bases-toolbar-menu-item.selected {
+	--mw-item-background: var(--cyan-transparent);
+	--mw-item-color: var(--magenta);
+	--interactive-normal: var(--cyan-transparent);
+	--interactive-hover: var(--cyan-transparent);
+	@mixin menu-item-state;
+}
+
+.bases-toolbar-menu-item.is-editing:focus-within:is(:hover, :focus, :active, .selected) {
+	background-color: var(--mw-item-background);
+}
+
+.bases-toolbar-menu-item.mod-hidden:hover {
+	--mw-item-background: transparent;
+
+	--interactive-normal: transparent;
+	--interactive-hover: transparent;
+	background-color: transparent;
+	color: var(--text-disabled);
+	cursor: default;
+}
+
+/* Shared component adjustment: dropdowns within bases. */
+
+.filter-group-header .conjunction.dropdown {
+	--background-modifier-hover: var(--magenta);
+	background-color: var(--magenta);
+}

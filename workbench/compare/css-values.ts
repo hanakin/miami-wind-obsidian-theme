@@ -46,7 +46,8 @@ function stringValue(raw: string): string | undefined {
 				continue;
 			}
 		} else if (/[\n\r\f]/.test(raw[i] ?? "")) return undefined;
-		const point = raw.codePointAt(i)!;
+		const point = raw.codePointAt(i);
+		if (point === undefined) return undefined;
 		result += character(point);
 		i += point > 0xffff ? 2 : 1;
 	}

@@ -35,3 +35,10 @@
 .canvas-card-menu .canvas-card-menu-button:hover {
 	color: var(--magenta);
 }
+
+/* Shared component adjustment: action icon colors. */
+
+/* Shared component adjustment: Canvas SVG icons. */
+.canvas-control-item:hover .svg-icon {
+	color: var(--magenta);
+}

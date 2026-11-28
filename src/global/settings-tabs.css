@@ -1,0 +1,10 @@
+/* Active settings navigation tabs in the app and modal dialogs. */
+
+body:not(.is-phone) .horizontal-tab-nav-item.is-active,
+body:not(.is-phone) .vertical-tab-nav-item.is-active,
+.modal .vertical-tab-nav-item.is-active,
+.modal .vertical-tab-nav-item.is-active:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--text-normal);
+	cursor: pointer;
+}

@@ -182,9 +182,9 @@ export async function render(
 		await cdp.send("Animation.setPlaybackRate", { playbackRate: 0 });
 		await movePointer(cdp, -1, -1);
 		await page.evaluate(() => {
-			document
-				.querySelectorAll("[data-compare-force]")
-				.forEach((el) => el.removeAttribute("data-compare-force"));
+			document.querySelectorAll("[data-compare-force]").forEach((el) => {
+				el.removeAttribute("data-compare-force");
+			});
 			const marks = new Map<Element, Set<string>>();
 			const add = (el: Element, state: string) => {
 				const states = marks.get(el) ?? new Set<string>();

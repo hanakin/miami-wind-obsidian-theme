@@ -216,9 +216,9 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 				[
 					resolve("workbench/compare/cli.ts"),
 					"--before",
-					before!,
+					before ?? "",
 					"--after",
-					after!,
+					after ?? "",
 					"--id",
 					"test",
 				],

@@ -27,13 +27,13 @@ mark {
 	color: var(--background-primary);
 }
 
-/* Tie the footnote reference and label rivals, as in the code pilot (0,4,1). */
+/* Tie the footnote reference and label rivals, (0,4,1). */
 .markdown-source-view.mod-cm6 span.cm-highlight.cm-footref,
 .markdown-source-view.mod-cm6 span.cm-highlight.cm-hmd-footnote {
 	color: var(--background-primary);
 }
 
-/* The highlight token replaces the redundant editor ancestor, keeping the 0,5,1 tie. */
+/* Match the formatted footnote label color at 0,5,1. */
 .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting.cm-highlight {
 	color: var(--background-primary);
 }
@@ -44,8 +44,8 @@ span.cm-formatting-link.cm-url.cm-highlight:hover {
 	color: var(--background-primary);
 }
 
-/* Flashing ranges use an important background; set its variable on the token. */
-span.is-flashing.cm-highlight {
+/* Flashing ranges read the highlight variable. The editor context beats colored token variables at 0,2,1. */
+.cm-s-obsidian .is-flashing.cm-highlight {
 	--highlight-background: var(--highlight);
 }
 

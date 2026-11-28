@@ -9,8 +9,9 @@ declare module "@bramus/specificity" {
 		b: number;
 		c: number;
 	}
-	export default class Specificity {
-		static calculate(selector: string): Specificity[];
-		static compare(a: Specificity | Tuple, b: Specificity | Tuple): number;
-	}
+	const Specificity: {
+		calculate(selector: string): Specificity[];
+		compare(a: Specificity | Tuple, b: Specificity | Tuple): number;
+	};
+	export default Specificity;
 }

@@ -15,26 +15,26 @@
  * 1. settings: palette..................src/settings/palette.css
  * 2. settings: tokens...................src/settings/tokens.css
  * 3. global application: inputs.........src/global/inputs.css
- * 4. global application: task inputs....src/global/task-inputs.css
- * 5. global application: multi select...src/global/multi-select.css
- * 6. global application: ribbon.........src/global/ribbon.css
- * 7. global application: sidebars.......src/global/sidebars.css
- * 8. global application: tabs...........src/global/tabs.css
- * 9. global application: suggestions....src/global/suggestions.css
- * 10. global application: status bar....src/global/status-bar.css
- * 11. global application: modals........src/global/modals.css
- * 12. global application: dropdowns.....src/global/dropdowns.css
- * 13. global application: prompts.......src/global/prompts.css
- * 14. global application: search........src/global/search.css
- * 15. global application: menus.........src/global/menus.css
- * 16. global application: overrides.....src/global/overrides.css
+ * 4. global application: multi select...src/global/multi-select.css
+ * 5. global application: ribbon.........src/global/ribbon.css
+ * 6. global application: sidebars.......src/global/sidebars.css
+ * 7. global application: tabs...........src/global/tabs.css
+ * 8. global application: suggestions....src/global/suggestions.css
+ * 9. global application: status bar.....src/global/status-bar.css
+ * 10. global application: modals........src/global/modals.css
+ * 11. global application: dropdowns.....src/global/dropdowns.css
+ * 12. global application: prompts.......src/global/prompts.css
+ * 13. global application: search........src/global/search.css
+ * 14. global application: menus.........src/global/menus.css
+ * 15. global application: settings tabs..src/global/settings-tabs.css
+ * 16. global application: scrollbars....src/global/scrollbars.css
  * 17. global application: icons.........src/global/icons.css
  * 18. global application: dividers......src/global/dividers.css
  * 19. markdown: headings................src/markdown/headings.css
  * 20. markdown: code....................src/markdown/code.css
  * 21. markdown: code actions............src/markdown/code-actions.css
  * 22. markdown: inline marks............src/markdown/inline-marks.css
- * 23. markdown: selection...............src/markdown/selection.css
+ * 23. global application: selection.....src/global/selection.css
  * 24. markdown: links...................src/markdown/links.css
  * 25. markdown: blockquotes.............src/markdown/blockquotes.css
  * 26. markdown: tasks...................src/markdown/tasks.css
@@ -42,12 +42,14 @@
  * 28. markdown: callouts................src/markdown/callouts.css
  * 29. markdown: tags....................src/markdown/tags.css
  * 30. markdown: tag hover...............src/markdown/tag-hover.css
- * 31. app section: canvas...............src/sections/canvas.css
- * 32. app section: properties...........src/sections/properties.css
- * 33. app section: file explorer........src/sections/file-explorer.css
- * 34. graph: graph......................src/sections/graph.css
- * 35. PDF: pdf..........................src/sections/pdf.css
- * 36. PDF: pdf xfa......................src/sections/pdf-xfa.css
+ * 31. app section: bases................src/sections/bases.css
+ * 32. app section: community browser....src/sections/community-browser.css
+ * 33. app section: canvas...............src/sections/canvas.css
+ * 34. app section: properties...........src/sections/properties.css
+ * 35. app section: file explorer........src/sections/file-explorer.css
+ * 36. app section: graph................src/sections/graph.css
+ * 37. app section: PDF..................src/sections/pdf.css
+ * 38. app section: PDF XFA..............src/sections/pdf-xfa.css
  */
 
 
@@ -57,13 +59,10 @@
  * @source: src/settings/palette.css
  * @description:
  *
- * Neutral shades, accent colors and transparent palette variants.
+ * Miami Wind palette: neutral shades, accent colors and transparent variants.
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Miami Wind palette: neutral shades, accent colors and transparent variants.
- */
 .theme-dark,
 .theme-light {
 	--grey-0: #cdd6f4;
@@ -135,14 +134,11 @@
  * @source: src/settings/tokens.css
  * @description:
  *
- * Palette colors and shared variables for note text and interface states.
+ * Shared variables grouped by the note content and application controls they
+ * style.
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Shared variables grouped by the note content and application controls they
- * style.
- */
 .theme-dark,
 .theme-light {
 	/*
@@ -380,8 +376,7 @@
 	 */
 
 	/*
-	 * Legacy tag aliases complement Obsidian’s tag variables without replacing
-	 * them.
+	 * Obsidian’s current tag variables control pill fill, hover and text.
 	 */
 	--tag-background: var(--cyan);
 	--tag-background-hover: var(--magenta);
@@ -422,9 +417,6 @@
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Shared inputs and comboboxes: fills, borders and keyboard focus.
- */
 input,
 .combobox-button {
 	--background-modifier-form-field: var(--grey-11);
@@ -479,8 +471,7 @@ input[type='radio']:checked:hover {
  * These search inputs reset borders literally; preserve their old computed
  * border colors.
  */
-.combobox .search-input-container input[type='search'],
-.bases-toolbar-menu-container .search-input-container input[type='search'] {
+.combobox .search-input-container input[type='search'] {
 	background-color: var(--grey-11);
 	border-color: var(--mw-input-border);
 }
@@ -521,51 +512,7 @@ input[type] {
 }
 
 /*
- * Shared icon controls in Bases.
- *
- * Sheet filter buttons have literal app fills; tie only those exact selectors.
- */
-.menu.mod-sheet .filter-row .filter-property-select.combobox-button,
-.drag-reorder-ghost.mod-sheet .filter-row .filter-property-select,
-.menu.mod-sheet .filter-row .filter-operator.combobox-button,
-.drag-reorder-ghost.mod-sheet .filter-row .filter-operator {
-	background-color: var(--grey-11);
-}
-
-/*
- * Editable table values otherwise reset their inputs with background shorthand.
- */
-.bases-rendered-value input {
-	background-color: var(--grey-11);
-}
-
-/*
- * Shared text fields in the Properties editor.
- */
-.metadata-property-key-input {
-	--metadata-label-text-color: var(--magenta);
-}
-
-/*
- * Tie Obsidian’s literal transparent property-input fills without affecting
- * pills.
- */
-.metadata-property .metadata-property-key-input,
-.metadata-property .metadata-property-key-input:hover,
-.metadata-property .metadata-property-key-input:active,
-.metadata-property .metadata-property-key-input:focus,
-.metadata-property-value .metadata-input-text,
-.metadata-property-value .metadata-input-text:is(:hover, :active, :focus, :focus-within),
-.metadata-property-value .metadata-input-number,
-.metadata-property-value .metadata-input-number:is(:hover, :active, :focus, :focus-within),
-.metadata-property-value .multi-select-container input {
-	background-color: var(--grey-11);
-	border-color: var(--mw-input-border);
-}
-
-/*
- * The former modal hover color was hidden by the global important border; keep
- * that paint.
+ * Modal input hover retains the shared field border.
  */
 .modal input:hover {
 	border-color: var(--mw-input-border);
@@ -580,90 +527,10 @@ input[type] {
 }
 
 /*
- * Shared inputs in the XFA layer.
- *
- * XFA’s layer reset also clears checkbox fills; its inputs have no inline fill
- * literals.
- */
-.xfaLayer input {
-	background-color: var(--grey-11);
-	border-color: var(--mw-input-border);
-}
-
-/*
- * The sort-direction divider reads this border token; focus shadows use a
- * separate token.
- */
-.bases-sort-direction {
-	--background-modifier-border: var(--mw-input-border);
-}
-
-/*
  * Tie the app’s literal transparent Vim command-line focus fill at 0,6,1.
  */
 .markdown-source-view.mod-cm6 .cm-panels.cm-panels-bottom input[type='text']:focus {
 	background-color: var(--grey-11);
-}
-
-
-/* -----------------------------------------------------------------------------
- * @global application: Task Inputs
- * -----------------------------------------------------------------------------
- * @source: src/global/task-inputs.css
- * @description:
- *
- * Task checkbox fills, borders and marker colors for each task state.
- *
- * -------------------------------------------------------------------------- */
-
-/*
- * Task checkbox fills, borders and marker colors for each task state.
- */
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] input {
-	background-color: var(--red);
-	border-color: var(--red);
-	color: var(--black);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] input {
-	background-color: var(--black);
-	border-color: var(--magenta);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] input {
-	background-color: var(--black);
-	border-color: var(--orange);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] input {
-	background-color: var(--black);
-	border-color: var(--blue);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] input {
-	background-color: var(--green);
-	border-color: var(--green);
-	color: var(--black);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] input {
-	background-color: var(--black);
-	border-color: var(--cyan);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] input {
-	background-color: var(--black);
-	border-color: var(--yellow);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] input {
-	background-color: var(--black);
-	border-color: var(--grey-3);
-}
-
-.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] input {
-	background-color: var(--black);
-	border-color: var(--purple);
 }
 
 
@@ -677,9 +544,6 @@ input[type] {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Remove-button hover colors in shared multi-select controls.
- */
 .multi-select-pill-remove-button:hover {
 	color: var(--red-bright);
 	cursor: pointer;
@@ -697,8 +561,6 @@ input[type] {
  * -------------------------------------------------------------------------- */
 
 /*
- * Ribbon icon backgrounds in hover and active states.
- *
  * Shared component adjustments: icon-background. Local --mw-* variables below
  * set this section’s colors and backgrounds.
  */
@@ -724,8 +586,6 @@ input[type] {
  * -------------------------------------------------------------------------- */
 
 /*
- * Drawer actions, sidebar tab states and the vault profile border.
- *
  * Shared component adjustments: icon-background. Local --mw-* variables below
  * set this section’s colors and backgrounds.
  */
@@ -776,8 +636,6 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  * -------------------------------------------------------------------------- */
 
 /*
- * Workspace tab icons, header backgrounds and active, hover and close states.
- *
  * Shared component adjustments: icon-background, surface-background. Local
  * --mw-* variables below set this section’s colors and backgrounds.
  */
@@ -854,8 +712,6 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  * -------------------------------------------------------------------------- */
 
 /*
- * Suggestion lists, selected rows, property fields and complex-item flair.
- *
  * Shared component adjustments: menu-item-state. Local --mw-* variables below
  * set this section’s colors and backgrounds.
  */
@@ -918,9 +774,6 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Status bar backgrounds, item text and clickable hover states.
- */
 .status-bar {
 	--status-bar-radius: 0;
 	border-top: 1px solid var(--cyan);
@@ -953,8 +806,6 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  * -------------------------------------------------------------------------- */
 
 /*
- * Dialog surfaces, navigation, action buttons and close-button states.
- *
  * Shared component adjustments: action-button. Local --mw-* variables below set
  * this section’s colors and backgrounds.
  */
@@ -1033,9 +884,6 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Dropdown controls and option states, including onboarding.
- */
 .modal .dropdown,
 .dropdown,
 select,
@@ -1080,17 +928,6 @@ select option:checked {
 	background-color: var(--magenta);
 }
 
-/*
- * Shared icon controls in Bases.
- *
- * Obsidian's query conjunction uses a literal fill; its hover reads this leaf
- * variable.
- */
-.filter-group-header .conjunction.dropdown {
-	--background-modifier-hover: var(--magenta);
-	background-color: var(--magenta);
-}
-
 
 /* -----------------------------------------------------------------------------
  * @global application: Prompts
@@ -1102,9 +939,6 @@ select option:checked {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Command prompt surfaces and instruction key colors.
- */
 .prompt {
 	--prompt-border-color: var(--magenta);
 }
@@ -1137,9 +971,6 @@ select option:checked {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Search clear buttons and result sorting dropdown states.
- */
 .search-input-clear-button {
 	color: var(--cyan);
 	cursor: pointer;
@@ -1171,8 +1002,6 @@ select option:checked {
  * -------------------------------------------------------------------------- */
 
 /*
- * Menu surfaces, icons, selected items and mobile action rows.
- *
  * Shared component adjustments: action-button, menu-item-state. Local --mw-*
  * variables below set this section’s colors and backgrounds.
  */
@@ -1189,20 +1018,6 @@ select option:checked {
 	background-color: var(--mw-action-background);
 	color: var(--mw-action-color);
 	cursor: pointer;
-}
-
-.menu .clickable-icon.bases-toolbar-menu-item-icon {
-	background-color: transparent;
-}
-
-.menu .clickable-icon.bases-toolbar-menu-item-icon:hover {
-	background-color: transparent;
-}
-
-.menu .bases-toolbar-menu-item:hover .clickable-icon,
-.menu .bases-toolbar-menu-item.is-selected .clickable-icon {
-	--text-on-accent: var(--magenta);
-	color: var(--magenta);
 }
 
 .menu .clickable-icon:hover,
@@ -1229,36 +1044,12 @@ select option:checked {
 .menu-item:hover,
 .menu-item:focus,
 .menu-item:active,
-.menu-item.selected,
-.bases-toolbar-menu-item:hover,
-.bases-toolbar-menu-item:focus,
-.bases-toolbar-menu-item:active,
-.bases-toolbar-menu-item.selected {
+.menu-item.selected {
 	--mw-item-background: var(--cyan-transparent);
 	--mw-item-color: var(--magenta);
 	background-color: var(--mw-item-background);
 	color: var(--mw-item-color);
 	cursor: pointer;
-}
-
-/*
- * Tie the app’s editing-row focus-within fill only when a theme item state
- * applies.
- */
-.bases-toolbar-menu-item.is-editing:focus-within:is(:hover, :focus, :active, .selected) {
-	background-color: var(--mw-item-background);
-}
-
-/*
- * Phone action/suggestion rows read these variables at higher specificity.
- * Scope them to the row states so their descendants keep the existing paint.
- */
-.bases-toolbar-menu-item:hover,
-.bases-toolbar-menu-item:focus,
-.bases-toolbar-menu-item:active,
-.bases-toolbar-menu-item.selected {
-	--interactive-normal: var(--cyan-transparent);
-	--interactive-hover: var(--cyan-transparent);
 }
 
 /*
@@ -1280,34 +1071,23 @@ select option:checked {
 	background-color: var(--cyan-transparent);
 }
 
-.menu-item.is-disabled:hover,
-.bases-toolbar-menu-item.mod-hidden:hover {
+.menu-item.is-disabled:hover {
 	background-color: transparent;
 	color: var(--text-disabled);
 	cursor: default;
 }
 
-.bases-toolbar-menu-item.mod-hidden:hover {
-	--mw-item-background: transparent;
-
-	--interactive-normal: transparent;
-	--interactive-hover: transparent;
-}
-
 
 /* -----------------------------------------------------------------------------
- * @global application: Overrides
+ * @global application: Settings Tabs
  * -----------------------------------------------------------------------------
- * @source: src/global/overrides.css
+ * @source: src/global/settings-tabs.css
  * @description:
  *
- * Final state overrides for settings tabs, scrollbars and disabled icons.
+ * Active settings navigation tabs in the app and modal dialogs.
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Final state overrides for settings tabs, scrollbars and disabled icons.
- */
 body:not(.is-phone) .horizontal-tab-nav-item.is-active,
 body:not(.is-phone) .vertical-tab-nav-item.is-active,
 .modal .vertical-tab-nav-item.is-active,
@@ -1317,14 +1097,43 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 	cursor: pointer;
 }
 
+
+/* -----------------------------------------------------------------------------
+ * @global application: Scrollbars
+ * -----------------------------------------------------------------------------
+ * @source: src/global/scrollbars.css
+ * @description:
+ *
+ * Pointer cursor on hovered scrollbar thumbs throughout the app.
+ *
+ * -------------------------------------------------------------------------- */
+
 ::-webkit-scrollbar-thumb:hover {
 	cursor: pointer;
 }
 
-/*
- * Disabled paint must follow surface states; cursor keeps its original cascade
- * position.
+
+/* -----------------------------------------------------------------------------
+ * @global application: Icons
+ * -----------------------------------------------------------------------------
+ * @source: src/global/icons.css
+ * @description:
  *
+ * Clickable icon hover fills and disabled pointer behavior.
+ *
+ * -------------------------------------------------------------------------- */
+
+.clickable-icon:hover,
+.mod-left-split .workspace-tab-header,
+.mod-right-split .workspace-tab-header {
+	cursor: var(--icon-cursor);
+}
+
+.clickable-icon[aria-disabled='true'] {
+	cursor: default;
+}
+
+/*
  * The zero-weight modal-close exclusion preserves its separate hover rule’s
  * precedence.
  */
@@ -1343,129 +1152,16 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 
 
 /* -----------------------------------------------------------------------------
- * @global application: Icons
- * -----------------------------------------------------------------------------
- * @source: src/global/icons.css
- * @description:
- *
- * Clickable icon hover fills and disabled pointer behavior.
- *
- * -------------------------------------------------------------------------- */
-
-/*
- * Clickable icon hover fills and disabled pointer behavior.
- */
-.clickable-icon:hover,
-.mod-left-split .workspace-tab-header,
-.mod-right-split .workspace-tab-header {
-	cursor: var(--icon-cursor);
-}
-
-.clickable-icon[aria-disabled='true'] {
-	cursor: default;
-}
-
-/*
- * Shared icon controls in Bases.
- */
-.bases-toolbar-section-content .filter-group-actions .text-icon-button,
-.filter-row-actions .clickable-icon {
-	margin-right: 4px;
-}
-
-.filter-row-actions .clickable-icon {
-	--text-faint: transparent;
-	background-color: transparent;
-}
-
-.filter-row-actions .clickable-icon:hover {
-	--text-faint: var(--magenta-transparent);
-	background-color: var(--magenta-transparent);
-	color: var(--magenta);
-}
-
-/*
- * Keep the original 0,3,0 hover tie by using the disabled attribute instead of
- * the icon class.
- */
-.filter-row-actions [aria-disabled='true']:hover {
-	background-color: var(--magenta-transparent);
-	color: var(--text-disabled);
-}
-
-/*
- * Sheet actions read accent text directly at 0,5,0 / 0,6,0.
- */
-.filter-row-actions [aria-disabled='true'],
-.filter-group-header-actions [aria-disabled='true'] {
-	--text-on-accent: var(--text-disabled);
-}
-
-.filter-group-header-actions [aria-disabled='true'] {
-	--text-faint: transparent;
-}
-
-/*
- * Shared SVG icons in Canvas.
- */
-.canvas-control-item:hover .svg-icon {
-	color: var(--magenta);
-}
-
-/*
- * Shared SVG icons in Properties.
- */
-.metadata-container .metadata-show-source-button:hover .svg-icon,
-.metadata-container .metadata-add-button:hover .svg-icon {
-	color: var(--black);
-}
-
-/*
- * Shared controls in community browser.
- *
- * Tie Obsidian 1.15.1's 0,3,1 sidebar button color without changing child
- * variables.
- */
-.mod-community-modal button.clickable-icon[aria-disabled='true'] {
-	color: var(--text-disabled);
-}
-
-/*
- * Bases toolbar actions and filter-row controls in normal and hover states.
- *
- * Shared component adjustments: action-button. Local --mw-* variables below set
- * this section’s colors and backgrounds.
- */
-.bases-toolbar-item .text-icon-button,
-.bases-toolbar-section-content .text-icon-button {
-	--mw-action-color: var(--cyan);
-	--mw-action-background: var(--cyan-transparent);
-	background-color: var(--mw-action-background);
-	color: var(--mw-action-color);
-	cursor: pointer;
-}
-
-.bases-toolbar-item .text-icon-button:hover,
-.bases-toolbar-section-content .text-icon-button:hover {
-	background-color: var(--magenta-transparent);
-	color: var(--magenta);
-}
-
-
-/* -----------------------------------------------------------------------------
  * @global application: Dividers
  * -----------------------------------------------------------------------------
  * @source: src/global/dividers.css
  * @description:
  *
- * Divider border colors for Markdown horizontal rules and the app pane resize handle.
+ * The bare hr sets borders on both Markdown horizontal rules and the app pane
+ * resize handle.
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Divider border colors for Markdown horizontal rules and the app pane resize
- * handle.
- */
 hr {
 	border-color: var(--cyan);
 }
@@ -1482,8 +1178,6 @@ hr {
  * -------------------------------------------------------------------------- */
 
 /*
- * Heading colors in the editor and reading view.
- *
  * Keep editor token colors local so list headings retain their stronger
  * defaults.
  */
@@ -1547,8 +1241,6 @@ hr {
  * -------------------------------------------------------------------------- */
 
 /*
- * Inline code, fenced code and editor syntax tokens: colors and backgrounds.
- *
  * Shared component adjustments: surface-background. Local --mw-* variables
  * below set this section’s colors and backgrounds.
  */
@@ -1612,23 +1304,23 @@ hr {
 	color: var(--string);
 }
 
-.cm-s-obsidian span.cm-number {
+.cm-s-obsidian .cm-number {
 	color: var(--value);
 }
 
-.cm-s-obsidian span.cm-comment {
+.cm-s-obsidian .cm-comment {
 	color: var(--comment);
 }
 
-.cm-s-obsidian span.cm-operator {
+.cm-s-obsidian .cm-operator {
 	color: var(--operator);
 }
 
-.cm-s-obsidian span.cm-variable {
+.cm-s-obsidian .cm-variable {
 	color: var(--variable);
 }
 
-.cm-s-obsidian span.cm-def {
+.cm-s-obsidian .cm-def {
 	color: var(--function);
 }
 
@@ -1643,9 +1335,6 @@ hr {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Code copy and edit buttons, including editor-specific state ties.
- */
 .code-block-flair,
 .edit-block-button {
 	color: var(--cyan);
@@ -1687,9 +1376,6 @@ hr {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Highlighted text across editor tokens, reading view and PDF export.
- */
 .markdown-rendered mark,
 .cm-s-obsidian span.cm-highlight,
 mark {
@@ -1724,7 +1410,7 @@ mark {
 }
 
 /*
- * Tie the footnote reference and label rivals, as in the code pilot (0,4,1).
+ * Tie the footnote reference and label rivals, (0,4,1).
  */
 .markdown-source-view.mod-cm6 span.cm-highlight.cm-footref,
 .markdown-source-view.mod-cm6 span.cm-highlight.cm-hmd-footnote {
@@ -1732,8 +1418,7 @@ mark {
 }
 
 /*
- * The highlight token replaces the redundant editor ancestor, keeping the 0,5,1
- * tie.
+ * Match the formatted footnote label color at 0,5,1.
  */
 .cm-line.HyperMD-footnote span.cm-hmd-footnote.cm-formatting.cm-highlight {
 	color: var(--background-primary);
@@ -1748,9 +1433,10 @@ span.cm-formatting-link.cm-url.cm-highlight:hover {
 }
 
 /*
- * Flashing ranges use an important background; set its variable on the token.
+ * Flashing ranges read the highlight variable. The editor context beats colored
+ * token variables at 0,2,1.
  */
-span.is-flashing.cm-highlight {
+.cm-s-obsidian .is-flashing.cm-highlight {
 	--highlight-background: var(--highlight);
 }
 
@@ -1764,18 +1450,15 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 
 
 /* -----------------------------------------------------------------------------
- * @markdown: Selection
+ * @global application: Selection
  * -----------------------------------------------------------------------------
- * @source: src/markdown/selection.css
+ * @source: src/global/selection.css
  * @description:
  *
  * Selection text and background colors throughout the app.
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Selection text and background colors throughout the app.
- */
 ::selection {
 	background-color: var(--text-selection);
 	color: var(--text-selection-fg);
@@ -1792,9 +1475,6 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Reading-view link colors across normal, hover, visited and focus states.
- */
 .markdown-rendered a {
 	color: var(--link-unresolved-color);
 }
@@ -1829,9 +1509,6 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Blockquote text, borders and backgrounds in reading view.
- */
 .markdown-rendered blockquote {
 	border-left: 4px solid var(--blockquote);
 	padding: 8px 16px 16px;
@@ -1849,8 +1526,6 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  * -------------------------------------------------------------------------- */
 
 /*
- * Editor task states: marker colors, text colors and completion styling.
- *
  * Keep custom task states editor-only for Reading-view parity.
  */
 .markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] {
@@ -1897,6 +1572,58 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 	color: var(--purple);
 }
 
+/*
+ * Task checkboxes
+ * -----------------------------------------------------------------------------
+ */
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='-'] input {
+	background-color: var(--red);
+	border-color: var(--red);
+	color: var(--black);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='/'] input {
+	background-color: var(--black);
+	border-color: var(--magenta);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='!'] input {
+	background-color: var(--black);
+	border-color: var(--orange);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='?'] input {
+	background-color: var(--black);
+	border-color: var(--blue);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='x'] input {
+	background-color: var(--green);
+	border-color: var(--green);
+	color: var(--black);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task=' '] input {
+	background-color: var(--black);
+	border-color: var(--cyan);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='*'] input {
+	background-color: var(--black);
+	border-color: var(--yellow);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='q'] input {
+	background-color: var(--black);
+	border-color: var(--grey-3);
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-task-line[data-task='>'] input {
+	background-color: var(--black);
+	border-color: var(--purple);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @markdown: Tables
@@ -1909,8 +1636,6 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  * -------------------------------------------------------------------------- */
 
 /*
- * Note table backgrounds, borders and text in reading view.
- *
  * Shared component adjustments: surface-background. Local --mw-* variables
  * below set this section’s colors and backgrounds.
  */
@@ -1941,8 +1666,6 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  * -------------------------------------------------------------------------- */
 
 /*
- * Callout backgrounds and title colors for each built-in callout type.
- *
  * Shared component adjustments: surface-background. Local --mw-* variables
  * below set this section’s colors and backgrounds.
  *
@@ -2013,9 +1736,6 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Tag pills in editor and reading view: colors, hover and invalid tags.
- */
 .cm-hashtag {
 	display: inline-block;
 	margin: 2px 0;
@@ -2042,14 +1762,177 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Joined tag highlighting when the editor tag text is hovered.
- *
- * Single optional tag-hover :has exception. Remove this file and its pilot slot
- * to retire it.
- */
 .cm-hashtag-begin:has(+ .cm-hashtag-end:hover) {
 	background-color: var(--magenta);
+}
+
+
+/* -----------------------------------------------------------------------------
+ * @app section: Bases
+ * -----------------------------------------------------------------------------
+ * @source: src/sections/bases.css
+ * @description:
+ *
+ * Bases toolbar buttons, filter fields, query groups and menu states.
+ *
+ * -------------------------------------------------------------------------- */
+
+/*
+ * Shared component adjustment: toolbar icons and filter actions.
+ */
+.bases-toolbar-section-content .filter-group-actions .text-icon-button,
+.filter-row-actions .clickable-icon {
+	margin-right: 4px;
+}
+
+.filter-row-actions .clickable-icon {
+	--text-faint: transparent;
+	background-color: transparent;
+}
+
+.filter-row-actions .clickable-icon:hover {
+	--text-faint: var(--magenta-transparent);
+	background-color: var(--magenta-transparent);
+	color: var(--magenta);
+}
+
+/*
+ * Shared component adjustment: disabled filter actions keep the 0,3,0 hover
+ * tie.
+ */
+.filter-row-actions [aria-disabled='true']:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--text-disabled);
+}
+
+/*
+ * Sheet actions read accent text directly at 0,5,0 / 0,6,0.
+ */
+.filter-row-actions [aria-disabled='true'],
+.filter-group-header-actions [aria-disabled='true'] {
+	--text-on-accent: var(--text-disabled);
+}
+
+.filter-group-header-actions [aria-disabled='true'] {
+	--text-faint: transparent;
+}
+
+/*
+ * Bases toolbar actions and filter-row controls in normal and hover states.
+ *
+ * Shared component adjustments: action-button. Local --mw-* variables below set
+ * this section’s colors and backgrounds.
+ */
+.bases-toolbar-item .text-icon-button,
+.bases-toolbar-section-content .text-icon-button {
+	--mw-action-color: var(--cyan);
+	--mw-action-background: var(--cyan-transparent);
+	background-color: var(--mw-action-background);
+	color: var(--mw-action-color);
+	cursor: pointer;
+}
+
+.bases-toolbar-item .text-icon-button:hover,
+.bases-toolbar-section-content .text-icon-button:hover {
+	background-color: var(--magenta-transparent);
+	color: var(--magenta);
+}
+
+/*
+ * Shared component adjustment: inputs within bases.
+ */
+.bases-toolbar-menu-container .search-input-container input[type='search'] {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}
+
+.menu.mod-sheet .filter-row .filter-property-select.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-property-select,
+.menu.mod-sheet .filter-row .filter-operator.combobox-button,
+.drag-reorder-ghost.mod-sheet .filter-row .filter-operator {
+	background-color: var(--grey-11);
+}
+
+.bases-rendered-value input {
+	background-color: var(--grey-11);
+}
+
+.bases-sort-direction {
+	--background-modifier-border: var(--mw-input-border);
+}
+
+/*
+ * Shared component adjustment: menus within bases.
+ */
+.menu .clickable-icon.bases-toolbar-menu-item-icon {
+	background-color: transparent;
+}
+
+.menu .clickable-icon.bases-toolbar-menu-item-icon:hover {
+	background-color: transparent;
+}
+
+.menu .bases-toolbar-menu-item:hover .clickable-icon,
+.menu .bases-toolbar-menu-item.is-selected .clickable-icon {
+	--text-on-accent: var(--magenta);
+	color: var(--magenta);
+}
+
+.bases-toolbar-menu-item:hover,
+.bases-toolbar-menu-item:focus,
+.bases-toolbar-menu-item:active,
+.bases-toolbar-menu-item.selected {
+	--mw-item-background: var(--cyan-transparent);
+	--mw-item-color: var(--magenta);
+
+	--interactive-normal: var(--cyan-transparent);
+	--interactive-hover: var(--cyan-transparent);
+	background-color: var(--mw-item-background);
+	color: var(--mw-item-color);
+	cursor: pointer;
+}
+
+.bases-toolbar-menu-item.is-editing:focus-within:is(:hover, :focus, :active, .selected) {
+	background-color: var(--mw-item-background);
+}
+
+.bases-toolbar-menu-item.mod-hidden:hover {
+	--mw-item-background: transparent;
+
+	--interactive-normal: transparent;
+	--interactive-hover: transparent;
+	background-color: transparent;
+	color: var(--text-disabled);
+	cursor: default;
+}
+
+/*
+ * Shared component adjustment: dropdowns within bases.
+ */
+.filter-group-header .conjunction.dropdown {
+	--background-modifier-hover: var(--magenta);
+	background-color: var(--magenta);
+}
+
+
+/* -----------------------------------------------------------------------------
+ * @app section: Community Browser
+ * -----------------------------------------------------------------------------
+ * @source: src/sections/community-browser.css
+ * @description:
+ *
+ * Disabled community-browser sidebar button text.
+ *
+ * -------------------------------------------------------------------------- */
+
+/*
+ * Shared component adjustment: disabled icon text.
+ *
+ * Tie Obsidian 1.15.1's 0,3,1 sidebar button color without changing child
+ * variables.
+ */
+.mod-community-modal button.clickable-icon[aria-disabled='true'] {
+	color: var(--text-disabled);
 }
 
 
@@ -2063,9 +1946,6 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Canvas controls, card menus and their icon hover states.
- */
 .theme-dark,
 .theme-light {
 	--canvas-dot-pattern: var(--magenta);
@@ -2102,6 +1982,15 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 	color: var(--magenta);
 }
 
+/*
+ * Shared component adjustment: action icon colors.
+ *
+ * Shared component adjustment: Canvas SVG icons.
+ */
+.canvas-control-item:hover .svg-icon {
+	color: var(--magenta);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @app section: Properties
@@ -2113,9 +2002,6 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Property labels, tag pills and property action buttons.
- */
 .metadata-properties-title {
 	color: var(--purple);
 }
@@ -2143,6 +2029,36 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 	color: var(--black);
 }
 
+/*
+ * Shared component adjustment: action icon colors.
+ *
+ * Shared component adjustment: Properties SVG icons.
+ */
+.metadata-container .metadata-show-source-button:hover .svg-icon,
+.metadata-container .metadata-add-button:hover .svg-icon {
+	color: var(--black);
+}
+
+/*
+ * Shared component adjustment: inputs within properties.
+ */
+.metadata-property-key-input {
+	--metadata-label-text-color: var(--magenta);
+}
+
+.metadata-property .metadata-property-key-input,
+.metadata-property .metadata-property-key-input:hover,
+.metadata-property .metadata-property-key-input:active,
+.metadata-property .metadata-property-key-input:focus,
+.metadata-property-value .metadata-input-text,
+.metadata-property-value .metadata-input-text:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .metadata-input-number,
+.metadata-property-value .metadata-input-number:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .multi-select-container input {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @app section: File Explorer
@@ -2154,16 +2070,13 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Active file entries in the file explorer.
- */
 .nav-file-title.is-active {
 	color: var(--text-normal);
 }
 
 
 /* -----------------------------------------------------------------------------
- * @graph: Graph
+ * @app section: Graph
  * -----------------------------------------------------------------------------
  * @source: src/sections/graph.css
  * @description:
@@ -2172,9 +2085,6 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * Graph node colors for files, tags, attachments and unresolved links.
- */
 .theme-dark,
 .theme-light {
 	--graph-node: var(--magenta);
@@ -2186,36 +2096,31 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 
 
 /* -----------------------------------------------------------------------------
- * @PDF: Pdf
+ * @app section: PDF
  * -----------------------------------------------------------------------------
  * @source: src/sections/pdf.css
  * @description:
  *
- * PDF viewer page-number loading fill in the toolbar.
+ * PDF viewer page-number loading state in the toolbar.
  *
  * -------------------------------------------------------------------------- */
 
-/*
- * PDF viewer page-number loading state in the toolbar.
- */
 .pdf-page-input.mod-page-loading {
 	background-color: var(--grey-11);
 }
 
 
 /* -----------------------------------------------------------------------------
- * @PDF: Pdf Xfa
+ * @app section: PDF XFA
  * -----------------------------------------------------------------------------
  * @source: src/sections/pdf-xfa.css
  * @description:
  *
- * XFA form select text, fills and focused states.
+ * PDF form control overrides for the app’s PDF renderer.
  *
  * -------------------------------------------------------------------------- */
 
 /*
- * PDF form control overrides for the app’s PDF renderer.
- *
  * pdf.js XFA resets color/fill on every child, then clears focused select
  * fills.
  */
@@ -2239,4 +2144,12 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 .xfaCheckbox:focus,
 .xfaRadio:focus {
 	outline: none;
+}
+
+/*
+ * Shared component adjustment: inputs within XFA.
+ */
+.xfaLayer input {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
 }

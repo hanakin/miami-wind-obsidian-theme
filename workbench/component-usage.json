@@ -134,7 +134,15 @@
 			},
 			{
 				"surface": "menus.css",
-				"selector": ".menu-item:hover,\n.menu-item:focus,\n.menu-item:active,\n.menu-item.selected,\n.bases-toolbar-menu-item:hover,\n.bases-toolbar-menu-item:focus,\n.bases-toolbar-menu-item:active,\n.bases-toolbar-menu-item.selected",
+				"selector": ".menu-item:hover,\n.menu-item:focus,\n.menu-item:active,\n.menu-item.selected",
+				"properties": {
+					"--mw-item-background": "var(--cyan-transparent)",
+					"--mw-item-color": "var(--magenta)"
+				}
+			},
+			{
+				"surface": "bases.css",
+				"selector": ".bases-toolbar-menu-item:hover,\n.bases-toolbar-menu-item:focus,\n.bases-toolbar-menu-item:active,\n.bases-toolbar-menu-item.selected",
 				"properties": {
 					"--mw-item-background": "var(--cyan-transparent)",
 					"--mw-item-color": "var(--magenta)"
@@ -186,19 +194,19 @@
 				}
 			},
 			{
-				"surface": "icons.css",
-				"selector": ".bases-toolbar-item .text-icon-button,\n.bases-toolbar-section-content .text-icon-button",
-				"properties": {
-					"--mw-action-color": "var(--cyan)",
-					"--mw-action-background": "var(--cyan-transparent)"
-				}
-			},
-			{
 				"surface": "code-actions.css",
 				"selector": ".code-block-flair:hover,\n.edit-block-button:hover,\n.markdown-source-view.mod-cm6 .code-block-flair:hover,\n.markdown-source-view.mod-cm6 .edit-block-button:hover",
 				"properties": {
 					"--mw-action-background": "var(--cyan-transparent)",
 					"--mw-action-color": "var(--magenta)"
+				}
+			},
+			{
+				"surface": "bases.css",
+				"selector": ".bases-toolbar-item .text-icon-button,\n.bases-toolbar-section-content .text-icon-button",
+				"properties": {
+					"--mw-action-color": "var(--cyan)",
+					"--mw-action-background": "var(--cyan-transparent)"
 				}
 			}
 		]

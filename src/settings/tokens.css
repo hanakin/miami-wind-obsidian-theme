@@ -165,7 +165,7 @@
 
 	/* @heading Tags */
 
-	/* Legacy tag aliases complement Obsidian’s tag variables without replacing them. */
+	/* Obsidian’s current tag variables control pill fill, hover and text. */
 	--tag-background: var(--cyan);
 	--tag-background-hover: var(--magenta);
 	--tag-color: var(--black);

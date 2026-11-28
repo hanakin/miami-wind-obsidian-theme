@@ -44,10 +44,14 @@ test("uses recorded stylesheet order, viewport, quirks and field selection throu
 			mode: document.compatMode,
 			width: innerWidth,
 			height: innerHeight,
-			color: getComputedStyle(document.querySelector("button")!).color,
+			color: (() => {
+				const button = document.querySelector("button");
+				if (!button) throw new Error("Missing button");
+				return getComputedStyle(button).color;
+			})(),
 			selection: [
-				document.querySelector("input")!.selectionStart,
-				document.querySelector("input")!.selectionEnd,
+				document.querySelector("input")?.selectionStart,
+				document.querySelector("input")?.selectionEnd,
 			],
 		})),
 	).toEqual({
@@ -126,7 +130,8 @@ test
 		const registry = JSON.parse(
 			readFileSync("capture/fixtures.json", "utf8"),
 		) as { fixtures: FixtureEntry[] };
-		const f = registry.fixtures.find((f) => f.id === id)!;
+		const f = registry.fixtures.find((f) => f.id === id);
+		if (!f) throw new Error(`Missing fixture ${id}`);
 		const r = await render(
 			page,
 			cdp,
@@ -166,7 +171,8 @@ test
 		const registry = JSON.parse(
 			readFileSync("capture/fixtures.json", "utf8"),
 		) as { fixtures: FixtureEntry[] };
-		const f = registry.fixtures.find((f) => f.id === id)!;
+		const f = registry.fixtures.find((f) => f.id === id);
+		if (!f) throw new Error(`Missing fixture ${id}`);
 		const html = readFileSync(`capture/fixtures/${f.file}`, "utf8");
 		const theme = execFileSync("git", ["show", "b478dc8:theme.css"], {
 			encoding: "utf8",
@@ -181,7 +187,7 @@ test
 			page,
 			cdp,
 			html,
-			{ ...css, theme: theme + "\n/* same */" },
+			{ ...css, theme: `${theme}\n/* same */` },
 			f,
 		);
 		expect(styleDiff(a.styles, repeat.styles)).toEqual([]);
@@ -190,7 +196,7 @@ test
 			page,
 			cdp,
 			html,
-			{ ...css, theme: theme + "\n.pdfViewer .page {margin-left:13px}" },
+			{ ...css, theme: `${theme}\n.pdfViewer .page {margin-left:13px}` },
 			f,
 		);
 		expect(
@@ -231,7 +237,8 @@ test.skipIf(!existsSync("capture/.app/runtime")).each([
 			JSON.parse(readFileSync("capture/fixtures.json", "utf8")) as {
 				fixtures: FixtureEntry[];
 			}
-		).fixtures.find((f) => f.id === id)!;
+		).fixtures.find((f) => f.id === id);
+		if (!f) throw new Error(`Missing fixture ${id}`);
 		const html = readFileSync(`capture/fixtures/${f.file}`, "utf8");
 		const css = {
 			app: readFileSync("capture/.app/app.css", "utf8"),
@@ -248,7 +255,7 @@ test.skipIf(!existsSync("capture/.app/runtime")).each([
 				html,
 				{
 					...css,
-					theme: css.theme + "\n.callout{--callout-icon:lucide-flame}",
+					theme: `${css.theme}\n.callout{--callout-icon:lucide-flame}`,
 				},
 				f,
 			);
@@ -258,7 +265,7 @@ test.skipIf(!existsSync("capture/.app/runtime")).each([
 			page,
 			cdp,
 			html,
-			{ ...css, theme: css.theme + "\n" + mutation },
+			{ ...css, theme: `${css.theme}\n${mutation}` },
 			f,
 		);
 		expect(
@@ -321,7 +328,8 @@ test("compares every audited JavaScript-read custom property on each element", a
 		{ app: "", cm: "", theme: theme("after") },
 		base,
 	);
-	const button = b.styles.find((s) => s.element.endsWith(":button"))!;
+	const button = b.styles.find((s) => s.element.endsWith(":button"));
+	if (!button) throw new Error("Missing fixture");
 	for (const name of JS_READ_PROPERTIES)
 		expect(button.props[name]).toBe("after");
 	expect(

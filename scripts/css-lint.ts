@@ -3,7 +3,6 @@ import path from "node:path";
 import postcss from "postcss";
 import stylelint from "stylelint";
 import permanent from "../config/stylelint-obsidian.json";
-import temporary from "../config/stylelint-temporary.json";
 import { stylelintConfig } from "./stylelint-config";
 
 export interface Finding {
@@ -126,10 +125,7 @@ export async function lintCss() {
 		findings,
 		expand(permanent as ExceptionGroup[]),
 	);
-	const temporaryResult = partitionFindings(
-		permanentResult.unexpected,
-		expand(temporary as ExceptionGroup[]),
-	);
+	const temporaryResult = partitionFindings(permanentResult.unexpected, []);
 	const counts: Record<string, number> = {};
 	for (const finding of findings)
 		counts[finding.rule] = (counts[finding.rule] ?? 0) + 1;

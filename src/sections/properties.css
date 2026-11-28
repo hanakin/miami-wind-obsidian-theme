@@ -26,3 +26,31 @@
 	background-color: var(--magenta);
 	color: var(--black);
 }
+
+/* Shared component adjustment: action icon colors. */
+
+/* Shared component adjustment: Properties SVG icons. */
+.metadata-container .metadata-show-source-button:hover .svg-icon,
+.metadata-container .metadata-add-button:hover .svg-icon {
+	color: var(--black);
+}
+
+
+/* Shared component adjustment: inputs within properties. */
+
+.metadata-property-key-input {
+	--metadata-label-text-color: var(--magenta);
+}
+
+.metadata-property .metadata-property-key-input,
+.metadata-property .metadata-property-key-input:hover,
+.metadata-property .metadata-property-key-input:active,
+.metadata-property .metadata-property-key-input:focus,
+.metadata-property-value .metadata-input-text,
+.metadata-property-value .metadata-input-text:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .metadata-input-number,
+.metadata-property-value .metadata-input-number:is(:hover, :active, :focus, :focus-within),
+.metadata-property-value .multi-select-container input {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}

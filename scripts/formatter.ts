@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import postcss, { type Container, type Plugin } from "postcss";
 import stylelint from "stylelint";
 import { formatConfig as config } from "./format-config";
@@ -21,27 +22,41 @@ function fileInfo(file: string) {
 	return {
 		source: source.startsWith("src/") ? source : `src/${source}`,
 		name,
-		label: name.replace(/\.css$/, "").replaceAll("-", " "),
-		layer:
-			config.sections[name]?.layer ??
-			(source.includes("/markdown/")
-				? "markdown"
-				: source.includes("/global/")
-					? "global application"
-					: source.includes("/sections/")
-						? "app section"
-						: source.includes("/components/")
-							? "component"
-							: "settings"),
+		label: name
+			.replace(/\.css$/, "")
+			.replaceAll("-", " ")
+			.replace(/\b(pdf|xfa|ui)\b/gi, (word) => word.toUpperCase()),
+		layer: source.includes("/markdown/")
+			? "markdown"
+			: source.includes("/global/")
+				? "global application"
+				: source.includes("/sections/")
+					? "app section"
+					: source.includes("/components/")
+						? "component"
+						: "settings",
 	};
 }
 function sectionBanner(file: string, continued: boolean): string {
-	const { source, name, label, layer } = fileInfo(file);
-	const settings = config.sections[name];
-	if (!settings) throw new Error(`Missing section description for ${source}`);
+	const { source, label, layer } = fileInfo(file);
+	if (!existsSync(source))
+		throw new Error(`Missing section description for ${source}`);
+	const first = postcss.parse(readFileSync(source, "utf8")).first;
+	if (first?.type !== "comment")
+		throw new Error(`Missing section description for ${source}`);
+	const description = first.text;
 	return banner(
-		`@${layer}: ${label.replace(/\b\w/g, (letter) => letter.toUpperCase())}${continued ? " (continued)" : ""}`,
-		[`@source: ${source}`, "@description:", "", settings.description, ""],
+		`@${layer}: ${label.replace(/\b(?:pdf|xfa|ui)\b|\b\w/gi, (word) => word.toUpperCase())}${continued ? " (continued)" : ""}`,
+		[
+			`@source: ${source}`,
+			"@description:",
+			"",
+			...comment(description, 0)
+				.split("\n")
+				.slice(1, -1)
+				.map((line) => line.replace(/^\s*\* ?/, "")),
+			"",
+		],
 	);
 }
 function contents(files: string[]): string {
@@ -206,6 +221,11 @@ function render(
 					continue;
 				}
 				const { source } = fileInfo(marker[1]);
+				const next = nodes[index + 1];
+				if (next?.type === "comment" && existsSync(source)) {
+					const header = postcss.parse(readFileSync(source, "utf8")).first;
+					if (header?.type === "comment" && next.text === header.text) index++;
+				}
 				const continued = seen.has(source);
 				seen.add(source);
 				if (!files.includes(source)) files.push(source);
@@ -300,7 +320,7 @@ export function formatCss(): Plugin {
 				const file = node.text.match(/@source: (src\/\S+\.css)/)?.[1];
 				if (
 					file &&
-					config.sections[fileInfo(file).name] &&
+					existsSync(fileInfo(file).source) &&
 					[false, true].some(
 						(continued) =>
 							node.text === commentText(sectionBanner(file, continued)),

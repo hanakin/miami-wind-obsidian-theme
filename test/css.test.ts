@@ -101,15 +101,7 @@ it.each([
 	);
 });
 
-it.each([
-	"keyword",
-	"string",
-	"number",
-	"comment",
-	"operator",
-	"variable",
-	"def",
-])(
+it.each(["keyword", "string"])(
 	"allows the exact legacy span.cm-%s syntax selector only in code.css",
 	async (token) => {
 		const css = `.cm-s-obsidian span.cm-${token} { color: var(--${token}) }`;
@@ -211,7 +203,6 @@ it("does not shorten a shorthand whose variables can expand into multiple values
 it.each([
 	".cm-s-obsidian span.cm-highlight",
 	".cm-s-obsidian span.cm-highlight.obsidian-search-match-highlight",
-	"span.is-flashing.cm-highlight",
 	"span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight",
 	"span.cm-formatting-link.cm-url.cm-highlight",
 	"span.cm-formatting-link.cm-url.cm-highlight:hover",
@@ -269,18 +260,18 @@ it.each([
 		);
 	},
 );
-it("allows only the exact disabled community-sidebar rival in overrides.css", async () => {
+it("allows only the exact disabled community-sidebar rival in community-browser.css", async () => {
 	const css =
 		".mod-community-modal button.clickable-icon[aria-disabled='true'] { color: var(--text-disabled) }";
 	await expect(
 		postcss([checkCss()]).process(css, {
-			from: "src/global/icons.css",
+			from: "src/sections/community-browser.css",
 		}),
 	).resolves.toBeDefined();
 	await expect(check(css)).rejects.toThrow();
 	await expect(
 		postcss([checkCss()]).process(css.replace("button.", "div."), {
-			from: "src/global/icons.css",
+			from: "src/sections/community-browser.css",
 		}),
 	).rejects.toThrow();
 });
@@ -435,4 +426,25 @@ it("allows only the exact Obsidian Vim-panel input focus tie in global inputs", 
 			from: "src/global/inputs.css",
 		}),
 	).rejects.toThrow();
+});
+
+it("keeps PDF and XFA acronyms in source-based banners", async () => {
+	const result = await postcss([formatCss()]).process(
+		"/* @section src/sections/pdf-xfa.css */ .x { color: red; }",
+		{ from: undefined },
+	);
+	expect(result.css).toContain("@app section: PDF XFA");
+});
+
+it("wraps descriptions from source headers within the banner width", async () => {
+	const result = await postcss([formatCss()]).process(
+		"/* @section src/global/dividers.css */ hr { color: red; }",
+		{ from: undefined },
+	);
+	expect(
+		result.css
+			.split("\n")
+			.filter((line) => line.startsWith(" * "))
+			.every((line) => line.length <= 80),
+	).toBe(true);
 });

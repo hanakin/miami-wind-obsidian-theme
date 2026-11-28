@@ -35,7 +35,7 @@ export function loadReplayLimits(inputs?: Inputs): Record<string, string> {
 					readFileSync("capture/coverage.json", "utf8"),
 			).replay?.limits ?? {};
 	}
-	return limits!;
+	return limits ?? {};
 }
 
 function sheet(

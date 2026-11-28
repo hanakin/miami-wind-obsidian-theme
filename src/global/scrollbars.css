@@ -1,0 +1,5 @@
+/* Pointer cursor on hovered scrollbar thumbs throughout the app. */
+
+::-webkit-scrollbar-thumb:hover {
+	cursor: pointer;
+}

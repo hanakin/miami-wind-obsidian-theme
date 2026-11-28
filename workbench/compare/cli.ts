@@ -23,6 +23,9 @@ import { render } from "./render";
 import { loadReplayLimits } from "./replay";
 import { runtimeCss } from "./runtime";
 
+// Miami Wind 1.x as released.
+const BASELINE = "b478dc8:theme.css";
+
 const { values } = parseArgs({
 	args: process.argv.slice(2),
 	options: {
@@ -98,7 +101,7 @@ const before = values.formatting
 	? inputs.read(`${out}/before-format.css`).toString("utf8")
 	: values.before
 		? inputs.read(values.before).toString("utf8")
-		: execFileSync("git", ["show", "b478dc8:theme.css"], { encoding: "utf8" });
+		: execFileSync("git", ["show", BASELINE], { encoding: "utf8" });
 const after = inputs.read(values.after ?? "theme.css").toString("utf8");
 mkdirSync(`${out}/themes`, { recursive: true });
 const snapshotTheme = async (
@@ -120,7 +123,7 @@ const [beforeTheme, afterTheme] = await Promise.all([
 		before,
 		values.formatting
 			? `${out}/before-format.css`
-			: (values.before ?? "b478dc8:theme.css"),
+			: (values.before ?? BASELINE),
 	),
 	snapshotTheme("after", after, values.after ?? "theme.css"),
 ]);

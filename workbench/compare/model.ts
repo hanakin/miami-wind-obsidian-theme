@@ -44,8 +44,8 @@ export function styleDiff(
 					x[property] !== y[property] &&
 					(x[property] === undefined ||
 						y[property] === undefined ||
-						propertyValueKey(property, x[property]!) !==
-							propertyValueKey(property, y[property]!))
+						propertyValueKey(property, x[property] ?? "") !==
+							propertyValueKey(property, y[property] ?? ""))
 				)
 					changes.push({
 						property,
