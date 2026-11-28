@@ -1,7 +1,6 @@
 /* Inline code, fenced code and editor syntax tokens: colors and backgrounds. */
 
-/* Shared component adjustments: surface-background.
- * Local --mw-* variables below set this section’s colors and backgrounds. */
+/* Uses component: surface-background. */
 
 .markdown-rendered code {
 	--mw-surface-background: var(--code-background);
@@ -22,7 +21,7 @@
 	color: var(--code-foreground);
 }
 
-/* Match Obsidian's 0,4,1 footnote rivals without changing inherited colors. */
+/* Match Obsidian’s 0,4,1 footnote rivals without changing inherited colors. */
 .markdown-source-view.mod-cm6 span.cm-inline-code.cm-footref,
 .markdown-source-view.mod-cm6 span.cm-inline-code.cm-hmd-footnote {
 	color: var(--code-foreground);

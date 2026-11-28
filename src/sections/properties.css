@@ -27,16 +27,13 @@
 	color: var(--black);
 }
 
-/* Shared component adjustment: action icon colors. */
-
-/* Shared component adjustment: Properties SVG icons. */
+/* Shared component adjustment: svg-icon in Properties. */
 .metadata-container .metadata-show-source-button:hover .svg-icon,
 .metadata-container .metadata-add-button:hover .svg-icon {
 	color: var(--black);
 }
 
-
-/* Shared component adjustment: inputs within properties. */
+/* Shared component adjustment: input in Properties. */
 
 .metadata-property-key-input {
 	--metadata-label-text-color: var(--magenta);

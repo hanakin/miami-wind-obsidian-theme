@@ -164,8 +164,6 @@
 	--scrollbar-active-thumb-bg: var(--magenta);
 
 	/* @heading Tags */
-
-	/* Obsidian’s current tag variables control pill fill, hover and text. */
 	--tag-background: var(--cyan);
 	--tag-background-hover: var(--magenta);
 	--tag-color: var(--black);

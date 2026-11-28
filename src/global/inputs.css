@@ -4,8 +4,11 @@ input,
 .combobox-button {
 	--background-modifier-form-field: var(--grey-11);
 	--background-modifier-form-field-hover: var(--grey-11);
+
 	--slider-track-background: var(--grey-11);
+
 	--mw-input-border: var(--grey-9);
+
 	--checkbox-border-color: var(--grey-9);
 	--checkbox-border-color-hover: var(--grey-9);
 	--checkbox-color: var(--grey-11);
@@ -25,6 +28,7 @@ textarea:focus-within,
 .combobox-button:focus-visible,
 .combobox-button:focus-within {
 	--mw-input-border: var(--cyan);
+
 	--checkbox-border-color: var(--cyan);
 	--checkbox-border-color-hover: var(--cyan);
 	border-color: var(--cyan);
@@ -43,7 +47,7 @@ input[type='radio']:checked:hover {
 	border-color: var(--checkbox-border-color);
 }
 
-/* These search inputs reset borders literally; preserve their old computed border colors. */
+/* Search inputs use the shared field fill and state border color. */
 .combobox .search-input-container input[type='search'] {
 	background-color: var(--grey-11);
 	border-color: var(--mw-input-border);
@@ -53,6 +57,7 @@ input[type='radio']:checked:hover {
 .combobox-button {
 	--dropdown-background: var(--grey-11);
 	--dropdown-background-hover: var(--grey-11);
+
 	--metadata-label-background-active: var(--grey-11);
 }
 

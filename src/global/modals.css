@@ -1,7 +1,6 @@
 /* Dialog surfaces, navigation, action buttons and close-button states. */
 
-/* Shared component adjustments: action-button.
- * Local --mw-* variables below set this section’s colors and backgrounds. */
+/* Uses component: action-button. */
 
 .modal {
 	--modal-border-width: 2px;

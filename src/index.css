@@ -23,11 +23,11 @@
 @import 'global/scrollbars.css';
 @import 'global/icons.css';
 @import 'global/dividers.css';
+@import 'global/selection.css';
 @import 'markdown/headings.css';
 @import 'markdown/code.css';
 @import 'markdown/code-actions.css';
 @import 'markdown/inline-marks.css';
-@import 'global/selection.css';
 @import 'markdown/links.css';
 @import 'markdown/blockquotes.css';
 @import 'markdown/tasks.css';

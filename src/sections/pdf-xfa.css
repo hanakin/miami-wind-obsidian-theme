@@ -21,7 +21,7 @@
 	outline: none;
 }
 
-/* Shared component adjustment: inputs within XFA. */
+/* Shared component adjustment: input in XFA. */
 
 .xfaLayer input {
 	background-color: var(--grey-11);

@@ -1,7 +1,6 @@
 /* Callout backgrounds and title colors for each built-in callout type. */
 
-/* Shared component adjustments: surface-background.
- * Local --mw-* variables below set this section’s colors and backgrounds. */
+/* Uses component: surface-background. */
 
 /* Background has no variable; title rules avoid recoloring icons and borders. */
 .cm-callout [data-callout='note'] {

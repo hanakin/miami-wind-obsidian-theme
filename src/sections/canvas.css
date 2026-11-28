@@ -36,9 +36,7 @@
 	color: var(--magenta);
 }
 
-/* Shared component adjustment: action icon colors. */
-
-/* Shared component adjustment: Canvas SVG icons. */
+/* Shared component adjustment: svg-icon in Canvas. */
 .canvas-control-item:hover .svg-icon {
 	color: var(--magenta);
 }

@@ -30,11 +30,11 @@
  * 16. global application: scrollbars....src/global/scrollbars.css
  * 17. global application: icons.........src/global/icons.css
  * 18. global application: dividers......src/global/dividers.css
- * 19. markdown: headings................src/markdown/headings.css
- * 20. markdown: code....................src/markdown/code.css
- * 21. markdown: code actions............src/markdown/code-actions.css
- * 22. markdown: inline marks............src/markdown/inline-marks.css
- * 23. global application: selection.....src/global/selection.css
+ * 19. global application: selection.....src/global/selection.css
+ * 20. markdown: headings................src/markdown/headings.css
+ * 21. markdown: code....................src/markdown/code.css
+ * 22. markdown: code actions............src/markdown/code-actions.css
+ * 23. markdown: inline marks............src/markdown/inline-marks.css
  * 24. markdown: links...................src/markdown/links.css
  * 25. markdown: blockquotes.............src/markdown/blockquotes.css
  * 26. markdown: tasks...................src/markdown/tasks.css
@@ -375,9 +375,6 @@
 	 * -------------------------------------------------------------------------
 	 */
 
-	/*
-	 * Obsidian’s current tag variables control pill fill, hover and text.
-	 */
 	--tag-background: var(--cyan);
 	--tag-background-hover: var(--magenta);
 	--tag-color: var(--black);
@@ -468,8 +465,7 @@ input[type='radio']:checked:hover {
 }
 
 /*
- * These search inputs reset borders literally; preserve their old computed
- * border colors.
+ * Search inputs use the shared field fill and state border color.
  */
 .combobox .search-input-container input[type='search'] {
 	background-color: var(--grey-11);
@@ -561,8 +557,7 @@ input[type] {
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustments: icon-background. Local --mw-* variables below
- * set this section’s colors and backgrounds.
+ * Uses component: icon-background.
  */
 .workspace-ribbon .clickable-icon:hover {
 	--mw-icon-background: var(--icon-background-hover);
@@ -586,8 +581,7 @@ input[type] {
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustments: icon-background. Local --mw-* variables below
- * set this section’s colors and backgrounds.
+ * Uses component: icon-background.
  */
 
 /*
@@ -611,7 +605,7 @@ input[type] {
 }
 
 /*
- * Pointerless devices lack Obsidian's stronger hover rivals.
+ * Pointerless devices lack Obsidian’s stronger hover rivals.
  */
 @media (hover: none) {
 	.mod-left-split .workspace-tab-header:hover,
@@ -641,8 +635,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustments: icon-background, surface-background. Local
- * --mw-* variables below set this section’s colors and backgrounds.
+ * Uses component: icon-background. Uses component: surface-background.
  */
 
 /*
@@ -717,8 +710,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustments: menu-item-state. Local --mw-* variables below
- * set this section’s colors and backgrounds.
+ * Uses component: menu-item-state.
  */
 .suggestion-container {
 	border: 1px solid var(--magenta);
@@ -811,8 +803,7 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustments: action-button. Local --mw-* variables below set
- * this section’s colors and backgrounds.
+ * Uses component: action-button.
  */
 .modal {
 	--modal-border-width: 2px;
@@ -1007,8 +998,7 @@ select option:checked {
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustments: action-button, menu-item-state. Local --mw-*
- * variables below set this section’s colors and backgrounds.
+ * Uses component: action-button. Uses component: menu-item-state.
  */
 .menu {
 	--menu-background: var(--black);
@@ -1068,7 +1058,8 @@ select option:checked {
 }
 
 /*
- * Disabled selected/focus/active used the normal fill; hover still wins below.
+ * Disabled selected, focused and active items keep the normal fill until
+ * hovered.
  */
 .menu-item.is-disabled.selected,
 .menu-item.is-disabled:focus,
@@ -1124,7 +1115,7 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
  * @source: src/global/icons.css
  * @description:
  *
- * Clickable icon hover fills and disabled pointer behavior.
+ * Clickable icon cursors, disabled backgrounds and disabled text colors.
  *
  * -------------------------------------------------------------------------- */
 
@@ -1136,10 +1127,6 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 	cursor: default;
 }
 
-/*
- * The zero-weight modal-close exclusion preserves its separate hover rule’s
- * precedence.
- */
 .clickable-icon[aria-disabled='true'],
 .clickable-icon[aria-disabled='true']:hover,
 .clickable-icon[aria-disabled='true']:active,
@@ -1148,6 +1135,10 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 	background-color: transparent;
 }
 
+/*
+ * The zero-weight modal-close exclusion preserves its separate hover rule’s
+ * precedence.
+ */
 .clickable-icon[aria-disabled='true'],
 .clickable-icon[aria-disabled='true']:is(:hover, :active, .is-active, .has-active-menu):where(:not(.modal-close-button:hover)) {
 	color: var(--text-disabled);
@@ -1167,6 +1158,22 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 
 hr {
 	border-color: var(--cyan);
+}
+
+
+/* -----------------------------------------------------------------------------
+ * @global application: Selection
+ * -----------------------------------------------------------------------------
+ * @source: src/global/selection.css
+ * @description:
+ *
+ * Selection text and background colors throughout the app.
+ *
+ * -------------------------------------------------------------------------- */
+
+::selection {
+	background-color: var(--text-selection);
+	color: var(--text-selection-fg);
 }
 
 
@@ -1244,8 +1251,7 @@ hr {
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustments: surface-background. Local --mw-* variables
- * below set this section’s colors and backgrounds.
+ * Uses component: surface-background.
  */
 .markdown-rendered code {
 	--mw-surface-background: var(--code-background);
@@ -1269,7 +1275,7 @@ hr {
 }
 
 /*
- * Match Obsidian's 0,4,1 footnote rivals without changing inherited colors.
+ * Match Obsidian’s 0,4,1 footnote rivals without changing inherited colors.
  */
 .markdown-source-view.mod-cm6 span.cm-inline-code.cm-footref,
 .markdown-source-view.mod-cm6 span.cm-inline-code.cm-hmd-footnote {
@@ -1345,8 +1351,7 @@ hr {
 }
 
 /*
- * Tie the editor’s own button selectors; 1.x hover also painted on touch
- * devices.
+ * Copy and edit buttons retain hover colors on both pointer and touch devices.
  */
 .markdown-source-view.mod-cm6 .code-block-flair,
 .markdown-source-view.mod-cm6 .edit-block-button {
@@ -1355,14 +1360,14 @@ hr {
 }
 
 /*
- * Shared component adjustments: action-button hover colors in Markdown.
+ * Uses component: action-button.
  */
 .code-block-flair:hover,
 .edit-block-button:hover,
 .markdown-source-view.mod-cm6 .code-block-flair:hover,
 .markdown-source-view.mod-cm6 .edit-block-button:hover {
-	--mw-action-background: var(--cyan-transparent);
 	--mw-action-color: var(--magenta);
+	--mw-action-background: var(--cyan-transparent);
 	background-color: var(--mw-action-background);
 	color: var(--mw-action-color);
 	cursor: pointer;
@@ -1396,7 +1401,7 @@ mark {
 }
 
 /*
- * Match Obsidian 1.15.1's PDF export rule (0,2,1).
+ * Match Obsidian 1.15.1’s PDF export rule (0,2,1).
  */
 @media print {
 	.print .markdown-preview-view mark {
@@ -1449,22 +1454,6 @@ span.cm-formatting-link.cm-url.cm-highlight:hover {
 .cm-line.HyperMD-footnote .cm-hmd-footnote-url-title.cm-highlight,
 span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 	color: var(--background-primary);
-}
-
-
-/* -----------------------------------------------------------------------------
- * @global application: Selection
- * -----------------------------------------------------------------------------
- * @source: src/global/selection.css
- * @description:
- *
- * Selection text and background colors throughout the app.
- *
- * -------------------------------------------------------------------------- */
-
-::selection {
-	background-color: var(--text-selection);
-	color: var(--text-selection-fg);
 }
 
 
@@ -1639,8 +1628,7 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustments: surface-background. Local --mw-* variables
- * below set this section’s colors and backgrounds.
+ * Uses component: surface-background.
  */
 .markdown-rendered table {
 	border: 1px solid var(--background-modifier-border);
@@ -1669,8 +1657,7 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustments: surface-background. Local --mw-* variables
- * below set this section’s colors and backgrounds.
+ * Uses component: surface-background.
  *
  * Background has no variable; title rules avoid recoloring icons and borders.
  */
@@ -1781,7 +1768,10 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustment: toolbar icons and filter actions.
+ * Shared component adjustment: text-icon-button and clickable-icon in Bases.
+ * The app sheet rival .menu.mod-sheet .bases-filter-page .filter-row
+ * .filter-row-actions .clickable-icon (0,6,0) reads --text-faint and
+ * --text-on-accent; these controls set the leaf tokens and spacing.
  */
 .bases-toolbar-section-content .filter-group-actions .text-icon-button,
 .filter-row-actions .clickable-icon {
@@ -1800,8 +1790,9 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 }
 
 /*
- * Shared component adjustment: disabled filter actions keep the 0,3,0 hover
- * tie.
+ * Shared component adjustment: clickable-icon in Bases. Tie global/icons.css
+ * .clickable-icon[aria-disabled=true]:hover (0,3,0) so disabled filter actions
+ * retain their own hover fill.
  */
 .filter-row-actions [aria-disabled='true']:hover {
 	background-color: var(--magenta-transparent);
@@ -1821,10 +1812,7 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 }
 
 /*
- * Bases toolbar actions and filter-row controls in normal and hover states.
- *
- * Shared component adjustments: action-button. Local --mw-* variables below set
- * this section’s colors and backgrounds.
+ * Uses component: action-button.
  */
 .bases-toolbar-item .text-icon-button,
 .bases-toolbar-section-content .text-icon-button {
@@ -1842,7 +1830,7 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 }
 
 /*
- * Shared component adjustment: inputs within bases.
+ * Shared component adjustment: input and combobox-button in Bases.
  */
 .bases-toolbar-menu-container .search-input-container input[type='search'] {
 	background-color: var(--grey-11);
@@ -1865,7 +1853,7 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 }
 
 /*
- * Shared component adjustment: menus within bases.
+ * Shared component adjustment: clickable-icon in Bases.
  */
 .menu .clickable-icon.bases-toolbar-menu-item-icon {
 	background-color: transparent;
@@ -1881,6 +1869,9 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 	color: var(--magenta);
 }
 
+/*
+ * Uses component: menu-item-state.
+ */
 .bases-toolbar-menu-item:hover,
 .bases-toolbar-menu-item:focus,
 .bases-toolbar-menu-item:active,
@@ -1910,7 +1901,7 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 }
 
 /*
- * Shared component adjustment: dropdowns within bases.
+ * Shared component adjustment: dropdown in Bases.
  */
 .filter-group-header .conjunction.dropdown {
 	--background-modifier-hover: var(--magenta);
@@ -1929,8 +1920,8 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  * -------------------------------------------------------------------------- */
 
 /*
- * Shared component adjustment: tie Obsidian 1.15.1's 0,3,1 disabled sidebar
- * button color.
+ * Shared component adjustment: clickable-icon in the community browser. Tie
+ * Obsidian 1.15.1’s 0,3,1 disabled sidebar button color.
  */
 .mod-community-modal button.clickable-icon[aria-disabled='true'] {
 	color: var(--text-disabled);
@@ -1984,9 +1975,7 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 }
 
 /*
- * Shared component adjustment: action icon colors.
- *
- * Shared component adjustment: Canvas SVG icons.
+ * Shared component adjustment: svg-icon in Canvas.
  */
 .canvas-control-item:hover .svg-icon {
 	color: var(--magenta);
@@ -2031,9 +2020,7 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 }
 
 /*
- * Shared component adjustment: action icon colors.
- *
- * Shared component adjustment: Properties SVG icons.
+ * Shared component adjustment: svg-icon in Properties.
  */
 .metadata-container .metadata-show-source-button:hover .svg-icon,
 .metadata-container .metadata-add-button:hover .svg-icon {
@@ -2041,7 +2028,7 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 }
 
 /*
- * Shared component adjustment: inputs within properties.
+ * Shared component adjustment: input in Properties.
  */
 .metadata-property-key-input {
 	--metadata-label-text-color: var(--magenta);
@@ -2148,7 +2135,7 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
 }
 
 /*
- * Shared component adjustment: inputs within XFA.
+ * Shared component adjustment: input in XFA.
  */
 .xfaLayer input {
 	background-color: var(--grey-11);

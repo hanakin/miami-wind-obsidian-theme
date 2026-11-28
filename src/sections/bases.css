@@ -1,6 +1,9 @@
 /* Bases toolbar buttons, filter fields, query groups and menu states. */
 
-/* Shared component adjustment: toolbar icons and filter actions. */
+/* Shared component adjustment: text-icon-button and clickable-icon in Bases.
+ * The app sheet rival .menu.mod-sheet .bases-filter-page .filter-row
+ * .filter-row-actions .clickable-icon (0,6,0) reads --text-faint and
+ * --text-on-accent; these controls set the leaf tokens and spacing. */
 
 .bases-toolbar-section-content .filter-group-actions .text-icon-button,
 .filter-row-actions .clickable-icon {
@@ -18,7 +21,9 @@
 	color: var(--magenta);
 }
 
-/* Shared component adjustment: disabled filter actions keep the 0,3,0 hover tie. */
+/* Shared component adjustment: clickable-icon in Bases.
+ * Tie global/icons.css .clickable-icon[aria-disabled=true]:hover (0,3,0)
+ * so disabled filter actions retain their own hover fill. */
 .filter-row-actions [aria-disabled='true']:hover {
 	background-color: var(--magenta-transparent);
 	color: var(--text-disabled);
@@ -34,10 +39,7 @@
 	--text-faint: transparent;
 }
 
-/* Bases toolbar actions and filter-row controls in normal and hover states. */
-
-/* Shared component adjustments: action-button.
- * Local --mw-* variables below set this section’s colors and backgrounds. */
+/* Uses component: action-button. */
 
 .bases-toolbar-item .text-icon-button,
 .bases-toolbar-section-content .text-icon-button {
@@ -52,7 +54,7 @@
 	color: var(--magenta);
 }
 
-/* Shared component adjustment: inputs within bases. */
+/* Shared component adjustment: input and combobox-button in Bases. */
 
 .bases-toolbar-menu-container .search-input-container input[type='search'] {
 	background-color: var(--grey-11);
@@ -74,7 +76,7 @@
 	--background-modifier-border: var(--mw-input-border);
 }
 
-/* Shared component adjustment: menus within bases. */
+/* Shared component adjustment: clickable-icon in Bases. */
 
 .menu .clickable-icon.bases-toolbar-menu-item-icon {
 	background-color: transparent;
@@ -90,12 +92,14 @@
 	color: var(--magenta);
 }
 
+/* Uses component: menu-item-state. */
 .bases-toolbar-menu-item:hover,
 .bases-toolbar-menu-item:focus,
 .bases-toolbar-menu-item:active,
 .bases-toolbar-menu-item.selected {
 	--mw-item-background: var(--cyan-transparent);
 	--mw-item-color: var(--magenta);
+
 	--interactive-normal: var(--cyan-transparent);
 	--interactive-hover: var(--cyan-transparent);
 	@mixin menu-item-state;
@@ -115,7 +119,7 @@
 	cursor: default;
 }
 
-/* Shared component adjustment: dropdowns within bases. */
+/* Shared component adjustment: dropdown in Bases. */
 
 .filter-group-header .conjunction.dropdown {
 	--background-modifier-hover: var(--magenta);

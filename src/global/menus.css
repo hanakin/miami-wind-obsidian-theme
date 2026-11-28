@@ -1,7 +1,7 @@
 /* Menu surfaces, icons, selected items and mobile action rows. */
 
-/* Shared component adjustments: action-button, menu-item-state.
- * Local --mw-* variables below set this section’s colors and backgrounds. */
+/* Uses component: action-button.
+ * Uses component: menu-item-state. */
 
 .menu {
 	--menu-background: var(--black);
@@ -52,7 +52,7 @@
 	background-color: var(--cyan-transparent);
 }
 
-/* Disabled selected/focus/active used the normal fill; hover still wins below. */
+/* Disabled selected, focused and active items keep the normal fill until hovered. */
 .menu-item.is-disabled.selected,
 .menu-item.is-disabled:focus,
 .menu-item.is-disabled:active {
