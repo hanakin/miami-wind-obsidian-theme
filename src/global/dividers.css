@@ -1,0 +1,5 @@
+/* Divider border colors for Markdown horizontal rules and the app pane resize handle. */
+
+hr {
+	border-color: var(--cyan);
+}

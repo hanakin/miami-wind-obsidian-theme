@@ -29,19 +29,19 @@
  * 15. global application: menus.........src/global/menus.css
  * 16. global application: overrides.....src/global/overrides.css
  * 17. global application: icons.........src/global/icons.css
- * 18. markdown: headings................src/markdown/headings.css
- * 19. markdown: code....................src/markdown/code.css
- * 20. markdown: code actions............src/markdown/code-actions.css
- * 21. markdown: inline marks............src/markdown/inline-marks.css
- * 22. markdown: selection...............src/markdown/selection.css
- * 23. markdown: links...................src/markdown/links.css
- * 24. markdown: blockquotes.............src/markdown/blockquotes.css
- * 25. markdown: tasks...................src/markdown/tasks.css
- * 26. markdown: tables..................src/markdown/tables.css
- * 27. markdown: callouts................src/markdown/callouts.css
- * 28. markdown: tags....................src/markdown/tags.css
- * 29. markdown: tag hover...............src/markdown/tag-hover.css
- * 30. markdown: horizontal rule.........src/markdown/horizontal-rule.css
+ * 18. global application: dividers......src/global/dividers.css
+ * 19. markdown: headings................src/markdown/headings.css
+ * 20. markdown: code....................src/markdown/code.css
+ * 21. markdown: code actions............src/markdown/code-actions.css
+ * 22. markdown: inline marks............src/markdown/inline-marks.css
+ * 23. markdown: selection...............src/markdown/selection.css
+ * 24. markdown: links...................src/markdown/links.css
+ * 25. markdown: blockquotes.............src/markdown/blockquotes.css
+ * 26. markdown: tasks...................src/markdown/tasks.css
+ * 27. markdown: tables..................src/markdown/tables.css
+ * 28. markdown: callouts................src/markdown/callouts.css
+ * 29. markdown: tags....................src/markdown/tags.css
+ * 30. markdown: tag hover...............src/markdown/tag-hover.css
  * 31. app section: canvas...............src/sections/canvas.css
  * 32. app section: properties...........src/sections/properties.css
  * 33. app section: file explorer........src/sections/file-explorer.css
@@ -590,6 +590,21 @@ input[type] {
 	border-color: var(--mw-input-border);
 }
 
+/*
+ * The sort-direction divider reads this border token; focus shadows use a
+ * separate token.
+ */
+.bases-sort-direction {
+	--background-modifier-border: var(--mw-input-border);
+}
+
+/*
+ * Tie the app’s literal transparent Vim command-line focus fill at 0,6,1.
+ */
+.markdown-source-view.mod-cm6 .cm-panels.cm-panels-bottom input[type='text']:focus {
+	background-color: var(--grey-11);
+}
+
 
 /* -----------------------------------------------------------------------------
  * @global application: Task Inputs
@@ -907,9 +922,9 @@ body:not(.is-mobile) .workspace-split.mod-left-split .workspace-sidedock-vault-p
  * Status bar backgrounds, item text and clickable hover states.
  */
 .status-bar {
-	--status-bar-text-color: var(--magenta);
 	--status-bar-radius: 0;
 	border-top: 1px solid var(--cyan);
+	color: var(--magenta);
 	padding: 0;
 }
 
@@ -1227,6 +1242,14 @@ select option:checked {
 }
 
 /*
+ * Tie the app’s editing-row focus-within fill only when a theme item state
+ * applies.
+ */
+.bases-toolbar-menu-item.is-editing:focus-within:is(:hover, :focus, :active, .selected) {
+	background-color: var(--mw-item-background);
+}
+
+/*
  * Phone action/suggestion rows read these variables at higher specificity.
  * Scope them to the row states so their descendants keep the existing paint.
  */
@@ -1265,6 +1288,8 @@ select option:checked {
 }
 
 .bases-toolbar-menu-item.mod-hidden:hover {
+	--mw-item-background: transparent;
+
 	--interactive-normal: transparent;
 	--interactive-hover: transparent;
 }
@@ -1424,6 +1449,25 @@ body:not(.is-phone) .vertical-tab-nav-item.is-active,
 .bases-toolbar-section-content .text-icon-button:hover {
 	background-color: var(--magenta-transparent);
 	color: var(--magenta);
+}
+
+
+/* -----------------------------------------------------------------------------
+ * @global application: Dividers
+ * -----------------------------------------------------------------------------
+ * @source: src/global/dividers.css
+ * @description:
+ *
+ * Divider border colors for Markdown horizontal rules and the app pane resize handle.
+ *
+ * -------------------------------------------------------------------------- */
+
+/*
+ * Divider border colors for Markdown horizontal rules and the app pane resize
+ * handle.
+ */
+hr {
+	border-color: var(--cyan);
 }
 
 
@@ -2006,24 +2050,6 @@ span.cm-hashtag.cm-hmd-escape-backslash.cm-highlight {
  */
 .cm-hashtag-begin:has(+ .cm-hashtag-end:hover) {
 	background-color: var(--magenta);
-}
-
-
-/* -----------------------------------------------------------------------------
- * @markdown: Horizontal Rule
- * -----------------------------------------------------------------------------
- * @source: src/markdown/horizontal-rule.css
- * @description:
- *
- * Horizontal divider colors in notes.
- *
- * -------------------------------------------------------------------------- */
-
-/*
- * Horizontal divider colors in notes.
- */
-hr {
-	border-color: var(--cyan);
 }
 
 

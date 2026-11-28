@@ -24,3 +24,8 @@ body {--background-modifier-hover:#555; --tab-background-hover:transparent;}
 .xfaTextfield:focus,.xfaSelect:focus{background-image:none;background-color:transparent;outline:auto;outline:var(--xfa-focus-outline);outline-offset:-1px}
 .xfaTextfield,.xfaSelect{height:100%;width:100%;flex:1 1 auto;border:none;resize:none;background-image:url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");background-image:var(--xfa-unfocused-field-background)}
 .xfaTextfield,.xfaSelect{background:transparent}
+
+.bases-group-page .bases-group-row.is-editing:focus-within{background-color:var(--background-modifier-hover)}
+
+.status-bar{color:var(--status-bar-text-color)}
+.status-bar-item.mod-clickable:hover{background-color:var(--background-modifier-hover);color:var(--text-normal)}

@@ -284,5 +284,27 @@
 				"count": 2
 			}
 		]
+	},
+	{
+		"file": "src/global/inputs.css",
+		"rule": "selector-max-specificity",
+		"reason": "Obsidian 1.15.1 gives its Vim command input a literal transparent focus fill at 0,6,1. This exact three-compound selector ties it to preserve the 1.x fill without importance.",
+		"selectors": [
+			{
+				"selector": ".markdown-source-view.mod-cm6 .cm-panels.cm-panels-bottom input[type='text']:focus",
+				"count": 1
+			}
+		]
+	},
+	{
+		"file": "theme.css",
+		"rule": "selector-max-specificity",
+		"reason": "Obsidian 1.15.1 gives its Vim command input a literal transparent focus fill at 0,6,1. This exact three-compound selector ties it to preserve the 1.x fill without importance.",
+		"selectors": [
+			{
+				"selector": ".markdown-source-view.mod-cm6 .cm-panels.cm-panels-bottom input[type='text']:focus",
+				"count": 1
+			}
+		]
 	}
 ]

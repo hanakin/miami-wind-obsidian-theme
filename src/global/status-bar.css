@@ -1,9 +1,9 @@
 /* Status bar backgrounds, item text and clickable hover states. */
 
 .status-bar {
-	--status-bar-text-color: var(--magenta);
 	--status-bar-radius: 0;
 	border-top: 1px solid var(--cyan);
+	color: var(--magenta);
 	padding: 0;
 }
 
