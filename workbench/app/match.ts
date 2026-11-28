@@ -186,6 +186,7 @@ export async function styledBy(files: { path: string; css: string }[]): Promise<
 			selector: probe.selector,
 			how: way,
 			adjustment: probe.adjustment,
+			variables: probe.variables,
 		});
 	}
 	const styled = [...byRule.values()];

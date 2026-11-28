@@ -9,6 +9,7 @@ import {
 	itemCode,
 	pageSummary,
 	rowState,
+	unchecked,
 } from "./compare-states.ts";
 import { touchedComponents } from "./elements.ts";
 import type { CompareState } from "./types.ts";
@@ -126,11 +127,22 @@ it("counts a page's places, and its dot is the worst of them", () => {
 	expect(pageSummary("button", surfaces, fixtures, compare, { "own-b": ["button"] })).toEqual({
 		same: 0,
 		different: 1,
-		"not-proven": 2,
+		// One place is really not proven; one was never checked, which is shown apart.
+		"not-proven": 1,
+		unchecked: 1,
 		noCapture: 1,
 		worst: "different",
 	});
 	expect(pageSummary("button", ["canvas"], fixtures, compare).worst).toBeUndefined();
+	// With no results for the sides on screen, every place is "not checked", never "not proven".
+	const fresh = pageSummary("button", surfaces, fixtures, null);
+	expect([fresh["not-proven"], fresh.unchecked, fresh.worst]).toEqual([0, 3, "unchecked"]);
+	// A real not-proven result outranks "not checked"; "not checked" outranks same.
+	expect(unchecked({ status: "not-proven", reasons: ["not checked with these sides"] })).toBe(true);
+	expect(
+		unchecked({ status: "not-proven", reasons: ["canvas content is not reconstructed"] }),
+	).toBe(false);
+	expect(unchecked({ status: "same" })).toBe(false);
 });
 
 const d = (element: string, property: string, before: string, after: string) => ({
@@ -362,4 +374,23 @@ it("shows every larger capture that changes the component, not only the first", 
 	const { changed, rest } = insidePictures("button", here, compare, touched);
 	expect(changed.map((f) => f.id)).toEqual(["menu.second"]);
 	expect(rest.map((f) => f.id)).toEqual(["menu.first", "menu.third"]);
+});
+
+it("names changed properties in plain words, and leaves out what only follows a size change", () => {
+	const found = changes([
+		d("1:hr", "height", "1px", "3px"),
+		d("1:hr", "block-size", "1px", "3px"),
+		// The turning point sits at the middle, so it moves with the height: nothing new.
+		d("1:hr", "transform-origin", "350px 0.5px", "350px 1.5px"),
+		d("1:hr", "perspective-origin", "350px 0.5px", "350px 1.5px"),
+		d("2:div.box", "padding-top", "4px", "8px"),
+		d("2:div.box", "padding-bottom", "4px", "8px"),
+		// No size change on this one: its turning point is a change of its own.
+		d("3:div.spin", "transform-origin", "0px 0px", "5px 5px"),
+	]);
+	expect(found.list.map((c) => `${c.what}: ${c.before} → ${c.after}`).sort()).toEqual([
+		"Height: 1px → 3px",
+		"Padding top, padding bottom: 4px → 8px",
+		"Transform origin: 0px 0px → 5px 5px",
+	]);
 });

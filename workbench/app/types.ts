@@ -47,6 +47,8 @@ export interface ViewerData {
 	frameOrigin: string;
 	/** The sidebar: items grouped by the source file that styles them, and the overlaps found. */
 	organization: Organization;
+	/** The items each shared build component is used on, found from the rules that include it. */
+	componentItems: Record<string, string[]>;
 }
 
 /** One side as the page knows it: a name and the hash of its CSS, or why it cannot be shown. */

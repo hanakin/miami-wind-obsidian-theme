@@ -3,10 +3,12 @@ import {
 	type Change,
 	changedIn,
 	insidePictures,
+	type PageSummary,
 	type PlaceVerdict,
 	pageSummary,
 	rowState,
 	stateFor,
+	unchecked,
 } from "./compare-states.ts";
 import { latest } from "./latest.ts";
 import type { Results } from "./results.ts";
@@ -24,13 +26,26 @@ const MODES: [Mode, string][] = [
 	["right", "Right"],
 	["both", "Side by side"],
 ];
-// The four states a place or capture can be in, worst first, in plain words.
-const STATES: [Status, string][] = [
+/**
+ * What a dot or a badge shows: one of the three verdicts, or "unchecked" when nothing was checked
+ * with the two sides on screen. That last one is a way of showing, not a fourth verdict.
+ */
+type Shown = Status | "unchecked";
+// Worst first, in the short words the counts use.
+const STATES: [Shown, string][] = [
 	["different", "Differs"],
 	["not-proven", "Not proven"],
+	["unchecked", "Not checked"],
 	["same", "Same"],
 ];
-const LABEL = Object.fromEntries(STATES) as Record<Status, string>;
+const LABEL: Record<Shown, string> = {
+	different: "Differs",
+	"not-proven": "Not proven",
+	unchecked: "Not checked with these sides",
+	same: "Same",
+};
+// Pictures shown for one place before the rest wait behind "Show all".
+const MAX_SHOWN = 4;
 // The desktop window size the fixtures were captured at (capture/scripts/obsidian.ts).
 const DESKTOP: [number, number] = [1600, 1000];
 // Room around the shown element, and the least a crop shows, so small things keep some context.
@@ -39,7 +54,7 @@ const PAD = 16;
 const PAD_Y = 6;
 const MIN_W = 320;
 const GAP = 8;
-// How many captures to try when looking for one that shows a state for the shared look.
+// How many captures to try when looking for one that shows a state for the standard look.
 const MAX_TRIES = 6;
 // Changes listed under a capture before the rest fold behind a click.
 const MAX_CHANGES = 3;
@@ -143,7 +158,26 @@ const summaryOf = (name: string) =>
 		live.compare,
 		live.touched,
 	);
-let summaries = new Map(names.map((n) => [n, summaryOf(n)]));
+/**
+ * A shared build component (a mixin in src/components/) has no captures of its own: its dot is
+ * the worst of the items it is used on.
+ */
+function summarize(): Map<string, PageSummary> {
+	const all = new Map(names.map((n) => [n, summaryOf(n)]));
+	for (const name of buildOnly) {
+		const used = (data.componentItems[name] ?? []).flatMap((n) => all.get(n)?.worst ?? []);
+		all.set(name, {
+			same: 0,
+			different: 0,
+			"not-proven": 0,
+			unchecked: 0,
+			noCapture: 0,
+			worst: STATES.find(([status]) => used.includes(status))?.[0],
+		});
+	}
+	return all;
+}
+let summaries = summarize();
 
 const newest = latest();
 /**
@@ -164,7 +198,7 @@ async function load(): Promise<{ hashes: Record<Which, string | undefined>; had:
 	};
 	sides = loaded.value.next;
 	live = loaded.value.results ?? none;
-	summaries = new Map(names.map((n) => [n, summaryOf(n)]));
+	summaries = summarize();
 	return was;
 }
 
@@ -204,7 +238,7 @@ function sectionName(id: string): string {
 /** A collapsed section: its name, its worst state and plain counts, and its content when opened. */
 function sectionFold(label: string, items: string[], ...content: Child[]): HTMLElement {
 	const all = items.flatMap((n) => summaries.get(n) ?? []);
-	const count = (status: Status) => all.filter((s) => s.worst === status).length;
+	const count = (status: Shown) => all.filter((s) => s.worst === status).length;
 	const worst = STATES.find(([status]) => count(status) > 0)?.[0];
 	const counts = STATES.toReversed()
 		.filter(([status]) => count(status) > 0)
@@ -219,12 +253,20 @@ function sectionFold(label: string, items: string[], ...content: Child[]): HTMLE
 		h(
 			"summary",
 			{},
-			h("span", { class: "section-name" }, label),
-			worst && h("span", { class: `dot ${worst}`, title: LABEL[worst] }),
+			// The dot stays beside the name when the counts move to a line of their own.
+			h(
+				"span",
+				{ class: "section-head" },
+				h("span", { class: "section-name" }, label),
+				worst && h("span", { class: `dot ${worst}`, title: LABEL[worst] }),
+			),
 			h(
 				"span",
 				{ class: "section-counts" },
-				counts || `${items.length} ${items.length === 1 ? "item" : "items"}`,
+				counts ||
+					(items.length === 0
+						? "no items yet"
+						: `${items.length} ${items.length === 1 ? "item" : "items"}`),
 			),
 		),
 		...content,
@@ -239,6 +281,8 @@ const groups = (list: { file: string; items: string[] }[]) =>
 			{ class: "group" },
 			g.file && h("h3", {}, g.file.split("/").pop() ?? g.file),
 			...g.items.map((n) => navLink(n)),
+			// The file is in the source tree, and no captured item is styled from it yet.
+			g.items.length === 0 && h("p", { class: "empty" }, "no items yet"),
 		),
 	);
 
@@ -248,14 +292,19 @@ function legend(): HTMLElement {
 		"ul",
 		{ class: "legend", "aria-label": "Left against right, by component" },
 		h("li", { class: "legend-title" }, `${names.length} items:`),
-		...STATES.toReversed().map(([status, label]) =>
-			h(
-				"li",
-				{},
-				h("span", { class: `dot ${status}` }),
-				`${[...summaries.values()].filter((s) => s.worst === status).length} ${status === "different" ? "differ" : label.toLowerCase()}`,
-			),
-		),
+		...STATES.toReversed().map(([status, label]) => {
+			const n = names.filter((name) => summaries.get(name)?.worst === status).length;
+			// "Not checked" is listed only when something is.
+			return (
+				(status !== "unchecked" || n > 0) &&
+				h(
+					"li",
+					{},
+					h("span", { class: `dot ${status}` }),
+					`${n} ${status === "different" ? "differ" : label.toLowerCase()}`,
+				)
+			);
+		}),
 	);
 }
 
@@ -288,6 +337,8 @@ function renderNav(): void {
 	}) as HTMLInputElement;
 	filter.addEventListener("input", () => {
 		const q = filter.value.trim().toLowerCase();
+		// While filtering, files and sections with no match are hidden (style.css).
+		nav.classList.toggle("filtering", q !== "");
 		for (const a of nav.querySelectorAll("a")) a.hidden = !a.dataset.name?.includes(q);
 		// A search opens the sections with a match; clearing it closes all but the current one.
 		openSections((a) => (q ? !a.hidden : a.getAttribute("aria-current") === "page"));
@@ -321,7 +372,7 @@ function renderNav(): void {
 				h("div", { class: "group" }, ...buildOnly.map((n) => navLink(n))),
 			),
 		sectionFold(
-			"Not styled directly",
+			"Obsidian's own (no theme rule)",
 			itemsOf(top("other")),
 			...[...rest.keys()]
 				.sort(bySurface)
@@ -339,17 +390,49 @@ function renderNav(): void {
 
 // --- Fixture frames -----------------------------------------------------------------------
 
-const lazy = new IntersectionObserver(
-	(entries) => {
-		for (const e of entries) {
-			if (!e.isIntersecting) continue;
-			const frame = e.target.querySelector("iframe");
-			if (frame?.dataset.src) frame.src = frame.dataset.src;
-			lazy.unobserve(e.target);
+// Pictures load a few at a time, and only while they are on screen. Each one is a whole Obsidian
+// window; loading hundreds at once locks the page, and one that is off screen never finishes
+// drawing (the browser pauses it), so it would only hold the others up.
+const MAX_LOADING = 3;
+const waiting: HTMLIFrameElement[] = [];
+const loading = new Set<HTMLIFrameElement>();
+function finished(frame: HTMLIFrameElement): void {
+	if (loading.delete(frame)) pump();
+}
+function pump(): void {
+	// A picture taken off the page while loading (another capture is tried in its place) will
+	// never answer: its turn is over.
+	for (const frame of loading) if (!frame.isConnected) loading.delete(frame);
+	while (loading.size < MAX_LOADING) {
+		const frame = waiting.shift();
+		if (!frame) return;
+		const crop = frame.parentElement;
+		if (!frame.isConnected || !frame.dataset.src || !crop) continue;
+		loading.add(frame);
+		lazy.unobserve(crop);
+		frame.src = frame.dataset.src;
+		// One that never answers must not hold up the rest, and its box says so.
+		setTimeout(() => {
+			if (!loading.has(frame)) return;
+			crop.dataset.note = "No picture: this capture did not finish drawing.";
+			finished(frame);
+		}, 8000);
+	}
+}
+const lazy = new IntersectionObserver((entries) => {
+	for (const e of entries) {
+		const frame = e.target.querySelector("iframe");
+		if (!frame || frame.getAttribute("src")) continue;
+		const at = waiting.indexOf(frame);
+		// A picture being tried in place of another goes first: its row is already waiting.
+		if (e.isIntersecting && at === -1) {
+			if (frame.dataset.first) waiting.unshift(frame);
+			else waiting.push(frame);
 		}
-	},
-	{ rootMargin: "600px" },
-);
+		if (!e.isIntersecting && at !== -1) waiting.splice(at, 1);
+	}
+	pump();
+});
 
 /** One fixture under one theme, cropped to the shown element once the frame reports it. */
 const frameUrl = (sha: string, id: string, focus?: string) =>
@@ -379,7 +462,7 @@ function shot(f: Fixture, which: Which, label: boolean, focus?: string): HTMLEle
 		height: String((f.viewport ?? DESKTOP)[1]),
 		tabindex: "-1",
 	});
-	const crop = h("div", { class: "crop" }, frame);
+	const crop = h("div", { class: "crop", "data-note": "Loading picture…" }, frame);
 	lazy.observe(crop);
 	return h("div", { class: "shot" }, label && name, crop);
 }
@@ -438,7 +521,8 @@ addEventListener("message", (e: MessageEvent<{ mwRect?: unknown; mwAround?: unkn
 	const frame = [...document.querySelectorAll("iframe")].find((f) => f.contentWindow === e.source);
 	const crop = frame?.parentElement;
 	const figure = crop?.closest("figure");
-	if (!crop || !figure) return;
+	if (!frame || !crop || !figure) return;
+	finished(frame);
 	const r = e.data.mwRect;
 	if (Array.isArray(r) && r.length === 4 && r.every((n) => Number.isFinite(n) && n >= 0)) {
 		rects.set(crop, r as Rect);
@@ -449,7 +533,7 @@ addEventListener("message", (e: MessageEvent<{ mwRect?: unknown; mwAround?: unkn
 		layout(figure);
 		return;
 	}
-	// Not found or not visible. For the shared look, the first theme decides whether to try another.
+	// Not found or not visible. For a picture picked from several, the first side decides whether to try another.
 	const retry = onMissing.get(figure);
 	if (retry && crop === figure.querySelector(".crop")) return retry();
 	// No empty box: the caption stays and says why there is no picture. Verdicts never depend on this.
@@ -489,11 +573,12 @@ function value(v: string | null): HTMLElement {
 /** One change in plain words: what changed, from what to what, and on which item. */
 function changeLine(c: Change, component: string): HTMLElement {
 	// Which item changed, relative to the component this page is about.
+	// A change on the component itself needs no "on the …": the page is about it.
 	const where = c.components.includes(component)
-		? `the ${component}`
+		? ""
 		: c.maybe.includes(component)
-			? `${c.items} (can't tell if this is the ${component})`
-			: c.items;
+			? ` on ${c.items} (can't tell if this is the ${component})`
+			: ` on ${c.items}`;
 	return h(
 		"li",
 		{ title: `${c.code.join(", ")}\n${c.properties.join(", ")}\n${c.before} → ${c.after}` },
@@ -501,7 +586,7 @@ function changeLine(c: Change, component: string): HTMLElement {
 		value(c.before),
 		" → ",
 		value(c.after),
-		` on ${where}`,
+		where,
 	);
 }
 
@@ -570,6 +655,14 @@ function whatDiffers(
 /** A capture's verdict under its picture: the state, then each reason on its own line. */
 function verdictLines(verdict: CompareState): HTMLElement | false {
 	if (verdict.status === "same") return false;
+	if (unchecked(verdict)) {
+		// With nothing checked at all, the notice at the top says so once; here it would repeat
+		// under every picture. With some captures checked, it says which ones are not.
+		return (
+			live.compare !== null &&
+			h("ul", { class: "reasons verdict unchecked" }, h("li", {}, LABEL.unchecked))
+		);
+	}
 	const reasons = verdict.status === "not-proven" ? verdict.reasons.map(why) : [];
 	return h(
 		"ul",
@@ -600,10 +693,13 @@ function capture(f: Fixture, focus?: string, only?: (c: Change) => boolean): HTM
 		h("div", { class: "shots" }, ...themes.map((t) => shot(f, t, mode === "both", focus))),
 		h(
 			"figcaption",
-			f.note ? { title: f.note } : {},
+			// The capture's own name is for looking it up, not for reading: it shows on hover.
+			{
+				title: [`Capture: ${f.id}`, around && `A capture of ${f.component}`, f.note]
+					.filter(Boolean)
+					.join("\n"),
+			},
 			h("span", { class: f.state === "default" ? "state" : "state forced" }, f.state),
-			h("code", {}, f.id),
-			around && h("span", { class: "aside" }, `in ${f.component}`),
 		),
 		verdict && verdictLines(verdict),
 		whatDiffers(f, component, only),
@@ -615,17 +711,34 @@ function capture(f: Fixture, focus?: string, only?: (c: Change) => boolean): HTM
  * time as the frames report back. When none qualifies, `none()` takes its place. This picks a
  * picture only; verdicts never depend on it.
  */
-function firstShowing(candidates: Fixture[], focus: string, none?: () => Node): Node {
+function firstShowing(
+	candidates: Fixture[],
+	focus: string,
+	none?: () => Node,
+	retry = false,
+): Node {
 	const [f, ...rest] = candidates;
 	if (!f) return none?.() ?? document.createComment("no capture shows this state");
 	const figure = capture(f, focus);
+	// A second try takes the place of a picture the reader is already waiting for: it loads first.
+	if (retry) for (const frame of figure.querySelectorAll("iframe")) frame.dataset.first = "1";
 	onMissing.set(figure, () => {
 		const section = figure.closest("section");
-		figure.replaceWith(firstShowing(rest, focus, none));
-		// A "Shared look" left with nothing to show goes away.
+		figure.replaceWith(firstShowing(rest, focus, none, true));
+		// A "Standard look" left with nothing to show goes away.
 		if (section?.classList.contains("shared") && !section.querySelector("figure")) section.remove();
 	});
 	return figure;
+}
+
+/** The first few of a place's pictures; the rest are made only when asked for. */
+function limited(makers: (() => Node)[], max = MAX_SHOWN): Node[] {
+	const rest = makers.slice(max);
+	const first = makers.slice(0, max).map((make) => make());
+	if (rest.length === 0) return first;
+	const all = h("button", { type: "button", class: "show-all" }, `Show all ${makers.length}`);
+	all.addEventListener("click", () => all.replaceWith(...rest.map((make) => make())));
+	return [...first, all];
 }
 
 // --- Component page -----------------------------------------------------------------------
@@ -637,7 +750,7 @@ function fold(summary: string, ...content: Child[]): HTMLElement {
 	return h("details", {}, h("summary", {}, summary), ...content);
 }
 
-/** How this place departs from the component's shared look (component-diffs.json), in one line. */
+/** How this place departs from the component's standard look (component-diffs.json), in one line. */
 function sharedLookLine(component: string, surface: string): HTMLElement | false {
 	const all = Object.values(live.diffs?.[component] ?? {});
 	// Styled differently in every place means there is no standard to differ from: say nothing.
@@ -677,6 +790,7 @@ function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLEle
 	const here = all.filter((f) => f.surface === surface);
 	const place = rowState(component, surface, all, live.compare, live.touched);
 	const status = place?.state.status ?? "not-proven";
+	const shownAs: Shown = !place || unchecked(place.state) ? "unchecked" : status;
 	const captures = h("div", { class: "captures" });
 	const row = h(
 		"section",
@@ -685,14 +799,18 @@ function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLEle
 			"header",
 			{},
 			h("h3", {}, surfaceName(surface)),
-			h("span", { class: `badge ${status}` }, `Left vs right: ${LABEL[status]}`),
+			h(
+				"span",
+				{ class: `badge ${shownAs}` },
+				shownAs === "unchecked" ? LABEL.unchecked : `Left vs right: ${LABEL[status]}`,
+			),
 			place?.inside &&
 				h(
 					"p",
 					{ class: "reason" },
-					`Seen inside ${here.length === 1 ? "a larger capture" : `${here.length} larger captures`}.`,
+					`There is no capture of the ${component} alone here. It is checked inside ${here.length === 1 ? "one capture of something larger" : `${here.length} captures of larger things`}.`,
 				),
-			place && reasonLines(place),
+			place && shownAs !== "unchecked" && reasonLines(place),
 			sharedLookLine(component, surface),
 		),
 		captures,
@@ -701,23 +819,34 @@ function surfaceRow(component: string, surface: string, all: Fixture[]): HTMLEle
 	// close-up to show, the row shrinks to a single line. Either way, every larger capture that
 	// differs on this item itself is shown, with only those changes: none is left to a stand-in.
 	const { changed, rest } = insidePictures(component, here, live.compare, live.touched);
-	const changedPictures = changed.map((f) =>
-		capture(f, component, (c) => c.components.includes(component)),
+	const changedPictures = changed.map(
+		(f) => () => capture(f, component, (c) => c.components.includes(component)),
 	);
+	// Captures that differ come first, so "Show all" never hides a change.
+	const differsFirst = (a: Fixture, b: Fixture) =>
+		Number(live.compare?.[b.id]?.status === "different") -
+		Number(live.compare?.[a.id]?.status === "different");
 	captures.append(
 		...(place?.inside
 			? [
-					...changedPictures,
+					...limited(changedPictures),
 					firstShowing(rest.toSorted(bySize).slice(0, MAX_TRIES), component, () => {
 						if (changed.length > 0) return document.createComment("the changes are shown");
 						row.classList.add("bare");
-						return h("p", { class: "reason" }, "No close-up to show.");
+						return h(
+							"p",
+							{ class: "reason" },
+							`No picture: the ${component} is hidden or covered in these captures.`,
+						);
 					}),
 				]
-			: [
-					...here.filter((f) => f.component === component).map((f) => capture(f)),
+			: limited([
 					...changedPictures,
-				]),
+					...here
+						.filter((f) => f.component === component)
+						.toSorted(differsFirst)
+						.map((f) => () => capture(f)),
+				])),
 	);
 	return row;
 }
@@ -732,12 +861,60 @@ function sharedLook(component: string, own: Fixture[]): HTMLElement | false {
 	return h(
 		"section",
 		{ class: "shared" },
-		h("h2", {}, "Shared look"),
+		h("h2", {}, "Standard look"),
 		h(
 			"div",
 			{ class: "captures" },
-			...order.map((s) => firstShowing((states.get(s) ?? []).slice(0, MAX_TRIES), component)),
+			...limited(
+				order.map((s) => () => firstShowing((states.get(s) ?? []).slice(0, MAX_TRIES), component)),
+				6,
+			),
 		),
+	);
+}
+
+/**
+ * Where a shared build component (a mixin in src/components/) is used: the items its rules
+ * style, each with its own state, and the source files that include it.
+ */
+function usedOn(component: string): HTMLElement | false {
+	const u = usage.get(component);
+	if (!u || data.components[component]) return false;
+	const items = data.componentItems[component] ?? [];
+	// The build names each file without its folder; the source tree knows where it is.
+	const paths = data.organization.sections.flatMap((s) => s.groups.map((g) => g.file));
+	const files = [...new Set(u.usages.map((x) => x.surface))]
+		.sort()
+		.map((file) => `src/${paths.find((p) => p.endsWith(`/${file}`)) ?? file}`);
+	return h(
+		"section",
+		{ class: "used-on" },
+		h("h2", {}, "Used on"),
+		items.length === 0
+			? h("p", { class: "also" }, "No captured item is styled with it yet.")
+			: h(
+					"ul",
+					{ class: "used" },
+					...items.map((item) => {
+						const worst = summaries.get(item)?.worst;
+						return h(
+							"li",
+							{},
+							h(
+								"a",
+								{ href: `#${item}` },
+								worst && h("span", { class: `dot ${worst}`, title: LABEL[worst] }),
+								item,
+							),
+							h(
+								"span",
+								{ class: "aside" },
+								counts(item, data.components[item]?.surfaces.length ?? 0),
+							),
+						);
+					}),
+				),
+		h("p", { class: "also" }, `Included from: ${files.join(", ")}.`),
 	);
 }
 
@@ -784,7 +961,7 @@ function usageTable(component: string): HTMLElement | false {
 function modeSwitch(): HTMLElement {
 	return h(
 		"div",
-		{ class: "switch", role: "group", "aria-label": "Theme" },
+		{ class: "switch", role: "group", "aria-label": "View" },
 		...MODES.map(([m, label]) => {
 			const b = h("button", { type: "button", "aria-pressed": String(m === mode) }, label);
 			b.addEventListener("click", () => {
@@ -800,11 +977,17 @@ function modeSwitch(): HTMLElement {
 /** "21 places: 14 same, 0 differ, 4 not proven, 3 no capture". */
 function counts(name: string, places: number): string {
 	const s = summaries.get(name);
-	if (!s) return "Used by the build only. There are no captures of it yet.";
+	if (!s) return "";
+	const count = `${places} ${places === 1 ? "place" : "places"}`;
+	// Nothing checked with these sides: say that once, not three zeros.
+	if (s.unchecked > 0 && s.same + s.different + s["not-proven"] === 0) {
+		return `${count}, not checked with these sides`;
+	}
 	const parts = [
 		`${s.same} same`,
 		`${s.different} differ`,
 		`${s["not-proven"]} not proven`,
+		s.unchecked > 0 && `${s.unchecked} not checked`,
 		s.noCapture > 0 && `${s.noCapture} no capture`,
 	];
 	return `${places} ${places === 1 ? "place" : "places"}: ${parts.filter(Boolean).join(", ")}`;
@@ -1026,6 +1209,9 @@ function renderPage(): void {
 	) {
 		up.open = true;
 	}
+	// Pictures of the page being left no longer wait their turn.
+	waiting.length = 0;
+	loading.clear();
 	if (name === UNTIED) {
 		renderUntied();
 		return;
@@ -1052,7 +1238,13 @@ function renderPage(): void {
 				"div",
 				{},
 				h("h1", {}, name),
-				h("p", {}, counts(name, places.length)),
+				h(
+					"p",
+					{},
+					entry
+						? counts(name, places.length)
+						: `A shared building block (src/components/${name}.css). It has no captures of its own; its state is the worst of the items it is used on${summaries.get(name)?.worst ? `: ${LABEL[summaries.get(name)?.worst ?? "same"]}` : ""}.`,
+				),
 				h("p", { class: "report" }, reportLine()),
 			),
 			modeSwitch(),
@@ -1103,6 +1295,7 @@ function renderPage(): void {
 				{ class: "also" },
 				`Also used in: ${bare.map(surfaceName).join(", ")}. No capture there yet.`,
 			),
+		usedOn(name),
 		usageTable(name),
 	];
 	main.replaceChildren(...parts.filter((c): c is Node | string => Boolean(c)));

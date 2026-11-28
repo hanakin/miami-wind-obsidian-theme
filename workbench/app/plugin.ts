@@ -30,7 +30,7 @@ import { type Focus, frameCsp, frameDocument, replayCall } from "./frame.ts";
 import { fingerprints } from "./inputs.ts";
 import { type FixtureResult, mergeRun, pairKey, resultsFor, type Store } from "./results.ts";
 import { parseChoice, resolveSide, type Side, sha256 } from "./sides.ts";
-import { organization } from "./source.ts";
+import { componentItems, organization } from "./source.ts";
 import type { CompareState, Diffs, ViewerData } from "./types.ts";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
@@ -236,9 +236,11 @@ function ingest(index: FixtureIndex): void {
 
 async function data(index: FixtureIndex, frameOrigin: string): Promise<ViewerData> {
 	ingest(index);
+	const usage = (json(paths.usage) as ViewerData["usage"] | null) ?? [];
 	return {
 		frameOrigin,
 		organization: await organization(),
+		componentItems: await componentItems(usage),
 		appCss: existsSync(paths.app),
 		cmCss: existsSync(`${ROOT}capture/.app/runtime`),
 		fixtures: index.fixtures.map(({ id, file, component, surface, state, note, viewport }) => ({
@@ -251,7 +253,7 @@ async function data(index: FixtureIndex, frameOrigin: string): Promise<ViewerDat
 			viewport,
 		})),
 		components: index.components,
-		usage: (json(paths.usage) as ViewerData["usage"] | null) ?? [],
+		usage,
 		compareError: reportError,
 	};
 }

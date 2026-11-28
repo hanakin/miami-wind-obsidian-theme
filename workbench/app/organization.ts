@@ -27,6 +27,11 @@ export interface Probe {
 	 * "Shared component adjustment" comment and reaches the item through a container.
 	 */
 	adjustment: boolean;
+	/**
+	 * True for a rule that only sets variables (--name). It styles nothing by itself and never
+	 * causes an overlap, but it does say which file an item's styling lives in.
+	 */
+	variables: boolean;
 }
 
 /** The tag, classes and attribute tests written on one element of a selector. */
@@ -133,9 +138,10 @@ export function probes(
 					return;
 				}
 			}
-			// A rule that only sets variables styles nothing by itself.
+			// A rule that only sets variables styles nothing by itself: kept apart (see Probe.variables).
 			const declarations = rule.nodes.filter((n) => n.type === "decl");
-			if (declarations.length > 0 && declarations.every((d) => d.prop.startsWith("--"))) return;
+			const variables =
+				declarations.length > 0 && declarations.every((d) => d.prop.startsWith("--"));
 			selectorParser((root) => {
 				for (const selector of root.nodes) {
 					const text = selector.toString().trim();
@@ -162,6 +168,7 @@ export function probes(
 								selector: text,
 								line: rule.source?.start?.line ?? 0,
 								adjustment: scoped && ADJUSTMENT.test(label),
+								variables,
 							});
 						} catch {
 							// A selector the rewrite cannot read names nothing we can test.
@@ -202,6 +209,8 @@ export interface RuleHit {
 	 */
 	how: "named" | "through" | "selected";
 	adjustment: boolean;
+	/** True when the rule only sets variables: it counts for the item's home, never for an overlap. */
+	variables?: boolean;
 }
 
 export interface Group {
@@ -234,12 +243,17 @@ function namedAfter(file: string, item: string): boolean {
  * One place for every item, from the rules that reach it. Two separate questions:
  *
  * Overlap (strict): an item named from more than one top-level place has its base styling split.
- * A section's labeled, scoped adjustment of a shared item is not an overlap; it is noted.
+ * A section's labeled, scoped adjustment of a shared item is not an overlap; it is noted. Rules
+ * that only set variables never count here.
  *
  * Home (generous): the item is listed under the file whose rules name it or pass through it;
  * failing that the file whose last part selects its element; and under "other" only when no rule
  * reaches it at all. Between several files, the one named after the item wins, then the one with
- * more rules. An overlap is listed under Global, where its rules belong.
+ * more rules. An overlap is listed under Global, where its rules belong. A rule that only sets
+ * variables for the item (`.markdown-rendered h1 { --h1-color }`) counts for its home like any
+ * other: that file is where the item's look is decided.
+ *
+ * Every source file in global/, markdown/ and sections/ is listed, also one no item lives in yet.
  */
 export function organize(hits: RuleHit[], items: string[], paths: string[]): Organization {
 	// Only folders whose files style elements own items; settings and components hold no rules of their own.
@@ -251,7 +265,7 @@ export function organize(hits: RuleHit[], items: string[], paths: string[]): Org
 	const placed = new Map<string, Map<string, string[]>>();
 	for (const item of [...items].sort()) {
 		const mine = owning.filter((h) => h.item === item);
-		const base = mine.filter((h) => h.how === "named" && !h.adjustment);
+		const base = mine.filter((h) => h.how === "named" && !h.adjustment && !h.variables);
 		const named = filesOf(base);
 		const overlap = placesOf(named).length > 1;
 		if (overlap) {
@@ -291,6 +305,13 @@ export function organize(hits: RuleHit[], items: string[], paths: string[]): Org
 		const groups = placed.get(section) ?? new Map<string, string[]>();
 		placed.set(section, groups);
 		groups.set(home, [...(groups.get(home) ?? []), item]);
+	}
+	// The whole source tree shows: a file no item lives in yet is listed with nothing under it.
+	for (const path of paths.filter((p) => /^(global|markdown|sections)\//.test(p))) {
+		const section = placeOf(path, paths);
+		const groups = placed.get(section) ?? new Map<string, string[]>();
+		placed.set(section, groups);
+		if (!groups.has(path)) groups.set(path, []);
 	}
 	const order = (id: string) => ["global", "markdown"].indexOf(id) + (id === "other" ? 99 : 0);
 	const rank = (id: string) => (order(id) === -1 ? 50 : order(id));

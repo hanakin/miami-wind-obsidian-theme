@@ -2,6 +2,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { styledBy } from "./match.ts";
 import { type Organization, organize } from "./organization.ts";
+import type { Usage } from "./types.ts";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 
@@ -26,4 +27,26 @@ export async function organization(): Promise<Organization> {
 		items,
 		files.map((f) => f.path),
 	);
+}
+
+/**
+ * The items each shared build component (a mixin in src/components/) is used on: for every rule
+ * that includes it, the items that rule's last part selects in the captures.
+ */
+export async function componentItems(usage: Usage[]): Promise<Record<string, string[]>> {
+	const styled = await styledBy(sourceFiles());
+	const plain = (selector: string) => selector.replace(/\s+/g, " ").trim();
+	const out: Record<string, string[]> = {};
+	for (const { component, usages } of usage) {
+		const items = new Set<string>();
+		for (const use of usages) {
+			const selectors = use.selector.split(",").map(plain);
+			for (const hit of styled) {
+				if (hit.how === "through" || !hit.file.endsWith(`/${use.surface}`)) continue;
+				if (selectors.includes(plain(hit.selector))) items.add(hit.item);
+			}
+		}
+		out[component] = [...items].sort();
+	}
+	return out;
 }

@@ -103,6 +103,11 @@ export function frameDocument(o: {
 addEventListener("click", (e) => e.preventDefault(), true);
 addEventListener("load", async () => {
 	${INPAGE}
+	// After drawing, the replay notes for the compare tool which pixels around the target a
+	// neighbor covers: one hit test per pixel, seconds of work, and only invisible marks come of
+	// it. A picture needs none of them, so here those hit tests find nothing. What is drawn is
+	// the same; the replay itself is untouched.
+	document.elementsFromPoint = () => [];
 	try {
 		await (${o.call.source})(${asData(o.call.args)});
 	} catch (e) {
@@ -110,6 +115,7 @@ addEventListener("load", async () => {
 		// what was drawn so far is still shown.
 		console.warn("replay stopped:", e);
 	}
+	delete document.elementsFromPoint;
 	await document.fonts.ready;
 	${measure(o.focus)}
 });`;

@@ -6,6 +6,7 @@ const paths = [
 	"global/inputs.css",
 	"global/menus.css",
 	"markdown/callouts.css",
+	"markdown/headings.css",
 	"markdown/tags.css",
 	"sections/canvas.css",
 	"sections/pdf.css",
@@ -93,7 +94,21 @@ it("gives every item one place, and sends overlaps to Global", () => {
 		dropdown: "global global/inputs.css",
 		callout: "markdown markdown/callouts.css",
 	});
-	expect(o.sections.map((s) => s.id)).toEqual(["global", "markdown", "sections/pdf", "other"]);
+	// Every source file is listed, also sections/canvas.css, which no item lives in here.
+	expect(o.sections.map((s) => s.id)).toEqual([
+		"global",
+		"markdown",
+		"sections/canvas",
+		"sections/pdf",
+		"other",
+	]);
+	expect(o.sections.find((s) => s.id === "sections/canvas")?.groups).toEqual([
+		{ file: "sections/canvas.css", items: [] },
+	]);
+	expect(o.sections.find((s) => s.id === "sections/pdf")?.groups.map((g) => g.file)).toEqual([
+		"sections/pdf-xfa.css",
+		"sections/pdf.css",
+	]);
 	expect(o.overlaps).toEqual([
 		{
 			item: "checkbox",
@@ -109,7 +124,7 @@ it("gives every item one place, and sends overlaps to Global", () => {
 	expect(o.adjusted).toEqual({ "clickable-icon": ["sections/canvas.css"] });
 });
 
-it("reads the selectors that can own an item, and leaves out states, context and variables", () => {
+it("reads the selectors that can own an item, and leaves out states and context", () => {
 	const found = probes(
 		[
 			{
@@ -132,7 +147,10 @@ it("reads the selectors that can own an item, and leaves out states, context and
 		],
 		(s) => s.replace(":hover", "[data-hover]"),
 	);
-	expect(found.map((p) => [p.selector, p.line, p.adjustment, p.full])).toEqual([
+	// A rule that only sets variables is read, and marked: it can give an item its home, never an overlap.
+	expect(found.filter((p) => p.variables).map((p) => p.selector)).toEqual([".canvas-wrapper"]);
+	const styling = found.filter((p) => !p.variables);
+	expect(styling.map((p) => [p.selector, p.line, p.adjustment, p.full])).toEqual([
 		[
 			".canvas-control-item:hover .svg-icon",
 			1,
@@ -146,7 +164,7 @@ it("reads the selectors that can own an item, and leaves out states, context and
 		// The next comment ends the label.
 		[".canvas-wrapper .tree-item.is-active", 11, false, ".canvas-wrapper .tree-item.is-active"],
 	]);
-	expect(found[4]?.last).toEqual({ classes: ["tree-item", "is-active"], attributes: [] });
+	expect(styling[4]?.last).toEqual({ classes: ["tree-item", "is-active"], attributes: [] });
 	expect(found[0]?.prefixes).toEqual([".canvas-control-item[data-hover]"]);
 	// An attribute test alone can select an item; it never names one.
 	const [weak] = probes(
@@ -202,4 +220,17 @@ it("reports an overlap made through :is()", () => {
 		paths,
 	);
 	expect(out.overlaps.map((o) => o.item)).toEqual(["button"]);
+});
+
+it("gives an item its home from a rule that only sets variables, without making an overlap", () => {
+	// The heading case: markdown/headings.css only sets --h1-color on the heading, and a section
+	// styles the heading outright. Its home is the markdown file; that is not an overlap.
+	const variables = { ...hit("heading", "markdown/headings.css"), variables: true };
+	const alone = organize([variables], ["heading"], paths);
+	expect(alone.sections.find((s) => s.id === "markdown")?.groups).toContainEqual({
+		file: "markdown/headings.css",
+		items: ["heading"],
+	});
+	const both = organize([variables, hit("heading", "sections/canvas.css")], ["heading"], paths);
+	expect(both.overlaps).toEqual([]);
 });

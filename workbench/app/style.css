@@ -122,7 +122,7 @@ nav input::-webkit-search-cancel-button {
 
 /* A filtered-out link, and any group the filter leaves empty. */
 nav a[hidden],
-.group:not(:has(a:not([hidden]))) {
+.filtering .group:not(:has(a:not([hidden]))) {
 	display: none;
 }
 
@@ -200,6 +200,11 @@ nav a[aria-current="page"] {
 
 .dot.not-proven {
 	background: var(--yellow);
+}
+
+/* Not checked with the sides on screen: nothing is known, so no color. */
+.dot.unchecked {
+	background: var(--grey-500);
 }
 
 /* Page */
@@ -330,6 +335,11 @@ main h2 {
 .badge.not-proven {
 	background: color-mix(in srgb, var(--yellow) 12%, transparent);
 	color: var(--yellow);
+}
+
+.badge.unchecked {
+	background: var(--grey-900);
+	color: var(--grey-300);
 }
 
 /* Why a place is not proven: one reason per line. */
@@ -596,12 +606,6 @@ td {
 	max-height: 320px;
 }
 
-/* Capture ids are for looking a capture up, not for reading. */
-figcaption > code {
-	color: var(--grey-500);
-	font-size: 11px;
-}
-
 /* A capture's reasons, one per line. */
 .reasons {
 	margin: 2px 0 0;
@@ -641,6 +645,7 @@ nav a.untied {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 12px 32px;
+	align-items: flex-start;
 	margin: 20px 0 0;
 }
 
@@ -738,7 +743,8 @@ details.section {
 
 details.section > summary {
 	display: flex;
-	gap: 8px;
+	flex-wrap: wrap;
+	gap: 2px 8px;
 	align-items: baseline;
 	width: auto;
 	margin: 0;
@@ -764,6 +770,12 @@ details.section[open] > summary::before {
 	transform: rotate(90deg);
 }
 
+.section-head {
+	display: inline-flex;
+	gap: 8px;
+	align-items: baseline;
+}
+
 .section-name {
 	font-weight: 600;
 }
@@ -773,13 +785,12 @@ details.section > summary .dot {
 	align-self: center;
 }
 
+/* The counts are never cut short: beside a long section name they move to a line of their own. */
 .section-counts {
-	flex: 1;
-	overflow: hidden;
+	flex: 1 0 auto;
 	color: var(--grey-400);
 	font-size: 11px;
 	text-align: right;
-	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
@@ -798,7 +809,7 @@ details.section .group {
 }
 
 /* A section the filter leaves empty. */
-details.section:not(:has(a:not([hidden]))) {
+.filtering details.section:not(:has(a:not([hidden]))) {
 	display: none;
 }
 
@@ -812,4 +823,77 @@ details.section:not(:has(a:not([hidden]))) {
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 	cursor: help;
+}
+
+/* A source file no captured item is styled from yet. */
+.group .empty {
+	margin: 0;
+	padding: 2px 12px 4px;
+	color: var(--grey-500);
+	font-size: 12px;
+}
+
+/* A picture still loading, or one that cannot be drawn: the box says which. */
+.crop:not(.ready)::before {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 8px;
+	color: var(--grey-500);
+	font-size: 12px;
+	text-align: center;
+	content: attr(data-note);
+}
+
+.verdict.unchecked {
+	color: var(--grey-400);
+}
+
+/* "Show all N": the rest of a place's pictures. */
+.show-all {
+	align-self: center;
+	padding: 6px 12px;
+	background: var(--grey-900);
+	border: 1px solid transparent;
+	border-radius: var(--radius);
+	color: var(--subtext);
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.show-all:hover,
+.show-all:focus-visible {
+	background: var(--interactive);
+	border-color: var(--grey-500);
+}
+
+/* Where a shared build component is used. */
+.used {
+	display: grid;
+	gap: 6px;
+	margin: 12px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.used li {
+	display: flex;
+	gap: 12px;
+	align-items: baseline;
+}
+
+.used a {
+	display: inline-flex;
+	gap: 8px;
+	align-items: center;
+	color: var(--cyan);
+	text-decoration: none;
+}
+
+.used a:hover,
+.used a:focus-visible {
+	text-decoration: underline;
 }
