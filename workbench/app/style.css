@@ -1,0 +1,914 @@
+/* The workbench's own interface. Miami Wind palette (DESIGN.md): dark only, flat, no focus rings. */
+:root {
+	color-scheme: dark;
+	--crust: #09090b;
+	--mantle: #0d0d14;
+	--base: #11111b;
+	--surface: #181825;
+	--grey-900: #1e1e2e;
+	--interactive: #313244;
+	--grey-700: #45475a;
+	--grey-500: #6c7086;
+	--grey-400: #7f849c;
+	--grey-300: #9399b2;
+	--subtext: #bac2de;
+	--text: #cdd6f4;
+	--pink: #f472b6;
+	--cyan: #22d3ee;
+	--green: #34d399;
+	--orange: #fdba74;
+	--red: #f87171;
+	--yellow: #fef08a;
+	--purple: #c084fc;
+	--border: color-mix(in srgb, #ffffff 7%, transparent);
+	--radius: 6px;
+	--mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+}
+
+* {
+	box-sizing: border-box;
+	outline: none;
+}
+
+body {
+	display: grid;
+	grid-template-columns: 264px minmax(0, 1fr);
+	height: 100vh;
+	margin: 0;
+	background: var(--crust);
+	color: var(--text);
+	font: 14px/1.45 system-ui, sans-serif;
+}
+
+code {
+	font-family: var(--mono);
+	font-size: 12px;
+}
+
+/* Navigation */
+nav {
+	padding: 0 8px 24px;
+	overflow-y: auto;
+	background: var(--mantle);
+	scrollbar-width: thin;
+	scrollbar-color: var(--interactive) transparent;
+}
+
+.nav-top {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	margin: 0 -8px;
+	padding: 18px 8px 10px;
+	background: var(--mantle);
+}
+
+.brand {
+	padding: 0 12px 12px;
+	font-weight: 650;
+	font-size: 15px;
+}
+
+nav input {
+	width: 100%;
+	padding: 7px 12px;
+	background: var(--grey-900);
+	border: 1px solid transparent;
+	border-radius: var(--radius);
+	color: var(--text);
+	font: inherit;
+	font-size: 13px;
+}
+
+nav input::placeholder {
+	color: var(--grey-500);
+}
+
+nav input:hover {
+	background: var(--interactive);
+}
+
+/* Focus shows as a surface and border shift, never a ring. */
+nav input:focus {
+	background: var(--interactive);
+	border-color: var(--grey-500);
+}
+
+nav input::-webkit-search-cancel-button {
+	cursor: pointer;
+}
+
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	margin: 10px 4px 0;
+	padding: 0;
+	list-style: none;
+	color: var(--grey-300);
+	font-size: 12px;
+}
+
+.legend-title {
+	width: 100%;
+	color: var(--grey-400);
+}
+
+.legend li {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+}
+
+/* A filtered-out link, and any group the filter leaves empty. */
+nav a[hidden],
+.filtering .group:not(:has(a:not([hidden]))) {
+	display: none;
+}
+
+nav h2 {
+	display: flex;
+	justify-content: space-between;
+	margin: 16px 12px 8px;
+	color: var(--subtext);
+	font-weight: 600;
+	font-size: 11px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+nav h2 span,
+.nav-count {
+	color: var(--grey-500);
+	font-weight: 400;
+	font-variant-numeric: tabular-nums;
+}
+
+nav h3 {
+	margin: 14px 12px 4px;
+	color: var(--grey-400);
+	font-weight: 500;
+	font-size: 12px;
+}
+
+nav a {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	padding: 5px 12px;
+	border-radius: var(--radius);
+	color: var(--subtext);
+	text-decoration: none;
+	cursor: pointer;
+}
+
+nav a:hover,
+nav a:focus-visible {
+	background: var(--grey-900);
+	color: var(--text);
+}
+
+nav a[aria-current="page"] {
+	background: var(--interactive);
+	color: var(--pink);
+}
+
+.nav-name {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nav-count {
+	font-size: 12px;
+}
+
+.dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+}
+
+.dot.same {
+	background: var(--green);
+}
+
+.dot.different {
+	background: var(--red);
+}
+
+.dot.not-proven {
+	background: var(--yellow);
+}
+
+/* Not checked with the sides on screen: nothing is known, so no color. */
+.dot.unchecked {
+	background: var(--grey-500);
+}
+
+/* Page */
+main {
+	padding: 0 32px 64px;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: var(--interactive) transparent;
+}
+
+.top {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	display: flex;
+	gap: 24px;
+	align-items: center;
+	justify-content: space-between;
+	margin: 0 -32px;
+	padding: 18px 32px 14px;
+	background: var(--crust);
+	border-bottom: 1px solid var(--border);
+}
+
+h1 {
+	margin: 0;
+	font-weight: 650;
+	font-size: 22px;
+	line-height: 1.2;
+}
+
+.top p {
+	margin: 2px 0 0;
+	color: var(--grey-400);
+	font-size: 13px;
+}
+
+main h2 {
+	margin: 32px 0 12px;
+	color: var(--subtext);
+	font-weight: 600;
+	font-size: 11px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.switch {
+	display: flex;
+	flex-shrink: 0;
+	gap: 2px;
+	padding: 3px;
+	background: var(--base);
+	border-radius: var(--radius);
+}
+
+.switch button {
+	padding: 6px 14px;
+	background: transparent;
+	border: 0;
+	border-radius: 4px;
+	color: var(--grey-300);
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.switch button:hover,
+.switch button:focus-visible {
+	background: var(--grey-900);
+	color: var(--text);
+}
+
+.switch button[aria-pressed="true"] {
+	background: var(--interactive);
+	color: var(--pink);
+}
+
+.message {
+	max-width: 60ch;
+	margin: 32px 0;
+	padding: 16px 20px;
+	background: var(--base);
+	border-radius: var(--radius);
+	color: var(--subtext);
+}
+
+.message code {
+	color: var(--green);
+}
+
+/* A surface row: label and verdict on the left, its captures on the right. */
+.surface {
+	display: grid;
+	grid-template-columns: 200px minmax(0, 1fr);
+	gap: 20px;
+	margin-bottom: 12px;
+	padding: 16px 20px;
+	background: var(--base);
+	border-radius: var(--radius);
+}
+
+.surface h3 {
+	margin: 0 0 8px;
+	font-weight: 600;
+	font-size: 14px;
+	overflow-wrap: anywhere;
+}
+
+.badge {
+	display: inline-block;
+	padding: 2px 8px;
+	background: var(--grey-900);
+	border-radius: 4px;
+	color: var(--grey-400);
+	font-size: 12px;
+}
+
+.badge.same {
+	background: color-mix(in srgb, var(--green) 14%, transparent);
+	color: var(--green);
+}
+
+.badge.different {
+	background: color-mix(in srgb, var(--red) 16%, transparent);
+	color: var(--red);
+}
+
+.badge.not-proven {
+	background: color-mix(in srgb, var(--yellow) 12%, transparent);
+	color: var(--yellow);
+}
+
+.badge.unchecked {
+	background: var(--grey-900);
+	color: var(--grey-300);
+}
+
+/* Why a place is not proven: one reason per line. */
+.reason {
+	margin: 8px 0 0;
+	padding: 0;
+	list-style: none;
+	color: var(--subtext);
+	font-size: 13px;
+}
+
+.reason li + li {
+	margin-top: 4px;
+}
+
+/* How the component is styled here against its standard look: a quiet aside, not a verdict. */
+.look {
+	margin-top: 8px;
+	color: var(--grey-400);
+	font-size: 12px;
+}
+
+.look p {
+	margin: 4px 0 0;
+}
+
+/* A place with no close-up to show: one line. */
+.surface.bare {
+	display: block;
+	padding-block: 10px;
+}
+
+/* A place with no picture: its name and verdict on one line, each reason on a line below. */
+.surface.bare header {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	align-items: baseline;
+}
+
+.surface.bare header > .reason,
+.surface.bare .captures {
+	flex-basis: 100%;
+	margin-top: 4px;
+}
+
+.surface.bare h3,
+.surface.bare .reason,
+.surface.bare .look,
+.surface.bare summary {
+	margin: 0;
+}
+
+/* Which build the results describe. */
+.top .report {
+	color: var(--grey-500);
+	font-size: 12px;
+}
+
+/* A notice that asks for attention. Yellow is kept for "not proven" alone. */
+.message.warn {
+	color: var(--text);
+}
+
+.props {
+	margin: 6px 0 0;
+	padding: 0;
+	list-style: none;
+	color: var(--grey-300);
+	font-family: var(--mono);
+	font-size: 12px;
+	line-height: 1.7;
+	overflow-wrap: anywhere;
+}
+
+/* Folded lists: the summary is the clickable part. */
+summary {
+	width: fit-content;
+	margin-top: 4px;
+	padding: 2px 8px;
+	margin-left: -8px;
+	border-radius: 4px;
+	color: var(--grey-300);
+	font-size: 12px;
+	cursor: pointer;
+}
+
+summary:hover,
+summary:focus-visible {
+	background: var(--grey-900);
+	color: var(--text);
+}
+
+.captures {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	align-items: flex-start;
+	min-width: 0;
+}
+
+.capture {
+	max-width: 100%;
+	margin: 0;
+}
+
+.shots {
+	display: flex;
+	gap: 8px;
+	align-items: flex-start;
+}
+
+.shots.stacked {
+	flex-direction: column;
+	gap: 12px;
+}
+
+.shot-label {
+	display: block;
+	margin-bottom: 4px;
+	color: var(--grey-400);
+	font-size: 11px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+/* The window onto the fixture frame; sized and shifted by main.ts once the frame reports. */
+.crop {
+	position: relative;
+	width: 220px;
+	height: 64px;
+	overflow: hidden;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	box-sizing: content-box;
+}
+
+.crop iframe {
+	position: absolute;
+	top: 0;
+	left: 0;
+	border: 0;
+	transform-origin: 0 0;
+	visibility: hidden;
+}
+
+.crop.ready iframe {
+	visibility: visible;
+}
+
+figcaption {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 8px;
+	align-items: baseline;
+	margin-top: 6px;
+	color: var(--grey-400);
+	font-size: 12px;
+}
+
+figcaption[title] {
+	cursor: help;
+}
+
+.state {
+	color: var(--grey-300);
+}
+
+.aside {
+	color: var(--grey-500);
+}
+
+/* A capture's verdict when it is not simply the same. */
+.verdict.different {
+	color: var(--red);
+}
+
+.verdict.not-proven {
+	color: var(--yellow);
+}
+
+/* What differs in a capture: a few plain lines, the rest folded. */
+.differs {
+	max-width: 100%;
+	margin-top: 4px;
+	color: var(--subtext);
+	font-size: 12px;
+}
+
+.differs ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	line-height: 1.8;
+}
+
+.differs p {
+	margin: 4px 0;
+	color: var(--grey-400);
+}
+
+/* The changed pixels, marked in red by the compare tool: kept small and toned down. */
+.differs img {
+	display: block;
+	max-width: 100%;
+	max-height: 280px;
+	height: auto;
+	object-fit: contain;
+	opacity: 0.75;
+	filter: saturate(0.6);
+	margin-top: 8px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+}
+
+.swatch {
+	display: inline-block;
+	width: 11px;
+	height: 11px;
+	vertical-align: -1px;
+	cursor: help;
+	border: 1px solid var(--border);
+	border-radius: 2px;
+}
+
+/* Places with no capture of the component itself. */
+.also {
+	margin: 16px 0 0;
+	color: var(--grey-400);
+	font-size: 13px;
+}
+
+table {
+	width: 100%;
+	margin-top: 8px;
+	background: var(--base);
+	border-radius: var(--radius);
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+th,
+td {
+	padding: 10px 20px;
+	text-align: left;
+	vertical-align: top;
+}
+
+th {
+	color: var(--grey-400);
+	font-weight: 500;
+	font-size: 12px;
+}
+
+td {
+	border-top: 1px solid var(--border);
+	color: var(--subtext);
+}
+
+.decl {
+	display: block;
+}
+
+/* The summary row stays short: a tall capture (a stacked tab strip) is cut off, not shrunk. */
+.shared .crop {
+	max-height: 320px;
+}
+
+/* A capture's reasons, one per line. */
+.reasons {
+	margin: 2px 0 0;
+	padding: 0;
+	list-style: none;
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+/* A one-line row has no room for the styling note. */
+.surface.bare .look {
+	display: none;
+}
+
+/* A very tall capture is cut off rather than filling the page with empty panel. */
+.crop {
+	max-height: 520px;
+}
+
+nav a.untied {
+	margin: 8px -4px 0;
+	font-size: 13px;
+}
+
+.surface h3 a {
+	color: var(--text);
+	cursor: pointer;
+}
+
+.surface h3 a:hover,
+.surface h3 a:focus-visible {
+	color: var(--pink);
+}
+
+/* The two sides: what each one shows. */
+.sides {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px 32px;
+	align-items: flex-start;
+	margin: 20px 0 0;
+}
+
+.side {
+	display: flex;
+	flex: 1 1 360px;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	min-width: 0;
+}
+
+.side-name {
+	width: 40px;
+	color: var(--grey-400);
+	font-size: 11px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.side select,
+.side input {
+	padding: 6px 10px;
+	background: var(--grey-900);
+	border: 1px solid transparent;
+	border-radius: var(--radius);
+	color: var(--text);
+	font: inherit;
+	font-size: 13px;
+}
+
+.side select {
+	cursor: pointer;
+}
+
+.side input {
+	flex: 1 1 200px;
+	min-width: 0;
+	font-family: var(--mono);
+	font-size: 12px;
+}
+
+.side select:hover,
+.side input:hover {
+	background: var(--interactive);
+}
+
+/* Focus shows as a surface and border shift, never a ring. */
+.side select:focus-visible,
+.side input:focus {
+	background: var(--interactive);
+	border-color: var(--grey-500);
+}
+
+.side-error {
+	width: 100%;
+	margin: 0 0 0 48px;
+	color: var(--red);
+	font-size: 12px;
+}
+
+/* Out of date, or a check running. */
+.recheck p {
+	margin: 0;
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.actions button {
+	padding: 7px 14px;
+	background: var(--interactive);
+	border: 0;
+	border-radius: var(--radius);
+	color: var(--text);
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.actions button:hover,
+.actions button:focus-visible {
+	background: var(--grey-700);
+	color: var(--pink);
+}
+
+/* Sidebar sections: one per source folder, closed until opened. */
+details.section {
+	margin-top: 2px;
+}
+
+details.section > summary {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px 8px;
+	align-items: baseline;
+	width: auto;
+	margin: 0;
+	padding: 8px 12px;
+	border-radius: var(--radius);
+	color: var(--text);
+	font-size: 13px;
+	list-style: none;
+}
+
+details.section > summary::-webkit-details-marker {
+	display: none;
+}
+
+/* A plain chevron that turns when the section opens. It stays on the name's line. */
+.chevron {
+	display: inline-block;
+	width: 8px;
+	color: var(--grey-500);
+}
+
+details.section[open] > summary .chevron {
+	transform: rotate(90deg);
+}
+
+details.section details.section:not([open]) > summary .chevron {
+	transform: none;
+}
+
+.section-head {
+	display: inline-flex;
+	gap: 8px;
+	align-items: baseline;
+}
+
+.section-name {
+	font-weight: 600;
+}
+
+details.section > summary .dot {
+	flex-shrink: 0;
+	align-self: center;
+}
+
+/* The counts are never cut short: beside a long section name they move to a line of their own. */
+.section-counts {
+	flex: 1 0 auto;
+	color: var(--grey-400);
+	font-size: 11px;
+	text-align: right;
+	white-space: nowrap;
+}
+
+/* A section inside a section sits one step in, with a quieter name. */
+details.section details.section {
+	margin-left: 10px;
+}
+
+details.section details.section .section-name {
+	color: var(--subtext);
+	font-weight: 500;
+}
+
+details.section .group {
+	margin: 0 0 6px 10px;
+}
+
+/* A section the filter leaves empty. */
+.filtering details.section:not(:has(a:not([hidden]))) {
+	display: none;
+}
+
+/* An item styled from more than one place in src/. */
+.overlap {
+	padding: 0 6px;
+	background: color-mix(in srgb, var(--red) 16%, transparent);
+	border-radius: 4px;
+	color: var(--red);
+	font-size: 10px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	cursor: help;
+}
+
+/* A source file no captured item is styled from yet. */
+.group .empty {
+	margin: 0;
+	padding: 2px 12px 4px;
+	color: var(--grey-500);
+	font-size: 12px;
+}
+
+/* A picture still loading, or one that cannot be drawn: the box says which. */
+.crop:not(.ready)::before {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 8px;
+	color: var(--grey-500);
+	font-size: 12px;
+	text-align: center;
+	content: attr(data-note);
+}
+
+.verdict.unchecked {
+	color: var(--grey-400);
+}
+
+/* "Show all N": the rest of a place's pictures. */
+.show-all {
+	align-self: center;
+	padding: 6px 12px;
+	background: var(--grey-900);
+	border: 1px solid transparent;
+	border-radius: var(--radius);
+	color: var(--subtext);
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.show-all:hover,
+.show-all:focus-visible {
+	background: var(--interactive);
+	border-color: var(--grey-500);
+}
+
+/* Where a shared build component is used. */
+.used {
+	display: grid;
+	gap: 6px;
+	margin: 12px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.used li {
+	display: flex;
+	gap: 12px;
+	align-items: baseline;
+}
+
+.used a {
+	display: inline-flex;
+	gap: 8px;
+	align-items: center;
+	color: var(--cyan);
+	text-decoration: none;
+}
+
+.used a:hover,
+.used a:focus-visible {
+	text-decoration: underline;
+}
+
+/* What a path may be, under the path box. */
+.side-hint {
+	width: 100%;
+	margin: 0 0 0 48px;
+	color: var(--grey-500);
+	font-size: 12px;
+}

@@ -1,0 +1,45 @@
+/* Components come first because they define reusable mixins without emitting CSS.
+ * Settings, global application, Markdown and app sections follow in cascade order. */
+
+@import 'components/menu-item-state.css';
+@import 'components/action-button.css';
+@import 'components/icon-background.css';
+@import 'components/surface-background.css';
+@import 'settings/palette.css';
+@import 'settings/tokens.css';
+@import 'global/inputs.css';
+@import 'global/multi-select.css';
+@import 'global/ribbon.css';
+@import 'global/sidebars.css';
+@import 'global/tabs.css';
+@import 'global/suggestions.css';
+@import 'global/status-bar.css';
+@import 'global/modals.css';
+@import 'global/dropdowns.css';
+@import 'global/prompts.css';
+@import 'global/search.css';
+@import 'global/menus.css';
+@import 'global/settings-tabs.css';
+@import 'global/scrollbars.css';
+@import 'global/icons.css';
+@import 'global/dividers.css';
+@import 'global/selection.css';
+@import 'markdown/headings.css';
+@import 'markdown/code.css';
+@import 'markdown/code-actions.css';
+@import 'markdown/inline-marks.css';
+@import 'markdown/links.css';
+@import 'markdown/blockquotes.css';
+@import 'markdown/tasks.css';
+@import 'markdown/tables.css';
+@import 'markdown/callouts.css';
+@import 'markdown/tags.css';
+@import 'markdown/tag-hover.css';
+@import 'sections/bases.css';
+@import 'sections/community-browser.css';
+@import 'sections/canvas.css';
+@import 'sections/properties.css';
+@import 'sections/file-explorer.css';
+@import 'sections/graph.css';
+@import 'sections/pdf.css';
+@import 'sections/pdf-xfa.css';

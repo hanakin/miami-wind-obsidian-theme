@@ -1,0 +1,42 @@
+/* Canvas controls, card menus and their icon hover states. */
+
+.theme-dark,
+.theme-light {
+	--canvas-dot-pattern: var(--magenta);
+}
+
+.canvas-control-group {
+	--canvas-controls-radius: 0;
+	border: none;
+	box-shadow: none;
+}
+
+.canvas-control-item {
+	background-color: transparent;
+	border: none;
+	border-radius: 4px;
+	box-shadow: none;
+	color: var(--cyan);
+	cursor: pointer;
+}
+
+.canvas-control-item:hover {
+	background-color: var(--magenta-transparent);
+}
+
+.canvas-card-menu {
+	border: 1px solid var(--magenta);
+}
+
+.canvas-card-menu .canvas-card-menu-button {
+	color: var(--cyan);
+}
+
+.canvas-card-menu .canvas-card-menu-button:hover {
+	color: var(--magenta);
+}
+
+/* Shared component adjustment: svg-icon in Canvas. */
+.canvas-control-item:hover .svg-icon {
+	color: var(--magenta);
+}

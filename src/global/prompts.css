@@ -1,0 +1,20 @@
+/* Command prompt surfaces and instruction key colors. */
+
+.prompt {
+	--prompt-border-color: var(--magenta);
+}
+
+.prompt-instruction-command {
+	background-color: var(--black);
+	border-radius: 4px;
+	color: var(--code-normal);
+	padding: 4px 8px;
+}
+
+/* Obsidian’s prompt input has a literal transparent fill. */
+.prompt .prompt-input,
+.prompt .prompt-input:hover,
+.prompt .prompt-input:focus,
+.prompt .prompt-input:focus-visible {
+	background-color: var(--grey-11);
+}

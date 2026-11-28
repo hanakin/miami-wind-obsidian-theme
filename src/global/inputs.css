@@ -1,0 +1,93 @@
+/* Shared inputs and comboboxes: fills, borders and keyboard focus. */
+
+input,
+.combobox-button {
+	--background-modifier-form-field: var(--grey-11);
+	--background-modifier-form-field-hover: var(--grey-11);
+
+	--slider-track-background: var(--grey-11);
+
+	--mw-input-border: var(--grey-9);
+
+	--checkbox-border-color: var(--grey-9);
+	--checkbox-border-color-hover: var(--grey-9);
+	--checkbox-color: var(--grey-11);
+	--checkbox-color-hover: var(--grey-11);
+	background-color: var(--grey-11);
+	border-color: var(--grey-9);
+	color: var(--text-normal);
+}
+
+input:focus,
+input:focus-visible,
+input:focus-within,
+textarea:focus,
+textarea:focus-visible,
+textarea:focus-within,
+.combobox-button:focus,
+.combobox-button:focus-visible,
+.combobox-button:focus-within {
+	--mw-input-border: var(--cyan);
+
+	--checkbox-border-color: var(--cyan);
+	--checkbox-border-color-hover: var(--cyan);
+	border-color: var(--cyan);
+	outline: none;
+}
+
+/* Invalid-field border paint is literal in the app; match its selector and use the input-local state token. */
+.form-field.is-invalid input {
+	border-color: var(--mw-input-border);
+}
+
+input[type='checkbox']:checked,
+input[type='radio']:checked,
+input[type='checkbox']:checked:hover,
+input[type='radio']:checked:hover {
+	border-color: var(--checkbox-border-color);
+}
+
+/* Search inputs use the shared field fill and state border color. */
+.combobox .search-input-container input[type='search'] {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}
+
+/* Combobox hover and focus fills read dropdown tokens rather than text-field tokens. */
+.combobox-button {
+	--dropdown-background: var(--grey-11);
+	--dropdown-background-hover: var(--grey-11);
+
+	--metadata-label-background-active: var(--grey-11);
+}
+
+/* Keep border paint separate from app border variables, which also color focus shadows. */
+input[type]:is(:hover, :active, :focus, :focus-visible, :focus-within) {
+	border-color: var(--mw-input-border);
+}
+
+/* Color controls reset their native fill and border literally in app.css. */
+input[type='color'] {
+	background-color: var(--grey-11);
+	border-color: var(--mw-input-border);
+}
+
+/* Match app type selectors for default border paint as well as interactive states. */
+input[type] {
+	border-color: var(--mw-input-border);
+}
+
+/* Modal input hover retains the shared field border. */
+.modal input:hover {
+	border-color: var(--mw-input-border);
+}
+
+/* Phone prompt inputs set a separate border shorthand; preserve the shared field border paint. */
+.is-phone .prompt-input[type='text'] {
+	border-color: var(--mw-input-border);
+}
+
+/* Tie the app’s literal transparent Vim command-line focus fill at 0,6,1. */
+.markdown-source-view.mod-cm6 .cm-panels.cm-panels-bottom input[type='text']:focus {
+	background-color: var(--grey-11);
+}

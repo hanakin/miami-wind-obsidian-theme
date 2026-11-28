@@ -1,0 +1,5 @@
+/* The bare hr sets borders on both Markdown horizontal rules and the app pane resize handle. */
+
+hr {
+	border-color: var(--cyan);
+}

@@ -1,0 +1,591 @@
+// Replays a saved fixture alone in a page prepared with the replay stylesheet and INPAGE: what
+// the coverage check renders and compares with the live screenshot. A viewer can follow the same
+// steps: images sized from imageSizes, canvas pixels drawn, stand-ins sized, scroll restored.
+import type { Page } from "playwright";
+
+export interface Replayed {
+	why: string;
+	inView?: number[] | null;
+	/** Elements whose content cannot be replayed are marked data-replay-mask (see replay-check.ts). */
+	masked?: number;
+	/** Trimmed fixtures: each kept entry's live box and replayed box. */
+	entries?: { live: number[]; now: number[] }[];
+	/** The first part around the target (outermost first) that is not where it was live. */
+	moved?: string | null;
+	/** Boxes of visible text (glyphs differ slightly between Chromium builds): x, y, w, h. */
+	text?: number[][];
+	/** Edge bands the two builds anti-alias differently (selection edges, borders under a scale). */
+	soft?: number[][];
+	/**
+	 * Elements the replay would size from their recorded live size: media stand-ins
+	 * (data-capture-size) and absolutely placed ancestors of the target. natural is the replay's own
+	 * box before any forcing (x, y, w, h); recorded is the live size (w, h); forced says whether it
+	 * was applied (see ReplayOptions.forceRecordedGeometry). Empty stand-ins (data-capture-placeholder)
+	 * are always sized and not listed.
+	 */
+	geometry?: {
+		what: string;
+		path: string;
+		natural: number[];
+		recorded: number[];
+		forced: boolean;
+	}[];
+}
+
+export interface ReplayOptions {
+	/**
+	 * Size media stand-ins and absolutely placed ancestors of the target to their recorded live size,
+	 * and force back scrollbars recorded live (data-capture-scrollbar) where the replay has none
+	 * (default true: the coverage check proves a fixture reproduces its screenshot). A comparison of
+	 * another stylesheet passes false, so its own sizes and overflow show, and reads
+	 * Replayed.geometry. Empty stand-ins (data-capture-placeholder) are sized either way.
+	 */
+	forceRecordedGeometry?: boolean;
+}
+
+export async function replayFixture(
+	page: Page,
+	html: string,
+	sizes: { index: number; width: number; height: number; url: string | null }[],
+	canvases: { index: number; frame: string | null; b64: string }[],
+	frames: Record<string, string> = {},
+	trimSelector: string | null = null,
+	options: ReplayOptions = {},
+): Promise<Replayed> {
+	const force = options.forceRecordedGeometry ?? true;
+	return (await page.evaluate(
+		async ([html, sizes, canvases, frames, trimSelector, force]) => {
+			const geometry: NonNullable<Replayed["geometry"]> = [];
+			const pathOf = (e: Element) => {
+				const parts: string[] = [];
+				for (let x: Element | null = e; x && x !== document.documentElement; x = x.parentElement)
+					parts.unshift(
+						`${x.localName}:nth-child(${x.parentElement ? [...x.parentElement.children].indexOf(x) + 1 : 1})`,
+					);
+				return parts.join(" > ");
+			};
+			const note = (e: Element, recorded: number[], forced: boolean) => {
+				const r = e.getBoundingClientRect();
+				geometry.push({
+					what: `${e.localName}${[...e.classList].map((c) => `.${c}`).join("")}`,
+					path: pathOf(e),
+					natural: [r.x, r.y, r.width, r.height],
+					recorded,
+					forced,
+				});
+			};
+			const d = new DOMParser().parseFromString(
+				html,
+				html.startsWith("<?xml") ? "application/xhtml+xml" : "text/html",
+			);
+			for (const [from, to] of [
+				[d.documentElement, document.documentElement],
+				[d.body, document.body],
+			] as const) {
+				for (const a of [...to.attributes]) to.removeAttribute(a.name);
+				for (const a of [...from.attributes]) to.setAttribute(a.name, a.value);
+			}
+			// The fixture's own runtime rules (MathJax glyphs) go with it.
+			for (const st of document.head.querySelectorAll("style[data-capture-runtime]")) st.remove();
+			for (const st of d.querySelectorAll("head style[data-capture-runtime]"))
+				document.head.appendChild(document.importNode(st, true));
+			document.body.replaceChildren(
+				...[...d.body.childNodes].map((n) => document.importNode(n, true)),
+			);
+			// Frames get their own stylesheets back (data-capture-frame-styles), then load; frames
+			// inside them the same way once they have loaded.
+			const loadFrames = (root: Document): Promise<unknown> => {
+				const loads: Promise<unknown>[] = [];
+				for (const fr of root.querySelectorAll<HTMLIFrameElement>(
+					"iframe[data-capture-frame-styles]",
+				)) {
+					const css = frames[fr.getAttribute("data-capture-frame-styles") ?? ""];
+					if (css === undefined) continue;
+					const sd = fr.getAttribute("srcdoc") ?? "";
+					loads.push(
+						new Promise((ok) => fr.addEventListener("load", ok, { once: true })).then(() =>
+							fr.contentDocument ? loadFrames(fr.contentDocument) : null,
+						),
+					);
+					fr.setAttribute("data-replay-frame", "");
+					// Its Content-Security-Policy allowed the app's own font origin; the replay serves the
+					// same files from another one, so the policy is left out.
+					fr.srcdoc = sd
+						.replace(/<meta[^>]*http-equiv=["']?Content-Security-Policy[^>]*>/gi, "")
+						.replace(
+							/<head([^>]*)>/i,
+							(m) => `${m}<style>${css.replace(/<\/style/gi, "<\\/style")}</style>`,
+						);
+				}
+				return Promise.all(loads);
+			};
+			await Promise.race([loadFrames(document), new Promise((ok) => setTimeout(ok, 10000))]);
+			// Images the fixture keeps are drawn as they were; other offline images get same-size
+			// stand-ins from the recorded imageSizes.
+			const decoding: Promise<unknown>[] = [];
+			for (const { index, width, height, url } of sizes) {
+				const im = document.images[index];
+				if (im && url) {
+					im.src = url;
+					decoding.push(im.decode().catch(() => null));
+				} else if (im) {
+					im.width = width;
+					im.height = height;
+					// A broken image ignores its size; a transparent stand-in of that size does not.
+					im.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+					im.setAttribute("data-replay-standin", "");
+				}
+			}
+			await Promise.all(decoding);
+			// Recorded canvas pixels, then recorded scroll offsets (after layout).
+			// A canvas inside a frame: follow its frame path (iframe indexes, outermost first).
+			const docOf = (path: string | null): Document | null => {
+				let d: Document | null = document;
+				for (const i of path ? path.split("/") : [])
+					d = d?.querySelectorAll("iframe")[Number(i)]?.contentDocument ?? null;
+				return d;
+			};
+			// A canvas that was blank live stays blank (transparent), as recorded.
+			const blank = (d: Document) => {
+				for (const c of d.querySelectorAll("canvas[data-capture-canvas-blank]"))
+					c.setAttribute("data-replay-pixels", "");
+				for (const f of d.querySelectorAll("iframe"))
+					if (f.contentDocument) blank(f.contentDocument);
+			};
+			blank(document);
+			for (const { index, frame, b64 } of canvases) {
+				const cv = docOf(frame)?.querySelectorAll("canvas")[index];
+				if (!cv) continue;
+				const bmp = await createImageBitmap(
+					await (await fetch(`data:image/png;base64,${b64}`)).blob(),
+				);
+				cv.getContext("2d")?.drawImage(bmp, 0, 0, cv.width, cv.height);
+				cv.setAttribute("data-replay-pixels", "");
+			}
+			// Empty stand-ins take their recorded live size.
+			for (const e of document.querySelectorAll<HTMLElement>("[data-capture-size]")) {
+				const [w = 0, h = 0] = (e.getAttribute("data-capture-size") ?? "").split(" ").map(Number);
+				// A restored frame and a kept image lay out from their own content, like live.
+				if (e.hasAttribute("data-replay-frame")) continue;
+				if (e.localName === "img" && !e.hasAttribute("data-replay-standin")) continue;
+				// Empty stand-ins are always sized (their content is not in the fixture); media
+				// stand-ins only when forcing recorded geometry. Both natural sizes are reported.
+				const empty = e.hasAttribute("data-capture-placeholder");
+				if (!empty) note(e, [w, h], force);
+				if (!empty && !force) continue;
+				// Unknown outside Electron (<webview>) or empty and inline: a size needs a box.
+				const disp =
+					e.getAttribute("data-capture-display") ??
+					(getComputedStyle(e).display === "inline" ? "inline-block" : null);
+				const [mt, mb] = (e.getAttribute("data-capture-margin") ?? "").split(" ");
+				for (const [k, v] of [
+					...(disp ? [["display", disp]] : []),
+					...(mt && mb
+						? [
+								["margin-top", `${mt}px`],
+								["margin-bottom", `${mb}px`],
+							]
+						: []),
+					["box-sizing", "border-box"],
+					["width", `${w}px`],
+					["height", `${h}px`],
+					["min-width", "0"],
+					["min-height", "0"],
+					["max-width", "none"],
+					["max-height", "none"],
+					["flex", "none"],
+				])
+					e.style.setProperty(k as string, v as string, "important");
+			}
+			// A scrollbar shown live but missing here (a trimmed list no longer overflows) is forced
+			// back; one already shown is left alone. Not when a comparison asked for its own sizes
+			// (forceRecordedGeometry false): its overflow decides.
+			for (const e of force
+				? document.querySelectorAll<HTMLElement>("[data-capture-scrollbar]")
+				: []) {
+				const bars = e.getAttribute("data-capture-scrollbar") ?? "";
+				const cs = getComputedStyle(e);
+				const bw = (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.borderRightWidth) || 0);
+				const bh = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+				if (bars.includes("y") && e.offsetWidth - e.clientWidth - bw <= 0)
+					e.style.setProperty("overflow-y", "scroll", "important");
+				if (bars.includes("x") && e.offsetHeight - e.clientHeight - bh <= 0)
+					e.style.setProperty("overflow-x", "scroll", "important");
+			}
+			// Controls whose state is not in the markup.
+			for (const e of document.querySelectorAll<HTMLSelectElement>(
+				"select[data-capture-select-none]",
+			))
+				e.selectedIndex = -1;
+			for (const e of document.querySelectorAll<HTMLInputElement>(
+				"input[data-capture-indeterminate]",
+			))
+				e.indeterminate = true;
+			// Absolutely placed ancestors of the target take their recorded live size when the replay
+			// differs (a PDF viewer sized by state the markup does not hold). The surroundings, not
+			// the target, so the target is still judged.
+			{
+				const tgt = document.querySelector("[data-capture-target]");
+				for (let a = tgt?.parentElement ?? null; a && a !== document.body; a = a.parentElement) {
+					const want = a.getAttribute("data-capture-box")?.split(" ").map(Number);
+					if (!want || !/^(absolute|fixed)$/.test(getComputedStyle(a).position)) continue;
+					const r = a.getBoundingClientRect();
+					if (Math.abs(r.width - (want[2] ?? 0)) > 1 || Math.abs(r.height - (want[3] ?? 0)) > 1) {
+						note(a, [want[2] ?? 0, want[3] ?? 0], force);
+						if (!force) continue;
+						(a as HTMLElement).style.setProperty("box-sizing", "border-box", "important");
+						(a as HTMLElement).style.setProperty("width", `${want[2]}px`, "important");
+						(a as HTMLElement).style.setProperty("height", `${want[3]}px`, "important");
+					}
+				}
+			}
+			// The recorded native text selection.
+			const end = (name: string): [Node, number] | null => {
+				const e = document.querySelector(`[data-capture-sel-${name}]`);
+				const [i = -1, off = 0] = (e?.getAttribute(`data-capture-sel-${name}`) ?? "")
+					.split(" ")
+					.map(Number);
+				const n = e && (i < 0 ? e : e.childNodes[i]);
+				return n ? [n, off] : null;
+			};
+			const a = end("anchor");
+			const z = end("focus");
+			if (a && z)
+				try {
+					getSelection()?.setBaseAndExtent(a[0], a[1], z[0], z[1]);
+				} catch {}
+			// Text selected inside a field (it shows only while the field has focus).
+			const field = document.querySelector<HTMLInputElement>("[data-capture-input-selection]");
+			if (field) {
+				const [from = "0", to = "0", dir = "none"] = (
+					field.getAttribute("data-capture-input-selection") ?? ""
+				).split(" ");
+				try {
+					field.focus();
+					field.setSelectionRange(Number(from), Number(to), dir as "none");
+				} catch {}
+			}
+			// Scroll offsets once fonts have loaded (the content has its final height).
+			await document.fonts.ready;
+			await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+			for (const e of document.querySelectorAll("[data-capture-scroll]")) {
+				const [top = 0, left = 0] = (e.getAttribute("data-capture-scroll") ?? "")
+					.split(" ")
+					.map(Number);
+				e.scrollTop = top;
+				e.scrollLeft = left;
+			}
+			await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+			const t = document.querySelector("[data-capture-target]");
+			if (!t) return { why: "no target" };
+			for (let a: Element | null = t; a; a = a.parentElement) {
+				const cs = getComputedStyle(a);
+				if (cs.display === "none")
+					return { why: `display: none on ${a.localName}.${[...a.classList].join(".")}` };
+				if (a === t && cs.visibility === "hidden")
+					return { why: `visibility: hidden on ${a.localName}.${[...a.classList].join(".")}` };
+			}
+			const area = (e: Element) =>
+				[...e.getClientRects()].reduce((s, r) => s + r.width * r.height, 0);
+			let boxed = area(t) > 0;
+			if (!boxed)
+				for (const d2 of t.querySelectorAll("*"))
+					if (area(d2) > 0 && getComputedStyle(d2).visibility !== "hidden") {
+						boxed = true;
+						break;
+					}
+			if (!boxed) return { why: "renders with no box" };
+			// What replay cannot reproduce offline is marked data-replay-mask; the check paints those
+			// elements in two flat colors and leaves out only the pixels that change, so anything
+			// drawn above them (controls over the graph) is still compared. Frames that showed
+			// nothing, or got their stylesheets back, hide nothing.
+			let masked = 0;
+			const mark = (e: Element, how = "") => {
+				e.setAttribute("data-replay-mask", how);
+				masked++;
+			};
+			for (const e of document.querySelectorAll(
+				"img, video, audio, iframe, object, embed, webview, canvas:not([data-replay-pixels])",
+			)) {
+				// A loaded image (data:, or an app icon from the local extract) is replayed as it was.
+				const im = e as HTMLImageElement;
+				if (
+					e.localName === "img" &&
+					im.complete &&
+					im.naturalWidth > 0 &&
+					!e.hasAttribute("data-replay-standin")
+				)
+					continue;
+				if (
+					e.localName === "iframe" &&
+					(e.hasAttribute("data-capture-frame-empty") || e.hasAttribute("data-replay-frame"))
+				)
+					continue;
+				mark(e);
+			}
+			// Floating stand-ins (the titlebar's buttons, the status bar) painted these boxes over the
+			// window live; replayed they are hidden. Animated parts and the text caret changed with
+			// time. Those boxes are left out (topmost overlays, invisible except while the check
+			// paints its masks).
+			for (const e of document.querySelectorAll("[data-capture-paints], [data-capture-animated]")) {
+				const list =
+					e.getAttribute("data-capture-paints") ?? e.getAttribute("data-capture-animated");
+				for (const box of (list ?? "").split(" ").filter(Boolean)) {
+					// Grown by 1 px: hit tests place these boxes to about a pixel.
+					const [x = 0, y = 0, w = 0, h = 0] = box.split(",").map(Number);
+					const o = document.createElement("div");
+					o.style.cssText = `position:fixed;left:${x - 1}px;top:${y - 1}px;width:${w + 2}px;height:${h + 2}px;z-index:2147483647;visibility:hidden;pointer-events:none`;
+					document.body.appendChild(o);
+					mark(o, "overlay");
+				}
+			}
+			// Neighbors in the compared ring (8 px around the target): whatever another element paints
+			// there (a sibling menu item, the next highlight's rounded corner) is left out pixel by
+			// pixel. The target's own outline, border and shadow, and its ancestors' paint, stay
+			// compared. Hit tests see through layers that paint nothing; integer points hit a pixel's
+			// own content (a point inside a pixel can hit the box starting at the next one).
+			if (!trimSelector) {
+				const cp = (window as unknown as { cap: { clear(w: Window, e: Element): boolean } }).cap;
+				const tr = t.getBoundingClientRect();
+				const hitStyle = document.createElement("style");
+				// Empty stand-ins are hit too (sized like live, hidden): what one painted live there is
+				// not in the fixture.
+				hitStyle.textContent =
+					"*, *::before, *::after { pointer-events: auto !important; } [data-capture-placeholder] { visibility: visible !important; }";
+				document.head.appendChild(hitStyle);
+				const runs: number[][] = [];
+				const x0 = Math.max(0, Math.floor(tr.left) - 8);
+				const x1 = Math.min(innerWidth, Math.ceil(tr.right) + 8);
+				for (
+					let y = Math.max(0, Math.floor(tr.top) - 8);
+					y < Math.min(innerHeight, Math.ceil(tr.bottom) + 8);
+					y++
+				) {
+					let start = -1;
+					for (let x = x0; x <= x1; x++) {
+						let hit = false;
+						const inBox =
+							x >= Math.ceil(tr.left) &&
+							x < Math.floor(tr.right) &&
+							y >= Math.ceil(tr.top) &&
+							y < Math.floor(tr.bottom);
+						// A box's hit area starts about a pixel before its top and left edges: a pixel
+						// a neighbor covers only in part is sampled half a pixel up and left, and near
+						// its far corner, too.
+						if (x < x1 && !inBox)
+							hit = [
+								[x, y],
+								[x - 0.5, y - 0.5],
+								[x + 0.9, y + 0.9],
+							].some(([px = 0, py = 0]) => {
+								for (const h of document.elementsFromPoint(px, py)) {
+									if (h.hasAttribute("data-replay-mask")) continue;
+									if (h === t || t.contains(h) || h.contains(t)) return false;
+									if (h.hasAttribute("data-capture-placeholder")) return true;
+									if (cp.clear(window, h)) continue;
+									return true;
+								}
+								return false;
+							});
+						if (hit && start < 0) start = x;
+						if (!hit && start >= 0) {
+							runs.push([start, y, x - start]);
+							start = -1;
+						}
+					}
+				}
+				hitStyle.remove();
+				for (const [x, y, w] of runs.slice(0, 20000)) {
+					const o = document.createElement("div");
+					o.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:${w}px;height:1px;z-index:2147483647;visibility:hidden;pointer-events:none`;
+					o.setAttribute("data-replay-neighbor", "");
+					document.body.appendChild(o);
+					mark(o, "overlay");
+				}
+			}
+			// Background images from app: / https: files do not load offline either (data: ones,
+			// and vault files put in place as data:, do).
+			for (const e of document.querySelectorAll("[style*='url(']")) {
+				const urls = [
+					...getComputedStyle(e).backgroundImage.matchAll(/url\(\s*["']?([^"')]+)/g),
+				].map((m) => m[1] ?? "");
+				if (urls.every((u) => u.startsWith("data:"))) continue;
+				mark(e);
+			}
+			// Trimmed lists: each kept entry, live box and replayed box.
+			const entries: { live: number[]; now: number[] }[] = [];
+			if (trimSelector)
+				for (const e of t.querySelectorAll(trimSelector)) {
+					const want = e.getAttribute("data-capture-box")?.split(" ").map(Number);
+					const r = e.getBoundingClientRect();
+					if (want && r.width >= 1 && r.height >= 1)
+						entries.push({ live: want, now: [r.x, r.y, r.width, r.height] });
+				}
+			const cap = (window as unknown as { cap: { visibleRect(e: Element): number[] | null } }).cap;
+			// The first recorded part (outermost first) that is not where it was live.
+			let moved: string | null = null;
+			const chain: Element[] = [];
+			for (let a: Element | null = t; a && a !== document.documentElement; a = a.parentElement)
+				chain.unshift(a);
+			for (const a of chain) {
+				// Parts before the branch (and the branch itself); later ones move with its content.
+				const kids = a.parentElement ? [...a.parentElement.children] : [a];
+				for (const e of kids.slice(0, kids.indexOf(a) + 1)) {
+					const want = e.getAttribute("data-capture-box")?.split(" ").map(Number);
+					if (!want || moved) continue;
+					const r = e.getBoundingClientRect();
+					const got = [r.x, r.y, r.width, r.height];
+					// Ancestors by position (their size follows their content); other parts by box.
+					const n = chain.includes(e) ? 2 : 4;
+					if (want.slice(0, n).some((v, k) => Math.abs(v - (got[k] ?? 0)) > 2))
+						moved = `${e.localName}.${[...e.classList].slice(0, 2).join(".")}${e.hasAttribute("data-capture-placeholder") ? " (stand-in)" : ""} at ${got.map(Math.round).join(",")}, live ${want.map(Math.round).join(",")}`;
+				}
+				if (moved) break;
+			}
+			// Else the first part inside the target that is not where it was.
+			// (Position first: a container grows because a part inside it moved or grew.)
+			for (const n of [2, 4]) {
+				if (moved) break;
+				for (const e of t.querySelectorAll("[data-capture-box]")) {
+					const want = (e.getAttribute("data-capture-box") ?? "").split(" ").map(Number);
+					const r = e.getBoundingClientRect();
+					const got = [r.x, r.y, r.width, r.height];
+					if (want.slice(0, n).some((v, k) => Math.abs(v - (got[k] ?? 0)) > 2)) {
+						moved = `${e.localName}.${[...e.classList].slice(0, 2).join(".")} inside the target at ${got.map(Math.round).join(",")}, live ${want.map(Math.round).join(",")}`;
+						break;
+					}
+				}
+			}
+			// Where text is drawn: text runs, the text inside fields, MathJax characters.
+			const text: number[][] = [];
+			const vw = innerWidth;
+			const vh = innerHeight;
+			// In restored frames too, offset by the frame's content box.
+			const collect = (d: Document, ox: number, oy: number) => {
+				const win = d.defaultView ?? window;
+				const keep = (r: DOMRect) => {
+					const x = r.x + ox;
+					const y = r.y + oy;
+					if (
+						text.length < 6000 &&
+						r.width >= 1 &&
+						r.height >= 1 &&
+						x + r.width > 0 &&
+						y + r.height > 0 &&
+						x < vw &&
+						y < vh
+					)
+						text.push([x, y, r.width, r.height]);
+				};
+				if (!d.body) return;
+				const walker = d.createTreeWalker(d.body, NodeFilter.SHOW_TEXT);
+				const range = d.createRange();
+				for (let n = walker.nextNode(); n && text.length < 6000; n = walker.nextNode()) {
+					if (!n.nodeValue?.trim() || !n.parentElement) continue;
+					const pcs = win.getComputedStyle(n.parentElement);
+					if (pcs.visibility !== "visible" || pcs.display === "none") continue;
+					range.selectNodeContents(n);
+					for (const r of range.getClientRects()) keep(r);
+				}
+				for (const e of d.querySelectorAll<HTMLElement>("input, textarea, select, mjx-c")) {
+					const r = e.getBoundingClientRect();
+					if (e.localName === "mjx-c") {
+						keep(r);
+						continue;
+					}
+					const cs = win.getComputedStyle(e);
+					const l = (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.paddingLeft) || 0);
+					const tp = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.paddingTop) || 0);
+					const rr = (parseFloat(cs.borderRightWidth) || 0) + (parseFloat(cs.paddingRight) || 0);
+					const bt = (parseFloat(cs.borderBottomWidth) || 0) + (parseFloat(cs.paddingBottom) || 0);
+					keep(new DOMRect(r.x + l, r.y + tp, r.width - l - rr, r.height - tp - bt));
+				}
+				for (const f of d.querySelectorAll<HTMLIFrameElement>("iframe[data-replay-frame]")) {
+					const fd = f.contentDocument;
+					if (!fd) continue;
+					const fr = f.getBoundingClientRect();
+					const fcs = win.getComputedStyle(f);
+					collect(
+						fd,
+						ox + fr.x + f.clientLeft + (parseFloat(fcs.paddingLeft) || 0),
+						oy + fr.y + f.clientTop + (parseFloat(fcs.paddingTop) || 0),
+					);
+				}
+			};
+			collect(document, 0, 0);
+			// Edges drawn differently by the two Chromium builds, though placed alike (measured: a
+			// 1 px border under a scale transform, 58 live and 84 replayed in one channel; CodeMirror's
+			// drawn selection): those edge bands get the text tolerance, not the ink check. (A native
+			// selection's edges are found from the pixels; see replay-check.ts.)
+			const soft: number[][] = [];
+			const band = (x: number, y: number, w: number, h: number) => {
+				if (soft.length < 6000 && w > 0 && h > 0) soft.push([x, y, w, h]);
+			};
+			const edges = (r: DOMRect) => {
+				band(r.x, r.y - 1, r.width, 2);
+				band(r.x, r.bottom - 1, r.width, 2);
+			};
+			for (const e of document.querySelectorAll(".cm-selectionBackground"))
+				edges(e.getBoundingClientRect());
+			// An icon drawn by a pseudo-element's image mask (a search field's magnifier) at a
+			// fractional position is resampled differently (measured: 142 replayed, 112 live, inside a
+			// settings modal at 51.2, 57.6): its box, when not on whole pixels.
+			for (const e of document.body.querySelectorAll<HTMLElement>(
+				"[data-capture-paint][data-capture-paint-fx]",
+			)) {
+				if (getComputedStyle(e).position === "static") continue;
+				for (const pe of ["::before", "::after"]) {
+					const c = getComputedStyle(e, pe);
+					if (c.content === "none" || c.content === "normal" || !/^(absolute)$/.test(c.position))
+						continue;
+					const img = `${c.getPropertyValue("-webkit-mask-image")} ${c.maskImage} ${c.backgroundImage}`;
+					if (!img.includes("url(")) continue;
+					const r = e.getBoundingClientRect();
+					const x = r.x + e.clientLeft + parseFloat(c.left);
+					const y = r.y + e.clientTop + parseFloat(c.top);
+					const w = parseFloat(c.width);
+					const h = parseFloat(c.height);
+					if (!Number.isFinite(x + y + w + h) || (Number.isInteger(x) && Number.isInteger(y)))
+						continue;
+					band(x - 1, y - 1, w + 2, h + 2);
+				}
+			}
+			// Where two rounded inline backgrounds meet at a fractional pixel (a highlight's marks
+			// and its text), the notch they leave is drawn a pixel apart: their side edges.
+			for (const e of document.body.querySelectorAll<HTMLElement>(
+				":is(span, mark, code, a, em, strong)[data-capture-paint][data-capture-paint-fx]",
+			)) {
+				const cs = getComputedStyle(e);
+				if (!cs.display.startsWith("inline") || cs.borderRadius === "0px") continue;
+				if (cs.backgroundColor === "rgba(0, 0, 0, 0)" && cs.backgroundImage === "none") continue;
+				for (const r of e.getClientRects()) {
+					if (Number.isInteger(r.x) && Number.isInteger(r.right)) continue;
+					band(r.x - 1.5, r.y - 2, 3, r.height + 4);
+					band(r.right - 1.5, r.y - 2, 3, r.height + 4);
+				}
+			}
+			const scaled = [...document.body.querySelectorAll<HTMLElement>("*")].filter((e) => {
+				const m = getComputedStyle(e).transform.match(/^matrix\(([^,]+),\s*([^,]+)/);
+				return !!m && Math.abs(Math.hypot(Number(m[1]), Number(m[2])) - 1) > 0.01;
+			});
+			// Only parts whose live paint colors were recorded (data-capture-paint): the check
+			// compares those, so a recolor still fails.
+			const painted = (e: Element) =>
+				e.hasAttribute("data-capture-paint") && e.hasAttribute("data-capture-paint-fx");
+			for (const s of scaled)
+				for (const e of [s, ...s.querySelectorAll("*")].slice(0, 2000)) {
+					if (!painted(e)) continue;
+					const cs = getComputedStyle(e);
+					const r = e.getBoundingClientRect();
+					const w = (k: string) =>
+						parseFloat(cs.getPropertyValue(`border-${k}-width`)) > 0 ? 3 : 0;
+					if (w("top")) band(r.x - 1, r.y - 1, r.width + 2, 3);
+					if (w("bottom")) band(r.x - 1, r.bottom - 2, r.width + 2, 3);
+					if (w("left")) band(r.x - 1, r.y - 1, 3, r.height + 2);
+					if (w("right")) band(r.right - 2, r.y - 1, 3, r.height + 2);
+				}
+			return { why: "", inView: cap.visibleRect(t), masked, entries, moved, text, soft, geometry };
+		},
+		[html, sizes, canvases, frames, trimSelector, force] as const,
+	)) as Replayed;
+}

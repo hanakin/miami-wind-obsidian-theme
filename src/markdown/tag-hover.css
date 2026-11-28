@@ -1,0 +1,5 @@
+/* Joined tag highlighting when the editor tag text is hovered. */
+
+.cm-hashtag-begin:has(+ .cm-hashtag-end:hover) {
+	background-color: var(--magenta);
+}

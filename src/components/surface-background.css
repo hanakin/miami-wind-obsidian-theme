@@ -1,0 +1,5 @@
+/* Reusable surface background styles controlled by local variables. */
+
+@define-mixin surface-background {
+	background-color: var(--mw-surface-background);
+}

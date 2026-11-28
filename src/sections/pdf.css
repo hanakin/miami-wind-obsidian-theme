@@ -1,0 +1,5 @@
+/* PDF viewer page-number loading state in the toolbar. */
+
+.pdf-page-input.mod-page-loading {
+	background-color: var(--grey-11);
+}

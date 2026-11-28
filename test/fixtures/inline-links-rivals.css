@@ -1,0 +1,9 @@
+/* Relevant unmodified Obsidian 1.15.1 rivals for the recorded DOM. */
+.cm-s-obsidian span.cm-inline-code{color:var(--code-normal);font-size:var(--code-size);background-color:var(--code-background);vertical-align:baseline;-webkit-box-decoration-break:clone}
+.cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote{cursor:text;display:inline-block;font-size:var(--font-smallest);position:relative;top:-.3em;color:var(--text-muted)}
+.cm-s-obsidian .cm-line.HyperMD-footnote span.cm-hmd-footnote .cm-underline{color:var(--text-muted);text-decoration:none}
+.cm-s-obsidian span.cm-link{color:var(--link-external-color);word-break:break-word}
+.cm-s-obsidian span.cm-footref.cm-inline-footnote.cm-formatting-inline-footnote,.cm-s-obsidian span.cm-footref.cm-hmd-barelink.cm-formatting,.cm-s-obsidian span.cm-formatting-image,.cm-s-obsidian span.cm-formatting-link-string,.cm-s-obsidian span.cm-formatting-link{color:var(--text-faint)}
+.cm-s-obsidian span.cm-footref.cm-hmd-barelink,.cm-s-obsidian span.cm-blockid{color:var(--text-muted)}
+.markdown-source-view.mod-cm6 .cm-link .cm-underline,.markdown-source-view.mod-cm6 .cm-url .cm-underline{color:var(--link-external-color);text-decoration-line:var(--link-external-decoration)}
+.markdown-source-view.mod-cm6 .cm-link .cm-underline:hover,.markdown-source-view.mod-cm6 .cm-url .cm-underline:hover{color:var(--link-external-color-hover);text-decoration-line:var(--link-external-decoration-hover)}

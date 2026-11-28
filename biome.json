@@ -1,0 +1,37 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
+	"files": {
+		"includes": [
+			"scripts/**/*.ts",
+			"test/**/*.ts",
+			"capture/scripts/**/*.ts",
+			"workbench/compare/**/*.ts",
+			"workbench/app/**/*.ts"
+		]
+	},
+	"formatter": {
+		"indentStyle": "tab"
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended"
+		}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"capture/scripts/**/*.ts",
+				"workbench/app/**/*.ts"
+			],
+			"formatter": {
+				"lineWidth": 100
+			},
+			"linter": {
+				"rules": {
+					"preset": "recommended"
+				}
+			}
+		}
+	]
+}

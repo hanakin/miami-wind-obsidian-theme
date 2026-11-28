@@ -1,0 +1,21 @@
+/* Status bar backgrounds, item text and clickable hover states. */
+
+.status-bar {
+	--status-bar-radius: 0;
+	border-top: 1px solid var(--cyan);
+	color: var(--magenta);
+	padding: 0;
+}
+
+.status-bar-item,
+.status-bar-item.mod-clickable {
+	border-radius: 0;
+	padding: 4px 8px;
+	cursor: pointer;
+}
+
+.status-bar-item:hover,
+.status-bar-item.mod-clickable:hover {
+	background-color: var(--cyan-transparent);
+	color: var(--magenta);
+}

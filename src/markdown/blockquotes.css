@@ -1,0 +1,6 @@
+/* Blockquote text, borders and backgrounds in reading view. */
+
+.markdown-rendered blockquote {
+	border-left: 4px solid var(--blockquote);
+	padding: 8px 16px 16px;
+}

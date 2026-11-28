@@ -1,0 +1,23 @@
+/* Clickable icon cursors, disabled backgrounds and disabled text colors. */
+
+.clickable-icon:hover {
+	cursor: var(--icon-cursor);
+}
+
+.clickable-icon[aria-disabled='true'] {
+	cursor: default;
+}
+
+.clickable-icon[aria-disabled='true'],
+.clickable-icon[aria-disabled='true']:hover,
+.clickable-icon[aria-disabled='true']:active,
+.clickable-icon[aria-disabled='true'].is-active,
+.clickable-icon[aria-disabled='true'].has-active-menu {
+	background-color: transparent;
+}
+
+/* The zero-weight modal-close exclusion preserves its separate hover rule’s precedence. */
+.clickable-icon[aria-disabled='true'],
+.clickable-icon[aria-disabled='true']:is(:hover, :active, .is-active, .has-active-menu):where(:not(.modal-close-button:hover)) {
+	color: var(--text-disabled);
+}
