@@ -1,12 +1,14 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdirSync, rmSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import type { FixtureEntry } from "../../capture/scripts/types";
 import { compile } from "../../scripts/pipeline";
 import { BROWSER_OPTIONS } from "./browser";
+import { Inputs } from "./inputs";
 import {
 	comparisonExitCode,
 	componentDiffs,
@@ -54,8 +56,15 @@ for (const side of ["before", "after"] as const)
 		throw new Error(
 			`Expected non-empty --${side} path; pass an empty CSS file for Default Obsidian.`,
 		);
-loadReplayLimits();
-const registry = (await Bun.file("capture/fixtures.json").json()) as {
+const inputs = new Inputs();
+for (const file of ["replay.ts", "css.ts", "inpage.ts"])
+	inputs.read(
+		fileURLToPath(new URL(`../../capture/scripts/${file}`, import.meta.url)),
+	);
+loadReplayLimits(inputs);
+const registry = JSON.parse(
+	inputs.read("capture/fixtures.json").toString("utf8"),
+) as {
 	obsidianVersion: string;
 	fixtures: FixtureEntry[];
 };
@@ -86,11 +95,11 @@ if (values.formatting)
 	);
 if (!values.after) execFileSync("bun", ["run", "build"], { stdio: "inherit" });
 const before = values.formatting
-	? await Bun.file(`${out}/before-format.css`).text()
+	? inputs.read(`${out}/before-format.css`).toString("utf8")
 	: values.before
-		? await Bun.file(values.before).text()
+		? inputs.read(values.before).toString("utf8")
 		: execFileSync("git", ["show", "b478dc8:theme.css"], { encoding: "utf8" });
-const after = await Bun.file(values.after ?? "theme.css").text();
+const after = inputs.read(values.after ?? "theme.css").toString("utf8");
 mkdirSync(`${out}/themes`, { recursive: true });
 const snapshotTheme = async (
 	side: "before" | "after",
@@ -106,24 +115,34 @@ const snapshotTheme = async (
 	};
 };
 const [beforeTheme, afterTheme] = await Promise.all([
-	snapshotTheme("before", before, values.before ?? "b478dc8:theme.css"),
+	snapshotTheme(
+		"before",
+		before,
+		values.formatting
+			? `${out}/before-format.css`
+			: (values.before ?? "b478dc8:theme.css"),
+	),
 	snapshotTheme("after", after, values.after ?? "theme.css"),
 ]);
 const themes = { before: beforeTheme, after: afterTheme };
 if (!(await Bun.file("capture/.app/app.css").exists()))
 	throw new Error("Missing app CSS: run bun run capture:extract-app-css first");
 const appVersion = (
-	(await Bun.file("capture/.app/package.json").json()) as { version: string }
+	JSON.parse(inputs.read("capture/.app/package.json").toString("utf8")) as {
+		version: string;
+	}
 ).version;
 if (appVersion !== registry.obsidianVersion)
 	throw new Error(
 		`App CSS ${appVersion} does not match fixtures ${registry.obsidianVersion}`,
 	);
-const app = await Bun.file("capture/.app/app.css").text();
-const cm = await runtimeCss();
+const app = inputs.read("capture/.app/app.css").toString("utf8");
+const cm = await runtimeCss(inputs);
+const sharedInputs = { ...inputs.hashes };
 const browser = await chromium.launch(BROWSER_OPTIONS);
 type Result = {
 	id: string;
+	inputs: Record<string, string>;
 	component: string;
 	surface: string;
 	state: string;
@@ -162,8 +181,17 @@ try {
 			while (next < fixtures.length) {
 				const f = fixtures[next++];
 				if (!f) break;
-				const html = await Bun.file(`capture/fixtures/${f.file}`).text();
-				const a = await render(page, cdp, html, { cm, app, theme: before }, f);
+				const fixtureInputs = inputs.fork(sharedInputs);
+				const html = fixtureInputs
+					.read(`capture/fixtures/${f.file}`)
+					.toString("utf8");
+				const a = await render(
+					page,
+					cdp,
+					html,
+					{ cm, app, theme: before, inputs: fixtureInputs },
+					f,
+				);
 				const sanity = await render(
 					page,
 					cdp,
@@ -171,12 +199,19 @@ try {
 					{
 						cm,
 						app,
+						inputs: fixtureInputs,
 						theme: `${before}\n/* compare sanity: identical declarations */`,
 					},
 					f,
 				);
 				const sanityStyles = styleDiff(a.styles, sanity.styles);
-				const b = await render(page, cdp, html, { cm, app, theme: after }, f);
+				const b = await render(
+					page,
+					cdp,
+					html,
+					{ cm, app, theme: after, inputs: fixtureInputs },
+					f,
+				);
 				const afterRepeat = await render(
 					page,
 					cdp,
@@ -184,6 +219,7 @@ try {
 					{
 						cm,
 						app,
+						inputs: fixtureInputs,
 						theme: `${after}\n/* compare after repeat: identical declarations */`,
 					},
 					f,
@@ -230,6 +266,7 @@ try {
 				});
 				const result: Result = {
 					id: f.id,
+					inputs: fixtureInputs.hashes,
 					component: f.component,
 					surface: f.surface,
 					state: f.state,
@@ -344,6 +381,7 @@ await Bun.write(
 		{
 			schemaVersion: 1,
 			generated,
+			inputs: inputs.hashes,
 			themes,
 			rasterization: {
 				flags: BROWSER_OPTIONS.args,

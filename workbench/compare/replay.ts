@@ -1,13 +1,15 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve, sep } from "node:path";
+import { extname, resolve, sep } from "node:path";
 import type { CDPSession, Page } from "playwright";
 import { replayCss } from "../../capture/scripts/css";
 import { INPAGE } from "../../capture/scripts/inpage";
 import { replayFixture } from "../../capture/scripts/replay";
 import type { FixtureEntry } from "../../capture/scripts/types";
+import type { Inputs } from "./inputs";
 
 const origin = "https://obsidian-app.invalid/";
 const assetRoot = resolve("capture/.app/assets");
+const pageInputs = new WeakMap<Page, Inputs>();
 const modes = new WeakMap<Page, boolean>();
 const sheets = new Map<string, string>();
 const desktopCss = new Map<string, string>();
@@ -22,30 +24,35 @@ function transformed(text: string, touch: boolean): string {
 	return value;
 }
 let limits: Record<string, string> | undefined;
-export function loadReplayLimits(): Record<string, string> {
-	if (!limits) {
-		if (!existsSync("capture/coverage.json"))
-			throw new Error("Missing capture coverage: capture/coverage.json");
+export function loadReplayLimits(inputs?: Inputs): Record<string, string> {
+	if (!existsSync("capture/coverage.json"))
+		throw new Error("Missing capture coverage: capture/coverage.json");
+	const bytes = inputs?.read("capture/coverage.json");
+	if (!limits || bytes) {
 		limits =
-			JSON.parse(readFileSync("capture/coverage.json", "utf8")).replay
-				?.limits ?? {};
+			JSON.parse(
+				bytes?.toString("utf8") ??
+					readFileSync("capture/coverage.json", "utf8"),
+			).replay?.limits ?? {};
 	}
 	return limits!;
 }
 
 function sheet(
 	token: string,
-	css: { app: string; cm: string; theme: string },
+	css: { app: string; cm: string; theme: string; inputs?: Inputs },
 	touch: boolean,
 ): string {
 	if (token === "theme") return transformed(css.theme, touch);
 	if (token === "app") return transformed(css.app, touch);
 	if (token === "runtime") return transformed(css.cm, touch);
+	const path = `capture/.app/runtime/${token}.css`;
+	const bytes = css.inputs?.read(path);
 	const key = `${token}:${touch}`;
 	let value = sheets.get(key);
 	if (value === undefined) {
 		value = replayCss(
-			readFileSync(`capture/.app/runtime/${token}.css`, "utf8"),
+			bytes?.toString("utf8") ?? readFileSync(path, "utf8"),
 			touch,
 		);
 		sheets.set(key, value);
@@ -58,9 +65,11 @@ export async function prepareReplay(
 	page: Page,
 	cdp: CDPSession,
 	html: string,
-	css: { app: string; cm: string; theme: string },
+	css: { app: string; cm: string; theme: string; inputs?: Inputs },
 	fixture: FixtureEntry,
 ) {
+	if (css.inputs) pageInputs.set(page, css.inputs);
+	const read = (file: string) => css.inputs?.read(file) ?? readFileSync(file);
 	if (modes.get(page) !== !!fixture.quirks) {
 		if (!modes.has(page))
 			await page.route("**/*", (route) => {
@@ -72,7 +81,23 @@ export async function prepareReplay(
 					existsSync(path)
 				)
 					return route.fulfill({
-						path,
+						body: pageInputs.get(page)?.read(path) ?? readFileSync(path),
+						contentType:
+							(
+								{
+									".svg": "image/svg+xml",
+									".png": "image/png",
+									".jpg": "image/jpeg",
+									".jpeg": "image/jpeg",
+									".webp": "image/webp",
+									".gif": "image/gif",
+									".woff": "font/woff",
+									".woff2": "font/woff2",
+									".ttf": "font/ttf",
+									".css": "text/css",
+									".js": "application/javascript",
+								} as Record<string, string>
+							)[extname(path)] ?? "application/octet-stream",
 						headers: { "Access-Control-Allow-Origin": "*" },
 					});
 				return route.abort();
@@ -142,7 +167,7 @@ export async function prepareReplay(
 	const canvases = (fixture.canvasPixels ?? []).map((c) => ({
 		index: c.index,
 		frame: c.frame ?? null,
-		b64: readFileSync(`capture/fixtures/${c.file}`).toString("base64"),
+		b64: read(`capture/fixtures/${c.file}`).toString("base64"),
 	}));
 	const got = await replayFixture(
 		page,
@@ -150,7 +175,7 @@ export async function prepareReplay(
 		(fixture.imageSizes ?? []).map((im) => ({
 			...im,
 			url: im.file
-				? `data:${({ png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", svg: "image/svg+xml", webp: "image/webp", avif: "image/avif", bmp: "image/bmp" } as Record<string, string>)[im.file.split(".").pop() ?? ""] ?? "image/png"};base64,${readFileSync(`capture/fixtures/${im.file}`).toString("base64")}`
+				? `data:${({ png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", svg: "image/svg+xml", webp: "image/webp", avif: "image/avif", bmp: "image/bmp" } as Record<string, string>)[im.file.split(".").pop() ?? ""] ?? "image/png"};base64,${read(`capture/fixtures/${im.file}`).toString("base64")}`
 				: null,
 		})),
 		canvases,
@@ -166,8 +191,8 @@ export async function prepareReplay(
 		got,
 		issues: [
 			...(got.why ? [got.why] : []),
-			...(loadReplayLimits()[fixture.id]
-				? [`capture replay limit: ${loadReplayLimits()[fixture.id]}`]
+			...(loadReplayLimits(css.inputs)[fixture.id]
+				? [`capture replay limit: ${loadReplayLimits(css.inputs)[fixture.id]}`]
 				: []),
 		],
 	};
