@@ -7,24 +7,23 @@ import {
 	existsSync,
 	mkdirSync,
 	readFileSync,
+	realpathSync,
 	statSync,
 	watch,
 	watchFile,
 	writeFileSync,
 } from "node:fs";
-import type { IncomingMessage, ServerResponse } from "node:http";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { resolve, sep } from "node:path";
 import Specificity from "@bramus/specificity";
-import { extractFile } from "@electron/asar";
 import type { Plugin } from "vite";
+import { replayCss } from "../../capture/scripts/css.ts";
 import { COMPONENTS } from "../../capture/scripts/engine.ts";
-import { appAsar } from "../../capture/scripts/obsidian.ts";
-import { embedMathjaxFonts } from "../compare/fonts.ts";
 import { changes, compareStates } from "./compare-states.ts";
 import { touchedComponents } from "./elements.ts";
-import { forceStates } from "./force-states.ts";
-import { frameCsp, frameDocument, type ImageSize } from "./frame.ts";
+import { type Focus, frameCsp, frameDocument, replayCall } from "./frame.ts";
 import { type FixtureResult, mergeRun, pairKey, resultsFor, type Store } from "./results.ts";
-import { parseChoice, resolveSide, type Side } from "./sides.ts";
+import { parseChoice, resolveSide, type Side, sha256 } from "./sides.ts";
 import { organization } from "./source.ts";
 import type { CompareState, Diffs, ViewerData } from "./types.ts";
 
@@ -72,11 +71,11 @@ const OUT = `${ROOT}workbench/out`;
 
 // Every side resolved so far, by the hash of its CSS: the text to draw (states forced) and the
 // text as it was read. Frames and re-checks work from these bytes, never from a path again.
-const sheets = new Map<string, { forced: string; raw: string }>();
+const sheets = new Map<string, { raw: string }>();
 const MAX_SHEETS = 24;
 function remember(side: Side): void {
 	if (!sheets.has(side.sha256)) {
-		sheets.set(side.sha256, { forced: forceStates(side.css), raw: side.css });
+		sheets.set(side.sha256, { raw: side.css });
 		for (const old of [...sheets.keys()].slice(0, Math.max(0, sheets.size - MAX_SHEETS))) {
 			sheets.delete(old);
 		}
@@ -124,14 +123,15 @@ type FixtureIndex = Pick<ViewerData, "components"> & {
 		/** Components found inside the capture. */
 		contains: string[];
 		format?: "xhtml";
-		imageSizes?: ImageSize[];
+		/** The rest is what capture's replay reads (see capture/scripts/types.ts). */
+		viewport?: [number, number];
+		quirks?: boolean;
+		styles?: string[];
+		runtimeStyles?: string[];
+		trimSelector?: string;
+		imageSizes?: { index: number; width: number; height: number; file?: string }[];
+		canvasPixels?: { index: number; frame?: string | null; file: string }[];
 	})[];
-};
-
-// The window sizes of the emulated mobile captures (capture/scripts/obsidian.ts).
-const VIEWPORTS: Record<string, [number, number]> = {
-	"mobile-phone": [390, 844],
-	"mobile-tablet": [1024, 768],
 };
 
 /** What a compare report found for each of its captures, in the form the workbench keeps. */
@@ -212,20 +212,21 @@ function ingest(index: FixtureIndex): void {
 	writeFileSync(STORE, JSON.stringify(store));
 }
 
-async function data(index: FixtureIndex): Promise<ViewerData> {
+async function data(index: FixtureIndex, frameOrigin: string): Promise<ViewerData> {
 	ingest(index);
 	return {
+		frameOrigin,
 		organization: await organization(),
 		appCss: existsSync(paths.app),
-		cmCss: existsSync(paths.cm),
-		fixtures: index.fixtures.map(({ id, file, component, surface, state, note }) => ({
+		cmCss: existsSync(`${ROOT}capture/.app/runtime`),
+		fixtures: index.fixtures.map(({ id, file, component, surface, state, note, viewport }) => ({
 			id,
 			component,
 			surface,
 			state,
 			note,
 			size: statSync(`${ROOT}capture/fixtures/${file}`).size,
-			viewport: VIEWPORTS[surface],
+			viewport,
 		})),
 		components: index.components,
 		usage: (json(paths.usage) as ViewerData["usage"] | null) ?? [],
@@ -233,35 +234,116 @@ async function data(index: FixtureIndex): Promise<ViewerData> {
 	};
 }
 
-// Stylesheets with forced states, kept until the file changes.
-const cssCache = new Map<string, { mtime: number; css: string }>();
-function sheet(path: string): string | null {
-	if (!existsSync(path)) return null;
-	const mtime = statSync(path).mtimeMs;
-	const hit = cssCache.get(path);
-	if (hit?.mtime === mtime) return hit.css;
-	const out = forceStates(readFileSync(path, "utf8"));
-	cssCache.set(path, { mtime, css: out });
-	return out;
+// --- Replay inputs: what the compare tool hands capture's replay, built the same way -----------
+
+const APP = `${ROOT}capture/.app`;
+const IMAGE_TYPES: Record<string, string> = {
+	png: "image/png",
+	jpg: "image/jpeg",
+	jpeg: "image/jpeg",
+	gif: "image/gif",
+	svg: "image/svg+xml",
+	webp: "image/webp",
+	avif: "image/avif",
+	bmp: "image/bmp",
+};
+
+// Stylesheets rewritten for replay by capture's replayCss, kept by what they were made from.
+const transformed = new Map<string, string>();
+function replaySheet(key: string, text: () => string, touch: boolean): string {
+	const id = `${key}:${touch}`;
+	let css = transformed.get(id);
+	if (css === undefined) {
+		css = replayCss(text(), touch);
+		transformed.set(id, css);
+		for (const old of [...transformed.keys()].slice(0, Math.max(0, transformed.size - 200))) {
+			transformed.delete(old);
+		}
+	}
+	return css;
 }
 
-// Obsidian's runtime rules with MathJax's fonts embedded the way the compare tool embeds them, so
-// frames ask the server for no font but the app's own.
-let runtime: { mtime: number; css: string } | undefined;
-function runtimeSheet(): string | null {
-	if (!existsSync(paths.cm)) return null;
-	const mtime = statSync(paths.cm).mtimeMs;
-	if (runtime?.mtime !== mtime) {
-		const css = readFileSync(paths.cm, "utf8");
-		let embedded = css;
-		try {
-			embedded = embedMathjaxFonts(css);
-		} catch (e) {
-			console.warn(`MathJax fonts not embedded: ${e}`);
-		}
-		runtime = { mtime, css: forceStates(embedded) };
+/** One stylesheet of a fixture's recorded list: the app's, the side's theme, or a runtime sheet. */
+function styleFor(token: string, side: string, touch: boolean): string {
+	if (token === "theme")
+		return replaySheet(`theme:${side}`, () => sheets.get(side)?.raw ?? "", touch);
+	if (token === "app") {
+		const mtime = statSync(paths.app).mtimeMs;
+		return replaySheet(`app:${mtime}`, () => readFileSync(paths.app, "utf8"), touch);
 	}
-	return runtime.css;
+	// Runtime sheets are named by a hash of their content.
+	if (!/^[0-9a-f]+$/.test(token) || !existsSync(`${APP}/runtime/${token}.css`)) return "";
+	return replaySheet(
+		`runtime:${token}`,
+		() => readFileSync(`${APP}/runtime/${token}.css`, "utf8"),
+		touch,
+	);
+}
+
+/** A fixture's stylesheets in their recorded order, with app asset URLs pointed at the workbench. */
+function stylesheets(tokens: string[], side: string, touch: boolean, origin: string): string {
+	return tokens
+		.map((t) => styleFor(t, side, touch))
+		.join("\n")
+		.replaceAll('url("./public/', `url("${origin}/assets/public/`)
+		.replaceAll('url("/lib/', `url("${origin}/assets/lib/`);
+}
+
+// The stylesheet each frame links, by the hash of its text: a frame can only ask for text the
+// workbench itself put together.
+const replaySheets = new Map<string, string>();
+function publish(css: string): string {
+	const hash = sha256(css);
+	replaySheets.set(hash, css);
+	for (const old of [...replaySheets.keys()].slice(0, Math.max(0, replaySheets.size - 60))) {
+		replaySheets.delete(old);
+	}
+	return hash;
+}
+
+type Captured = FixtureIndex["fixtures"][number];
+
+/** Everything capture's replay needs to draw one fixture with one side's theme. */
+function replayInput(fixture: Captured, side: string, origin: string) {
+	const touch = fixture.id.startsWith("mobile.");
+	const tokens = fixture.runtimeStyles ?? fixture.styles ?? ["app", "runtime", "theme"];
+	const html = readFileSync(`${ROOT}capture/fixtures/${fixture.file}`, "utf8")
+		.replaceAll('url("./public/', `url("${origin}/assets/public/`)
+		.replaceAll('url("/lib/', `url("${origin}/assets/lib/`)
+		.replaceAll('src="/lib/', `src="${origin}/assets/lib/`);
+	// Each nested frame's own stylesheets, by the list recorded on it.
+	const frames: Record<string, string> = {};
+	for (const match of html.matchAll(/data-capture-frame-styles=(?:"|(?:&amp;)*&quot;)([^"&]*)/g)) {
+		const key = match[1] ?? "";
+		frames[key] = stylesheets(key.split(" ").filter(Boolean), side, touch, origin);
+	}
+	const data = (file: string) => readFileSync(`${ROOT}capture/fixtures/${file}`).toString("base64");
+	return {
+		stylesheet: publish(
+			`${stylesheets(tokens, side, touch, origin)}\n[data-capture-placeholder], [data-capture-placeholder] * {visibility:hidden!important}`,
+		),
+		input: {
+			html,
+			sizes: (fixture.imageSizes ?? []).map((im) => ({
+				index: im.index,
+				width: im.width,
+				height: im.height,
+				// An image the capture saved is drawn as it was; others get a same-size stand-in.
+				url: im.file
+					? `data:${IMAGE_TYPES[im.file.split(".").pop() ?? ""] ?? "image/png"};base64,${data(im.file)}`
+					: null,
+			})),
+			canvases: (fixture.canvasPixels ?? []).map((c) => ({
+				index: c.index,
+				frame: c.frame ?? null,
+				b64: data(c.file),
+			})),
+			frames,
+			trimSelector: fixture.trimSelector ?? null,
+			// The side's own sizes and overflow show, as in the compare tool.
+			options: { forceRecordedGeometry: false },
+		},
+	};
 }
 
 function send(res: ServerResponse, status: number, type: string, body: string | Uint8Array): void {
@@ -279,11 +361,8 @@ export function viewer(): Plugin {
 			const byId = new Map(index.fixtures.map((f) => [f.id, f]));
 			// The compare tool's font embedding reads paths relative to the repository root.
 			process.chdir(ROOT);
-			// Bumped on every change so frames fetch fresh CSS while unchanged CSS stays cached.
-			let version = Date.now();
-			for (const path of [paths.diffs, paths.compare, paths.app, paths.cm]) {
+			for (const path of [paths.diffs, paths.compare, paths.app]) {
 				watchFile(path, { interval: 300 }, () => {
-					version = Date.now();
 					server.ws.send({ type: "full-reload" });
 				});
 			}
@@ -308,12 +387,93 @@ export function viewer(): Plugin {
 				req.headers.origin === `http://${req.headers.host}` &&
 				(req.headers["content-type"] ?? "").startsWith("application/json");
 
+			// Fixture frames live at an address of their own: the next port. They never share the
+			// workbench's origin, so nothing in a frame can read the workbench or call its API, while
+			// the replay can still reach the frames nested inside its own document.
+			const port = server.config.server.port ?? 5175;
+			const pageOrigin = `http://127.0.0.1:${port}`;
+			const origin = `http://127.0.0.1:${port + 1}`;
+			const frames = createServer((req, res) => {
+				if (req.headers.host !== `127.0.0.1:${port + 1}` || req.method !== "GET") {
+					return void send(res, 404, "text/plain", "Not found");
+				}
+				const url = new URL(req.url ?? "/", origin);
+				const [, area, a, b] = url.pathname.split("/").map(decodeURIComponent);
+				if (area === "frame" && a && sheets.has(a) && b && byId.has(b)) {
+					const fixture = byId.get(b) as Captured;
+					const nonce = randomUUID();
+					const component = url.searchParams.get("focus") ?? "";
+					const selector = COMPONENTS[component];
+					const focus: Focus | null = selector
+						? { is: selector, not: moreSpecific(component) }
+						: null;
+					const { stylesheet, input } = replayInput(fixture, a, origin);
+					replayCall(input)
+						.then((call) => {
+							res.setHeader("Content-Security-Policy", frameCsp(origin, pageOrigin, nonce));
+							res.setHeader("Cache-Control", "no-store");
+							send(
+								res,
+								200,
+								"text/html; charset=utf-8",
+								frameDocument({
+									call,
+									stylesheet: `${origin}/css/replay/${stylesheet}.css`,
+									focus,
+									nonce,
+									quirks: Boolean(fixture.quirks),
+								}),
+							);
+						})
+						.catch((e) => send(res, 500, "text/plain", String(e)));
+					return;
+				}
+				if (area === "css" && a === "replay" && b) {
+					// A frame's stylesheet, named by the hash of its text: only text the workbench built.
+					const css = replaySheets.get(b.replace(/\.css$/, ""));
+					if (css === undefined) return void send(res, 404, "text/plain", "Not found");
+					res.setHeader("Cache-Control", "max-age=31536000, immutable");
+					return send(res, 200, "text/css; charset=utf-8", css);
+				}
+				if (url.pathname.startsWith("/assets/")) {
+					// The app's own fonts and images, from the files extracted beside app.css. The real
+					// path must be a file inside that folder.
+					const root = `${APP}/assets`;
+					const path = resolve(root, decodeURIComponent(url.pathname.slice("/assets/".length)));
+					if (!existsSync(path)) return void send(res, 404, "text/plain", "Not found");
+					const real = realpathSync(path);
+					if (!real.startsWith(realpathSync(root) + sep) || !statSync(real).isFile()) {
+						return void send(res, 404, "text/plain", "Not found");
+					}
+					// Frames are sandboxed (origin "null"), and fonts are fetched with CORS.
+					res.setHeader("Access-Control-Allow-Origin", "null");
+					res.setHeader("Cache-Control", "max-age=31536000, immutable");
+					const type =
+						{ svg: "image/svg+xml", woff2: "font/woff2", ttf: "font/ttf", png: "image/png" }[
+							real.split(".").pop() ?? ""
+						] ?? "application/octet-stream";
+					return send(res, 200, type, readFileSync(real));
+				}
+				send(res, 404, "text/plain", "Not found");
+			});
+			// Vite restarts itself when this plugin's files change: the frame server it had must be
+			// gone before the new one takes the port, so wait for the old one and retry if needed.
+			const held = globalThis as { mwFrames?: ReturnType<typeof createServer> };
+			const previous = held.mwFrames;
+			held.mwFrames = frames;
+			let tries = 0;
+			frames.on("error", (e: NodeJS.ErrnoException) => {
+				if (e.code !== "EADDRINUSE" || ++tries > 20) throw e;
+				setTimeout(() => frames.listen(port + 1, "127.0.0.1"), 250);
+			});
+			const listen = () => frames.listen(port + 1, "127.0.0.1");
+			if (previous?.listening) previous.close(listen);
+			else listen();
+			server.httpServer?.on("close", () => frames.close());
+
 			server.middlewares.use((req, res, next) => {
 				const url = new URL(req.url ?? "/", "http://viewer");
-				const [, area, a, b] = url.pathname.split("/").map(decodeURIComponent);
-				// Frames have no origin of their own (sandbox), so every URL they load is spelled out.
-				const origin = `http://${req.headers.host}`;
-
+				const [, area] = url.pathname.split("/").map(decodeURIComponent);
 				if (url.pathname === "/api/sides") {
 					// Resolve what each side points at. The page gets a label and a hash, never the text.
 					if (!fromPage(req)) return send(res, 403, "text/plain", "Forbidden");
@@ -400,62 +560,10 @@ export function viewer(): Plugin {
 					return send(res, 200, "application/json", JSON.stringify(resultsFor(store, key)));
 				}
 				if (url.pathname === "/api/data") {
-					data(index)
+					data(index, origin)
 						.then((all) => send(res, 200, "application/json", JSON.stringify(all)))
 						.catch((e) => send(res, 500, "text/plain", String(e)));
 					return;
-				}
-				if (area === "frame" && a && sheets.has(a) && b && byId.has(b)) {
-					const nonce = randomUUID();
-					const component = url.searchParams.get("focus") ?? "";
-					const selector = COMPONENTS[component];
-					const focus = selector ? { is: selector, not: moreSpecific(component) } : null;
-					// Runtime rules, app CSS, then the side's theme by its hash: the compare tool's order.
-					const styles = [
-						`${origin}/css/cm.css?v=${version}`,
-						`${origin}/css/app.css?v=${version}`,
-						`${origin}/css/theme/${a}.css`,
-					];
-					const fixture = byId.get(b);
-					const html = readFileSync(`${ROOT}capture/fixtures/${fixture?.file}`, "utf8");
-					// The content decides: synthetic platform variants keep ".html" names for XHTML text.
-					const xhtml = fixture?.format === "xhtml" || html.startsWith("<?xml");
-					res.setHeader("Content-Security-Policy", frameCsp(origin, nonce));
-					res.setHeader("Cache-Control", "no-store");
-					return send(
-						res,
-						200,
-						xhtml ? "application/xhtml+xml; charset=utf-8" : "text/html; charset=utf-8",
-						frameDocument(html, styles, focus, nonce, fixture?.imageSizes, xhtml),
-					);
-				}
-				if (area === "css" && a === "public" && b && /^[\w.-]+$/.test(b)) {
-					// Fonts and images app.css points at, read straight from the local Obsidian install.
-					try {
-						const asar = appAsar() ?? "/usr/lib/obsidian/obsidian.asar";
-						const file = extractFile(asar, `public/${b}`);
-						// Frames are sandboxed (origin "null"), and fonts are fetched with CORS.
-						res.setHeader("Access-Control-Allow-Origin", "null");
-						res.setHeader("Cache-Control", "max-age=31536000, immutable");
-						const type = b.endsWith(".svg") ? "image/svg+xml" : "application/octet-stream";
-						return send(res, 200, type, file);
-					} catch {
-						return send(res, 404, "text/plain", "Not found");
-					}
-				}
-				if (area === "css" && a === "theme" && b) {
-					// A side's theme, named by the hash of its text: only text a side resolved to.
-					const theme = sheets.get(b.replace(/\.css$/, ""));
-					if (!theme) return send(res, 404, "text/plain", "Not found");
-					res.setHeader("Cache-Control", "max-age=31536000, immutable");
-					return send(res, 200, "text/css; charset=utf-8", theme.forced);
-				}
-				if (area === "css" && a && !b) {
-					const name = a.replace(/\.css$/, "");
-					const body = name === "cm" ? runtimeSheet() : name === "app" ? sheet(paths.app) : null;
-					if (body === null) return send(res, 404, "text/plain", "Not found");
-					res.setHeader("Cache-Control", "max-age=31536000, immutable");
-					return send(res, 200, "text/css; charset=utf-8", body);
 				}
 				const picture = /^\/diff\/([0-9a-f]{64})\/([0-9a-f]{64})\/(.+)$/.exec(url.pathname);
 				if (picture) {
@@ -467,7 +575,7 @@ export function viewer(): Plugin {
 					res.setHeader("Cache-Control", "no-store");
 					return send(res, 200, "image/png", readFileSync(file));
 				}
-				if (["frame", "css", "diff", "lib"].includes(area ?? "")) {
+				if (["frame", "css", "diff", "lib", "assets"].includes(area ?? "")) {
 					return send(res, 404, "text/plain", "Not found");
 				}
 				next();

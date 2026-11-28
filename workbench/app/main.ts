@@ -336,7 +336,7 @@ const lazy = new IntersectionObserver(
 
 /** One fixture under one theme, cropped to the shown element once the frame reports it. */
 const frameUrl = (sha: string, id: string, focus?: string) =>
-	`/frame/${sha}/${encodeURIComponent(id)}${focus ? `?focus=${encodeURIComponent(focus)}` : ""}`;
+	`${data.frameOrigin}/frame/${sha}/${encodeURIComponent(id)}${focus ? `?focus=${encodeURIComponent(focus)}` : ""}`;
 
 function shot(f: Fixture, which: Which, label: boolean, focus?: string): HTMLElement {
 	const sha = hashOf(which);
@@ -355,8 +355,9 @@ function shot(f: Fixture, which: Which, label: boolean, focus?: string): HTMLEle
 		"data-fixture": f.id,
 		"data-focus": focus ?? "",
 		title: `${f.id} (${labelOf(which)})`,
-		// Captured markup is untrusted: no same-origin access, only the viewer's own measuring script.
-		sandbox: "allow-scripts",
+		// Captured markup is untrusted. The frame is served from its own address, so "same origin"
+		// here means that address, never the workbench's; only the replay script may run in it.
+		sandbox: "allow-scripts allow-same-origin",
 		width: String((f.viewport ?? DESKTOP)[0]),
 		height: String((f.viewport ?? DESKTOP)[1]),
 		tabindex: "-1",

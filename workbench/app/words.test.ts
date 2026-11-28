@@ -17,6 +17,9 @@ it("says not-proven reasons in plain words", () => {
 	expect(plainReason("embed content is not reconstructed")).toBe(
 		"contains embed content the tool cannot rebuild",
 	);
+	expect(plainReason("background image content is not reconstructed")).toBe(
+		"contains a background image the tool cannot load",
+	);
 	expect(plainReason("something new")).toBe("something new");
 });
 

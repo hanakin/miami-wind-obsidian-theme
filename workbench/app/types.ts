@@ -43,6 +43,8 @@ export interface ViewerData {
 	usage: Usage[];
 	/** Why compare.json could not be used, when it exists but is not a schemaVersion 1 report. */
 	compareError?: string;
+	/** Where fixture frames are served: an address of their own, apart from the workbench's. */
+	frameOrigin: string;
 	/** The sidebar: items grouped by the source file that styles them, and the overlaps found. */
 	organization: Organization;
 }

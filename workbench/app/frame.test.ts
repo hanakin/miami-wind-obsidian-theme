@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { frameCsp, frameDocument, sanitize } from "./frame.ts";
+import { frameCsp, frameDocument, replayCall, sanitize } from "./frame.ts";
 
 it("strips scripts and inline handlers from captured markup", () => {
 	expect(sanitize('<p onclick="x()" class="a">hi</p><script>alert(1)</script>')).toBe(
@@ -12,72 +12,64 @@ it("strips scripts and inline handlers from captured markup", () => {
 	);
 });
 
-it("puts only the viewer's own script in the frame, behind the nonce", () => {
-	const doc = frameDocument(
-		'<html><head><meta charset="utf-8"><script>evil()</script></head><body onload="evil()"><b>x</b></body></html>',
-		["/css/cm.css", "/css/app.css", "/css/new.css"],
-		{ is: "button", not: [".clickable-icon"] },
-		"N1",
+const input = (html: string) => ({
+	html,
+	sizes: [],
+	canvases: [],
+	frames: {},
+	trimSelector: null,
+	options: { forceRecordedGeometry: false },
+});
+
+it("takes the shared replay's own page step, with the fixture cleaned first", async () => {
+	const call = await replayCall(
+		input('<html><body onload="evil()"><b>x</b><script>evil()</script></body></html>'),
 	);
-	expect(doc).not.toContain("evil");
+	// The function capture's replayFixture runs in a page, not a copy of it.
+	expect(call.source).toContain("DOMParser");
+	expect(call.source).toContain("data-capture-runtime");
+	const [html, , , , , force] = call.args as [string, unknown, unknown, unknown, unknown, boolean];
+	expect(html).toBe("<html><body><b>x</b></body></html>");
+	expect(force).toBe(false);
+});
+
+it("puts one script in the frame, behind the nonce, and nothing can close it early", async () => {
+	const call = await replayCall(
+		input("<html><body><p>a </script><script>evil()</script> <!-- b</p></body></html>"),
+	);
+	const doc = frameDocument({
+		call,
+		stylesheet: "/css/replay/abc.css",
+		focus: { is: "button", not: [".clickable-icon"] },
+		nonce: "N1",
+		quirks: false,
+	});
+	expect(doc.startsWith("<!doctype html>")).toBe(true);
 	expect(doc.match(/<script/g)).toHaveLength(1);
+	expect(doc.match(/<\/script/g)).toHaveLength(1);
 	expect(doc).toContain('<script nonce="N1">');
-	expect(doc.indexOf("cm.css")).toBeLessThan(doc.indexOf("app.css"));
-	expect(doc.indexOf("app.css")).toBeLessThan(doc.indexOf("new.css"));
-	const csp = frameCsp("http://127.0.0.1:5175", "N1");
+	expect(doc).not.toContain("<!--");
+	expect(doc).toContain('<link id="replay" rel="stylesheet" href="/css/replay/abc.css">');
+	// A fixture captured in quirks mode is replayed without a doctype.
+	expect(
+		frameDocument({
+			call,
+			stylesheet: "/s.css",
+			focus: null,
+			nonce: "N1",
+			quirks: true,
+		}).startsWith("<html>"),
+	).toBe(true);
+});
+
+it("allows only the nonce'd script and the frame address's own paths", () => {
+	const csp = frameCsp("http://127.0.0.1:5176", "http://127.0.0.1:5175", "N1");
 	expect(csp).toContain("script-src 'nonce-N1'");
-	expect(csp).toContain("sandbox allow-scripts;");
-	expect(csp).not.toContain("allow-same-origin");
-});
-
-it("styles captured srcdoc iframes like the outer frame and locks them down", () => {
-	const inner =
-		'<!doctype html><html><head><base href="app://obsidian.md/index.html"></head><body onload="evil()"><p class="a">A &amp; B</p></body></html>';
-	const attr = inner.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
-	const doc = frameDocument(
-		`<html><head><meta charset="utf-8"></head><body><iframe class="embed-iframe" sandbox="allow-same-origin allow-scripts" srcdoc="${attr}" data-capture-iframe-styles="link app.css"></iframe><img src="app://x/a.png"></body></html>`,
-		["/css/app.css", "/css/new.css"],
-		null,
-		"N1",
-		[{ index: 0, width: 480, height: 270 }],
-	);
-	expect(doc).toContain('<iframe sandbox="" class="embed-iframe"');
-	expect(doc).not.toContain("allow-same-origin");
-	expect(doc).not.toContain("evil");
-	expect(doc).not.toContain("app://obsidian.md");
-	// The inner document carries the same stylesheet links, escaped inside the attribute.
-	expect(doc).toContain("<head><link rel=&quot;stylesheet&quot; href=&quot;/css/app.css&quot;>");
-	expect(doc).toContain("A &amp;amp; B");
-	expect(doc).toContain('"width":480,"height":270');
-	expect(frameCsp("http://127.0.0.1:5175", "N1")).toContain("frame-src about:");
-});
-
-it("builds XHTML fixtures as well-formed XML and hides the capture's stand-ins", () => {
-	const doc = frameDocument(
-		'<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title></title></head><body><p><div data-capture-target="">x</div></p><hr data-capture-placeholder=""/></body></html>',
-		["/css/app.css?v=1"],
-		{ is: "a", not: ["b"] },
-		"N1",
-		[],
-		true,
-	);
-	expect(doc).toContain('<meta charset="utf-8"/><link rel="stylesheet" href="/css/app.css?v=1"/>');
-	expect(doc).toContain("[data-capture-placeholder] { display: none !important; }");
-	expect(doc).toContain('<script nonce="N1">//<![CDATA[');
-	expect(doc).toContain("//]]></script></head>");
-});
-
-it("keeps the runtime rules a capture carries in its own head", () => {
-	const doc = frameDocument(
-		'<!doctype html><html><head><meta charset="utf-8"><style data-capture-runtime="mathjax">mjx-c.mjx-c32 { padding: 1em; }</style><style>.other { color: red; }</style></head><body><p>x</p></body></html>',
-		["/css/cm.css", "/css/app.css"],
-		null,
-		"N1",
-	);
-	expect(doc).toContain(
-		'<style data-capture-runtime="mathjax">mjx-c.mjx-c32 { padding: 1em; }</style>',
-	);
-	// Only the capture's marked runtime rules are kept, and they come before the stylesheets.
-	expect(doc).not.toContain(".other");
-	expect(doc.indexOf("mjx-c32")).toBeLessThan(doc.indexOf("/css/cm.css"));
+	expect(csp).not.toContain("unsafe-eval");
+	expect(csp).toContain("default-src 'none'");
+	expect(csp).toContain("connect-src data:;");
+	expect(csp).toContain("img-src http://127.0.0.1:5176/assets/ data: blob:");
+	// Nothing in it names the workbench's own address except who may show the frame.
+	expect(csp.split("5175")).toHaveLength(2);
+	expect(csp).toContain("frame-ancestors http://127.0.0.1:5175");
 });

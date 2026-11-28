@@ -29,6 +29,8 @@ const CONTENT: Record<string, string> = {
 	audio: "audio the tool cannot replay",
 	iframe: "an embedded page the tool cannot rebuild",
 	img: "an image the tool cannot load",
+	webview: "an embedded web page the tool cannot rebuild",
+	"background image": "a background image the tool cannot load",
 };
 
 const REASONS: Record<string, string> = {
@@ -40,7 +42,7 @@ const REASONS: Record<string, string> = {
 
 /** A compare tool not-proven reason, said plainly. Unknown reasons pass through unchanged. */
 export function plainReason(reason: string): string {
-	const content = /^(\w+) content is not reconstructed$/.exec(reason);
+	const content = /^([\w ]+) content is not reconstructed$/.exec(reason);
 	if (content) {
 		return `contains ${CONTENT[content[1] ?? ""] ?? `${content[1]} content the tool cannot rebuild`}`;
 	}
