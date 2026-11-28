@@ -355,7 +355,7 @@ export async function checkFixture(
 		if (differs)
 			return {
 				status: "fail",
-				why: `text styles differ from live: ${differs[0].replaceAll("|", " ").slice(0, 160)} (${now[differs[0]] ?? 0} run(s) replayed, ${liveText[differs[0]] ?? 0} live)`,
+				why: `text styles differ from live: ${differs[0].split("|").slice(1).join(" ").trim()} in ${differs[0].split("|")[0]?.slice(0, 60)} (${now[differs[0]] ?? 0} element(s) replayed, ${liveText[differs[0]] ?? 0} live)`,
 			};
 	}
 	const ev = f.evidence;
@@ -421,6 +421,23 @@ export async function checkFixture(
 	const forced = (f.evidence?.media ?? "").includes("forced-colors");
 	const replayShot = `${WORK}/replay/${f.id}.png`;
 	const full = await page.screenshot({ path: replayShot });
+	// A selection highlight is placed a pixel apart by the two builds: shot without it too, so
+	// the compare knows exactly where it paints (its edge rows get the text tolerance).
+	let noSel: Buffer | null = null;
+	if (await page.evaluate(() => !!getSelection()?.rangeCount && !getSelection()?.isCollapsed)) {
+		await page.evaluate(() => {
+			const s = getSelection() as Selection;
+			(window as unknown as { __sel: Range[] }).__sel = [...Array(s.rangeCount)].map((_, i) =>
+				s.getRangeAt(i).cloneRange(),
+			);
+			s.removeAllRanges();
+		});
+		noSel = await page.screenshot();
+		await page.evaluate(() => {
+			const s = getSelection() as Selection;
+			for (const r of (window as unknown as { __sel: Range[] }).__sel) s.addRange(r);
+		});
+	}
 	let maskA: Buffer | null = null;
 	let maskB: Buffer | null = null;
 	if (got.masked) {
@@ -443,6 +460,8 @@ export async function checkFixture(
 	await page.evaluate(() => {
 		for (const e of document.querySelectorAll("[data-mutation]")) e.remove();
 	});
+	// Text boxes, then soft edge bands (flagged 1: tolerance like text, no ink check).
+	const textArg: number[][] = [...(got.text ?? []), ...(got.soft ?? []).map((b) => [...b, 1])];
 	const res = (await env.cmp.evaluate(compare, [
 		readFileSync(shot).toString("base64"),
 		full.toString("base64"),
@@ -452,10 +471,11 @@ export async function checkFixture(
 		EDGE,
 		EDGE_LOSS,
 		!!process.env.REPLAY_DEBUG,
-		got.text ?? [],
+		textArg,
 		TOLERANCE,
 		pixelRegions,
 		forced,
+		noSel?.toString("base64") ?? null,
 	] as const)) as {
 		blocks: number;
 		bad: number;
@@ -539,6 +559,7 @@ async function compare([
 	TOL,
 	pixelRegions,
 	FORCED,
+	NO_SEL,
 ]: readonly [
 	string,
 	string,
@@ -552,6 +573,7 @@ async function compare([
 	{ solid: number; text: number; shift: number },
 	number[][],
 	boolean,
+	string | null,
 ]) {
 	const data = async (b64: string) => {
 		const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${b64}`)).blob());
@@ -637,6 +659,31 @@ async function compare([
 		for (let y = Math.max(0, Math.floor(ty) - 1); y < Math.min(H, Math.ceil(ty + th) + 1); y++)
 			for (let x = Math.max(0, Math.floor(tx) - 1); x < Math.min(W, Math.ceil(tx + tw) + 1); x++)
 				textMap[y * W + x] = 1;
+	// The selection highlight's edges: where the replay with and without the selection differ,
+	// the top and bottom rows of each run, 1 px up or down; along a row, as far as 32 px past a
+	// run's end (where two lines' highlights meet, one build draws a step the other does not).
+	if (NO_SEL) {
+		const n = await data(NO_SEL);
+		const sel = (x: number, y: number) => {
+			const p = (y * W + x) * 4;
+			return (
+				Math.abs((b.data[p] ?? 0) - (n.data[p] ?? 0)) +
+					Math.abs((b.data[p + 1] ?? 0) - (n.data[p + 1] ?? 0)) +
+					Math.abs((b.data[p + 2] ?? 0) - (n.data[p + 2] ?? 0)) >
+				24
+			);
+		};
+		for (let y = 0; y < H; y++)
+			for (let x = 0; x < W; x++) {
+				if (!sel(x, y)) continue;
+				const edge = y === 0 || y === H - 1 || !sel(x, y - 1) || !sel(x, y + 1);
+				if (!edge) continue;
+				for (let j = -1; j <= 1; j++)
+					for (let i = -32; i <= 32; i++)
+						if (y + j >= 0 && y + j < H && x + i >= 0 && x + i < W)
+							textMap[(y + j) * W + x + i] = 1;
+			}
+	}
 	// Per pixel, both ways: a pixel matches when a pixel within 1 px on the other side has the
 	// same color (every channel within the tolerance). Counted apart for text and for the rest.
 	const near = (
@@ -789,10 +836,21 @@ async function compare([
 	const [r0x = 0, r0y = 0, r0rx = 0, r0ry = 0] = pixelRegions[0] ?? [];
 	const offX = Math.round(r0x) - Math.round(r0rx);
 	const offY = Math.round(r0y) - Math.round(r0ry);
-	const ink = (d: ImageData, x0: number, y0: number, w: number, h: number) => {
+	// Masked pixels (a caret, an animated part) are left out; mx, my is the box's replay origin.
+	const ink = (
+		d: ImageData,
+		x0: number,
+		y0: number,
+		w: number,
+		h: number,
+		mx: number,
+		my: number,
+	) => {
+		const off = (x: number, y: number) => masked[(my + y - y0) * W + mx + x - x0] === 1;
 		const count = new Map<number, number>();
 		for (let y = y0; y < y0 + h; y++)
 			for (let x = x0; x < x0 + w; x++) {
+				if (off(x, y)) continue;
 				const p = (y * d.width + x) * 4;
 				const k =
 					((d.data[p] ?? 0) >> 4) * 256 +
@@ -808,6 +866,7 @@ async function compare([
 		let far = -1;
 		for (let y = y0; y < y0 + h; y++)
 			for (let x = x0; x < x0 + w; x++) {
+				if (off(x, y)) continue;
 				const p = (y * d.width + x) * 4;
 				const c = [d.data[p] ?? 0, d.data[p + 1] ?? 0, d.data[p + 2] ?? 0];
 				const dist =
@@ -816,7 +875,8 @@ async function compare([
 			}
 		return { ink: best, far: Math.sqrt(far) };
 	};
-	for (const [tx = 0, ty = 0, tw = 0, th = 0] of textBoxes) {
+	for (const [tx = 0, ty = 0, tw = 0, th = 0, softBand = 0] of textBoxes) {
+		if (softBand) continue;
 		const X0 = Math.round(tx);
 		const Y0 = Math.round(ty);
 		const w = Math.round(tw);
@@ -831,10 +891,10 @@ async function compare([
 				X0 >= rx && Y0 >= ry && X0 + w <= rx + rw && Y0 + h <= ry + rh,
 		);
 		if (!inRegion || masked[(Y0 + (h >> 1)) * W + X0 + (w >> 1)]) continue;
-		const rp = ink(b, X0, Y0, w, h);
+		const rp = ink(b, X0, Y0, w, h, X0, Y0);
 		// Forced colors: the palette-mapped ink, or the ink as it is.
 		const diff = (src: ImageData) => {
-			const lv = ink(src, x0, y0, w, h);
+			const lv = ink(src, x0, y0, w, h, X0, Y0);
 			if (lv.far < 30 && rp.far < 30) return 0;
 			return Math.max(...lv.ink.map((v, k) => Math.abs(v - (rp.ink[k] ?? 0))));
 		};

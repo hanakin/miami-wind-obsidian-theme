@@ -489,6 +489,10 @@ export async function captureItem(
 			await page.evaluate(
 				"(async () => { const d = window.__cap.target?.ownerDocument ?? document; for (let i = 0; i < 40; i++) { const r = d.getAnimations().filter((a) => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming?.().endTime ?? Infinity)); if (!r.length) break; await new Promise((ok) => setTimeout(ok, 25)); } })()",
 			);
+			// Canvases (the graph's force layout, in its frame) keep drawing for a while: wait until
+			// every shown canvas, in frames too, has held its pixels for 400 ms (at most 8 s), so the
+			// pixels saved after the shot are the ones it shows.
+			await page.evaluate("window.cap.canvasesStill(8000)");
 		}
 		const vp = (await page.evaluate(
 			"({ width: innerWidth, height: innerHeight, hover: matchMedia('(hover: hover)').matches, finePointer: matchMedia('(pointer: fine)').matches, dark: matchMedia('(prefers-color-scheme: dark)').matches, canvas: (() => { const d = document.createElement('div'); d.style.backgroundColor = 'Canvas'; document.body.append(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return c; })() })",
@@ -615,13 +619,12 @@ export async function captureItem(
 				`data-capture-frame-styles=${q}${saveSheets(snap.frameSheets[Number(k)] ?? []).join(" ")}${q}`,
 		);
 		writeFileSync(join(out.fixturesDir, file), html);
-		// Canvas pixels as PNG files named by content (PDF pages repeat across fixtures). WebGL
-		// canvases read back empty, so those come from the screen.
+		// Canvas pixels as PNG files named by content (PDF pages repeat across fixtures). A canvas
+		// that cannot be read (tainted) comes from the screen.
 		const canvasPixels: NonNullable<FixtureEntry["canvasPixels"]> = [];
 		for (const c of snap.canvasPixels) {
 			const [cx = 0, cy = 0, cw = 0, ch = 0] = c.rect;
-			// From the shot itself when the canvas lies inside it: a moving canvas (the graph's
-			// force layout) must match the shot, not a moment later.
+			// From the shot itself when the canvas lies inside it.
 			const x0 = Math.round(cx - clip.x);
 			const y0 = Math.round(cy - clip.y);
 			const inShot =
@@ -630,9 +633,7 @@ export async function captureItem(
 				y0 >= 0 &&
 				x0 + Math.round(cw) <= clip.width + 1 &&
 				y0 + Math.round(ch) <= clip.height + 1;
-			// A canvas inside a frame (the graph's renderer) keeps drawing after the shot: from the
-			// shot too.
-			const own = c.url && !(c.frame && inShot) ? c.url : null;
+			const own = c.url;
 			const png = own
 				? Buffer.from(own.slice(own.indexOf(",") + 1), "base64")
 				: inShot
