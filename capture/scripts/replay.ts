@@ -403,9 +403,13 @@ export async function replayFixture(
 					mark(o, "overlay");
 				}
 			}
-			// Background images from app: / https: files do not load offline either.
+			// Background images from app: / https: files do not load offline either (data: ones,
+			// and vault files put in place as data:, do).
 			for (const e of document.querySelectorAll("[style*='url(']")) {
-				if (!/url\(\s*["']?(?!data:)/.test(getComputedStyle(e).backgroundImage)) continue;
+				const urls = [
+					...getComputedStyle(e).backgroundImage.matchAll(/url\(\s*["']?([^"')]+)/g),
+				].map((m) => m[1] ?? "");
+				if (urls.every((u) => u.startsWith("data:"))) continue;
 				mark(e);
 			}
 			// Trimmed lists: each kept entry, live box and replayed box.

@@ -186,6 +186,7 @@ const keep = new Set(
 		f.file,
 		...(f.canvasPixels ?? []).map((c) => c.file),
 		...(f.imageSizes ?? []).flatMap((i) => (i.file ? [i.file] : [])),
+		...Object.values(f.styleImages ?? {}),
 	]),
 );
 for (const name of readdirSync(FIXTURES))
