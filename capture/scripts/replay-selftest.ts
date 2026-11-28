@@ -203,6 +203,27 @@ const CASES: { id: string; name: string; mutate?: Mutation; pass: boolean }[] = 
 		mutate: { css: ".search-input-container::before { background-color: #c586f7 !important; }" },
 		pass: false,
 	},
+	// A Bases card cover (a vault image as an inline background) is drawn and compared.
+	{ id: "qc.gap.bases-cards-cover", name: "unchanged", pass: true },
+	{
+		id: "qc.gap.bases-cards-cover",
+		name: "cover image hue-rotated",
+		mutate: { css: ".bases-cards-cover { filter: hue-rotate(90deg) !important; }" },
+		pass: false,
+	},
+	// QC round 8: the icon darkened without a color change.
+	{
+		id: "mobile.tablet.settings",
+		name: "search icon (image mask) at half opacity",
+		mutate: { css: ".search-input-container::before { opacity: 0.5 !important; }" },
+		pass: false,
+	},
+	{
+		id: "mobile.tablet.settings",
+		name: "search icon (image mask) at half brightness",
+		mutate: { css: ".search-input-container::before { filter: brightness(0.5) !important; }" },
+		pass: false,
+	},
 	{
 		id: "qc.media.forced-colors",
 		name: "table borders red (forced-color-adjust none)",

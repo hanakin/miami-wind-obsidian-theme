@@ -403,9 +403,13 @@ export async function replayFixture(
 					mark(o, "overlay");
 				}
 			}
-			// Background images from app: / https: files do not load offline either.
+			// Background images from app: / https: files do not load offline either (data: ones,
+			// and vault files put in place as data:, do).
 			for (const e of document.querySelectorAll("[style*='url(']")) {
-				if (!/url\(\s*["']?(?!data:)/.test(getComputedStyle(e).backgroundImage)) continue;
+				const urls = [
+					...getComputedStyle(e).backgroundImage.matchAll(/url\(\s*["']?([^"')]+)/g),
+				].map((m) => m[1] ?? "");
+				if (urls.every((u) => u.startsWith("data:"))) continue;
 				mark(e);
 			}
 			// Trimmed lists: each kept entry, live box and replayed box.
@@ -526,7 +530,9 @@ export async function replayFixture(
 			// An icon drawn by a pseudo-element's image mask (a search field's magnifier) at a
 			// fractional position is resampled differently (measured: 142 replayed, 112 live, inside a
 			// settings modal at 51.2, 57.6): its box, when not on whole pixels.
-			for (const e of document.body.querySelectorAll<HTMLElement>("[data-capture-paint]")) {
+			for (const e of document.body.querySelectorAll<HTMLElement>(
+				"[data-capture-paint][data-capture-paint-fx]",
+			)) {
 				if (getComputedStyle(e).position === "static") continue;
 				for (const pe of ["::before", "::after"]) {
 					const c = getComputedStyle(e, pe);
@@ -547,7 +553,7 @@ export async function replayFixture(
 			// Where two rounded inline backgrounds meet at a fractional pixel (a highlight's marks
 			// and its text), the notch they leave is drawn a pixel apart: their side edges.
 			for (const e of document.body.querySelectorAll<HTMLElement>(
-				":is(span, mark, code, a, em, strong)[data-capture-paint]",
+				":is(span, mark, code, a, em, strong)[data-capture-paint][data-capture-paint-fx]",
 			)) {
 				const cs = getComputedStyle(e);
 				if (!cs.display.startsWith("inline") || cs.borderRadius === "0px") continue;
@@ -564,7 +570,8 @@ export async function replayFixture(
 			});
 			// Only parts whose live paint colors were recorded (data-capture-paint): the check
 			// compares those, so a recolor still fails.
-			const painted = (e: Element) => e.hasAttribute("data-capture-paint");
+			const painted = (e: Element) =>
+				e.hasAttribute("data-capture-paint") && e.hasAttribute("data-capture-paint-fx");
 			for (const s of scaled)
 				for (const e of [s, ...s.querySelectorAll("*")].slice(0, 2000)) {
 					if (!painted(e)) continue;

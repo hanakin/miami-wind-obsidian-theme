@@ -134,6 +134,11 @@ export interface ChecklistItem {
  * - data-capture-input-selection="START END DIRECTION" on the focused field: its selected text.
  * - data-capture-cm-selection: CodeMirror's own selection ranges (reference only; the editor
  *   draws them as .cm-selectionBackground boxes, which are in the markup).
+ * - data-capture-paint="COLORS" and data-capture-paint-fx="FX" on parts where the replay check
+ *   allows raster differences between builds (borders under a scale transform, pseudo-element
+ *   image-mask icons, rounded inline backgrounds): the live text, background, border and
+ *   pseudo-element colors and image hash, and the opacity, filter and blend mode of the part, its
+ *   pseudo-elements and every ancestor that sets one. The replay must compute the same.
  * - data-capture-canvas-blank on a <canvas> that read back blank (fully transparent) live: replayed
  *   as it is, not masked.
  * - data-capture-ghost-of="PATH" on the copy a reorder drag's ghost holds (.drag-reorder-ghost >
@@ -180,6 +185,12 @@ export interface FixtureEntry {
 	 * a replay draws in its place.
 	 */
 	imageSizes?: { index: number; width: number; height: number; file?: string }[];
+	/**
+	 * Capture-vault files that inline styles use as images (url(app:...) in a style attribute, e.g.
+	 * a Bases card cover), by the exact URL in the fixture: the file under capture/fixtures/, by
+	 * content. A replay puts the file in place of the URL.
+	 */
+	styleImages?: Record<string, string>;
 	/** "xhtml" when the tree cannot be written as HTML text (e.g. a <div> inside a <p>); parse it as application/xhtml+xml. */
 	format?: "xhtml";
 	/**

@@ -654,24 +654,36 @@ export async function captureItem(
 		}
 		// Images from the capture vault (app: URLs of its files) are kept by content, so a replay
 		// draws the real picture; others (remote) stay same-size stand-ins.
+		const keepVaultFile = (src: string | null): string | null => {
+			let path = "";
+			try {
+				const u = new URL(src ?? "");
+				if (u.protocol === "app:") path = decodeURIComponent(u.pathname);
+			} catch {}
+			if (!path.startsWith(`${VAULT}/`) || !existsSync(path) || statSync(path).size > 1 << 20)
+				return null;
+			const ext = (path.match(/\.(png|jpe?g|gif|svg|webp|avif|bmp)$/i)?.[1] ?? "").toLowerCase();
+			if (!ext) return null;
+			const data = readFileSync(path);
+			const name = `pixels/${new Bun.CryptoHasher("sha256").update(data).digest("hex").slice(0, 32)}.${ext}`;
+			mkdirSync(join(out.fixturesDir, "pixels"), { recursive: true });
+			writeFileSync(join(out.fixturesDir, name), data);
+			return name;
+		};
 		const imageSizes: NonNullable<FixtureEntry["imageSizes"]> = snap.imageSizes.map(
 			({ src, ...im }) => {
-				let path = "";
-				try {
-					const u = new URL(src ?? "");
-					if (u.protocol === "app:") path = decodeURIComponent(u.pathname);
-				} catch {}
-				if (!path.startsWith(`${VAULT}/`) || !existsSync(path) || statSync(path).size > 1 << 20)
-					return im;
-				const data = readFileSync(path);
-				const ext = (path.match(/\.(png|jpe?g|gif|svg|webp|avif|bmp)$/i)?.[1] ?? "").toLowerCase();
-				if (!ext) return im;
-				const name = `pixels/${new Bun.CryptoHasher("sha256").update(data).digest("hex").slice(0, 32)}.${ext}`;
-				mkdirSync(join(out.fixturesDir, "pixels"), { recursive: true });
-				writeFileSync(join(out.fixturesDir, name), data);
-				return { ...im, file: name };
+				const name = keepVaultFile(src);
+				return name ? { ...im, file: name } : im;
 			},
 		);
+		// The same for vault files that inline styles use as images (a Bases card's cover).
+		const styleImages: Record<string, string> = {};
+		for (const m of html.matchAll(/url\((?:&quot;|"|')?(app:\/\/[^"'&)]+)/g)) {
+			const url = m[1] ?? "";
+			if (url in styleImages) continue;
+			const name = keepVaultFile(url);
+			if (name) styleImages[url] = name;
+		}
 		const entry: FixtureEntry = {
 			id: item.id,
 			file,
@@ -684,6 +696,7 @@ export async function captureItem(
 			obsidianVersion: out.version,
 			contains: snap.contains,
 			...(imageSizes.length ? { imageSizes } : {}),
+			...(Object.keys(styleImages).length ? { styleImages } : {}),
 			...(canvasPixels.length ? { canvasPixels } : {}),
 			viewport: snap.viewport,
 			styles: snap.styles,

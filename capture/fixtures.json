@@ -1,6 +1,6 @@
 {
 	"obsidianVersion": "1.15.1",
-	"generated": "2026-11-28T04:27:37.909Z",
+	"generated": "2026-11-28T05:53:08.738Z",
 	"fixtures": [
 		{
 			"id": "bases.cards",
@@ -16,26 +16,23 @@
 			"contains": [
 				"tag"
 			],
+			"styleImages": {
+				"app://e166be4d196bfb33bfe15538cb6bb4e1a357/home/hanakin/Work/miami-wind-obsidian-capture/vault/Attachments/sample-image.png?1795845074627": "pixels/c8c643d51993d013ce86e667fd2d95aa.png"
+			},
 			"viewport": [
 				1600,
 				1000
 			],
 			"styles": [
-				"runtime",
 				"app",
+				"runtime",
 				"theme"
 			],
 			"runtimeStyles": [
-				"3932aecc178042804c34",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
-				"8fd76dc226b0513a11f8",
-				"37a9e3445bc44d57b671",
-				"4347ae04f06b178136ec",
-				"2c11858cea6dd48ac24b",
-				"aa98560f1d348c2fb999",
-				"9b4b20bf3fc7e975cc8b"
+				"8fd76dc226b0513a11f8"
 			],
 			"evidence": {
 				"box": [
@@ -52,10 +49,7 @@
 				],
 				"unobscured": 1,
 				"marks": {
-					"focus-within": 15,
-					"hover": 9,
-					"focus": 1,
-					"focus-visible": 1
+					"hover": 9
 				},
 				"forced": [],
 				"live": [
@@ -82,10 +76,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "488c219f61cc021cfe3e90ab86d4826654a48711f9b164838844e3f5f5024dfc",
+					"sha256": "99b97f25e3f2df60eee18ed8def6345c5c65eecaba470595ca7b44ab8e01c619",
 					"width": 1264,
 					"height": 890,
-					"colors": 1570
+					"colors": 1563
 				}
 			}
 		},
@@ -57024,7 +57018,7 @@
 				"theme"
 			],
 			"runtimeStyles": [
-				"d6b3fa4b76551e354f87",
+				"4c6326ac06b4f6c7ea93",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
@@ -79385,21 +79379,15 @@
 				768
 			],
 			"styles": [
-				"runtime",
 				"app",
+				"runtime",
 				"theme"
 			],
 			"runtimeStyles": [
-				"d6b3fa4b76551e354f87",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
-				"8fd76dc226b0513a11f8",
-				"37a9e3445bc44d57b671",
-				"4347ae04f06b178136ec",
-				"2c11858cea6dd48ac24b",
-				"aa98560f1d348c2fb999",
-				"0ac92200de440ef61394"
+				"8fd76dc226b0513a11f8"
 			],
 			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device.",
 			"evidence": {
@@ -79469,10 +79457,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "bcd2cddb74b8372993606c01aa0fa037d640fc92e18c5fb5d2cd4bd0e0013ff3",
+					"sha256": "c56b425f5311c4e8d524f0b0d0af33ed5e93d4b83c62c23d509e581d5f36e2e3",
 					"width": 1024,
 					"height": 768,
-					"colors": 2166
+					"colors": 2155
 				}
 			}
 		},
@@ -79504,21 +79492,15 @@
 				768
 			],
 			"styles": [
-				"runtime",
 				"app",
+				"runtime",
 				"theme"
 			],
 			"runtimeStyles": [
-				"d6b3fa4b76551e354f87",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
-				"8fd76dc226b0513a11f8",
-				"37a9e3445bc44d57b671",
-				"4347ae04f06b178136ec",
-				"2c11858cea6dd48ac24b",
-				"aa98560f1d348c2fb999",
-				"0ac92200de440ef61394"
+				"8fd76dc226b0513a11f8"
 			],
 			"note": "Emulated mobile (app.emulateMobile in desktop Obsidian 1.15.1), not a real device. Limits: the body keeps the desktop Linux classes (mod-linux, is-frameless, is-hidden-frameless, show-ribbon) and has no is-ios/is-android; captured without a mouse ((hover: none), (pointer: none)), so hover styles do not apply, as on a touch device. A Settings page (Editor), opened by tapping its entry; on a phone it slides in with a back button.",
 			"evidence": {
@@ -79592,10 +79574,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "4db7f09dc06e573db4566083889ea9fbd845f123bfc8eac15e814b9bd41339ec",
+					"sha256": "33be7bd0691e4afb04a4581597413b6663ac7a1828170a63d5632dceced325f5",
 					"width": 1024,
 					"height": 768,
-					"colors": 2030
+					"colors": 2019
 				}
 			}
 		},
@@ -92726,7 +92708,12 @@
 				"qc.gap.bases-cards-cover"
 			],
 			"obsidianVersion": "1.15.1",
-			"contains": [],
+			"contains": [
+				"tag"
+			],
+			"styleImages": {
+				"app://2be6d71f46474bfba8e3cba74073cf4d4c77/home/hanakin/Work/miami-wind-obsidian-capture/vault/Attachments/sample-image.png?1795845178500": "pixels/c8c643d51993d013ce86e667fd2d95aa.png"
+			},
 			"viewport": [
 				1600,
 				1000
@@ -92737,10 +92724,11 @@
 				"theme"
 			],
 			"runtimeStyles": [
-				"34083cfea5cc408bc6a3",
+				"d6b3fa4b76551e354f87",
 				"app",
 				"e48b35cbf8991ae214e9",
 				"theme",
+				"8fd76dc226b0513a11f8",
 				"37a9e3445bc44d57b671",
 				"4347ae04f06b178136ec",
 				"2c11858cea6dd48ac24b",
@@ -92750,22 +92738,23 @@
 			"note": "The Cards view uses note.cover as its image property; Gaps.md has a cover.",
 			"evidence": {
 				"box": [
-					356,
-					130,
+					1055,
+					407,
 					221,
 					303
 				],
 				"inView": [
-					356,
-					130,
+					1055,
+					407,
 					221,
 					303
 				],
 				"unobscured": 1,
 				"marks": {
 					"focus": 1,
+					"focus-visible": 1,
 					"focus-within": 13,
-					"hover": 17
+					"hover": 9
 				},
 				"forced": [],
 				"expect": ":has(.bases-cards-cover)",
@@ -92775,12 +92764,13 @@
 				"domOnly": [],
 				"textStyles": {
 					"\"??\", \"Liberation Sans\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Google Sans Flex\", Roboto, \"Inter Variable\", Inter, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", sans-serif|15px|600|normal|100%|normal|normal|normal|normal|0px|none|none|0px|": 1,
-					"\"??\", \"Liberation Sans\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Google Sans Flex\", Roboto, \"Inter Variable\", Inter, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", sans-serif|12px|400|normal|100%|normal|normal|normal|normal|0px|none|none|0px|": 1
+					"\"??\", \"Liberation Sans\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Google Sans Flex\", Roboto, \"Inter Variable\", Inter, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", sans-serif|12px|400|normal|100%|normal|normal|normal|normal|0px|none|none|0px|": 1,
+					"\"??\", \"Liberation Sans\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, \"Segoe UI\", \"Google Sans Flex\", Roboto, \"Inter Variable\", Inter, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", sans-serif|11.4844px|400|normal|100%|normal|normal|normal|normal|0px|none|none|0px|": 2
 				},
-				"seen": 21,
+				"seen": 27,
 				"clip": [
-					348,
-					122,
+					1047,
+					399,
 					237,
 					319
 				],
@@ -92791,10 +92781,10 @@
 					"canvas": "rgb(18, 18, 18)"
 				},
 				"screenshot": {
-					"sha256": "d071685b6da7feb592d37364e6a4326b4f4fe82ef33bed196292e19aaad53d63",
+					"sha256": "3d82eea608d1cbd0afa70addb802661dd6724e652d63c24a480fea76e4413478",
 					"width": 237,
 					"height": 319,
-					"colors": 246
+					"colors": 1347
 				}
 			}
 		},
@@ -115758,6 +115748,7 @@
 				"qc.drag.done",
 				"qc.drag.tab-split-edge",
 				"qc.gap.bases-add-group",
+				"qc.gap.bases-cards-cover",
 				"qc.gap.bases-group-rows",
 				"qc.gap.canvas-readonly",
 				"qc.gap.editor-caret",

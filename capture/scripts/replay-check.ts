@@ -319,9 +319,17 @@ export async function checkFixture(
 	await page.evaluate(() => {
 		(document.getElementById("replay-mask") as HTMLStyleElement).textContent = "";
 	});
+	// Vault files inline styles use as images, in place of their app: URLs.
+	let replayHtml = html;
+	for (const [url, file] of Object.entries(f.styleImages ?? {}))
+		replayHtml = replayHtml
+			.split(url)
+			.join(
+				`data:${IMAGE_TYPES[file.split(".").pop() ?? ""] ?? "image/png"};base64,${readFileSync(`${CAPTURE}fixtures/${file}`).toString("base64")}`,
+			);
 	const got = await replayFixture(
 		page,
-		html,
+		replayHtml,
 		(f.imageSizes ?? []).map((im) => ({
 			...im,
 			url: im.file
@@ -349,14 +357,22 @@ export async function checkFixture(
 	// Paint colors recorded live where raster differences between builds are allowed (borders
 	// under a scale, image-mask icons, rounded inline backgrounds) must be the replay's own.
 	const paintDiff = (await page.evaluate(() => {
-		const cap = (window as unknown as { cap: { paintOf(e: Element): string } }).cap;
+		const cap = (
+			window as unknown as {
+				cap: { paintOf(e: Element): string; paintFx(e: Element): string };
+			}
+		).cap;
 		for (const e of document.querySelectorAll(
 			"[data-capture-paint]:not([data-capture-placeholder])",
 		)) {
+			const what = `${e.localName}${[...e.classList].map((c) => `.${c}`).join("")}`;
 			const now = cap.paintOf(e);
 			const was = e.getAttribute("data-capture-paint") ?? "";
-			if (now !== was)
-				return `${e.localName}${[...e.classList].map((c) => `.${c}`).join("")}: ${now} (live ${was})`;
+			if (now !== was) return `${what}: ${now} (live ${was})`;
+			// Opacity, filter and blend mode, of the part and its ancestors (recorded since round 8).
+			const fxWas = e.getAttribute("data-capture-paint-fx");
+			if (fxWas !== null && cap.paintFx(e) !== fxWas)
+				return `${what}: opacity/filter/blend ${cap.paintFx(e)} (live ${fxWas})`;
 		}
 		return null;
 	})) as string | null;
