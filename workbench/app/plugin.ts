@@ -134,6 +134,8 @@ export type FixtureIndex = Pick<ViewerData, "components"> & {
 		runtimeStyles?: string[];
 		trimSelector?: string;
 		imageSizes?: { index: number; width: number; height: number; file?: string }[];
+		/** Saved images that inline styles use, by the exact address written in the capture. */
+		styleImages?: Record<string, string>;
 		canvasPixels?: { index: number; frame?: string | null; file: string }[];
 		evidence?: { box?: unknown };
 	})[];
@@ -342,7 +344,16 @@ type Captured = FixtureIndex["fixtures"][number];
 function replayInput(fixture: Captured, side: string, origin: string) {
 	const touch = fixture.id.startsWith("mobile.");
 	const tokens = fixture.runtimeStyles ?? fixture.styles ?? ["app", "runtime", "theme"];
-	const html = readFileSync(`${ROOT}capture/fixtures/${fixture.file}`, "utf8")
+	const data = (file: string) => readFileSync(`${ROOT}capture/fixtures/${file}`).toString("base64");
+	const imageUrl = (file: string) =>
+		`data:${IMAGE_TYPES[file.split(".").pop() ?? ""] ?? "image/png"};base64,${data(file)}`;
+	// Images that inline styles point at (a Bases card cover) were saved with the capture: each
+	// takes the place of its recorded address, as in the compare tool.
+	const html = Object.entries(fixture.styleImages ?? {})
+		.reduce(
+			(text, [url, file]) => text.split(url).join(imageUrl(file)),
+			readFileSync(`${ROOT}capture/fixtures/${fixture.file}`, "utf8"),
+		)
 		.replaceAll('url("./public/', `url("${origin}/assets/public/`)
 		.replaceAll('url("/lib/', `url("${origin}/assets/lib/`)
 		.replaceAll('src="/lib/', `src="${origin}/assets/lib/`);
@@ -352,7 +363,6 @@ function replayInput(fixture: Captured, side: string, origin: string) {
 		const key = match[1] ?? "";
 		frames[key] = stylesheets(key.split(" ").filter(Boolean), side, touch, origin);
 	}
-	const data = (file: string) => readFileSync(`${ROOT}capture/fixtures/${file}`).toString("base64");
 	return {
 		stylesheet: publish(
 			`${stylesheets(tokens, side, touch, origin)}\n[data-capture-placeholder], [data-capture-placeholder] * {visibility:hidden!important}`,
@@ -364,9 +374,7 @@ function replayInput(fixture: Captured, side: string, origin: string) {
 				width: im.width,
 				height: im.height,
 				// An image the capture saved is drawn as it was; others get a same-size stand-in.
-				url: im.file
-					? `data:${IMAGE_TYPES[im.file.split(".").pop() ?? ""] ?? "image/png"};base64,${data(im.file)}`
-					: null,
+				url: im.file ? imageUrl(im.file) : null,
 			})),
 			canvases: (fixture.canvasPixels ?? []).map((c) => ({
 				index: c.index,
