@@ -41,7 +41,7 @@ const { values } = parseArgs({
 });
 if (values.help) {
 	console.log(
-		"bun run compare [--before path] [--after path] [--id substring|id,id...] [--component name] [--surface name]\nRepeat --id for an exact ID list. Pass an empty CSS file for Default Obsidian. Defaults: b478dc8:theme.css vs freshly built theme.css. Outputs: workbench/out/{compare.json,compare.md,component-diffs.json,diffs/}.",
+		`bun run compare [--before path] [--after path] [--id substring|id,id...] [--component name] [--surface name]\nRepeat --id for an exact ID list. Pass an empty CSS file for Default Obsidian. Defaults: ${BASELINE} vs freshly built theme.css. Outputs: workbench/out/{compare.json,compare.md,component-diffs.json,diffs/}.`,
 	);
 	process.exit(0);
 }
