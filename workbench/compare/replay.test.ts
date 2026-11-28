@@ -142,9 +142,8 @@ test
 		expect(r.replayIssues).toEqual([]);
 		if (id === "graph.view") {
 			expect(await page.locator("canvas[data-replay-pixels]").count()).toBe(1);
-			// The fixture also contains an iframe canvas without captured pixels.
-			expect(r.unsupported).toEqual(["canvas"]);
-		} else expect(r.unsupported).not.toContain("canvas");
+		}
+		expect(r.unsupported).not.toContain("canvas");
 		expect(r.unsupported).not.toContain("iframe");
 		if (id === "qc.selection.layer")
 			expect(
