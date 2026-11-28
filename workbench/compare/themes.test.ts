@@ -37,6 +37,10 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 			join(cwd, "capture/fixtures/canvas.png"),
 			readFileSync(join(cwd, "capture/fixtures/saved.png")),
 		);
+		writeFileSync(
+			join(cwd, "capture/fixtures/background.png"),
+			readFileSync(join(cwd, "capture/fixtures/saved.png")),
+		);
 		mkdirSync(join(cwd, "workbench/out/themes"), { recursive: true });
 		writeFileSync(
 			join(cwd, "capture/fixtures.json"),
@@ -49,6 +53,7 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 						runtimeStyles: ["app", "runtime", "test-sheet", "theme"],
 						imageSizes: [{ index: 0, width: 1, height: 1, file: "saved.png" }],
 						canvasPixels: [{ index: 0, file: "canvas.png" }],
+						styleImages: { "app://test/cover.png": "background.png" },
 						component: "button",
 						surface: "test",
 						state: "default",
@@ -59,7 +64,7 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 		);
 		writeFileSync(
 			join(cwd, "capture/fixtures/test.html"),
-			"<button data-capture-target>Test</button><img><canvas></canvas>",
+			"<button data-capture-target>Test</button><img><canvas></canvas><div style='width:4px;height:4px;background-image:url(app://test/cover.png)'></div>",
 		);
 		writeFileSync(
 			join(cwd, "capture/.app/package.json"),
@@ -92,6 +97,7 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 			"capture/fixtures/test.html",
 			"capture/fixtures/saved.png",
 			"capture/fixtures/canvas.png",
+			"capture/fixtures/background.png",
 			"capture/fixtures.json",
 			"capture/coverage.json",
 			"capture/.app/app.css",
@@ -118,10 +124,11 @@ test("reports the run date and preserves the exact compared CSS with hashes and 
 		);
 		writeFileSync(
 			join(cwd, "capture/fixtures/test.html"),
-			"<button data-capture-target>Test</button><img><canvas></canvas>",
+			"<button data-capture-target>Test</button><img><canvas></canvas><div style='width:4px;height:4px;background-image:url(app://test/cover.png)'></div>",
 		);
 
 		expect(report.status).toBe("different");
+		expect(report.fixtures[0].unsupported).not.toContain("background image");
 		expect(report).not.toHaveProperty("accepted");
 		expect(report.summary).not.toHaveProperty("accepted");
 		for (const fixture of report.fixtures)

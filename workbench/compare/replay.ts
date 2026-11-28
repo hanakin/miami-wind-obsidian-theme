@@ -164,6 +164,12 @@ export async function prepareReplay(
 				.join("\n"),
 		);
 	}
+	const imageUrl = (file: string) =>
+		`data:${({ png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", svg: "image/svg+xml", webp: "image/webp", avif: "image/avif", bmp: "image/bmp" } as Record<string, string>)[file.split(".").pop() ?? ""] ?? "image/png"};base64,${read(`capture/fixtures/${file}`).toString("base64")}`;
+	const hydratedHtml = Object.entries(fixture.styleImages ?? {}).reduce(
+		(value, [url, file]) => value.split(url).join(imageUrl(file)),
+		html,
+	);
 	const canvases = (fixture.canvasPixels ?? []).map((c) => ({
 		index: c.index,
 		frame: c.frame ?? null,
@@ -171,12 +177,10 @@ export async function prepareReplay(
 	}));
 	const got = await replayFixture(
 		page,
-		rewrite(html).replaceAll('src="/lib/', `src="${origin}lib/`),
+		rewrite(hydratedHtml).replaceAll('src="/lib/', `src="${origin}lib/`),
 		(fixture.imageSizes ?? []).map((im) => ({
 			...im,
-			url: im.file
-				? `data:${({ png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", svg: "image/svg+xml", webp: "image/webp", avif: "image/avif", bmp: "image/bmp" } as Record<string, string>)[im.file.split(".").pop() ?? ""] ?? "image/png"};base64,${read(`capture/fixtures/${im.file}`).toString("base64")}`
-				: null,
+			url: im.file ? imageUrl(im.file) : null,
 		})),
 		canvases,
 		frames,
